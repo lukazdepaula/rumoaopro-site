@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --header-height: 72px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #08090b;
+  color: #17191d;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+.surface-grid {
+  background-image:
+    linear-gradient(rgba(8, 9, 11, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 9, 11, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.hero-image {
+  background-image:
+    linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.72) 42%, rgba(8, 9, 11, 0.22) 100%),
+    url("https://cdn.shopify.com/s/files/1/0053/8175/0855/files/Copia_de_Arena_Vegette.png?v=1754203818&width=2048");
+  background-position: center;
+  background-size: cover;
+}
+
+.hero-image-alt {
+  background-image:
+    linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.7) 46%, rgba(8, 9, 11, 0.18) 100%),
+    url("https://cdn.shopify.com/s/files/1/0053/8175/0855/files/IMG_3993.jpg?v=1754204323");
+  background-position: center;
+  background-size: cover;
+}
+
+.focus-ring:focus-visible {
+  outline: 3px solid #77d5df;
+  outline-offset: 3px;
+}
