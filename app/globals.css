@@ -48,16 +48,16 @@ img {
 .hero-image {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.72) 42%, rgba(8, 9, 11, 0.22) 100%),
-    url("https://cdn.shopify.com/s/files/1/0053/8175/0855/files/Copia_de_Arena_Vegette.png?v=1754203818&width=2048");
-  background-position: center;
+    url("/assets/photos/lukaz-sprint-front.jpg");
+  background-position: center right;
   background-size: cover;
 }
 
 .hero-image-alt {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.7) 46%, rgba(8, 9, 11, 0.18) 100%),
-    url("https://cdn.shopify.com/s/files/1/0053/8175/0855/files/IMG_3993.jpg?v=1754204323");
-  background-position: center;
+    url("/assets/photos/lukaz-sprint-side.jpg");
+  background-position: center right;
   background-size: cover;
 }
 

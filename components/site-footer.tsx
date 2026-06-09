@@ -1,12 +1,21 @@
 import Link from "next/link";
-import { contact } from "@/lib/content";
+import { assets, contact } from "@/lib/content";
 
 export function SiteFooter() {
   return (
     <footer className="bg-ink text-white">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.3fr_1fr_1fr] lg:px-8">
         <div>
-          <p className="font-display text-xl uppercase">RumoAoPro</p>
+          <div className="flex items-center gap-3">
+            <img
+              alt="RumoAoPro"
+              className="h-10 w-10 rounded-md bg-white object-cover"
+              height={40}
+              src={assets.logo}
+              width={40}
+            />
+            <p className="font-display text-xl uppercase">RumoAoPro</p>
+          </div>
           <p className="mt-3 max-w-md text-sm leading-6 text-white/70">
             Assessoria, programas e performance para atletas que querem treinar
             com intenção profissional.

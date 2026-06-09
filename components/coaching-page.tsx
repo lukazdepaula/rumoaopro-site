@@ -4,7 +4,7 @@ import { ApplicationForm } from "@/components/application-form";
 import { CtaButton } from "@/components/cta-button";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, testimonials } from "@/lib/content";
+import { assets, testimonials, testimonialScreens } from "@/lib/content";
 import type { CoachingCopy } from "@/lib/content";
 
 export function CoachingPage({ copy }: { copy: CoachingCopy }) {
@@ -12,6 +12,40 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
   const methodId = copy.locale === "pt" ? "metodo" : "method";
   const currentTestimonials =
     copy.locale === "pt" ? testimonials.pt : testimonials.en;
+  const methodImage =
+    copy.locale === "pt" ? assets.trainingOrganizationPt : assets.howWorkWasDoneEn;
+  const supportImage =
+    copy.locale === "pt" ? assets.coachingWorkflowPt : assets.rakanPerformanceEn;
+  const proofImages =
+    copy.locale === "pt"
+      ? [
+          {
+            alt: "Relatório de temporada de atleta acompanhado pela RumoAoPro",
+            src: assets.caseSuccessDewa
+          },
+          {
+            alt: "Exemplo de organização semanal dos treinos",
+            src: assets.trainingOrganizationPt
+          },
+          {
+            alt: "Exemplo de entrega da assessoria online",
+            src: assets.coachingWorkflowPt
+          }
+        ]
+      : [
+          {
+            alt: "Season report from a RumoAoPro athlete",
+            src: assets.rakanSeasonReportEn
+          },
+          {
+            alt: "Performance support report from an athlete",
+            src: assets.rakanPerformanceEn
+          },
+          {
+            alt: "Example of weekly work organization",
+            src: assets.howWorkWasDoneEn
+          }
+        ];
 
   return (
     <main className="min-h-screen bg-smoke" lang={copy.locale === "pt" ? "pt-BR" : "en"}>
@@ -88,9 +122,9 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     : "Example individual training calendar"
                 }
                 className="h-auto w-full object-cover"
-                height={760}
-                src={assets.appCalendar}
-                width={1120}
+                height={1254}
+                src={methodImage}
+                width={1254}
               />
             </div>
           </div>
@@ -116,6 +150,54 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
         </div>
       </section>
 
+      <section className="bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase text-signal">
+                {copy.locale === "pt" ? "Prova do método" : "Method proof"}
+              </p>
+              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+                {copy.caseTitle}
+              </h2>
+              <p className="mt-5 text-base leading-7 text-graphite/75">
+                {copy.caseLead}
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-ink/10 bg-ink">
+              <Image
+                alt={
+                  copy.locale === "pt"
+                    ? "Exemplo de como funciona a assessoria individual"
+                    : "Example of how individual coaching works"
+                }
+                className="h-auto w-full object-cover"
+                height={1254}
+                src={supportImage}
+                width={1254}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {proofImages.map((image) => (
+              <figure
+                className="overflow-hidden rounded-lg border border-ink/10 bg-ink shadow-sm"
+                key={image.src}
+              >
+                <Image
+                  alt={image.alt}
+                  className="h-auto w-full object-cover transition duration-300 hover:scale-[1.02]"
+                  height={1254}
+                  src={image.src}
+                  width={1254}
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
           <div>
@@ -127,17 +209,27 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             </h2>
             <p className="mt-5 text-base leading-8 text-white/70">{copy.coachBody}</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {copy.credentials.map((credential) => (
-                <div
-                  className="flex items-center gap-3 rounded-md border border-white/10 bg-white/10 px-4 py-3"
-                  key={credential}
-                >
-                  <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-gold" />
-                  <span className="text-sm font-semibold text-white/80">
-                    {credential}
-                  </span>
-                </div>
-              ))}
+              {copy.credentials.map((credential) => {
+                const isCbf = credential.toLowerCase().includes("cbf");
+
+                return (
+                  <div
+                    className="flex items-center gap-3 rounded-md border border-white/10 bg-white/10 px-4 py-3"
+                    key={credential}
+                  >
+                    {isCbf ? (
+                      <span className="grid h-10 w-12 place-items-center rounded-md border border-gold/50 bg-gold text-xs font-black uppercase tracking-wide text-ink">
+                        CBF A
+                      </span>
+                    ) : (
+                      <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-gold" />
+                    )}
+                    <span className="text-sm font-semibold text-white/80">
+                      {credential}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="overflow-hidden rounded-lg border border-white/10">
@@ -147,10 +239,10 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                   ? "Lukaz de Paula acompanhando atletas em treino"
                   : "Lukaz de Paula coaching athletes in training"
               }
-              className="h-full min-h-[420px] w-full object-cover"
-              height={1536}
-              src={assets.coachCollage}
-              width={864}
+                className="h-full min-h-[420px] w-full object-cover"
+              height={2800}
+              src={assets.coachGym}
+              width={2100}
             />
           </div>
         </div>
@@ -206,6 +298,45 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                 </figcaption>
               </figure>
             ))}
+          </div>
+          <div className="mt-10">
+            <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div>
+                <p className="text-sm font-bold uppercase text-signal">
+                  {copy.locale === "pt" ? "Depoimentos reais" : "Real feedback"}
+                </p>
+                <h3 className="mt-2 font-display text-2xl uppercase text-ink sm:text-3xl">
+                  {copy.locale === "pt"
+                    ? "Prints de atletas acompanhados"
+                    : "Screenshots from coached athletes"}
+                </h3>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-graphite/65">
+                {copy.locale === "pt"
+                  ? "Feedbacks de atletas que buscaram mais velocidade, resistência, consistência, retorno seguro e uma rotina de treino mais profissional."
+                  : "Feedback from athletes looking for more speed, endurance, consistency, safer return to play and a more professional training routine."}
+              </p>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {testimonialScreens.slice(0, 8).map((src, index) => (
+                <figure
+                  className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm"
+                  key={src}
+                >
+                  <Image
+                    alt={
+                      copy.locale === "pt"
+                        ? `Depoimento de atleta ${index + 1}`
+                        : `Athlete testimonial ${index + 1}`
+                    }
+                    className="h-auto w-full object-cover"
+                    height={1080}
+                    src={src}
+                    width={1080}
+                  />
+                </figure>
+              ))}
+            </div>
           </div>
         </div>
       </section>
