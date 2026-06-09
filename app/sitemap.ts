@@ -1,0 +1,40 @@
+import type { MetadataRoute } from "next";
+
+const baseUrl = "https://rumoaopro.com";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date();
+
+  return [
+    {
+      url: `${baseUrl}/`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 1
+    },
+    {
+      url: `${baseUrl}/assessoria`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.95
+    },
+    {
+      url: `${baseUrl}/en/coaching`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9
+    },
+    {
+      url: `${baseUrl}/programas`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.75
+    },
+    {
+      url: `${baseUrl}/links`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7
+    }
+  ];
+}
