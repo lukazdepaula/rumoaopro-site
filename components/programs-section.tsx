@@ -24,8 +24,9 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
             </h2>
             <p className="mt-4 text-base leading-7 text-graphite/75">
               Cada programa resolve um momento específico da jornada do atleta:
-              pré-temporada, ganho de força ou retorno ao campo. A compra segue
-              pela loja atual durante a transição da nova esteira.
+              força e potência, offseason curta, velocidade, resistência ou
+              manutenção durante a temporada. Os produtos prontos seguem pela
+              loja atual; os novos entram primeiro por lista de interesse.
             </p>
           </div>
           {compact ? (
@@ -35,7 +36,7 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
           ) : null}
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {visiblePrograms.map((program) => {
             const isExternal =
               !program.href.startsWith("/") && !program.href.startsWith("#");
@@ -126,10 +127,10 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
                 </h3>
               </div>
               <p className="text-sm leading-6 text-graphite/70">
-                Escolha um programa se você quer seguir uma estrutura pronta
-                para um objetivo específico. Suba para a assessoria se precisa
-                de ajustes semanais, controle de carga e um plano em volta da
-                sua rotina real.
+                Escolha um programa se você quer uma estrutura pronta para um
+                objetivo específico. Suba para a assessoria se precisa de
+                ajustes semanais, controle de carga e um plano em volta da sua
+                rotina real.
               </p>
               <div className="flex items-start md:justify-end">
                 <Link

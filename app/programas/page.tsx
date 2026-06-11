@@ -24,8 +24,17 @@ export default function ProgramasPage() {
   return (
     <main className="min-h-screen bg-smoke">
       <SiteHeader navItems={nav.pt} ctaHref="/assessoria#aplicacao" />
-      <section className="bg-ink text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:min-h-[calc(82vh-var(--header-height))] md:grid-cols-[0.94fr_1.06fr] md:items-center lg:px-8">
+      <section className="relative isolate overflow-hidden bg-ink text-white">
+        <Image
+          alt="Lukaz de Paula orientando treino físico em campo"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-[62%_center]"
+          fill
+          priority
+          sizes="100vw"
+          src={assets.coachFieldDrillWide}
+        />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.96)_0%,rgba(8,9,11,0.82)_46%,rgba(8,9,11,0.34)_100%)]" />
+        <div className="mx-auto flex min-h-[calc(82svh-var(--header-height))] max-w-7xl items-center px-4 py-10 sm:px-6 md:min-h-[calc(78vh-var(--header-height))] lg:px-8">
           <div className="max-w-3xl">
             <p className="inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-gold">
               Nova esteira RumoAoPro
@@ -39,6 +48,10 @@ export default function ProgramasPage() {
               e planejamento de temporada para atletas que precisam de mais
               proximidade.
             </p>
+            <p className="mt-4 max-w-xl text-sm font-bold uppercase leading-6 text-ice">
+              Força, velocidade, resistência e recuperação conectadas ao
+              calendário real do atleta.
+            </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaButton href="#esteira" icon={ArrowRight}>
                 Ver esteira
@@ -50,7 +63,7 @@ export default function ProgramasPage() {
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {[
                 ["5", "níveis de produto"],
-                ["3", "programas ativos"],
+                ["5", "programas na coleção"],
                 ["1:1", "assessoria personalizada"]
               ].map(([value, label]) => (
                 <div
@@ -65,25 +78,6 @@ export default function ProgramasPage() {
                   </p>
                 </div>
               ))}
-            </div>
-          </div>
-          <div className="relative">
-            <Image
-              alt="Lukaz de Paula orientando treino físico em campo"
-              className="aspect-[4/5] max-h-[650px] w-full rounded-lg object-cover shadow-clean"
-              height={1536}
-              priority
-              src={assets.coachGym}
-              width={1152}
-            />
-            <div className="absolute bottom-4 left-4 right-4 rounded-lg border border-white/15 bg-ink/88 p-4 text-white backdrop-blur">
-              <p className="text-xs font-bold uppercase text-gold">
-                Sistema de treino
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/75">
-                Força, velocidade, resistência e recuperação conectadas ao
-                calendário real do atleta.
-              </p>
             </div>
           </div>
         </div>

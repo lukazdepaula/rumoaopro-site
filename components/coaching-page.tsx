@@ -4,7 +4,12 @@ import { ApplicationForm } from "@/components/application-form";
 import { CtaButton } from "@/components/cta-button";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, testimonials, testimonialScreens } from "@/lib/content";
+import {
+  assets,
+  countriesWorked,
+  testimonials,
+  testimonialScreens
+} from "@/lib/content";
 import type { CoachingCopy } from "@/lib/content";
 
 export function CoachingPage({ copy }: { copy: CoachingCopy }) {
@@ -15,7 +20,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
   const methodImage =
     copy.locale === "pt" ? assets.trainingOrganizationPt : assets.howWorkWasDoneEn;
   const supportImage =
-    copy.locale === "pt" ? assets.coachingWorkflowPt : assets.rakanPerformanceEn;
+    copy.locale === "pt" ? assets.coachFieldDrillWide : assets.coachFieldPlaying;
   const proofImages =
     copy.locale === "pt"
       ? [
@@ -24,12 +29,12 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             src: assets.caseSuccessDewa
           },
           {
-            alt: "Exemplo de organização semanal dos treinos",
-            src: assets.trainingOrganizationPt
-          },
-          {
             alt: "Exemplo de entrega da assessoria online",
             src: assets.coachingWorkflowPt
+          },
+          {
+            alt: "Lukaz de Paula orientando atletas em campo",
+            src: assets.coachFieldWalk
           }
         ]
       : [
@@ -42,8 +47,8 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             src: assets.rakanPerformanceEn
           },
           {
-            alt: "Example of weekly work organization",
-            src: assets.howWorkWasDoneEn
+            alt: "Lukaz de Paula coaching athletes on the field",
+            src: assets.coachFieldDrillWide
           }
         ];
 
@@ -231,6 +236,28 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                 );
               })}
             </div>
+            <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.06] p-5">
+              <p className="text-sm font-bold uppercase text-white/50">
+                {copy.locale === "pt"
+                  ? "Experiência em ambientes internacionais"
+                  : "International performance environments"}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                {countriesWorked.map((country) => (
+                  <div
+                    className="rounded-md border border-white/10 bg-ink/35 px-3 py-3 text-center"
+                    key={country.label}
+                  >
+                    <p className="text-2xl" aria-hidden="true">
+                      {country.flag}
+                    </p>
+                    <p className="mt-2 text-xs font-bold uppercase text-white/70">
+                      {country.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="overflow-hidden rounded-lg border border-white/10">
             <Image
@@ -239,7 +266,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                   ? "Lukaz de Paula acompanhando atletas em treino"
                   : "Lukaz de Paula coaching athletes in training"
               }
-                className="h-full min-h-[420px] w-full object-cover"
+              className="h-full min-h-[420px] w-full object-cover"
               height={2800}
               src={assets.coachGym}
               width={2100}
@@ -318,7 +345,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
               </p>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {testimonialScreens.slice(0, 8).map((src, index) => (
+              {testimonialScreens.map((src, index) => (
                 <figure
                   className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm"
                   key={src}
