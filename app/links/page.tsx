@@ -26,7 +26,7 @@ export default function LinksPage() {
         <div className="mt-6 text-center">
           <img
             alt="RumoAoPro"
-            className="mx-auto mb-4 h-16 w-16 rounded-md bg-white object-cover"
+            className="mx-auto mb-4 h-16 w-16 object-contain"
             height={64}
             src={assets.logo}
             width={64}

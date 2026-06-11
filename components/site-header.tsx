@@ -22,7 +22,7 @@ export function SiteHeader({
         <Link className="flex items-center gap-3 focus-ring rounded-md" href="/">
           <img
             alt="RumoAoPro"
-            className="h-10 w-10 rounded-md bg-white object-cover"
+            className="h-10 w-10 object-contain"
             height={40}
             src={assets.logo}
             width={40}

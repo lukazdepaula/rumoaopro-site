@@ -49,7 +49,7 @@ img {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.72) 42%, rgba(8, 9, 11, 0.22) 100%),
     url("/assets/photos/lukaz-gym-instruction.jpg");
-  background-position: center right;
+  background-position: center top;
   background-size: cover;
 }
 
@@ -57,7 +57,7 @@ img {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.7) 46%, rgba(8, 9, 11, 0.18) 100%),
     url("/assets/photos/lukaz-gym-coaching-wide.jpg");
-  background-position: center right;
+  background-position: center top;
   background-size: cover;
 }
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, Star } from "lucide-react";
 import { ApplicationForm } from "@/components/application-form";
 import { CtaButton } from "@/components/cta-button";
 import { SiteFooter } from "@/components/site-footer";
@@ -7,7 +7,9 @@ import { SiteHeader } from "@/components/site-header";
 import {
   assets,
   countriesWorked,
-  testimonials,
+  performanceEnvironments,
+  playerPathLogos,
+  successCases,
   testimonialScreens
 } from "@/lib/content";
 import type { CoachingCopy } from "@/lib/content";
@@ -15,42 +17,35 @@ import type { CoachingCopy } from "@/lib/content";
 export function CoachingPage({ copy }: { copy: CoachingCopy }) {
   const formId = copy.locale === "pt" ? "aplicacao" : "application";
   const methodId = copy.locale === "pt" ? "metodo" : "method";
-  const currentTestimonials =
-    copy.locale === "pt" ? testimonials.pt : testimonials.en;
+  const currentSuccessCases =
+    copy.locale === "pt" ? successCases.pt : successCases.en;
   const methodImage =
     copy.locale === "pt" ? assets.trainingOrganizationPt : assets.howWorkWasDoneEn;
-  const supportImage =
-    copy.locale === "pt" ? assets.coachFieldDrillWide : assets.coachFieldPlaying;
-  const proofImages =
-    copy.locale === "pt"
-      ? [
-          {
-            alt: "Relatório de temporada de atleta acompanhado pela RumoAoPro",
-            src: assets.caseSuccessDewa
-          },
-          {
-            alt: "Exemplo de entrega da assessoria online",
-            src: assets.coachingWorkflowPt
-          },
-          {
-            alt: "Lukaz de Paula orientando atletas em campo",
-            src: assets.coachFieldWalk
-          }
-        ]
-      : [
-          {
-            alt: "Season report from a RumoAoPro athlete",
-            src: assets.rakanSeasonReportEn
-          },
-          {
-            alt: "Performance support report from an athlete",
-            src: assets.rakanPerformanceEn
-          },
-          {
-            alt: "Lukaz de Paula coaching athletes on the field",
-            src: assets.coachFieldDrillWide
-          }
-        ];
+  const proofImages = [
+    {
+      alt:
+        copy.locale === "pt"
+          ? "Microciclo de temporada organizado para Theo Ferreira"
+          : "In-season microcycle organized for Theo Ferreira",
+      src: assets.theoMicrocycle
+    },
+    {
+      alt:
+        copy.locale === "pt"
+          ? "Microciclo semanal organizado para atleta profissional"
+          : "Weekly microcycle organized for a professional athlete",
+      src: methodImage
+    },
+    {
+      alt:
+        copy.locale === "pt"
+          ? "Treino concluído no acompanhamento individual"
+          : "Training completed in the individual coaching system",
+      src: assets.theoTrainingCompleted
+    }
+  ];
+  const applicationSpots =
+    copy.locale === "pt" ? "3 vagas em triagem nesta semana" : "3 screening spots this week";
 
   return (
     <main className="min-h-screen bg-smoke" lang={copy.locale === "pt" ? "pt-BR" : "en"}>
@@ -157,34 +152,19 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase text-signal">
-                {copy.locale === "pt" ? "Prova do método" : "Method proof"}
-              </p>
-              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                {copy.caseTitle}
-              </h2>
-              <p className="mt-5 text-base leading-7 text-graphite/75">
-                {copy.caseLead}
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-lg border border-ink/10 bg-ink">
-              <Image
-                alt={
-                  copy.locale === "pt"
-                    ? "Exemplo de como funciona a assessoria individual"
-                    : "Example of how individual coaching works"
-                }
-                className="h-auto w-full object-cover"
-                height={1254}
-                src={supportImage}
-                width={1254}
-              />
-            </div>
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase text-signal">
+              {copy.locale === "pt" ? "Prova do método" : "Method proof"}
+            </p>
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+              {copy.caseTitle}
+            </h2>
+            <p className="mt-5 text-base leading-7 text-graphite/75">
+              {copy.caseLead}
+            </p>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {proofImages.map((image) => (
               <figure
                 className="overflow-hidden rounded-lg border border-ink/10 bg-ink shadow-sm"
@@ -192,7 +172,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
               >
                 <Image
                   alt={image.alt}
-                  className="h-auto w-full object-cover transition duration-300 hover:scale-[1.02]"
+                  className="aspect-square h-full w-full object-cover transition duration-300 hover:scale-[1.02]"
                   height={1254}
                   src={image.src}
                   width={1254}
@@ -258,6 +238,81 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                 ))}
               </div>
             </div>
+            <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.06] p-5">
+              <p className="text-sm font-bold uppercase text-white/50">
+                {copy.locale === "pt"
+                  ? "Clubes, universidade e performance"
+                  : "Clubs, university and performance"}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {performanceEnvironments.map((item) => (
+                  <div
+                    className="flex min-h-20 items-center gap-3 rounded-md border border-white/10 bg-ink/35 px-3 py-3"
+                    key={item.name}
+                  >
+                    {item.image ? (
+                      <Image
+                        alt={`${item.name} logo`}
+                        className="h-11 w-11 rounded-md object-contain"
+                        height={64}
+                        src={item.image}
+                        width={64}
+                      />
+                    ) : (
+                      <span className="grid h-11 w-11 place-items-center rounded-md border border-gold/40 bg-gold/10 text-xs font-black uppercase text-gold">
+                        {item.name
+                          .split(" ")
+                          .map((word) => word[0])
+                          .join("")
+                          .slice(0, 3)}
+                      </span>
+                    )}
+                    <span>
+                      <span className="block text-sm font-bold text-white">
+                        {item.name}
+                      </span>
+                      <span className="mt-1 block text-xs font-semibold uppercase text-white/45">
+                        {item.role}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-5 rounded-lg border border-gold/25 bg-gold/10 p-5">
+              <p className="text-sm font-bold uppercase text-gold">
+                {copy.locale === "pt"
+                  ? "Também viveu o jogo como atleta"
+                  : "He also lived the game as a player"}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-white/70">
+                {copy.locale === "pt"
+                  ? "A leitura da assessoria vem de quem já esteve no vestiário, em universidade nos EUA, base profissional, Europa e rotina competitiva."
+                  : "The coaching lens comes from someone who has been inside the locker room, college soccer in the US, academy environments, Europe and competitive routines."}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                {playerPathLogos.map((item) => (
+                  <div
+                    className="rounded-md border border-white/10 bg-ink/40 px-3 py-4 text-center"
+                    key={item.name}
+                  >
+                    <Image
+                      alt={`${item.name} logo`}
+                      className="mx-auto h-12 w-12 object-contain"
+                      height={72}
+                      src={item.image}
+                      width={72}
+                    />
+                    <p className="mt-3 text-xs font-bold uppercase text-white/80">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-[11px] font-semibold uppercase text-white/45">
+                      {item.role}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="overflow-hidden rounded-lg border border-white/10">
             <Image
@@ -310,20 +365,39 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
               {copy.locale === "pt"
-                ? "Atletas que sentiram diferença na rotina"
-                : "Athletes who felt the difference in their routine"}
+                ? "Casos de sucesso"
+                : "Success stories"}
             </h2>
+            <p className="mt-4 text-base leading-7 text-graphite/70">
+              {copy.locale === "pt"
+                ? "Atletas que treinaram com acompanhamento individual, organização de carga e uma rotina pensada para a realidade competitiva."
+                : "Players supported with individual programming, load organization and a routine built around the competitive reality."}
+            </p>
           </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {currentTestimonials.map((item) => (
-              <figure className="rounded-lg bg-white p-6 shadow-sm" key={item.name}>
-                <blockquote className="text-base leading-7 text-graphite/80">
-                  “{item.quote}”
-                </blockquote>
-                <figcaption className="mt-5 text-sm font-bold text-ink">
-                  {item.name}
-                </figcaption>
-              </figure>
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+            {currentSuccessCases.map((item) => (
+              <article
+                className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm"
+                key={item.name}
+              >
+                <Image
+                  alt={
+                    copy.locale === "pt"
+                      ? `Caso de sucesso de ${item.name}`
+                      : `${item.name} success story`
+                  }
+                  className="aspect-[4/4.6] w-full object-cover"
+                  height={906}
+                  src={item.image}
+                  width={812}
+                />
+                <div className="p-5">
+                  <h3 className="text-base font-black text-ink">{item.name}</h3>
+                  <p className="mt-3 text-sm leading-6 text-graphite/75">
+                    {item.quote}
+                  </p>
+                </div>
+              </article>
             ))}
           </div>
           <div className="mt-10">
@@ -380,18 +454,35 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             <p className="mt-5 text-base leading-7 text-graphite/75">
               {copy.formLead}
             </p>
-            <div className="mt-8 overflow-hidden rounded-lg border border-ink/10">
+            <div className="relative mt-8 overflow-hidden rounded-lg border border-ink/10 bg-ink">
               <Image
                 alt={
                   copy.locale === "pt"
-                    ? "Tela de comunicação e suporte do aplicativo de treino"
-                    : "Training app communication and support screen"
+                    ? "Lukaz de Paula orientando atletas na assessoria"
+                    : "Lukaz de Paula coaching athletes in the performance program"
                 }
-                className="h-auto w-full object-cover"
-                height={1040}
-                src={assets.appCommunication}
-                width={1120}
+                className="aspect-[4/3] w-full object-cover opacity-90"
+                height={1536}
+                src={assets.coachFieldDrillWide}
+                width={2048}
               />
+              <div className="absolute bottom-4 left-4 right-4 rounded-lg border border-white/15 bg-ink/85 p-4 text-white shadow-sm backdrop-blur">
+                <div className="flex gap-1 text-gold">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Star
+                      aria-hidden="true"
+                      className="h-4 w-4 fill-current"
+                      key={index}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm font-black uppercase">
+                  {copy.locale === "pt" ? "Vagas limitadas" : "Limited spots"}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white/70">
+                  {applicationSpots}
+                </p>
+              </div>
             </div>
           </div>
           <ApplicationForm

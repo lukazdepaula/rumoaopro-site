@@ -48,6 +48,18 @@ export const assets = {
   howWorkWasDoneEn: "/assets/proof/how-work-was-done-en.png",
   rakanSeasonReportEn: "/assets/proof/rakan-season-report-en.png",
   rakanPerformanceEn: "/assets/proof/rakan-performance-en.png",
+  theoMicrocycle: "/assets/proof/theo-microcycle.jpg",
+  theoTrainingCompleted: "/assets/proof/theo-training-completed.png",
+  logoAlmunecar: "/assets/logos/almunecar-city.png",
+  logoColoradoRapids: "/assets/logos/colorado-rapids.png",
+  logoDesportivoBrasil: "/assets/logos/desportivo-brasil.png",
+  logoExtratime: "/assets/logos/extratime.png",
+  logoVasalunds: "/assets/logos/vasalunds.png",
+  successTheo: "/assets/success/theo-ferreira.png",
+  successHaroune: "/assets/success/haroune-camara.png",
+  successAmar: "/assets/success/amar.png",
+  successJackson: "/assets/success/jackson.png",
+  successDiogo: "/assets/success/diogo-fortunato.png",
   preSeason:
     "https://www.rumoaopro.com.br/cdn/shop/files/Capa_1_480x480.png?v=1742056677",
   adama:
@@ -72,9 +84,12 @@ export const nav = {
 };
 
 export const testimonialScreens = [
-  "/assets/testimonials/testimonial-1.png",
+  "/assets/testimonials/testimonial-2.png",
   "/assets/testimonials/testimonial-3.png",
+  "/assets/testimonials/testimonial-4.png",
+  "/assets/testimonials/testimonial-5.png",
   "/assets/testimonials/testimonial-6.png",
+  "/assets/testimonials/testimonial-7.png",
   "/assets/testimonials/testimonial-8.png"
 ];
 
@@ -84,6 +99,111 @@ export const countriesWorked = [
   { flag: "🇸🇦", label: "Arábia Saudita" },
   { flag: "🇪🇸", label: "Espanha" }
 ];
+
+export const performanceEnvironments = [
+  { name: "FC Málaga City", role: "Performance staff" },
+  {
+    name: "Extratime Performance",
+    role: "Director of physical training",
+    image: assets.logoExtratime
+  },
+  { name: "Lindsey Wilson University", role: "Former S&C coach" },
+  {
+    name: "CD Almuñécar City",
+    role: "Performance staff",
+    image: assets.logoAlmunecar
+  }
+];
+
+export const playerPathLogos = [
+  {
+    name: "Colorado Rapids U23",
+    role: "United States",
+    image: assets.logoColoradoRapids
+  },
+  {
+    name: "Desportivo Brasil",
+    role: "Brazil",
+    image: assets.logoDesportivoBrasil
+  },
+  {
+    name: "Vasalunds IF",
+    role: "Sweden",
+    image: assets.logoVasalunds
+  },
+  {
+    name: "CD Almuñécar City",
+    role: "Spain",
+    image: assets.logoAlmunecar
+  }
+];
+
+export const successCases = {
+  pt: [
+    {
+      name: "Theo Ferreira",
+      image: assets.successTheo,
+      quote:
+        "Com apenas 2 anos de trabalho focado em força, velocidade e preparação física individualizada, Theo saiu da base do Newcastle Sub-16 e hoje é jogador profissional no Sub-21. Planejamento + execução = resultado."
+    },
+    {
+      name: "Haroune Camara",
+      image: assets.successHaroune,
+      quote:
+        "Haroune Camara se reinventou. Voltou a ser convocado para a Seleção Saudita e fez o maior número de gols da carreira. Quando o físico volta para o topo, o futebol acompanha."
+    },
+    {
+      name: "Amar",
+      image: assets.successAmar,
+      quote:
+        "Destaque nas categorias de base do Al Ittihad, Amar transformou seu corpo, aumentou performance e conquistou a convocação para a Seleção Sub-20 da Arábia Saudita."
+    },
+    {
+      name: "Jackson",
+      image: assets.successJackson,
+      quote:
+        "Três temporadas seguidas sem lesão, campeão e artilheiro. Com planejamento, consistência e treino inteligente, Jackson provou que dá para manter alto nível sem parar por lesão."
+    },
+    {
+      name: "Diogo Fortunato",
+      image: assets.successDiogo,
+      quote:
+        "Melhor meio-campista da temporada. Diogo uniu talento e preparo físico de alto nível para se destacar na Europa. Treino certo, consistência e foco. O resultado veio."
+    }
+  ],
+  en: [
+    {
+      name: "Theo Ferreira",
+      image: assets.successTheo,
+      quote:
+        "After two years of focused strength, speed and individualized physical preparation, Theo moved from Newcastle U16 to the professional U21 environment. Planning plus execution creates results."
+    },
+    {
+      name: "Haroune Camara",
+      image: assets.successHaroune,
+      quote:
+        "Haroune Camara reinvented himself. He returned to the Saudi national team setup and produced the highest goal count of his career. When the physical level rises, football follows."
+    },
+    {
+      name: "Amar",
+      image: assets.successAmar,
+      quote:
+        "A standout in Al Ittihad's academy categories, Amar transformed his body, improved performance and earned a call-up to the Saudi Arabia U20 national team."
+    },
+    {
+      name: "Jackson",
+      image: assets.successJackson,
+      quote:
+        "Three straight seasons without injury, champion and top scorer. With planning, consistency and intelligent training, Jackson showed that players can stay at a high level without being stopped by injuries."
+    },
+    {
+      name: "Diogo Fortunato",
+      image: assets.successDiogo,
+      quote:
+        "Best midfielder of the season. Diogo combined talent with high-level physical preparation to stand out in Europe. The right training, consistency and focus brought the result."
+    }
+  ]
+};
 
 export const testimonials = {
   pt: [
@@ -202,12 +322,13 @@ export const coachingCopy = {
     ],
     coachTitle: "Treinado por quem vive performance no futebol",
     coachBody:
-      "Lukaz de Paula atua hoje como coordenador de performance física do FC Málaga City e CD Almuñécar City na Espanha. Também foi preparador físico da Lindsey Wilson University nos EUA, uma das maiores campeãs nacionais da NAIA, e diretor de treinamento físico da Extratime, academia de performance para jogadores profissionais em Jeddah, na Arábia Saudita.",
+      "Lukaz de Paula atua hoje como coordenador de performance física do FC Málaga City e CD Almuñécar City na Espanha. Também foi preparador físico da Lindsey Wilson University nos EUA, uma das maiores campeãs nacionais da NAIA, e diretor de treinamento físico da Extratime, academia de performance para jogadores profissionais em Jeddah, na Arábia Saudita. Além de treinador, viveu o jogo como atleta: jogou futebol universitário nos Estados Unidos, passou por Colorado Rapids U23, Desportivo Brasil, Vasalunds IF na Suécia e segue jogando no CD Almuñécar City. Isso ajuda o trabalho a entender o que o atleta sente dentro da rotina real.",
     credentials: [
-      "Licença CBF A",
+      "Licença CBF A em Strength & Conditioning",
       "FC Málaga City e CD Almuñécar City",
       "Ex Lindsey Wilson University",
-      "Ex Extratime Performance, Jeddah"
+      "Ex Extratime Performance, Jeddah",
+      "Ex-atleta universitário e profissional"
     ],
     processTitle: "Como funciona",
     process: [
@@ -336,12 +457,13 @@ export const coachingCopy = {
     ],
     coachTitle: "Coached by someone living football performance every day",
     coachBody:
-      "Lukaz de Paula currently works as physical performance coordinator for FC Málaga City and CD Almuñécar City in Spain. He previously worked as a strength and conditioning coach at Lindsey Wilson University in the United States, one of the top NAIA national championship programs, and as director of physical training at Extratime, a performance facility for professional players in Jeddah, Saudi Arabia.",
+      "Lukaz de Paula currently works as physical performance coordinator for FC Málaga City and CD Almuñécar City in Spain. He previously worked as a strength and conditioning coach at Lindsey Wilson University in the United States, one of the top NAIA national championship programs, and as director of physical training at Extratime, a performance facility for professional players in Jeddah, Saudi Arabia. He also lived the game as a player: college soccer in the United States, Colorado Rapids U23, Desportivo Brasil, Vasalunds IF in Sweden and currently CD Almuñécar City. That matters because he understands what the athlete feels inside the real football routine.",
     credentials: [
-      "CBF A license",
+      "CBF A Strength & Conditioning license",
       "FC Málaga City and CD Almuñécar City",
       "Former Lindsey Wilson University S&C coach",
-      "Former Extratime Performance, Jeddah"
+      "Former Extratime Performance, Jeddah",
+      "Former college and professional football player"
     ],
     processTitle: "How it works",
     process: [
