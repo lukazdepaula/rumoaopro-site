@@ -31,7 +31,7 @@ export default function ProgramasPage() {
           fill
           priority
           sizes="100vw"
-          src={assets.coachGym}
+          src={assets.coachFieldDrillWide}
         />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.96)_0%,rgba(8,9,11,0.82)_46%,rgba(8,9,11,0.34)_100%)]" />
         <div className="mx-auto flex min-h-[calc(82svh-var(--header-height))] max-w-7xl items-center px-4 py-10 sm:px-6 md:min-h-[calc(78vh-var(--header-height))] lg:px-8">
@@ -63,7 +63,7 @@ export default function ProgramasPage() {
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {[
                 ["5", "níveis de produto"],
-                ["3", "programas ativos"],
+                ["5", "programas na coleção"],
                 ["1:1", "assessoria personalizada"]
               ].map(([value, label]) => (
                 <div

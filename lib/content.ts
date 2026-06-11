@@ -30,6 +30,9 @@ export const assets = {
   coachGym: "/assets/photos/lukaz-gym-coaching-wide.jpg",
   coachGymInstruction: "/assets/photos/lukaz-gym-instruction.jpg",
   coachFieldProfile: "/assets/photos/lukaz-field-profile.jpg",
+  coachFieldDrillWide: "/assets/photos/lukaz-field-drill-wide.jpg",
+  coachFieldPlaying: "/assets/photos/lukaz-field-playing.jpg",
+  coachFieldWalk: "/assets/photos/lukaz-field-walk.jpg",
   sprintFront: "/assets/photos/lukaz-sprint-front.jpg",
   sprintSide: "/assets/photos/lukaz-sprint-side.jpg",
   appCalendar:
@@ -70,13 +73,16 @@ export const nav = {
 
 export const testimonialScreens = [
   "/assets/testimonials/testimonial-1.png",
-  "/assets/testimonials/testimonial-2.png",
   "/assets/testimonials/testimonial-3.png",
-  "/assets/testimonials/testimonial-4.png",
-  "/assets/testimonials/testimonial-5.png",
   "/assets/testimonials/testimonial-6.png",
-  "/assets/testimonials/testimonial-7.png",
   "/assets/testimonials/testimonial-8.png"
+];
+
+export const countriesWorked = [
+  { flag: "🇧🇷", label: "Brasil" },
+  { flag: "🇺🇸", label: "Estados Unidos" },
+  { flag: "🇸🇦", label: "Arábia Saudita" },
+  { flag: "🇪🇸", label: "Espanha" }
 ];
 
 export const testimonials = {
@@ -403,52 +409,84 @@ export type CoachingCopy =
 
 export const programs = [
   {
-    title: "Projeto Pré-Temporada",
-    tag: "Ciclo completo",
-    duration: "8 semanas",
-    level: "Intermediário ao avançado",
+    title: "Offseason Strength & Power",
+    tag: "Adama Project",
+    duration: "8-9 semanas",
+    level: "Força e potência",
     body:
-      "Preparação completa para chegar mais forte, resistente e rápido para temporada, peneira ou competição.",
+      "O novo Adama Project, com prioridade em força, potência e construção física para atletas que querem chegar mais fortes na temporada.",
     outcomes: [
-      "Força, potência e resistência",
-      "Rotina de campo + academia",
-      "Progressão para chegar pronto"
-    ],
-    image: assets.preSeason,
-    href: `${contact.shopify}/products/projeto-pre-temporada`,
-    cta: "Ver na loja"
-  },
-  {
-    title: "Projeto Adama",
-    tag: "Força útil",
-    duration: "9 semanas",
-    level: "Atleta que quer ganhar massa",
-    body:
-      "Força e hipertrofia pensadas para o atleta que quer ganhar massa sem ficar pesado em campo.",
-    outcomes: [
-      "Hipertrofia com intenção esportiva",
-      "Força para duelo e arrancada",
-      "Treino sem perder mobilidade"
+      "Força útil para duelo e arrancada",
+      "Potência sem perder mobilidade",
+      "Estrutura de academia com intenção de campo"
     ],
     image: assets.adama,
     href: `${contact.shopify}/products/projeto-adama-9-semanas`,
-    cta: "Ver na loja"
+    cta: "Ver programa"
   },
   {
-    title: "De Volta aos Gramados",
-    tag: "Retorno",
-    duration: "Progressivo",
-    level: "Atleta voltando ao jogo",
+    title: "Offseason 30 Days",
+    tag: "Offseason curta",
+    duration: "30 dias",
+    level: "Base geral",
     body:
-      "Progressão para atletas retornando de pubalgia, lesões ou longos períodos longe dos jogos.",
+      "Programa mais curto e direto para atletas com pouco tempo de offseason que precisam organizar força, campo e condicionamento.",
     outcomes: [
-      "Retomada de força e confiança",
-      "Exposição gradual ao campo",
-      "Base para voltar a competir"
+      "Estrutura simples para 4 semanas",
+      "Base de força, velocidade e resistência",
+      "Ideal para voltar ao ritmo sem se perder"
     ],
-    image: assets.dvg,
-    href: `${contact.shopify}/products/de-volta-aos-gramados-rehabilitacao-de-pubalgia`,
-    cta: "Ver na loja"
+    image: assets.coachFieldDrillWide,
+    href: whatsappMessage("Quero entrar na lista do Offseason 30 Days."),
+    cta: "Entrar na lista"
+  },
+  {
+    title: "Offseason Speed & Power",
+    tag: "Velocidade",
+    duration: "Em produção",
+    level: "Aceleração e potência",
+    body:
+      "Foco em desenvolvimento de velocidade, aceleração, exposição a sprint e potência específica para ações decisivas.",
+    outcomes: [
+      "Mecânica e aceleração",
+      "Sprints e mudança de direção",
+      "Potência aplicada ao jogo"
+    ],
+    image: assets.sprintFront,
+    href: whatsappMessage("Quero entrar na lista do Offseason Speed & Power."),
+    cta: "Entrar na lista"
+  },
+  {
+    title: "Offseason Endurance Program",
+    tag: "Resistência",
+    duration: "Em produção",
+    level: "Capacidade de repetir ações",
+    body:
+      "Linha voltada para resistência específica: sustentar ritmo, repetir esforços intensos e chegar forte nos minutos finais.",
+    outcomes: [
+      "Condicionamento com lógica de futebol",
+      "Repetição de ações intensas",
+      "Controle de fadiga e progressão"
+    ],
+    image: assets.coachFieldPlaying,
+    href: whatsappMessage("Quero entrar na lista do programa de resistência RumoAoPro."),
+    cta: "Entrar na lista"
+  },
+  {
+    title: "In-Season Program",
+    tag: "Elanga Project",
+    duration: "Em produção",
+    level: "Manutenção na temporada",
+    body:
+      "Programa para manter força, velocidade e disponibilidade durante a temporada sem competir com jogos e treinos do time.",
+    outcomes: [
+      "Microdoses de força e potência",
+      "Velocidade no momento certo",
+      "Recuperação e disponibilidade"
+    ],
+    image: assets.rakanPerformanceEn,
+    href: whatsappMessage("Quero entrar na lista do In-Season Program Elanga."),
+    cta: "Entrar na lista"
   }
 ];
 
@@ -475,7 +513,8 @@ export const productLadder = [
       "Para quem quer uma estrutura pronta, objetiva e específica para futebol.",
     promise:
       "Treinar com progressão clara sem depender de agenda individual ou acompanhamento semanal.",
-    delivery: "Pré-temporada, força útil ou retorno aos gramados.",
+    delivery:
+      "Offseason Strength & Power, 30 Days, Speed & Power, Endurance e In-Season.",
     href: "#programas",
     cta: "Ver programas"
   },
@@ -555,18 +594,23 @@ export const programDecisionRows = [
   },
   {
     situation: "Tenho peneira, volta de férias ou temporada chegando.",
-    path: "Projeto Pré-Temporada ou Ciclo Game Ready",
-    reason: "A meta tem data e precisa de progressão completa."
+    path: "Offseason 30 Days ou Ciclo Game Ready",
+    reason: "A meta tem data e precisa de progressão curta e objetiva."
   },
   {
     situation: "Quero ganhar massa, força e presença física.",
-    path: "Projeto Adama",
+    path: "Offseason Strength & Power",
     reason: "Foco em hipertrofia e força com transferência para o futebol."
   },
   {
-    situation: "Estou voltando depois de lesão ou muito tempo parado.",
-    path: "De Volta aos Gramados",
-    reason: "Progressão mais conservadora antes de voltar ao jogo pesado."
+    situation: "Quero ficar mais rápido e explosivo.",
+    path: "Offseason Speed & Power",
+    reason: "Foco em aceleração, sprint, potência e mudança de direção."
+  },
+  {
+    situation: "Canso rápido ou perco intensidade no fim do jogo.",
+    path: "Offseason Endurance Program",
+    reason: "Foco em repetir ações intensas e sustentar ritmo."
   },
   {
     situation: "Meu calendário muda toda semana e preciso de ajuste.",
