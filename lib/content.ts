@@ -21,17 +21,30 @@ export const contact = {
   shopify: process.env.NEXT_PUBLIC_SHOPIFY_URL || "https://www.rumoaopro.com.br"
 };
 
+const whatsappMessage = (message: string) =>
+  `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(message)}`;
+
 export const assets = {
-  coachCollage:
-    "https://cdn.shopify.com/s/files/1/0053/8175/0855/files/IMG_3993.jpg?v=1754204323",
+  coachCollage: "/assets/photos/lukaz-field-coaching.jpg",
+  coachPortrait: "/assets/photos/lukaz-rain-portrait.jpg",
+  coachGym: "/assets/photos/lukaz-gym-coaching-wide.jpg",
+  coachGymInstruction: "/assets/photos/lukaz-gym-instruction.jpg",
+  coachFieldProfile: "/assets/photos/lukaz-field-profile.jpg",
+  sprintFront: "/assets/photos/lukaz-sprint-front.jpg",
+  sprintSide: "/assets/photos/lukaz-sprint-side.jpg",
   appCalendar:
     "https://cdn.shopify.com/s/files/1/0053/8175/0855/files/Dashboard-Exercise_and_Workout_1.png?v=1754204601&width=2048",
   appCommunication:
     "https://cdn.shopify.com/s/files/1/0053/8175/0855/files/CRx_Trans_0001_CRx_System-Highlights_0009_Communication.webp?v=1754421304&width=2048",
   appTraining:
     "https://cdn.shopify.com/s/files/1/0053/8175/0855/files/Dashboard-Exercise.webp?v=1754421183&width=2048",
-  logo:
-    "https://cdn.shopify.com/s/files/1/0053/8175/0855/files/Logo_rumoaopro_1.png?height=628&pad_color=f0f0f0&v=1668613184&width=1200",
+  logo: "/assets/brand/rumoaopro-logo.svg",
+  caseSuccessDewa: "/assets/proof/case-success-dewa.png",
+  trainingOrganizationPt: "/assets/proof/training-organization-pt.png",
+  coachingWorkflowPt: "/assets/proof/coaching-workflow-pt.png",
+  howWorkWasDoneEn: "/assets/proof/how-work-was-done-en.png",
+  rakanSeasonReportEn: "/assets/proof/rakan-season-report-en.png",
+  rakanPerformanceEn: "/assets/proof/rakan-performance-en.png",
   preSeason:
     "https://www.rumoaopro.com.br/cdn/shop/files/Capa_1_480x480.png?v=1742056677",
   adama:
@@ -45,15 +58,26 @@ export const nav = {
     { label: "Assessoria", href: "/assessoria" },
     { label: "Programas", href: "/programas" },
     { label: "Links", href: "/links" },
-    { label: "English", href: "/en/coaching" }
+    { label: "🇺🇸 English", href: "/en/coaching" }
   ],
   en: [
     { label: "Coaching", href: "/en/coaching" },
     { label: "Programs", href: "/programas" },
     { label: "Links", href: "/links" },
-    { label: "Português", href: "/assessoria" }
+    { label: "🇧🇷 Português", href: "/assessoria" }
   ]
 };
+
+export const testimonialScreens = [
+  "/assets/testimonials/testimonial-1.png",
+  "/assets/testimonials/testimonial-2.png",
+  "/assets/testimonials/testimonial-3.png",
+  "/assets/testimonials/testimonial-4.png",
+  "/assets/testimonials/testimonial-5.png",
+  "/assets/testimonials/testimonial-6.png",
+  "/assets/testimonials/testimonial-7.png",
+  "/assets/testimonials/testimonial-8.png"
+];
 
 export const testimonials = {
   pt: [
@@ -129,6 +153,9 @@ export const coachingCopy = {
     methodTitle: "O que muda quando o treino é individual",
     methodLead:
       "A assessoria não entrega uma planilha genérica. Ela organiza seu microciclo, controla resposta ao treino e ajusta o plano conforme sua rotina real.",
+    caseTitle: "O trabalho aparece no detalhe da semana",
+    caseLead:
+      "O calendário, a força, a velocidade, a recuperação e o feedback semanal entram em uma mesma lógica. O objetivo não é treinar mais. É treinar melhor, no momento certo da temporada.",
     benefits: [
       {
         icon: CalendarDays,
@@ -260,6 +287,9 @@ export const coachingCopy = {
     methodTitle: "What changes when the plan is truly individual",
     methodLead:
       "This is not a generic PDF. Your training week is planned, monitored and adjusted around your football or soccer schedule, gym access, fatigue and goals.",
+    caseTitle: "The work shows up in the details of the week",
+    caseLead:
+      "Calendar, strength, speed exposure, recovery and weekly feedback are connected in one process. The goal is not to train more. It is to train with better timing.",
     benefits: [
       {
         icon: CalendarDays,
@@ -374,24 +404,174 @@ export type CoachingCopy =
 export const programs = [
   {
     title: "Projeto Pré-Temporada",
-    tag: "Premium",
-    body: "Preparação completa para chegar mais forte, resistente e rápido para temporada, peneira ou competição.",
+    tag: "Ciclo completo",
+    duration: "8 semanas",
+    level: "Intermediário ao avançado",
+    body:
+      "Preparação completa para chegar mais forte, resistente e rápido para temporada, peneira ou competição.",
+    outcomes: [
+      "Força, potência e resistência",
+      "Rotina de campo + academia",
+      "Progressão para chegar pronto"
+    ],
     image: assets.preSeason,
-    href: `${contact.shopify}/products/projeto-pre-temporada`
+    href: `${contact.shopify}/products/projeto-pre-temporada`,
+    cta: "Ver na loja"
   },
   {
     title: "Projeto Adama",
-    tag: "Força",
-    body: "Força e hipertrofia pensadas para o atleta que quer ganhar massa sem ficar pesado em campo.",
+    tag: "Força útil",
+    duration: "9 semanas",
+    level: "Atleta que quer ganhar massa",
+    body:
+      "Força e hipertrofia pensadas para o atleta que quer ganhar massa sem ficar pesado em campo.",
+    outcomes: [
+      "Hipertrofia com intenção esportiva",
+      "Força para duelo e arrancada",
+      "Treino sem perder mobilidade"
+    ],
     image: assets.adama,
-    href: `${contact.shopify}/products/projeto-adama-9-semanas`
+    href: `${contact.shopify}/products/projeto-adama-9-semanas`,
+    cta: "Ver na loja"
   },
   {
     title: "De Volta aos Gramados",
     tag: "Retorno",
-    body: "Progressão para atletas retornando de pubalgia, lesões ou longos períodos longe dos jogos.",
+    duration: "Progressivo",
+    level: "Atleta voltando ao jogo",
+    body:
+      "Progressão para atletas retornando de pubalgia, lesões ou longos períodos longe dos jogos.",
+    outcomes: [
+      "Retomada de força e confiança",
+      "Exposição gradual ao campo",
+      "Base para voltar a competir"
+    ],
     image: assets.dvg,
-    href: `${contact.shopify}/products/de-volta-aos-gramados-rehabilitacao-de-pubalgia`
+    href: `${contact.shopify}/products/de-volta-aos-gramados-rehabilitacao-de-pubalgia`,
+    cta: "Ver na loja"
+  }
+];
+
+export const productLadder = [
+  {
+    step: "01",
+    tier: "Entrada",
+    title: "Diagnóstico RumoAoPro",
+    icon: Target,
+    audience:
+      "Para o atleta que treina, mas ainda não sabe qual prioridade física destrava o próximo nível.",
+    promise:
+      "Mapear objetivo, rotina, estrutura, histórico de lesões e melhor caminho dentro da RumoAoPro.",
+    delivery: "Questionário rápido + recomendação de rota.",
+    href: whatsappMessage("Quero fazer o Diagnóstico RumoAoPro."),
+    cta: "Pedir diagnóstico"
+  },
+  {
+    step: "02",
+    tier: "Acesso imediato",
+    title: "Programas RumoAoPro",
+    icon: Dumbbell,
+    audience:
+      "Para quem quer uma estrutura pronta, objetiva e específica para futebol.",
+    promise:
+      "Treinar com progressão clara sem depender de agenda individual ou acompanhamento semanal.",
+    delivery: "Pré-temporada, força útil ou retorno aos gramados.",
+    href: "#programas",
+    cta: "Ver programas"
+  },
+  {
+    step: "03",
+    tier: "Premium guiado",
+    title: "Ciclo Game Ready",
+    icon: CalendarDays,
+    audience:
+      "Para peneira, volta de férias, início de temporada ou meta com data marcada.",
+    promise:
+      "Um ciclo de 8 a 10 semanas com foco em velocidade, potência, resistência e rotina de jogo.",
+    delivery: "Programa premium + aulas de execução + checkpoints coletivos.",
+    href: whatsappMessage("Quero entrar na lista do Ciclo Game Ready."),
+    cta: "Entrar na lista"
+  },
+  {
+    step: "04",
+    tier: "Personalizado",
+    title: "Assessoria Online",
+    icon: LineChart,
+    audience:
+      "Para atleta com calendário variável, jogos, treinos do time, fadiga e necessidade de ajuste real.",
+    promise:
+      "Microciclo individual no app, controle de carga e suporte semanal para treinar no timing certo.",
+    delivery: "Plano individual + vídeos + feedback + ajustes semanais.",
+    href: "/assessoria#aplicacao",
+    cta: "Aplicar"
+  },
+  {
+    step: "05",
+    tier: "Elite",
+    title: "Performance Season",
+    icon: Trophy,
+    audience:
+      "Para atletas profissionais, semiprofissionais ou projetos que precisam planejar uma temporada.",
+    promise:
+      "Estratégia física com leitura de calendário, fases da temporada e relatórios de evolução.",
+    delivery: "Triagem, reunião estratégica, acompanhamento e relatório.",
+    href: "/assessoria#aplicacao",
+    cta: "Solicitar triagem"
+  }
+];
+
+export const trainingPillars = [
+  {
+    title: "Força que transfere",
+    icon: Dumbbell,
+    body:
+      "Construir potência, estabilidade e capacidade de vencer duelos sem virar um treino de academia desconectado do campo."
+  },
+  {
+    title: "Velocidade com intenção",
+    icon: Zap,
+    body:
+      "Expor o atleta a aceleração, mudança de direção, mecânica de corrida e sprints no momento certo da semana."
+  },
+  {
+    title: "Resistência de jogo",
+    icon: Activity,
+    body:
+      "Melhorar a capacidade de repetir ações intensas, sustentar ritmo e chegar forte aos minutos finais."
+  },
+  {
+    title: "Disponibilidade",
+    icon: ShieldCheck,
+    body:
+      "Controlar carga, sono, dor, recuperação e progressão para reduzir conflito entre treino físico, campo e competição."
+  }
+];
+
+export const programDecisionRows = [
+  {
+    situation: "Quero começar com direção, mas não sei qual programa escolher.",
+    path: "Diagnóstico RumoAoPro",
+    reason: "Primeiro define prioridade, depois indica produto."
+  },
+  {
+    situation: "Tenho peneira, volta de férias ou temporada chegando.",
+    path: "Projeto Pré-Temporada ou Ciclo Game Ready",
+    reason: "A meta tem data e precisa de progressão completa."
+  },
+  {
+    situation: "Quero ganhar massa, força e presença física.",
+    path: "Projeto Adama",
+    reason: "Foco em hipertrofia e força com transferência para o futebol."
+  },
+  {
+    situation: "Estou voltando depois de lesão ou muito tempo parado.",
+    path: "De Volta aos Gramados",
+    reason: "Progressão mais conservadora antes de voltar ao jogo pesado."
+  },
+  {
+    situation: "Meu calendário muda toda semana e preciso de ajuste.",
+    path: "Assessoria Online",
+    reason: "Treino individual, controle de carga e suporte semanal."
   }
 ];
 

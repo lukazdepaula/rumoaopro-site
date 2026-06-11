@@ -19,11 +19,18 @@ export default function LinksPage() {
             className="h-56 w-full object-cover"
             height={1536}
             priority
-            src={assets.coachCollage}
-            width={864}
+            src={assets.coachPortrait}
+            width={2300}
           />
         </div>
         <div className="mt-6 text-center">
+          <img
+            alt="RumoAoPro"
+            className="mx-auto mb-4 h-16 w-16 rounded-md bg-white object-cover"
+            height={64}
+            src={assets.logo}
+            width={64}
+          />
           <p className="font-display text-3xl uppercase">RumoAoPro</p>
           <p className="mt-3 text-sm leading-6 text-white/70">
             Assessoria online, programas de treinamento e performance para
