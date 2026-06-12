@@ -27,6 +27,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
         copy.locale === "pt"
           ? "Microciclo de temporada organizado para Theo Ferreira"
           : "In-season microcycle organized for Theo Ferreira",
+      fit: "cover",
       src: assets.theoMicrocycle
     },
     {
@@ -34,6 +35,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
         copy.locale === "pt"
           ? "Microciclo semanal organizado para atleta profissional"
           : "Weekly microcycle organized for a professional athlete",
+      fit: "cover",
       src: methodImage
     },
     {
@@ -41,11 +43,51 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
         copy.locale === "pt"
           ? "Treino concluído no acompanhamento individual"
           : "Training completed in the individual coaching system",
+      fit: "contain",
       src: assets.theoTrainingCompleted
     }
   ];
   const applicationSpots =
-    copy.locale === "pt" ? "3 vagas em triagem nesta semana" : "3 screening spots this week";
+    copy.locale === "pt"
+      ? "Apenas 3 vagas disponíveis no momento"
+      : "Only 3 spots available right now";
+  const ratingLabel =
+    copy.locale === "pt"
+      ? "Avaliações 5 estrelas de atletas acompanhados"
+      : "5-star feedback from coached athletes";
+  const appIntro =
+    copy.locale === "pt"
+      ? "O atleta recebe a semana organizada no app: calendário, sessões do dia, instruções, controle de esforço, comentários e ajustes sem ficar perdido em planilhas soltas."
+      : "The athlete sees the week organized inside the app: calendar, daily sessions, instructions, effort control, comments and adjustments without getting lost in loose spreadsheets.";
+  const appDetails = [
+    copy.locale === "pt"
+      ? "Semana visual com treino, recuperação e dias de jogo"
+      : "Visual week with training, recovery and match days",
+    copy.locale === "pt"
+      ? "Exercícios com séries, repetições, carga e observações"
+      : "Exercises with sets, reps, load and notes",
+    copy.locale === "pt"
+      ? "Feedback e comentários para ajustar o microciclo"
+      : "Feedback and comments to adjust the microcycle"
+  ];
+  const appScreens = [
+    {
+      alt:
+        copy.locale === "pt"
+          ? "Calendário semanal do atleta dentro do app"
+          : "Athlete weekly calendar inside the app",
+      label: copy.locale === "pt" ? "Calendário semanal" : "Weekly calendar",
+      src: assets.appCalendarScreen
+    },
+    {
+      alt:
+        copy.locale === "pt"
+          ? "Sessão individual com esforço, duração, carga e exercícios"
+          : "Individual session with effort, duration, load and exercises",
+      label: copy.locale === "pt" ? "Sessão do dia" : "Daily session",
+      src: assets.appInterface
+    }
+  ];
 
   return (
     <main className="min-h-screen bg-smoke" lang={copy.locale === "pt" ? "pt-BR" : "en"}>
@@ -172,10 +214,65 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
               >
                 <Image
                   alt={image.alt}
-                  className="aspect-square h-full w-full object-cover transition duration-300 hover:scale-[1.02]"
+                  className={`aspect-square h-full w-full transition duration-300 hover:scale-[1.02] ${
+                    image.fit === "contain" ? "object-contain p-2" : "object-cover"
+                  }`}
                   height={1254}
                   src={image.src}
                   width={1254}
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-ink py-16 text-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
+          <div>
+            <p className="text-sm font-bold uppercase text-gold">
+              {copy.locale === "pt" ? "Por dentro do app" : "Inside the app"}
+            </p>
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
+              {copy.locale === "pt"
+                ? "Você enxerga exatamente o que precisa fazer"
+                : "You see exactly what needs to be done"}
+            </h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{appIntro}</p>
+            <div className="mt-8 grid gap-3">
+              {appDetails.map((detail) => (
+                <div
+                  className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.06] px-4 py-3"
+                  key={detail}
+                >
+                  <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-gold" />
+                  <span className="text-sm font-semibold text-white/75">
+                    {detail}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
+            {appScreens.map((screen) => (
+              <figure
+                className="overflow-hidden rounded-lg border border-white/10 bg-graphite p-3 shadow-sm"
+                key={screen.src}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <figcaption className="text-sm font-black uppercase text-white">
+                    {screen.label}
+                  </figcaption>
+                  <span className="rounded-md bg-signal px-2 py-1 text-xs font-black uppercase text-white">
+                    Live view
+                  </span>
+                </div>
+                <Image
+                  alt={screen.alt}
+                  className="h-full max-h-[560px] w-full rounded-md object-contain"
+                  height={1024}
+                  src={screen.src}
+                  width={1536}
                 />
               </figure>
             ))}
@@ -203,8 +300,14 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     key={credential}
                   >
                     {isCbf ? (
-                      <span className="grid h-10 w-12 place-items-center rounded-md border border-gold/50 bg-gold text-xs font-black uppercase tracking-wide text-ink">
-                        CBF A
+                      <span className="grid h-12 w-12 place-items-center rounded-md border border-gold/50 bg-white p-1">
+                        <Image
+                          alt="CBF logo"
+                          className="h-full w-full object-contain"
+                          height={64}
+                          src={assets.logoCbf}
+                          width={64}
+                        />
                       </span>
                     ) : (
                       <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-gold" />
@@ -253,7 +356,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     {item.image ? (
                       <Image
                         alt={`${item.name} logo`}
-                        className="h-11 w-11 rounded-md object-contain"
+                        className="h-12 w-12 rounded-md bg-white object-contain p-1"
                         height={64}
                         src={item.image}
                         width={64}
@@ -461,25 +564,27 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     ? "Lukaz de Paula orientando atletas na assessoria"
                     : "Lukaz de Paula coaching athletes in the performance program"
                 }
-                className="aspect-[4/3] w-full object-cover opacity-90"
-                height={1536}
-                src={assets.coachFieldDrillWide}
-                width={2048}
+                className="aspect-[4/3] w-full object-cover object-top opacity-90"
+                height={2800}
+                src={assets.coachGymInstruction}
+                width={2100}
               />
               <div className="absolute bottom-4 left-4 right-4 rounded-lg border border-white/15 bg-ink/85 p-4 text-white shadow-sm backdrop-blur">
-                <div className="flex gap-1 text-gold">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <Star
-                      aria-hidden="true"
-                      className="h-4 w-4 fill-current"
-                      key={index}
-                    />
-                  ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex gap-1 text-gold">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star
+                        aria-hidden="true"
+                        className="h-4 w-4 fill-current"
+                        key={index}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs font-black uppercase text-white/80">
+                    {ratingLabel}
+                  </p>
                 </div>
-                <p className="mt-3 text-sm font-black uppercase">
-                  {copy.locale === "pt" ? "Vagas limitadas" : "Limited spots"}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white/70">
+                <p className="mt-4 inline-flex animate-pulse rounded-md bg-signal px-4 py-3 text-sm font-black uppercase text-white shadow-lg shadow-signal/30">
                   {applicationSpots}
                 </p>
               </div>

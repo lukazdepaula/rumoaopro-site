@@ -49,16 +49,23 @@ img {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.72) 42%, rgba(8, 9, 11, 0.22) 100%),
     url("/assets/photos/lukaz-gym-instruction.jpg");
-  background-position: center top;
+  background-position: 60% top;
   background-size: cover;
 }
 
 .hero-image-alt {
   background-image:
     linear-gradient(90deg, rgba(8, 9, 11, 0.94) 0%, rgba(8, 9, 11, 0.7) 46%, rgba(8, 9, 11, 0.18) 100%),
-    url("/assets/photos/lukaz-gym-coaching-wide.jpg");
-  background-position: center top;
+    url("/assets/photos/lukaz-gym-instruction.jpg");
+  background-position: 60% top;
   background-size: cover;
+}
+
+@media (max-width: 767px) {
+  .hero-image,
+  .hero-image-alt {
+    background-position: 54% top;
+  }
 }
 
 .focus-ring:focus-visible {

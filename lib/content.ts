@@ -50,16 +50,22 @@ export const assets = {
   rakanPerformanceEn: "/assets/proof/rakan-performance-en.png",
   theoMicrocycle: "/assets/proof/theo-microcycle.jpg",
   theoTrainingCompleted: "/assets/proof/theo-training-completed.png",
+  appInterface: "/assets/app/app-interface.png",
+  appCalendarScreen: "/assets/app/app-calendar.png",
+  logoCbf: "/assets/logos/cbf.svg",
+  logoMalagaCity: "/assets/logos/malaga-city.jpg",
+  logoLindseyWilson: "/assets/logos/lindsey-wilson.jpg",
   logoAlmunecar: "/assets/logos/almunecar-city.png",
   logoColoradoRapids: "/assets/logos/colorado-rapids.png",
   logoDesportivoBrasil: "/assets/logos/desportivo-brasil.png",
   logoExtratime: "/assets/logos/extratime.png",
   logoVasalunds: "/assets/logos/vasalunds.png",
-  successTheo: "/assets/success/theo-ferreira.png",
-  successHaroune: "/assets/success/haroune-camara.png",
-  successAmar: "/assets/success/amar.png",
-  successJackson: "/assets/success/jackson.png",
-  successDiogo: "/assets/success/diogo-fortunato.png",
+  logoVasalundsTransparent: "/assets/logos/vasalunds-transparent.png",
+  successTheo: "/assets/success/theo-ferreira-player.jpg",
+  successHaroune: "/assets/success/haroune-camara-player.jpg",
+  successAmar: "/assets/success/amar-player.jpg",
+  successJackson: "/assets/success/jackson-player.jpg",
+  successDiogo: "/assets/success/diogo-fortunato-player.jpg",
   preSeason:
     "https://www.rumoaopro.com.br/cdn/shop/files/Capa_1_480x480.png?v=1742056677",
   adama:
@@ -87,7 +93,6 @@ export const testimonialScreens = [
   "/assets/testimonials/testimonial-2.png",
   "/assets/testimonials/testimonial-3.png",
   "/assets/testimonials/testimonial-4.png",
-  "/assets/testimonials/testimonial-5.png",
   "/assets/testimonials/testimonial-6.png",
   "/assets/testimonials/testimonial-7.png",
   "/assets/testimonials/testimonial-8.png"
@@ -101,13 +106,21 @@ export const countriesWorked = [
 ];
 
 export const performanceEnvironments = [
-  { name: "FC Málaga City", role: "Performance staff" },
+  {
+    name: "FC Málaga City",
+    role: "Performance staff",
+    image: assets.logoMalagaCity
+  },
   {
     name: "Extratime Performance",
     role: "Director of physical training",
     image: assets.logoExtratime
   },
-  { name: "Lindsey Wilson University", role: "Former S&C coach" },
+  {
+    name: "Lindsey Wilson University",
+    role: "Former S&C coach",
+    image: assets.logoLindseyWilson
+  },
   {
     name: "CD Almuñécar City",
     role: "Performance staff",
@@ -129,7 +142,7 @@ export const playerPathLogos = [
   {
     name: "Vasalunds IF",
     role: "Sweden",
-    image: assets.logoVasalunds
+    image: assets.logoVasalundsTransparent
   },
   {
     name: "CD Almuñécar City",
