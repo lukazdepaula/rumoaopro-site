@@ -300,7 +300,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     key={credential}
                   >
                     {isCbf ? (
-                      <span className="grid h-12 w-12 place-items-center rounded-md border border-gold/50 bg-white p-1">
+                      <span className="grid h-12 w-12 place-items-center rounded-md border border-gold/50 bg-white/5 p-1">
                         <Image
                           alt="CBF logo"
                           className="h-full w-full object-contain"
@@ -356,7 +356,11 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     {item.image ? (
                       <Image
                         alt={`${item.name} logo`}
-                        className="h-12 w-12 rounded-md bg-white object-contain p-1"
+                        className={`h-12 w-12 rounded-md object-contain p-1 ${
+                          item.name.includes("Extratime")
+                            ? "brightness-0 invert"
+                            : ""
+                        }`}
                         height={64}
                         src={item.image}
                         width={64}
@@ -564,7 +568,7 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     ? "Lukaz de Paula orientando atletas na assessoria"
                     : "Lukaz de Paula coaching athletes in the performance program"
                 }
-                className="aspect-[4/3] w-full object-cover object-top opacity-90"
+                className="h-auto w-full object-contain opacity-90"
                 height={2800}
                 src={assets.coachGymInstruction}
                 width={2100}
