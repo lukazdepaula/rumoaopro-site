@@ -6,22 +6,49 @@ import { CtaButton } from "@/components/cta-button";
 import { ProgramsSection } from "@/components/programs-section";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, nav, programDecisionRows, trainingPillars } from "@/lib/content";
+import { assets, nav } from "@/lib/content";
 
 export const metadata: Metadata = {
-  title: "Programas de treinamento para futebol",
+  title: "Football training programs",
   description:
-    "Programas RumoAoPro para offseason, pre-temporada, velocidade, retorno aos gramados e manutencao durante a temporada."
+    "RumoAoPro training programs for offseason, strength and power, in-season maintenance and football performance."
 };
 
-export default function ProgramasPage() {
+const decisionRows = [
+  {
+    situation: "I have a short break and need structure fast.",
+    path: "Offseason Program 30 Days",
+    reason: "A direct 4-week plan for players who cannot waste the offseason."
+  },
+  {
+    situation: "I want to build strength, power and physical presence.",
+    path: "Adama Offseason Strength & Power",
+    reason: "A 12-week offseason structure focused on strength and power."
+  },
+  {
+    situation: "I am already in season and need to maintain my level.",
+    path: "Projeto Elanga In-Season",
+    reason: "Small doses of strength, speed and recovery around matches."
+  },
+  {
+    situation: "My schedule changes every week and I need adjustments.",
+    path: "Online Coaching",
+    reason: "A 1:1 plan with weekly support, load control and direct feedback."
+  }
+];
+
+export default function EnglishProgramsPage() {
   return (
     <main className="min-h-screen bg-smoke">
-      <SiteHeader navItems={nav.pt} ctaHref="/assessoria#aplicacao" />
+      <SiteHeader
+        navItems={nav.en}
+        ctaHref="/en/coaching#application"
+        ctaLabel="Apply"
+      />
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
-          alt="Lukaz de Paula orientando atletas em campo"
+          alt="Lukaz de Paula coaching athletes on the field"
           className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center]"
           fill
           priority
@@ -33,36 +60,36 @@ export default function ProgramasPage() {
           <div className="max-w-3xl">
             <div className="flex flex-wrap gap-3">
               <p className="inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-gold">
-                Programas RumoAoPro
+                RumoAoPro programs
               </p>
               <Link
                 className="focus-ring inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-white transition hover:bg-white hover:text-ink"
-                href="/en/programs"
+                href="/programas"
               >
-                🇺🇸 English
+                🇧🇷 Portugues
               </Link>
             </div>
             <h1 className="mt-5 font-display text-4xl uppercase leading-[1.03] sm:text-5xl lg:text-6xl">
-              Escolha o programa certo para o seu momento no futebol.
+              Choose the right training program for your football moment.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
-              Programas prontos para atletas que precisam treinar com direcao:
-              offseason curta, forca e potencia, pre-temporada, retorno aos
-              gramados, velocidade e manutencao durante a temporada.
+              Ready-to-buy programs for serious players: short offseason,
+              strength and power, and in-season maintenance. Built for football
+              athletes who need direction, not random workouts.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaButton href="#programas" icon={ArrowRight}>
-                Ver programas
+                See programs
               </CtaButton>
-              <CtaButton href="/assessoria#aplicacao" variant="secondary">
-                Quero algo personalizado
+              <CtaButton href="/en/coaching#application" variant="secondary">
+                I need 1:1 coaching
               </CtaButton>
             </div>
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {[
-                ["6", "programas disponiveis"],
-                ["PT + EN", "opcoes bilingues"],
-                ["1:1", "assessoria para ajuste total"]
+                ["3", "English options"],
+                ["PT + EN", "bilingual programs"],
+                ["1:1", "custom coaching"]
               ].map(([value, label]) => (
                 <div
                   className="rounded-lg border border-white/10 bg-white/[0.06] p-4"
@@ -81,26 +108,25 @@ export default function ProgramasPage() {
         </div>
       </section>
 
-      <ProgramsSection />
+      <ProgramsSection locale="en" />
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-[0.72fr_1.28fr]">
             <div>
               <p className="text-sm font-bold uppercase text-signal">
-                Qual comprar?
+                What should I buy?
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
-                Escolha pelo problema que voce quer resolver
+                Choose by the problem you need to solve
               </h2>
               <p className="mt-4 text-base leading-7 text-graphite/75">
-                Se o seu calendario muda toda semana ou voce precisa de ajuste
-                individual, a assessoria e o melhor caminho. Se o objetivo e
-                direto, escolha o programa que encaixa no seu momento.
+                Programs are best when the goal is clear. Coaching is better
+                when your week changes constantly and you need adjustments.
               </p>
             </div>
             <div className="overflow-hidden rounded-lg border border-ink/10 bg-white">
-              {programDecisionRows.map((row) => (
+              {decisionRows.map((row) => (
                 <div
                   className="grid gap-4 border-b border-ink/10 p-5 last:border-b-0 md:grid-cols-[1fr_0.72fr_1fr]"
                   key={row.situation}
@@ -126,50 +152,28 @@ export default function ProgramasPage() {
       </section>
 
       <section className="bg-ink py-16 text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:items-start lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_1fr] md:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-gold">
-              Por que programas RumoAoPro
+              Inside the athlete app
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
-              Treino fisico de futebol, nao treino aleatorio de academia.
+              Calendar, sessions and instructions in one place.
             </h2>
             <p className="mt-5 text-base leading-8 text-white/70">
-              A logica dos programas segue o mesmo metodo da assessoria:
-              progressao, intencao de campo e escolha inteligente da carga para
-              o atleta evoluir sem se perder.
+              The programs are built to help players see the week, follow the
+              session, track completion and understand the purpose of each
+              training day.
             </p>
-            <div className="mt-8 overflow-hidden rounded-lg border border-white/10">
-              <Image
-                alt="Interface do aplicativo com calendario semanal"
-                className="aspect-[16/10] w-full object-cover"
-                height={900}
-                src={assets.appCalendarScreen}
-                width={1440}
-              />
-            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {trainingPillars.map((pillar) => {
-              const Icon = pillar.icon;
-
-              return (
-                <article
-                  className="rounded-lg border border-white/10 bg-white/[0.06] p-5"
-                  key={pillar.title}
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white text-ink">
-                    <Icon aria-hidden="true" className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-5 text-xl font-bold text-white">
-                    {pillar.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-white/68">
-                    {pillar.body}
-                  </p>
-                </article>
-              );
-            })}
+          <div className="overflow-hidden rounded-lg border border-white/10">
+            <Image
+              alt="Training program interface inside the athlete app"
+              className="aspect-[16/10] w-full object-cover"
+              height={900}
+              src={assets.appCalendarScreen}
+              width={1440}
+            />
           </div>
         </div>
       </section>
@@ -178,22 +182,21 @@ export default function ProgramasPage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-signal">
-              Precisa de algo individual?
+              Need something individual?
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
-              A assessoria continua sendo o produto principal.
+              Online coaching is still the main product.
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-graphite/75">
-              Se voce tem jogos, treinos do time, fadiga, lesao recente ou uma
-              rotina que muda toda semana, o plano 1:1 com suporte semanal e o
-              caminho mais seguro.
+              If you have matches, team sessions, fatigue, injury history or a
+              schedule that changes every week, the 1:1 plan is the safer path.
             </p>
           </div>
           <Link
             className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 text-sm font-bold text-white transition hover:bg-[#b90f20]"
-            href="/assessoria#aplicacao"
+            href="/en/coaching#application"
           >
-            Aplicar para assessoria
+            Apply for coaching
             <ExternalLink aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>

@@ -31,10 +31,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75
     },
     {
+      url: `${baseUrl}/en/programs`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.72
+    },
+    {
       url: `${baseUrl}/links`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7
+    },
+    {
+      url: `${baseUrl}/en/links`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.68
     }
   ];
 }

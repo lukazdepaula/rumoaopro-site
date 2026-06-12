@@ -17,13 +17,13 @@ import {
   contact,
   performanceEnvironments,
   playerPathLogos,
-  programs
+  programsEn
 } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Links",
   description:
-    "Links principais da RumoAoPro: assessoria online, programas de treinamento, WhatsApp, Instagram e YouTube."
+    "RumoAoPro main links for online coaching, football training programs, WhatsApp, Instagram and YouTube."
 };
 
 const socialLinks = [
@@ -44,7 +44,7 @@ const socialLinks = [
   }
 ];
 
-export default function LinksPage() {
+export default function EnglishLinksPage() {
   return (
     <main className="min-h-screen bg-ink px-4 py-8 text-white sm:px-6">
       <section className="mx-auto max-w-3xl">
@@ -61,16 +61,16 @@ export default function LinksPage() {
           </Link>
           <Link
             className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 text-sm font-bold text-white transition hover:bg-white hover:text-ink"
-            href="/en/links"
+            href="/links"
           >
             <Globe2 aria-hidden="true" className="h-4 w-4" />
-            🇺🇸 EN
+            🇧🇷 PT
           </Link>
         </div>
 
         <div className="mt-6 overflow-hidden rounded-lg border border-white/10">
           <Image
-            alt="Lukaz de Paula treinando atletas no campo"
+            alt="Lukaz de Paula coaching athletes on the field"
             className="h-72 w-full object-cover object-[50%_35%]"
             height={1536}
             priority
@@ -81,18 +81,19 @@ export default function LinksPage() {
 
         <div className="mt-6">
           <p className="text-sm font-bold uppercase text-gold">
-            Assessoria e programas para futebol
+            Football performance coaching and programs
           </p>
           <h1 className="mt-3 font-display text-4xl uppercase leading-tight">
-            Treine com estrutura de atleta.
+            Train with a football-specific structure.
           </h1>
           <p className="mt-4 text-base leading-7 text-white/72">
-            Lukaz de Paula e preparador fisico com licenca CBF A, coordenador de
-            performance fisica do FC Malaga City e CD Almunecar City na Espanha,
-            ex Lindsey Wilson University nos EUA e ex diretor de treinamento
-            fisico da Extratime Performance em Jeddah. Tambem viveu o jogo como
-            atleta: futebol universitario nos EUA, Colorado Rapids U23,
-            Desportivo Brasil, Vasalunds IF e CD Almunecar City.
+            Lukaz de Paula is a CBF A licensed strength and conditioning coach,
+            currently physical performance coordinator for FC Malaga City and CD
+            Almunecar City in Spain. He previously worked at Lindsey Wilson
+            University in the United States and directed physical training at
+            Extratime Performance in Jeddah. He also lived the game as a player:
+            college soccer in the U.S., Colorado Rapids U23, Desportivo Brasil,
+            Vasalunds IF and CD Almunecar City.
           </p>
         </div>
 
@@ -123,7 +124,7 @@ export default function LinksPage() {
 
         <a
           className="focus-ring mt-6 block rounded-lg bg-signal p-5 text-white shadow-clean transition hover:bg-[#b90f20]"
-          href="/assessoria#aplicacao"
+          href="/en/coaching#application"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -135,17 +136,17 @@ export default function LinksPage() {
                     key={star}
                   />
                 ))}
-                Avaliacoes 5 estrelas
+                5-star rated support
               </p>
               <h2 className="mt-2 text-2xl font-bold">
-                Aplicar para a Assessoria Online
+                Apply for Online Coaching
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/85">
-                Programa individual, calendario personalizado, controle de carga
-                e suporte semanal direto com o coach.
+                Individual program, personalized calendar, load monitoring and
+                weekly support directly with the coach.
               </p>
               <p className="mt-4 inline-flex rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-signal">
-                Apenas 3 vagas disponiveis no momento
+                Only 3 spots currently available
               </p>
             </div>
             <ArrowRight aria-hidden="true" className="mt-1 h-6 w-6 shrink-0" />
@@ -155,21 +156,21 @@ export default function LinksPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             className="focus-ring flex min-h-14 items-center justify-between rounded-md border border-white/10 bg-white px-4 text-ink transition hover:bg-steel"
-            href="/programas"
+            href="/en/programs"
           >
             <span className="flex items-center gap-3 text-sm font-bold">
               <Dumbbell aria-hidden="true" className="h-5 w-5 text-signal" />
-              Ver programas
+              See English programs
             </span>
             <ArrowRight aria-hidden="true" className="h-4 w-4 text-ink/50" />
           </Link>
           <Link
             className="focus-ring flex min-h-14 items-center justify-between rounded-md border border-white/10 bg-white px-4 text-ink transition hover:bg-steel"
-            href="/en/coaching#application"
+            href="/programas"
           >
             <span className="flex items-center gap-3 text-sm font-bold">
               <Target aria-hidden="true" className="h-5 w-5 text-signal" />
-              English coaching
+              Catalogo em portugues
             </span>
             <ArrowRight aria-hidden="true" className="h-4 w-4 text-ink/50" />
           </Link>
@@ -177,10 +178,10 @@ export default function LinksPage() {
 
         <section className="mt-10">
           <p className="text-sm font-bold uppercase text-gold">
-            Programas disponiveis
+            Available programs
           </p>
           <div className="mt-4 grid gap-4">
-            {programs.map((program) => (
+            {programsEn.map((program) => (
               <a
                 className="focus-ring grid overflow-hidden rounded-lg border border-white/10 bg-white/[0.06] transition hover:bg-white/10 sm:grid-cols-[150px_1fr]"
                 href={program.href}
@@ -211,7 +212,7 @@ export default function LinksPage() {
                     {program.body}
                   </p>
                   <p className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-gold">
-                    Comprar programa
+                    Buy program
                     <ExternalLink aria-hidden="true" className="h-4 w-4" />
                   </p>
                 </div>

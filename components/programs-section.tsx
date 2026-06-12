@@ -2,14 +2,49 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
-import { programs } from "@/lib/content";
+import { programs, programsEn } from "@/lib/content";
 
 type ProgramsSectionProps = {
   compact?: boolean;
+  locale?: "pt" | "en";
 };
 
-export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
-  const visiblePrograms = compact ? programs.slice(0, 3) : programs;
+export function ProgramsSection({
+  compact = false,
+  locale = "pt"
+}: ProgramsSectionProps) {
+  const selectedPrograms = locale === "en" ? programsEn : programs;
+  const visiblePrograms = compact
+    ? selectedPrograms.slice(0, 3)
+    : selectedPrograms;
+  const copy = {
+    pt: {
+      eyebrow: "Programas de treinamento",
+      title: "Programas prontos para comprar e começar com direção",
+      body:
+        "Cada programa resolve um momento específico da jornada do atleta: offseason curta, força e potência, pré-temporada, retorno aos gramados, velocidade ou manutenção durante a temporada.",
+      seeAll: "Ver todos",
+      chooseEyebrow: "Como escolher",
+      chooseTitle: "Programa ou assessoria?",
+      chooseBody:
+        "Escolha um programa se você quer uma estrutura pronta para um objetivo específico. Aplique para a assessoria se precisa de ajustes semanais, controle de carga e um plano em volta da sua rotina real.",
+      apply: "Aplicar para a assessoria",
+      applyHref: "/assessoria#aplicacao"
+    },
+    en: {
+      eyebrow: "Training programs",
+      title: "Ready-to-buy programs for specific football moments",
+      body:
+        "Each program solves a specific player need: short offseason, strength and power, in-season maintenance or a structured return to consistent training.",
+      seeAll: "See all",
+      chooseEyebrow: "How to choose",
+      chooseTitle: "Program or coaching?",
+      chooseBody:
+        "Choose a program if you want a ready structure for one specific goal. Apply for coaching if you need weekly adjustments, load control and a plan built around your real schedule.",
+      apply: "Apply for coaching",
+      applyHref: "/en/coaching#application"
+    }
+  }[locale];
 
   return (
     <section className="surface-grid bg-smoke py-16" id="programas">
@@ -17,21 +52,22 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="max-w-2xl">
             <p className="text-sm font-bold uppercase text-signal">
-              Programas de treinamento
+              {copy.eyebrow}
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
-              Treinos prontos para entrar na rotina sem virar tentativa solta
+              {copy.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-graphite/75">
-              Cada programa resolve um momento específico da jornada do atleta:
-              força e potência, offseason curta, velocidade, resistência ou
-              manutenção durante a temporada. Os produtos prontos seguem pela
-              loja atual; os novos entram primeiro por lista de interesse.
+              {copy.body}
             </p>
           </div>
           {compact ? (
-            <CtaButton href="/programas" variant="dark" icon={ArrowRight}>
-              Ver todos
+            <CtaButton
+              href={locale === "en" ? "/en/programs" : "/programas"}
+              variant="dark"
+              icon={ArrowRight}
+            >
+              {copy.seeAll}
             </CtaButton>
           ) : null}
         </div>
@@ -91,6 +127,8 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
                         <a
                           className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-bold text-white transition hover:bg-graphite"
                           href={program.href}
+                          rel="noreferrer"
+                          target="_blank"
                         >
                           {program.cta}
                           <ExternalLink
@@ -120,24 +158,21 @@ export function ProgramsSection({ compact = false }: ProgramsSectionProps) {
             <div className="grid gap-5 md:grid-cols-3">
               <div>
                 <p className="text-sm font-bold uppercase text-signal">
-                  Como escolher
+                  {copy.chooseEyebrow}
                 </p>
                 <h3 className="mt-3 text-xl font-bold text-ink">
-                  Programa, ciclo guiado ou assessoria?
+                  {copy.chooseTitle}
                 </h3>
               </div>
               <p className="text-sm leading-6 text-graphite/70">
-                Escolha um programa se você quer uma estrutura pronta para um
-                objetivo específico. Suba para a assessoria se precisa de
-                ajustes semanais, controle de carga e um plano em volta da sua
-                rotina real.
+                {copy.chooseBody}
               </p>
               <div className="flex items-start md:justify-end">
                 <Link
                   className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-signal px-5 text-sm font-bold text-white transition hover:bg-[#b90f20]"
-                  href="/assessoria"
+                  href={copy.applyHref}
                 >
-                  Aplicar para a assessoria
+                  {copy.apply}
                 </Link>
               </div>
             </div>
