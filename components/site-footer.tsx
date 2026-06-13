@@ -44,8 +44,17 @@ export function SiteFooter() {
             <Link className="block hover:text-white" href="/en/coaching">
               Coaching
             </Link>
+            <Link className="block hover:text-white" href="/programas">
+              Programas
+            </Link>
+            <Link className="block hover:text-white" href="/en/programs">
+              Programs
+            </Link>
             <Link className="block hover:text-white" href="/links">
               Links
+            </Link>
+            <Link className="block hover:text-white" href="/en/links">
+              Links EN
             </Link>
           </div>
         </div>
