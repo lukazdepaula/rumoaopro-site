@@ -3,9 +3,13 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
+  BadgeCheck,
+  Building2,
   CalendarDays,
   CheckCircle2,
   Dumbbell,
+  Flame,
+  Globe2,
   Languages,
   LineChart,
   PlayCircle,
@@ -152,10 +156,27 @@ const copy = {
       ["Conditioning", "Suporte aeróbico sem roubar potência"],
       ["Reload", "Semanas de ajuste para absorver a carga"]
     ],
+    fieldTitle: "Do peso ao campo",
+    fieldH2: "O programa não termina no agachamento.",
+    fieldLead:
+      "O Adama usa a academia para construir força e potência, mas sempre com intenção de futebol: acelerar melhor, sustentar contato, repetir ações e chegar mais disponível para treinar e competir.",
+    fieldCards: [
+      ["Strength", "Base para duelo, desaceleração e potência"],
+      ["Speed", "Exposição de aceleração e velocidade máxima"],
+      ["Conditioning", "Suporte para repetir ações sem perder qualidade"]
+    ],
     authorityTitle: "Programado por quem trabalha com futebol real",
-    authorityH2: "Força que transfere para o futebol.",
+    authorityH2: "Criado por Lukaz de Paula.",
     authorityBody:
-      "Criado por Lukaz de Paula, preparador físico com licença CBF A, experiência em FC Málaga City, CD Almuñécar City, Lindsey Wilson University e Extratime Performance. A lógica vem do campo: força que transfere, não treino aleatório.",
+      "Preparador físico com licença CBF A em Strength & Conditioning, experiência em FC Málaga City, CD Almuñécar City, Lindsey Wilson University e Extratime Performance. Além de treinador, Lukaz também viveu o jogo como atleta. Essa mistura importa: o programa foi desenhado por alguém que entende a exigência física e também sabe como o atleta sente o treino no corpo.",
+    authorityMiniTitle: "Visão de treinador + atleta",
+    authorityMiniBody:
+      "Criado a partir da academia, do campo e da rotina real de um jogador de futebol.",
+    authorityStats: [
+      ["CBF A", "licença aplicada à preparação física no futebol"],
+      ["4 países", "Brasil, EUA, Arábia Saudita e Espanha"],
+      ["Coach + atleta", "visão de treinador e experiência de atleta"]
+    ],
     faqTitle: "Perguntas rápidas",
     faqH2: "Antes de comprar",
     faqs: [
@@ -315,10 +336,27 @@ const copy = {
       ["Conditioning", "Aerobic support without stealing power"],
       ["Reload", "Adjustment weeks to absorb the workload"]
     ],
+    fieldTitle: "From weight room to pitch",
+    fieldH2: "The program does not end with the squat.",
+    fieldLead:
+      "Adama uses the gym to build strength and power, but the intent stays connected to football: accelerate better, handle contact, repeat actions and arrive more available for training and competition.",
+    fieldCards: [
+      ["Strength", "Base for duels, deceleration and power"],
+      ["Speed", "Acceleration and max velocity exposure"],
+      ["Conditioning", "Support to repeat actions without losing quality"]
+    ],
     authorityTitle: "Built by someone working in real football",
-    authorityH2: "Strength that transfers to football.",
+    authorityH2: "Created by Lukaz de Paula.",
     authorityBody:
-      "Created by Lukaz de Paula, CBF A licensed strength and conditioning coach with experience at FC Málaga City, CD Almuñécar City, Lindsey Wilson University and Extratime Performance. The logic comes from the field: strength that transfers, not random gym work.",
+      "CBF A licensed strength and conditioning coach with experience at FC Málaga City, CD Almuñécar City, Lindsey Wilson University and Extratime Performance. Lukaz also lived the game as a player. That mix matters: the program was built by someone who understands football demands and knows what the athlete feels inside the training process.",
+    authorityMiniTitle: "Coach + player perspective",
+    authorityMiniBody:
+      "Built from the weight room, the field and the real routine of a football player.",
+    authorityStats: [
+      ["CBF A", "football strength and conditioning background"],
+      ["4 countries", "Brazil, USA, Saudi Arabia and Spain"],
+      ["Coach + player", "coaching eye with player experience"]
+    ],
     faqTitle: "Quick questions",
     faqH2: "Before you buy",
     faqs: [
@@ -351,33 +389,68 @@ const copy = {
   }
 };
 
+const adamaGallery = [
+  {
+    src: assets.adamaFieldPlay,
+    alt: "Lukaz de Paula training on the field",
+    label: "Field transfer"
+  },
+  {
+    src: assets.adamaCoachField,
+    alt: "Lukaz de Paula in football training environment",
+    label: "Coach's eye"
+  },
+  {
+    src: assets.adamaSprintFront,
+    alt: "Football player sprinting forward on the field",
+    label: "Acceleration"
+  },
+  {
+    src: assets.adamaSprintSide,
+    alt: "Football player sprinting from the side",
+    label: "Power expression"
+  }
+];
+
+const authorityLogos = [
+  { name: "CBF A", image: assets.logoCbf },
+  { name: "FC Malaga City", image: assets.logoMalagaCity },
+  { name: "CD Almunecar City", image: assets.logoAlmunecar },
+  { name: "Lindsey Wilson", image: assets.logoLindseyWilson },
+  { name: "Extratime", image: assets.logoExtratime }
+];
+
 export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
   const page = copy[locale];
   const coachingHref =
     locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
 
   return (
-    <main className="min-h-screen bg-smoke">
+    <main className="min-h-screen bg-[#070708]">
       <SiteHeader
         navItems={page.nav}
         ctaHref={shopifyProducts.adama}
         ctaLabel={page.ctaLabel}
       />
 
-      <section className="relative isolate overflow-hidden bg-ink text-white">
+      <section className="relative isolate overflow-hidden bg-[#050506] text-white">
         <Image
-          alt="Adama Project Offseason Strength and Power cover"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[68%_center] opacity-40"
+          alt="Football player sprinting during Adama Project training"
+          className="absolute inset-0 -z-30 h-full w-full object-cover object-[58%_center] opacity-24"
           fill
           priority
           sizes="100vw"
-          src={assets.adamaCover}
+          src={assets.adamaSprintSide}
         />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.98)_0%,rgba(8,9,11,0.90)_48%,rgba(8,9,11,0.62)_100%)]" />
-        <div className="mx-auto grid min-h-[calc(88svh-var(--header-height))] max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.03fr_0.97fr] lg:items-center lg:px-8">
-          <div>
+        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_82%_18%,rgba(231,18,38,0.48),transparent_31%),radial-gradient(circle_at_12%_82%,rgba(255,210,94,0.14),transparent_28%),linear-gradient(90deg,#050506_0%,rgba(5,5,6,0.96)_42%,rgba(5,5,6,0.74)_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.16] [background-image:linear-gradient(rgba(255,255,255,0.13)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.13)_1px,transparent_1px)] [background-size:48px_48px]" />
+        <div className="absolute left-[-8%] top-16 -z-10 hidden h-[640px] w-32 -rotate-[18deg] bg-signal/50 blur-[2px] lg:block" />
+        <div className="absolute bottom-0 left-0 right-0 -z-10 h-28 bg-gradient-to-t from-[#070708] to-transparent" />
+
+        <div className="mx-auto grid min-h-[calc(92svh-var(--header-height))] max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.96fr_1.04fr] lg:items-center lg:px-8">
+          <div className="relative z-10">
             <div className="flex flex-wrap gap-3">
-              <p className="inline-flex rounded-md border border-red-500/40 bg-red-500/15 px-3 py-2 text-sm font-bold uppercase text-white">
+              <p className="inline-flex rounded-md border border-signal/60 bg-signal/20 px-3 py-2 text-sm font-bold uppercase text-white shadow-[0_0_28px_rgba(231,18,38,0.22)]">
                 {page.eyebrow}
               </p>
               <Link
@@ -387,7 +460,11 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
                 {page.languageLabel}
               </Link>
             </div>
-            <h1 className="mt-6 font-display text-4xl uppercase leading-[1.02] sm:text-5xl lg:text-7xl">
+            <p className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.26em] text-gold/90">
+              <Flame aria-hidden="true" className="h-4 w-4 text-signal" />
+              RumoAoPro original program
+            </p>
+            <h1 className="mt-4 max-w-4xl font-display text-4xl uppercase leading-[0.98] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.42)] sm:text-5xl lg:text-7xl">
               {page.h1}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -395,7 +472,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-clean transition hover:bg-[#b90f20]"
+                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.38)] transition hover:bg-[#b90f20]"
                 href={shopifyProducts.adama}
                 rel="noreferrer"
                 target="_blank"
@@ -416,7 +493,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <div className="mt-8 flex flex-wrap gap-3">
               {page.chips.map((chip) => (
                 <span
-                  className="rounded-md border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-bold uppercase text-white/70"
+                  className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-bold uppercase text-white/70 backdrop-blur"
                   key={chip}
                 >
                   {chip}
@@ -425,8 +502,27 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[460px]">
-            <div className="overflow-hidden rounded-lg border border-white/12 bg-white/[0.06] p-3 shadow-clean">
+          <div className="relative mx-auto w-full max-w-[600px] py-6 lg:min-h-[690px]">
+            <div className="absolute left-0 top-8 hidden w-[38%] -rotate-6 overflow-hidden rounded-lg border border-white/10 bg-black/50 shadow-[0_24px_70px_rgba(0,0,0,0.54)] sm:block">
+              <Image
+                alt="Lukaz de Paula playing football"
+                className="aspect-[4/5] w-full object-cover object-[48%_center] opacity-85"
+                height={980}
+                src={assets.adamaFieldPlay}
+                width={720}
+              />
+            </div>
+            <div className="absolute bottom-12 right-0 hidden w-[38%] rotate-3 overflow-hidden rounded-lg border border-signal/35 bg-black/50 shadow-[0_24px_70px_rgba(231,18,38,0.18)] md:block">
+              <Image
+                alt="Lukaz de Paula coaching on the field"
+                className="aspect-[4/5] w-full object-cover object-[48%_center] opacity-90"
+                height={980}
+                src={assets.adamaCoachField}
+                width={720}
+              />
+            </div>
+            <div className="relative mx-auto w-[82%] max-w-[430px] overflow-hidden rounded-lg border border-white/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] p-3 shadow-[0_34px_110px_rgba(0,0,0,0.72)]">
+              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-signal to-transparent" />
               <Image
                 alt="The Adama Project cover"
                 className="aspect-[4/5] w-full rounded-md object-cover"
@@ -439,10 +535,10 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <div className="mt-4 grid grid-cols-3 gap-3">
               {page.stats.map(([value, label]) => (
                 <div
-                  className="rounded-lg border border-white/10 bg-white/[0.06] p-4 text-center"
+                  className="rounded-lg border border-white/10 bg-black/45 p-4 text-center backdrop-blur"
                   key={label}
                 >
-                  <p className="font-display text-2xl uppercase text-white">
+                  <p className="font-display text-2xl uppercase text-signal">
                     {value}
                   </p>
                   <p className="mt-1 text-[11px] font-bold uppercase leading-4 text-white/50">
@@ -455,29 +551,29 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-[#070708] py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-signal">
               <Target aria-hidden="true" className="mr-2 inline h-4 w-4" />
               {page.fitTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-4xl">
               {page.fitH2}
             </h2>
-            <p className="mt-5 text-base leading-8 text-graphite/75">
+            <p className="mt-5 text-base leading-8 text-white/68">
               {page.fitLead}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-ink/10 bg-smoke p-5">
+            <div className="rounded-lg border border-white/10 bg-white/[0.06] p-5 shadow-[0_18px_70px_rgba(0,0,0,0.28)]">
               <p className="text-sm font-bold uppercase text-turf">
                 {page.goodFitLabel}
               </p>
               <ul className="mt-4 space-y-3">
                 {page.goodFit.map((item) => (
                   <li
-                    className="flex gap-3 text-sm leading-6 text-graphite/76"
+                    className="flex gap-3 text-sm leading-6 text-white/72"
                     key={item}
                   >
                     <CheckCircle2
@@ -489,14 +585,14 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-ink/10 bg-white p-5">
+            <div className="rounded-lg border border-signal/30 bg-signal/[0.08] p-5 shadow-[0_18px_70px_rgba(231,18,38,0.12)]">
               <p className="text-sm font-bold uppercase text-signal">
                 {page.notFitLabel}
               </p>
               <ul className="mt-4 space-y-3">
                 {page.notFit.map((item) => (
                   <li
-                    className="flex gap-3 text-sm leading-6 text-graphite/76"
+                    className="flex gap-3 text-sm leading-6 text-white/72"
                     key={item}
                   >
                     <ShieldCheck
@@ -508,6 +604,60 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-[#0b0b0d] py-16 text-white">
+        <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.22)_1px,transparent_1px)] [background-size:18px_18px]" />
+        <div className="absolute right-[-12%] top-[-18%] h-72 w-72 rounded-full bg-signal/25 blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl gap-9 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-sm font-bold uppercase text-gold">
+              <Globe2 aria-hidden="true" className="mr-2 inline h-4 w-4" />
+              {page.fieldTitle}
+            </p>
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-5xl">
+              {page.fieldH2}
+            </h2>
+            <p className="mt-5 text-base leading-8 text-white/68">
+              {page.fieldLead}
+            </p>
+            <div className="mt-7 grid gap-3">
+              {page.fieldCards.map(([label, body]) => (
+                <div
+                  className="grid gap-2 border-l-2 border-signal bg-white/[0.045] p-4 sm:grid-cols-[130px_1fr]"
+                  key={label}
+                >
+                  <p className="font-display text-xl uppercase text-signal">
+                    {label}
+                  </p>
+                  <p className="text-sm leading-6 text-white/70">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {adamaGallery.map((photo) => (
+              <figure
+                className="group relative overflow-hidden rounded-lg border border-white/10 bg-black shadow-[0_22px_60px_rgba(0,0,0,0.34)]"
+                key={photo.src}
+              >
+                <Image
+                  alt={photo.alt}
+                  className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                  height={1080}
+                  src={photo.src}
+                  width={810}
+                />
+                <figcaption className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/68 to-transparent p-4">
+                  <span className="inline-flex rounded-md bg-signal px-2.5 py-1 text-xs font-bold uppercase text-white">
+                    {photo.label}
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -571,14 +721,16 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
         </div>
       </section>
 
-      <section className="surface-grid bg-smoke py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#111114_0%,#070708_52%,#26060b_100%)] py-16 text-white">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal to-transparent" />
+        <div className="absolute left-[-10%] top-1/3 h-56 w-56 rounded-full bg-signal/20 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-bold uppercase text-signal">
               <Languages aria-hidden="true" className="mr-2 inline h-4 w-4" />
               {page.includedTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl uppercase text-white sm:text-4xl">
               {page.includedH2}
             </h2>
           </div>
@@ -588,16 +740,16 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
 
               return (
                 <article
-                  className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+                  className="rounded-lg border border-white/10 bg-white/[0.06] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.24)]"
                   key={item.title}
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-ink text-white">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-signal text-white shadow-[0_0_30px_rgba(231,18,38,0.25)]">
                     <Icon aria-hidden="true" className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-5 text-xl font-bold text-ink">
+                  <h3 className="mt-5 text-xl font-bold text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
+                  <p className="mt-3 text-sm leading-6 text-white/66">
                     {item.body}
                   </p>
                 </article>
@@ -607,38 +759,59 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-[#070708] py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-signal">
               <Activity aria-hidden="true" className="mr-2 inline h-4 w-4" />
               {page.methodTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-4xl">
               {page.methodH2}
             </h2>
-            <p className="mt-5 text-base leading-8 text-graphite/75">
+            <p className="mt-5 text-base leading-8 text-white/68">
               {page.methodLead}
             </p>
           </div>
-          <div className="overflow-hidden rounded-lg border border-ink/10 bg-white">
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.055] shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
             {page.methodRows.map(([label, body]) => (
               <div
-                className="grid gap-2 border-b border-ink/10 p-5 last:border-b-0 sm:grid-cols-[150px_1fr]"
+                className="grid gap-2 border-b border-white/10 p-5 last:border-b-0 sm:grid-cols-[210px_1fr]"
                 key={label}
               >
-                <p className="font-display text-xl uppercase text-signal">
+                <p className="font-display text-lg uppercase text-signal sm:text-xl">
                   {label}
                 </p>
-                <p className="text-sm leading-6 text-graphite/75">{body}</p>
+                <p className="text-sm leading-6 text-white/70">{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-ink py-16 text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_0.8fr] lg:items-center lg:px-8">
+      <section className="relative overflow-hidden bg-[#050506] py-16 text-white">
+        <div className="absolute inset-0 opacity-[0.10] [background-image:linear-gradient(135deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:22px_22px]" />
+        <div className="absolute bottom-[-18%] right-[-8%] h-96 w-96 rounded-full bg-signal/20 blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl gap-9 px-4 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-8">
+          <div className="relative order-2 lg:order-1">
+            <div className="overflow-hidden rounded-lg border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.44)]">
+              <Image
+                alt="Lukaz de Paula coaching athletes in the gym"
+                className="aspect-[4/5] w-full object-cover object-[50%_35%]"
+                height={1150}
+                src={assets.coachGymInstruction}
+                width={920}
+              />
+            </div>
+            <div className="absolute -bottom-5 left-5 right-5 rounded-lg border border-signal/35 bg-black/88 p-4 shadow-[0_18px_60px_rgba(231,18,38,0.20)] backdrop-blur">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-gold">
+                {page.authorityMiniTitle}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-white/72">
+                {page.authorityMiniBody}
+              </p>
+            </div>
+          </div>
           <div>
             <p className="text-sm font-bold uppercase text-gold">
               <Trophy aria-hidden="true" className="mr-2 inline h-4 w-4" />
@@ -650,37 +823,72 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <p className="mt-5 max-w-3xl text-base leading-8 text-white/70">
               {page.authorityBody}
             </p>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-white/10">
-            <Image
-              alt="Lukaz de Paula coaching athletes in the gym"
-              className="aspect-[4/3] w-full object-cover"
-              height={900}
-              src={assets.coachGymInstruction}
-              width={1200}
-            />
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              {page.authorityStats.map(([value, label]) => (
+                <div
+                  className="rounded-lg border border-white/10 bg-white/[0.055] p-4"
+                  key={value}
+                >
+                  <BadgeCheck
+                    aria-hidden="true"
+                    className="mb-3 h-5 w-5 text-signal"
+                  />
+                  <p className="font-display text-2xl uppercase text-white">
+                    {value}
+                  </p>
+                  <p className="mt-2 text-xs font-bold uppercase leading-5 text-white/50">
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.055] p-5">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-white/52">
+                <Building2 aria-hidden="true" className="h-4 w-4 text-signal" />
+                Performance background
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {authorityLogos.map((logo) => (
+                  <div
+                    className="flex min-h-24 items-center justify-center rounded-md border border-white/10 bg-white p-3"
+                    key={logo.name}
+                  >
+                    <Image
+                      alt={logo.name}
+                      className="max-h-16 w-auto object-contain"
+                      height={92}
+                      src={logo.image}
+                      width={140}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-[#0b0b0d] py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.72fr_1.28fr] lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-signal">
               {page.faqTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl uppercase text-white sm:text-4xl">
               {page.faqH2}
             </h2>
           </div>
           <div className="grid gap-4">
             {page.faqs.map((faq) => (
               <article
-                className="rounded-lg border border-ink/10 bg-smoke p-5"
+                className="rounded-lg border border-white/10 bg-white/[0.055] p-5"
                 key={faq.question}
               >
-                <h3 className="text-lg font-bold text-ink">{faq.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-graphite/72">
+                <h3 className="text-lg font-bold text-white">
+                  {faq.question}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-white/66">
                   {faq.answer}
                 </p>
               </article>
@@ -689,8 +897,16 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
         </div>
       </section>
 
-      <section className="bg-signal py-14 text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
+      <section className="relative overflow-hidden bg-[#050506] py-14 text-white">
+        <Image
+          alt="Adama Project strength and power cover background"
+          className="absolute inset-0 h-full w-full object-cover object-[62%_center] opacity-24"
+          fill
+          sizes="100vw"
+          src={assets.adamaCover}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#050506_0%,rgba(5,5,6,0.90)_52%,rgba(231,18,38,0.52)_100%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-white/75">
               Adama Project
@@ -704,7 +920,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <a
-              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-bold text-signal transition hover:bg-steel"
+              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.36)] transition hover:bg-[#b90f20]"
               href={shopifyProducts.adama}
               rel="noreferrer"
               target="_blank"
@@ -713,7 +929,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </a>
             <Link
-              className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/40 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20"
+              className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/40 bg-black/25 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
               href={coachingHref}
             >
               {page.coachingCta}
