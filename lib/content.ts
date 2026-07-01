@@ -55,7 +55,7 @@ export const assets = {
   logoCbf: "/assets/logos/cbf.svg",
   logoMalagaCity: "/assets/logos/malaga-city-transparent.png",
   logoLindseyWilson: "/assets/logos/lindsey-wilson-transparent.png",
-  logoAlmunecar: "/assets/logos/almunecar-city.png",
+  logoAlmunecar: "/assets/logos/almunecar-city-transparent.png",
   logoColoradoRapids: "/assets/logos/colorado-rapids.png",
   logoDesportivoBrasil: "/assets/logos/desportivo-brasil.png",
   logoExtratime: "/assets/logos/extratime-transparent.png",

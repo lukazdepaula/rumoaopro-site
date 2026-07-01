@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, nav, shopifyProducts } from "@/lib/content";
+import { assets, nav, shopifyProducts, successCases } from "@/lib/content";
 
 type AdamaSalesPageProps = {
   locale: "pt" | "en";
@@ -40,6 +40,7 @@ const copy = {
     secondaryCta: "Ver estrutura",
     storeNote: "Compra finalizada pela loja RumoAoPro.",
     chips: ["12 semanas", "3 fases", "Gym + field", "PT + EN"],
+    coverStatLabel: "semanas para construir força, potência e velocidade",
     stats: [
       ["3", "fases progressivas"],
       ["12", "semanas de offseason"],
@@ -165,8 +166,13 @@ const copy = {
       ["Speed", "Exposição de aceleração e velocidade máxima"],
       ["Conditioning", "Suporte para repetir ações sem perder qualidade"]
     ],
+    successTitle: "Casos de sucesso",
+    successH2: "O método já aparece em atletas reais.",
+    successLead:
+      "A lógica do Adama nasce do mesmo princípio aplicado na assessoria: força útil, velocidade, consistência e preparação física conectada ao calendário do futebol.",
     authorityTitle: "Programado por quem trabalha com futebol real",
     authorityH2: "Criado por Lukaz de Paula.",
+    authorityLogoLabel: "Experiência em performance",
     authorityBody:
       "Preparador físico com licença CBF A em Strength & Conditioning, experiência em FC Málaga City, CD Almuñécar City, Lindsey Wilson University e Extratime Performance. Além de treinador, Lukaz também viveu o jogo como atleta. Essa mistura importa: o programa foi desenhado por alguém que entende a exigência física e também sabe como o atleta sente o treino no corpo.",
     authorityMiniTitle: "Visão de treinador + atleta",
@@ -177,6 +183,7 @@ const copy = {
       ["4 países", "Brasil, EUA, Arábia Saudita e Espanha"],
       ["Coach + atleta", "visão de treinador e experiência de atleta"]
     ],
+    caseLabel: "Caso RumoAoPro",
     faqTitle: "Perguntas rápidas",
     faqH2: "Antes de comprar",
     faqs: [
@@ -220,6 +227,7 @@ const copy = {
     secondaryCta: "See structure",
     storeNote: "Checkout runs through the RumoAoPro store.",
     chips: ["12 weeks", "3 phases", "Gym + field", "EN + PT"],
+    coverStatLabel: "weeks to build strength, power and speed",
     stats: [
       ["3", "progressive phases"],
       ["12", "offseason weeks"],
@@ -345,8 +353,13 @@ const copy = {
       ["Speed", "Acceleration and max velocity exposure"],
       ["Conditioning", "Support to repeat actions without losing quality"]
     ],
+    successTitle: "Success cases",
+    successH2: "The method already shows up with real players.",
+    successLead:
+      "Adama follows the same logic used inside online coaching: useful strength, speed, consistency and physical preparation connected to the football calendar.",
     authorityTitle: "Built by someone working in real football",
     authorityH2: "Created by Lukaz de Paula.",
+    authorityLogoLabel: "Performance background",
     authorityBody:
       "CBF A licensed strength and conditioning coach with experience at FC Málaga City, CD Almuñécar City, Lindsey Wilson University and Extratime Performance. Lukaz also lived the game as a player. That mix matters: the program was built by someone who understands football demands and knows what the athlete feels inside the training process.",
     authorityMiniTitle: "Coach + player perspective",
@@ -357,6 +370,7 @@ const copy = {
       ["4 countries", "Brazil, USA, Saudi Arabia and Spain"],
       ["Coach + player", "coaching eye with player experience"]
     ],
+    caseLabel: "RumoAoPro case",
     faqTitle: "Quick questions",
     faqH2: "Before you buy",
     faqs: [
@@ -391,24 +405,14 @@ const copy = {
 
 const adamaGallery = [
   {
-    src: assets.adamaFieldPlay,
-    alt: "Lukaz de Paula training on the field",
-    label: "Field transfer"
-  },
-  {
-    src: assets.adamaCoachField,
-    alt: "Lukaz de Paula in football training environment",
-    label: "Coach's eye"
-  },
-  {
     src: assets.adamaSprintFront,
     alt: "Football player sprinting forward on the field",
     label: "Acceleration"
   },
   {
-    src: assets.adamaSprintSide,
-    alt: "Football player sprinting from the side",
-    label: "Power expression"
+    src: assets.adamaFieldPlay,
+    alt: "Lukaz de Paula training on the field",
+    label: "Football transfer"
   }
 ];
 
@@ -417,11 +421,12 @@ const authorityLogos = [
   { name: "FC Malaga City", image: assets.logoMalagaCity },
   { name: "CD Almunecar City", image: assets.logoAlmunecar },
   { name: "Lindsey Wilson", image: assets.logoLindseyWilson },
-  { name: "Extratime", image: assets.logoExtratime }
+  { name: "Extratime", image: assets.logoExtratime, tone: "light" }
 ];
 
 export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
   const page = copy[locale];
+  const selectedSuccessCases = successCases[locale].slice(0, 3);
   const coachingHref =
     locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
 
@@ -512,14 +517,11 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
                 width={720}
               />
             </div>
-            <div className="absolute bottom-12 right-0 hidden w-[38%] rotate-3 overflow-hidden rounded-lg border border-signal/35 bg-black/50 shadow-[0_24px_70px_rgba(231,18,38,0.18)] md:block">
-              <Image
-                alt="Lukaz de Paula coaching on the field"
-                className="aspect-[4/5] w-full object-cover object-[48%_center] opacity-90"
-                height={980}
-                src={assets.adamaCoachField}
-                width={720}
-              />
+            <div className="absolute bottom-12 right-0 hidden w-[38%] rotate-3 rounded-lg border border-signal/35 bg-black/70 p-5 shadow-[0_24px_70px_rgba(231,18,38,0.18)] backdrop-blur md:block">
+              <p className="font-display text-5xl uppercase text-signal">12</p>
+              <p className="mt-1 text-xs font-bold uppercase leading-5 tracking-[0.22em] text-white/55">
+                {page.coverStatLabel}
+              </p>
             </div>
             <div className="relative mx-auto w-[82%] max-w-[430px] overflow-hidden rounded-lg border border-white/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] p-3 shadow-[0_34px_110px_rgba(0,0,0,0.72)]">
               <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-signal to-transparent" />
@@ -646,7 +648,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
               >
                 <Image
                   alt={photo.alt}
-                  className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                  className="aspect-[5/6] w-full object-cover transition duration-500 group-hover:scale-[1.04]"
                   height={1080}
                   src={photo.src}
                   width={810}
@@ -792,37 +794,20 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
       <section className="relative overflow-hidden bg-[#050506] py-16 text-white">
         <div className="absolute inset-0 opacity-[0.10] [background-image:linear-gradient(135deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:22px_22px]" />
         <div className="absolute bottom-[-18%] right-[-8%] h-96 w-96 rounded-full bg-signal/20 blur-3xl" />
-        <div className="relative mx-auto grid max-w-7xl gap-9 px-4 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-8">
-          <div className="relative order-2 lg:order-1">
-            <div className="overflow-hidden rounded-lg border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.44)]">
-              <Image
-                alt="Lukaz de Paula coaching athletes in the gym"
-                className="aspect-[4/5] w-full object-cover object-[50%_35%]"
-                height={1150}
-                src={assets.coachGymInstruction}
-                width={920}
-              />
-            </div>
-            <div className="absolute -bottom-5 left-5 right-5 rounded-lg border border-signal/35 bg-black/88 p-4 shadow-[0_18px_60px_rgba(231,18,38,0.20)] backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-gold">
-                {page.authorityMiniTitle}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase text-gold">
+                <Trophy aria-hidden="true" className="mr-2 inline h-4 w-4" />
+                {page.authorityTitle}
               </p>
-              <p className="mt-2 text-sm leading-6 text-white/72">
-                {page.authorityMiniBody}
+              <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
+                {page.authorityH2}
+              </h2>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-white/70">
+                {page.authorityBody}
               </p>
             </div>
-          </div>
-          <div>
-            <p className="text-sm font-bold uppercase text-gold">
-              <Trophy aria-hidden="true" className="mr-2 inline h-4 w-4" />
-              {page.authorityTitle}
-            </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
-              {page.authorityH2}
-            </h2>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-white/70">
-              {page.authorityBody}
-            </p>
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
               {page.authorityStats.map(([value, label]) => (
                 <div
@@ -842,29 +827,79 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
                 </div>
               ))}
             </div>
+          </div>
 
-            <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.055] p-5">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-white/52">
-                <Building2 aria-hidden="true" className="h-4 w-4 text-signal" />
-                Performance background
-              </p>
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {authorityLogos.map((logo) => (
-                  <div
-                    className="flex min-h-24 items-center justify-center rounded-md border border-white/10 bg-white p-3"
-                    key={logo.name}
-                  >
-                    <Image
-                      alt={logo.name}
-                      className="max-h-16 w-auto object-contain"
-                      height={92}
-                      src={logo.image}
-                      width={140}
-                    />
-                  </div>
-                ))}
-              </div>
+          <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.045] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-white/52">
+              <Building2 aria-hidden="true" className="h-4 w-4 text-signal" />
+              {page.authorityLogoLabel}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {authorityLogos.map((logo) => (
+                <div
+                  className="flex min-h-20 items-center justify-center rounded-md border border-white/10 bg-white/[0.035] p-3"
+                  key={logo.name}
+                >
+                  <Image
+                    alt={logo.name}
+                    className={`max-h-14 w-auto object-contain ${
+                      "tone" in logo && logo.tone === "light"
+                        ? "brightness-0 invert"
+                        : ""
+                    }`}
+                    height={92}
+                    src={logo.image}
+                    width={140}
+                  />
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#101012] py-16 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase text-signal">
+                {page.successTitle}
+              </p>
+              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-4xl">
+                {page.successH2}
+              </h2>
+            </div>
+            <p className="max-w-3xl text-base leading-8 text-white/66">
+              {page.successLead}
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {selectedSuccessCases.map((item) => (
+              <article
+                className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.045] shadow-[0_22px_70px_rgba(0,0,0,0.24)]"
+                key={item.name}
+              >
+                <Image
+                  alt={item.name}
+                  className="aspect-[4/3] w-full object-cover"
+                  height={840}
+                  src={item.image}
+                  width={1120}
+                />
+                <div className="p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.20em] text-signal">
+                    {page.caseLabel}
+                  </p>
+                  <h3 className="mt-2 text-xl font-bold text-white">
+                    {item.name}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/66">
+                    {item.quote}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
