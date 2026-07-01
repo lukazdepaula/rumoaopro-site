@@ -61,6 +61,10 @@ export const assets = {
   logoExtratime: "/assets/logos/extratime-transparent.png",
   logoVasalunds: "/assets/logos/vasalunds.png",
   logoVasalundsTransparent: "/assets/logos/vasalunds-transparent.png",
+  adamaCover: "/assets/programs/adama/adama-cover.webp",
+  adamaPhase1Overview: "/assets/programs/adama/adama-phase-1-overview.jpg",
+  adamaPhase2Overview: "/assets/programs/adama/adama-phase-2-overview.jpg",
+  adamaPhase3Overview: "/assets/programs/adama/adama-phase-3-overview.jpg",
   successTheo: "/assets/success/theo-ferreira-player.jpg",
   successHaroune: "/assets/success/haroune-camara-player.jpg",
   successAmar: "/assets/success/amar-player.jpg",
@@ -586,9 +590,9 @@ export const programs = [
       "Potência sem perder mobilidade",
       "Progressão completa de academia com intenção de campo"
     ],
-    image: assets.adama,
-    href: shopifyProducts.adama,
-    cta: "Comprar programa"
+    image: assets.adamaCover,
+    href: "/programas/adama-strength-power",
+    cta: "Ver página"
   },
   {
     title: "Projeto Pré Temporada",
@@ -685,9 +689,9 @@ export const programsEn = [
       "Power without losing mobility",
       "Gym progression connected to football demands"
     ],
-    image: assets.adama,
-    href: shopifyProducts.adama,
-    cta: "Buy program"
+    image: assets.adamaCover,
+    href: "/en/programs/adama-strength-power",
+    cta: "View page"
   },
   {
     title: "Projeto Elanga In-Season",

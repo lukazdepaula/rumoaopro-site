@@ -31,10 +31,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75
     },
     {
+      url: `${baseUrl}/programas/adama-strength-power`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
       url: `${baseUrl}/en/programs`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.72
+    },
+    {
+      url: `${baseUrl}/en/programs/adama-strength-power`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8
     },
     {
       url: `${baseUrl}/links`,
