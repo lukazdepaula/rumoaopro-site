@@ -479,8 +479,6 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.38)] transition hover:bg-[#b90f20]"
                 href={shopifyProducts.adama}
-                rel="noreferrer"
-                target="_blank"
               >
                 {page.primaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -957,8 +955,6 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <a
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.36)] transition hover:bg-[#b90f20]"
               href={shopifyProducts.adama}
-              rel="noreferrer"
-              target="_blank"
             >
               {page.finalCta}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />

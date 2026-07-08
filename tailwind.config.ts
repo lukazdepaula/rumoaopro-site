@@ -23,7 +23,8 @@ const config: Config = {
         display: ["Arial Black", "Inter", "Arial", "Helvetica", "sans-serif"]
       },
       boxShadow: {
-        clean: "0 18px 60px rgba(0, 0, 0, 0.16)"
+        clean: "0 18px 60px rgba(0, 0, 0, 0.16)",
+        card: "0 22px 70px rgba(8, 9, 11, 0.14)"
       }
     }
   },

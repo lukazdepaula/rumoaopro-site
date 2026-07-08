@@ -87,12 +87,12 @@ export default function LinksPage() {
             Treine com estrutura de atleta.
           </h1>
           <p className="mt-4 text-base leading-7 text-white/72">
-            Lukaz de Paula e preparador fisico com licenca CBF A, coordenador de
-            performance fisica do FC Malaga City e CD Almunecar City na Espanha,
+            Lukaz de Paula é preparador físico com licença CBF A, coordenador de
+            performance física do FC Málaga City e CD Almuñécar City na Espanha,
             ex Lindsey Wilson University nos EUA e ex diretor de treinamento
-            fisico da Extratime Performance em Jeddah. Tambem viveu o jogo como
-            atleta: futebol universitario nos EUA, Colorado Rapids U23,
-            Desportivo Brasil, Vasalunds IF e CD Almunecar City.
+            físico da Extratime Performance em Jeddah. Também viveu o jogo como
+            atleta: futebol universitário nos EUA, Colorado Rapids U23,
+            Desportivo Brasil, Vasalunds IF e CD Almuñécar City.
           </p>
         </div>
 
@@ -135,17 +135,17 @@ export default function LinksPage() {
                     key={star}
                   />
                 ))}
-                Avaliacoes 5 estrelas
+                Avaliações 5 estrelas
               </p>
               <h2 className="mt-2 text-2xl font-bold">
                 Aplicar para a Assessoria Online
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/85">
-                Programa individual, calendario personalizado, controle de carga
+                Programa individual, calendário personalizado, controle de carga
                 e suporte semanal direto com o coach.
               </p>
               <p className="mt-4 inline-flex rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-signal">
-                Apenas 3 vagas disponiveis no momento
+                Apenas 3 vagas disponíveis no momento
               </p>
             </div>
             <ArrowRight aria-hidden="true" className="mt-1 h-6 w-6 shrink-0" />

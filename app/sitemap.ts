@@ -37,6 +37,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.82
     },
     {
+      url: `${baseUrl}/programas/offseason-30-days`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
+      url: `${baseUrl}/programas/projeto-36kmh`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
+      url: `${baseUrl}/programas/elanga-in-season`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
       url: `${baseUrl}/en/programs`,
       lastModified,
       changeFrequency: "weekly",
@@ -44,6 +62,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/en/programs/adama-strength-power`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8
+    },
+    {
+      url: `${baseUrl}/en/programs/offseason-30-days`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8
+    },
+    {
+      url: `${baseUrl}/en/programs/project-36kmh`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8
+    },
+    {
+      url: `${baseUrl}/en/programs/elanga-in-season`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8

@@ -61,6 +61,53 @@ export const assets = {
   logoExtratime: "/assets/logos/extratime-transparent.png",
   logoVasalunds: "/assets/logos/vasalunds.png",
   logoVasalundsTransparent: "/assets/logos/vasalunds-transparent.png",
+  offseason30Cover:
+    "/assets/programs/offseason-30/offseason-30-preview-01.jpg",
+  offseason30Progression:
+    "/assets/programs/offseason-30/offseason-30-preview-02.jpg",
+  offseason30FieldWarmup:
+    "/assets/programs/offseason-30/offseason-30-preview-03.jpg",
+  offseason30GymWarmup:
+    "/assets/programs/offseason-30/offseason-30-preview-04.jpg",
+  offseason30WeekOverview:
+    "/assets/programs/offseason-30/offseason-30-preview-05.jpg",
+  offseason30DayOne:
+    "/assets/programs/offseason-30/offseason-30-preview-06.jpg",
+  project36Cover: "/assets/programs/project-36/project-36-cover.jpg",
+  project36HowToUse: "/assets/programs/project-36/project-36-how-to-use.jpg",
+  project36RestRules: "/assets/programs/project-36/project-36-rest-rules.jpg",
+  project36Phase1Overview:
+    "/assets/programs/project-36/project-36-phase-1-overview.jpg",
+  project36Phase1Day1:
+    "/assets/programs/project-36/project-36-phase-1-day-1.jpg",
+  project36Phase2Overview:
+    "/assets/programs/project-36/project-36-phase-2-overview.jpg",
+  project36Phase2Day1:
+    "/assets/programs/project-36/project-36-phase-2-day-1.jpg",
+  project36Phase3Overview:
+    "/assets/programs/project-36/project-36-phase-3-overview.jpg",
+  project36Phase3Day1:
+    "/assets/programs/project-36/project-36-phase-3-day-1.jpg",
+  elangaCover: "/assets/programs/elanga/elanga-cover.jpg",
+  elangaPhase1Overview:
+    "/assets/programs/elanga/elanga-phase-1-overview.jpg",
+  elangaHowToFollow: "/assets/programs/elanga/elanga-how-to-follow.jpg",
+  elangaPhase2Overview:
+    "/assets/programs/elanga/elanga-phase-2-overview.jpg",
+  elangaPhase3Overview:
+    "/assets/programs/elanga/elanga-phase-3-overview.jpg",
+  elangaPhase4Overview:
+    "/assets/programs/elanga/elanga-phase-4-overview.jpg",
+  elangaPhase5Overview:
+    "/assets/programs/elanga/elanga-phase-5-overview.jpg",
+  elangaPhase6Overview:
+    "/assets/programs/elanga/elanga-phase-6-overview.jpg",
+  elangaPhase7Overview:
+    "/assets/programs/elanga/elanga-phase-7-overview.jpg",
+  elangaExtraAerobicBase:
+    "/assets/programs/elanga/elanga-extra-aerobic-base.jpg",
+  elangaExtraAerobicTempo:
+    "/assets/programs/elanga/elanga-extra-aerobic-tempo.jpg",
   adamaCover: "/assets/programs/adama/adama-cover.webp",
   adamaPhase1Overview: "/assets/programs/adama/adama-phase-1-overview.jpg",
   adamaPhase2Overview: "/assets/programs/adama/adama-phase-2-overview.jpg",
@@ -69,6 +116,14 @@ export const assets = {
   adamaCoachField: "/assets/programs/adama/adama-coach-field.jpg",
   adamaSprintFront: "/assets/programs/adama/adama-sprint-front.jpg",
   adamaSprintSide: "/assets/programs/adama/adama-sprint-side.jpg",
+  programsGameDuel: "/assets/photos/programs/programs-game-duel.jpg",
+  programsFieldControl: "/assets/photos/programs/programs-field-control.jpg",
+  programsPlayerReady: "/assets/photos/programs/programs-player-ready.jpg",
+  programsGymBriefing: "/assets/photos/programs/programs-gym-briefing.jpg",
+  programsJumpTest: "/assets/photos/programs/programs-jump-test.jpg",
+  programsProMatch: "/assets/photos/programs/programs-pro-match.jpg",
+  programsSprintChase: "/assets/photos/programs/programs-sprint-chase.jpg",
+  programsMatchCarry: "/assets/photos/programs/programs-match-carry.jpg",
   successTheo: "/assets/success/theo-ferreira-player.jpg",
   successHaroune: "/assets/success/haroune-camara-player.jpg",
   successAmar: "/assets/success/amar-player.jpg",
@@ -551,68 +606,144 @@ export type CoachingCopy =
   | (typeof coachingCopy)["en"];
 
 export const shopifyProducts = {
-  offseason30:
-    "https://www.rumoaopro.com.br/collections/in-english/products/preseason-project-12-weeks",
-  adama:
-    "https://www.rumoaopro.com.br/collections/in-english/products/offseason-strength-and-power-the-adama-project-12-weeks",
-  preTemporada:
-    "https://www.rumoaopro.com.br/collections/programas-de-treinamento/products/projeto-pre-temporada",
+  offseason30: "/checkout/offseason-30-days",
+  adama: "/checkout/adama-offseason-strength-and-power",
+  preTemporada: "/checkout/projeto-pre-temporada",
+  deVoltaAosGramados: "/checkout/de-volta-aos-gramados",
+  projeto36: "/checkout/project-36",
+  elanga: "/checkout/elanga-in-season"
+};
+
+export const legacyPortugueseProducts = {
+  preTemporada: "https://www.rumoaopro.com.br/products/projeto-pre-temporada",
+  adama2022: "https://www.rumoaopro.com.br/products/projeto-adama-9-semanas",
+  projeto362022: "https://www.rumoaopro.com.br/products/projeto-36-12-semanas",
   deVoltaAosGramados:
-    "https://www.rumoaopro.com.br/collections/programas-de-treinamento/products/de-volta-aos-gramados-rehabilitacao-de-pubalgia",
-  projeto36:
-    "https://www.rumoaopro.com.br/collections/programas-de-treinamento/products/projeto-36-12-semanas",
-  elanga:
-    "https://www.rumoaopro.com.br/collections/in-english/products/elanga-project"
+    "https://www.rumoaopro.com.br/products/de-volta-aos-gramados-rehabilitacao-de-pubalgia"
 };
 
 export const programs = [
   {
     title: "Offseason Program 30 Days",
-    tag: "PT + EN",
+    tag: "Conteúdo em inglês",
     duration: "30 dias",
-    level: "Offseason curta",
+    level: "Últimos 30 dias da offseason",
     body:
-      "Para atletas com uma janela curta de preparação que precisam organizar força, velocidade, campo e condicionamento sem perder tempo.",
+      "Uma estrutura curta para organizar campo, academia, velocidade e condicionamento quando a volta ao clube já está perto.",
     outcomes: [
-      "4 semanas com estrutura objetiva",
-      "Base física para voltar mais pronto",
-      "Ideal para férias curtas, peneira ou retorno aos treinos"
+      "4 semanas objetivas",
+      "Campo + academia",
+      "Conteúdo do programa em inglês"
     ],
-    image: assets.coachFieldDrillWide,
-    href: shopifyProducts.offseason30,
-    cta: "Comprar programa"
+    image: assets.programsFieldControl,
+    imageClass: "object-[center_20%]",
+    href: "/programas/offseason-30-days",
+    cta: "Ver detalhes"
   },
   {
     title: "Adama Offseason Strength & Power",
-    tag: "PT + EN",
+    tag: "Conteúdo em inglês",
     duration: "12 semanas",
-    level: "Força e potência",
+    level: "Offseason - força e potência",
     body:
-      "Programa de offseason com prioridade em força, potência e construção física para atletas que querem chegar mais fortes na temporada.",
+      "Para construir base física, força útil, potência e presença nos duelos antes da temporada começar.",
     outcomes: [
-      "Força útil para duelo e arrancada",
-      "Potência sem perder mobilidade",
-      "Progressão completa de academia com intenção de campo"
+      "Força útil para o jogo",
+      "Potência e robustez",
+      "Conteúdo do programa em inglês"
     ],
-    image: assets.adamaCover,
+    image: assets.programsJumpTest,
+    imageClass: "object-[center_48%]",
     href: "/programas/adama-strength-power",
-    cta: "Ver página"
+    cta: "Ver detalhes"
   },
+  {
+    title: "Project 36 Offseason",
+    tag: "Conteúdo em inglês",
+    duration: "12 semanas",
+    level: "Offseason - velocidade",
+    body:
+      "Sistema para desenvolver aceleração, top speed, re-aceleração e velocidade aplicada ao jogo.",
+    outcomes: [
+      "Aceleração",
+      "Max velocity",
+      "Conteúdo do programa em inglês"
+    ],
+    image: assets.programsSprintChase,
+    imageClass: "object-center",
+    href: "/programas/projeto-36kmh",
+    cta: "Ver detalhes"
+  },
+  {
+    title: "Projeto Elanga In-Season",
+    tag: "Conteúdo em inglês",
+    duration: "28 semanas",
+    level: "Temporada",
+    body:
+      "Para manter força, velocidade e potência durante a temporada sem competir com jogos e treinos do time.",
+    outcomes: [
+      "3 sessões de suporte por semana",
+      "Baixo volume",
+      "Conteúdo do programa em inglês"
+    ],
+    image: assets.programsProMatch,
+    imageClass: "object-center",
+    href: "/programas/elanga-in-season",
+    cta: "Ver detalhes"
+  }
+];
+
+export const programsPtLegacy = [
   {
     title: "Projeto Pré Temporada",
     tag: "Português",
     duration: "12 semanas",
     level: "Preparação completa",
     body:
-      "Estrutura completa para chegar mais pronto ao início da temporada, combinando força, velocidade, resistência e rotina de campo.",
+      "Plano clássico em português para chegar melhor preparado ao início da temporada, peneira ou campeonato.",
     outcomes: [
-      "Organização física para pré-temporada",
-      "Força, velocidade e condicionamento no mesmo plano",
-      "Progressão para sair do improviso"
+      "Força, velocidade e resistência",
+      "Campo + academia",
+      "Produto em português"
     ],
     image: assets.preSeason,
-    href: shopifyProducts.preTemporada,
-    cta: "Comprar programa"
+    imageClass: "object-center",
+    href: legacyPortugueseProducts.preTemporada,
+    cta: "Comprar no site atual"
+  },
+  {
+    title: "Projeto Adama (versão 2022)",
+    tag: "Português",
+    duration: "9 semanas",
+    level: "Força e hipertrofia",
+    body:
+      "Versão original em português para atletas que querem ganhar força, hipertrofia e mais presença física.",
+    outcomes: [
+      "Força e hipertrofia",
+      "Base de academia",
+      "Produto em português"
+    ],
+    image: assets.adama,
+    imageClass: "object-center",
+    href: legacyPortugueseProducts.adama2022,
+    cta: "Comprar no site atual"
+  },
+  {
+    title: "Projeto 36 km/h (versão 2022)",
+    tag: "Português",
+    duration: "12 semanas",
+    level: "Força e velocidade",
+    body:
+      "Versão original em português para desenvolver velocidade, força e explosão com foco em futebol.",
+    outcomes: [
+      "Força e velocidade",
+      "Aceleração",
+      "Produto em português"
+    ],
+    image: assets.programsMatchCarry,
+    imageClass: "object-[center_28%]",
+    href: legacyPortugueseProducts.projeto362022,
+    cta: "Comprar no site atual"
   },
   {
     title: "De Volta aos Gramados",
@@ -620,98 +751,87 @@ export const programs = [
     duration: "Reabilitação",
     level: "Pubalgia / retorno",
     body:
-      "Para atletas que precisam voltar a treinar com mais segurança após dor na região da pubalgia/adutores, respeitando progressão e controle.",
+      "Programa em português para retorno gradual aos treinos após dor em pubalgia, adutores ou quadril.",
     outcomes: [
-      "Progressão de retorno aos treinos",
-      "Força e estabilidade para quadril e adutores",
-      "Estrutura para reduzir tentativa solta"
+      "Progressão de retorno",
+      "Quadril e adutores",
+      "Produto em português"
     ],
     image: assets.dvg,
-    href: shopifyProducts.deVoltaAosGramados,
-    cta: "Comprar programa"
-  },
-  {
-    title: "Projeto 36km/h",
-    tag: "Português",
-    duration: "12 semanas",
-    level: "Velocidade",
-    body:
-      "Foco em aceleração, técnica de sprint, potência e exposição progressiva à velocidade para atletas que querem correr melhor.",
-    outcomes: [
-      "Mecânica e aceleração",
-      "Sprints com progressão inteligente",
-      "Velocidade aplicada ao futebol"
-    ],
-    image: assets.sprintFront,
-    href: shopifyProducts.projeto36,
-    cta: "Comprar programa"
-  },
-  {
-    title: "Projeto Elanga In-Season",
-    tag: "English",
-    duration: "In-season",
-    level: "Manutenção na temporada",
-    body:
-      "Programa em inglês para manter força, velocidade e disponibilidade durante a temporada sem competir com jogos e treinos do time.",
-    outcomes: [
-      "Microdoses de força e potência",
-      "Velocidade no momento certo",
-      "Recuperação e disponibilidade"
-    ],
-    image: assets.rakanPerformanceEn,
-    href: shopifyProducts.elanga,
-    cta: "Comprar programa"
+    imageClass: "object-center",
+    href: legacyPortugueseProducts.deVoltaAosGramados,
+    cta: "Comprar no site atual"
   }
 ];
 
 export const programsEn = [
   {
     title: "Offseason Program 30 Days",
-    tag: "EN + PT",
+    tag: "English",
     duration: "30 days",
-    level: "Short offseason",
+    level: "Final 30 days",
     body:
-      "For players with a short preparation window who need strength, speed, field work and conditioning organized without wasting time.",
+      "A direct plan for players who need field work, gym, speed and conditioning organized before returning to team training.",
     outcomes: [
       "4 weeks with a clear structure",
       "Physical base to return sharper",
       "Ideal for short breaks, trials or return to training"
     ],
-    image: assets.coachFieldDrillWide,
-    href: shopifyProducts.offseason30,
-    cta: "Buy program"
+    image: assets.programsFieldControl,
+    imageClass: "object-[center_20%]",
+    href: "/en/programs/offseason-30-days",
+    cta: "View page"
   },
   {
     title: "Adama Offseason Strength & Power",
-    tag: "EN + PT",
+    tag: "English",
     duration: "12 weeks",
-    level: "Strength and power",
+    level: "Offseason strength",
     body:
-      "An offseason program built around strength, power and physical presence for players who want to enter the season stronger.",
+      "A strength and power block for players who want more physical presence before the season starts.",
     outcomes: [
       "Useful strength for duels and acceleration",
       "Power without losing mobility",
       "Gym progression connected to football demands"
     ],
-    image: assets.adamaCover,
+    image: assets.programsJumpTest,
+    imageClass: "object-[center_48%]",
     href: "/en/programs/adama-strength-power",
+    cta: "View page"
+  },
+  {
+    title: "Project 36 Offseason",
+    tag: "English",
+    duration: "12 weeks",
+    level: "Offseason speed",
+    body:
+      "A speed system for acceleration, top speed, re-acceleration and football actions that actually show up in matches.",
+    outcomes: [
+      "Athletic Foundation",
+      "Acceleration Power",
+      "Max Velocity & Game Speed"
+    ],
+    image: assets.programsSprintChase,
+    imageClass: "object-center",
+    href: "/en/programs/project-36kmh",
     cta: "View page"
   },
   {
     title: "Projeto Elanga In-Season",
     tag: "English",
-    duration: "In-season",
-    level: "Season maintenance",
+    duration: "28 weeks",
+    level: "In-season",
     body:
-      "An in-season program to maintain strength, speed and availability without fighting against matches and team training.",
+      "A low-volume in-season system to maintain strength, speed and power without fighting against matches and team training.",
     outcomes: [
-      "Small doses of strength and power",
-      "Speed exposure at the right time",
-      "Recovery and availability through the season"
+      "3 support sessions per week",
+      "7 phases of 4 weeks each",
+      "Low volume, high intent"
     ],
-    image: assets.rakanPerformanceEn,
-    href: shopifyProducts.elanga,
-    cta: "Buy program"
+    image: assets.programsProMatch,
+    imageClass: "object-center",
+    href: "/en/programs/elanga-in-season",
+    cta: "View page"
   }
 ];
 

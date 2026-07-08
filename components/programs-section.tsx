@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
 import { programs, programsEn } from "@/lib/content";
 
@@ -19,10 +19,10 @@ export function ProgramsSection({
     : selectedPrograms;
   const copy = {
     pt: {
-      eyebrow: "Programas de treinamento",
-      title: "Programas prontos para comprar e começar com direção",
+      eyebrow: "Programas principais",
+      title: "Quatro caminhos para treinar o ano inteiro",
       body:
-        "Cada programa resolve um momento específico da jornada do atleta: offseason curta, força e potência, pré-temporada, retorno aos gramados, velocidade ou manutenção durante a temporada.",
+        "Esta coleção está disponível em inglês no momento. Use a página em português para entender qual programa encaixa no seu calendário antes de comprar.",
       seeAll: "Ver todos",
       chooseEyebrow: "Como escolher",
       chooseTitle: "Programa ou assessoria?",
@@ -33,9 +33,9 @@ export function ProgramsSection({
     },
     en: {
       eyebrow: "Training programs",
-      title: "Ready-to-buy programs for specific football moments",
+      title: "Four programs to cover the whole football year",
       body:
-        "Each program solves a specific player need: short offseason, strength and power, in-season maintenance or a structured return to consistent training.",
+        "Use the offseason to build strength and speed, sharpen the final 30 days before return, then maintain the work during the season.",
       seeAll: "See all",
       chooseEyebrow: "How to choose",
       chooseTitle: "Program or coaching?",
@@ -47,7 +47,7 @@ export function ProgramsSection({
   }[locale];
 
   return (
-    <section className="surface-grid bg-smoke py-16" id="programas">
+    <section className="surface-gradient py-16" id="programas">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="max-w-2xl">
@@ -72,83 +72,79 @@ export function ProgramsSection({
           ) : null}
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {visiblePrograms.map((program) => {
             const isExternal =
               !program.href.startsWith("/") && !program.href.startsWith("#");
 
-            return (
+            const content = (
               <article
-                className="group flex overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-ink/10"
+                className="group flex h-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
                 key={program.title}
               >
                 <div className="flex w-full flex-col">
                   <div className="relative overflow-hidden bg-ink">
                     <Image
                       alt={program.title}
-                      className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                      height={480}
+                      className={`aspect-[16/12] w-full object-cover transition duration-500 group-hover:scale-105 ${"imageClass" in program ? program.imageClass : "object-center"}`}
+                      height={520}
                       src={program.image}
-                      width={640}
+                      width={720}
                     />
-                    <div className="absolute left-4 top-4 rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-ink shadow-sm">
+                    <div className="absolute left-4 top-4 rounded-md bg-white/95 px-3 py-2 text-[11px] font-bold uppercase text-ink shadow-sm">
                       {program.tag}
                     </div>
-                    <div className="absolute bottom-4 left-4 rounded-md bg-ink/85 px-3 py-2 text-xs font-bold uppercase text-white backdrop-blur">
+                    <div className="absolute bottom-4 left-4 rounded-md bg-ink/85 px-3 py-2 text-[11px] font-bold uppercase text-white backdrop-blur">
                       {program.duration}
                     </div>
                   </div>
-                  <div className="flex min-h-[360px] flex-1 flex-col p-5">
+                  <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-bold uppercase text-signal">
                       {program.level}
                     </p>
-                    <h3 className="mt-3 text-xl font-bold text-ink">
+                    <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
                       {program.title}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-graphite/70">
                       {program.body}
                     </p>
-                    <ul className="mt-5 space-y-3">
-                      {program.outcomes.map((outcome) => (
-                        <li
-                          className="flex gap-3 text-sm leading-5 text-graphite/75"
-                          key={outcome}
-                        >
-                          <CheckCircle2
-                            aria-hidden="true"
-                            className="mt-0.5 h-4 w-4 shrink-0 text-turf"
-                          />
-                          <span>{outcome}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-auto pt-6">
+                    <p className="mt-auto inline-flex pt-5 text-sm font-bold text-ink">
+                      {program.cta}
                       {isExternal ? (
-                        <a
-                          className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-bold text-white transition hover:bg-graphite"
-                          href={program.href}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {program.cta}
-                          <ExternalLink
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                          />
-                        </a>
+                        <ExternalLink
+                          aria-hidden="true"
+                          className="ml-2 mt-0.5 h-4 w-4"
+                        />
                       ) : (
-                        <Link
-                          className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-bold text-white transition hover:bg-graphite"
-                          href={program.href}
-                        >
-                          {program.cta}
-                          <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                        </Link>
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="ml-2 mt-0.5 h-4 w-4"
+                        />
                       )}
-                    </div>
+                    </p>
                   </div>
                 </div>
               </article>
+            );
+
+            return isExternal ? (
+              <a
+                className="focus-ring block"
+                href={program.href}
+                key={program.title}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {content}
+              </a>
+            ) : (
+              <Link
+                className="focus-ring block"
+                href={program.href}
+                key={program.title}
+              >
+                {content}
+              </Link>
             );
           })}
         </div>

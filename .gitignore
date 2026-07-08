@@ -7,4 +7,8 @@ dist
 *.log
 tsconfig.tsbuildinfo
 .DS_Store
+.pnpm-store
 public/assets/logos/cbf-diploma.jpg
+.data
+private-files/*
+!private-files/.gitkeep

@@ -27,7 +27,9 @@ export function SiteHeader({
             src={assets.logo}
             width={40}
           />
-          <span className="font-display text-lg uppercase">RumoAoPro</span>
+          <span className="hidden font-display text-lg uppercase sm:inline">
+            RumoAoPro
+          </span>
         </Link>
         <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
           {navItems.map((item) => {

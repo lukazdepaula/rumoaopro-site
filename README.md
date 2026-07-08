@@ -8,6 +8,8 @@ Primeira versão do novo site da RumoAoPro, com landing bilíngue para a assesso
 - `/assessoria`: landing da assessoria em português.
 - `/en/coaching`: landing da assessoria em inglês.
 - `/programas`: vitrine dos programas atuais.
+- `/checkout/[slug]`: checkout próprio para programas digitais.
+- `/admin`: painel interno protegido para pedidos, entrega e fiscal.
 - `/links`: substituto do Komi/link da bio.
 - `/obrigado` e `/en/thank-you`: páginas pós-aplicação.
 
@@ -40,3 +42,17 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=5519981331996
 NEXT_PUBLIC_CONTACT_EMAIL=contato@rumoaopro.com.br
 NEXT_PUBLIC_SHOPIFY_URL=https://www.rumoaopro.com.br
 ```
+
+## Checkout próprio
+
+A estrutura inicial de vendas diretas está documentada em
+[`docs/checkout.md`](docs/checkout.md).
+
+Ela inclui:
+
+- Mercado Pago/Pix para Brasil com CPF/CNPJ obrigatório;
+- Stripe Checkout para clientes internacionais;
+- banco SQLite local para pedidos;
+- webhooks para confirmação real de pagamento;
+- entrega digital por link temporário assinado;
+- admin `/admin` com exportação fiscal em CSV.
