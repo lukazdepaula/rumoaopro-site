@@ -32,6 +32,13 @@ export default async function CheckoutSuccessPage({
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
   const accessHref =
     order?.status === "paid" && product ? `/my-programs/${product.slug}` : "/my-programs";
+  const title =
+    order?.status === "paid" ? "Pagamento confirmado" : "Pagamento em confirmação";
+  const description = order?.status === "paid"
+    ? "Pagamento aprovado. Seu acesso foi liberado e o e-mail de confirmação será enviado automaticamente."
+    : showMockActions
+      ? "Recebemos o retorno do checkout. No modo mock, use os botões abaixo para simular a confirmação."
+      : "Recebemos o retorno do checkout. Por segurança, o produto só é liberado quando o pagamento for confirmado pelo gateway.";
 
   return (
     <main className="min-h-screen bg-smoke">
@@ -43,12 +50,10 @@ export default async function CheckoutSuccessPage({
             className="mx-auto h-14 w-14 text-turf"
           />
           <h1 className="mt-6 font-display text-4xl uppercase leading-tight sm:text-5xl">
-            Pagamento em confirmação
+            {title}
           </h1>
           <p className="mt-5 text-base leading-8 text-white/70">
-            Recebemos o retorno do checkout. Por segurança, o produto só é
-            liberado quando o pagamento for confirmado pelo gateway. No modo
-            mock, use os botões abaixo para simular essa confirmação.
+            {description}
           </p>
           {order ? (
             <div className="mt-8 rounded-lg border border-white/15 bg-white/10 p-4 text-left">
