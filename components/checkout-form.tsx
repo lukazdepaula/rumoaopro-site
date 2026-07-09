@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Copy, Loader2 } from "lucide-react";
+import { ArrowRight, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
 import type { CheckoutProduct } from "@/lib/checkout/types";
 
 type CheckoutFormProps = {
@@ -122,6 +122,51 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
       </div>
 
       <form className="mt-5 grid gap-4" onSubmit={submit}>
+        <div className="rounded-md border border-ink/10 bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase text-graphite/55">
+                Pagamentos disponíveis
+              </p>
+              <p className="mt-1 text-sm font-semibold text-ink">
+                Brasil no Pix. Exterior no cartão internacional.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div
+                className={`flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
+                  !isBrazil
+                    ? "border-[#635bff] bg-[#f4f2ff] text-[#302a85]"
+                    : "border-ink/10 bg-smoke text-graphite/70"
+                }`}
+              >
+                <CreditCard aria-hidden="true" className="h-4 w-4" />
+                <span className="rounded-sm bg-[#635bff] px-2 py-1 text-xs font-black lowercase tracking-normal text-white">
+                  stripe
+                </span>
+              </div>
+              <div
+                className={`flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
+                  isBrazil
+                    ? "border-[#00a650] bg-[#ecfff5] text-[#006b3c]"
+                    : "border-ink/10 bg-smoke text-graphite/70"
+                }`}
+              >
+                <QrCode aria-hidden="true" className="h-4 w-4" />
+                <span className="rounded-sm bg-[#00a650] px-2 py-1 text-xs font-black text-white">
+                  Pix
+                </span>
+                <span className="hidden text-xs font-bold sm:inline">
+                  Mercado Pago
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs font-semibold text-graphite/60">
+            Forma deste checkout: {isBrazil ? "Mercado Pago / Pix" : "Stripe / Cartão"}.
+          </p>
+        </div>
+
         <label className="grid gap-2 text-sm font-semibold text-ink">
           País
           <select
