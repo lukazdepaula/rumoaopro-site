@@ -19,14 +19,22 @@ export function calculateLocalizedPrice(
 ) {
   const isBrazil = country.trim().toUpperCase() === "BR";
   const exchangeRate = isBrazil ? getUsdToBrlRate() : null;
+  const brlAmount =
+    Number.isFinite(product.price_brl) && product.price_brl > 0
+      ? Math.round(product.price_brl * 100) / 100
+      : usdToBrl(product.base_price_usd, exchangeRate || undefined);
+  const convertedBrlAmount = usdToBrl(
+    product.base_price_usd,
+    exchangeRate || undefined
+  );
+  const usesConvertedBrl =
+    isBrazil && Math.abs(brlAmount - convertedBrlAmount) < 0.01;
 
   return {
-    amount: isBrazil
-      ? usdToBrl(product.base_price_usd, exchangeRate || undefined)
-      : product.base_price_usd,
+    amount: isBrazil ? brlAmount : product.base_price_usd,
     currency: isBrazil ? "BRL" : "USD",
-    exchangeRateUsed: exchangeRate,
+    exchangeRateUsed: usesConvertedBrl ? exchangeRate : null,
     basePriceUsd: product.base_price_usd,
-    brlEstimate: usdToBrl(product.base_price_usd)
+    brlEstimate: product.price_brl_estimated
   };
 }

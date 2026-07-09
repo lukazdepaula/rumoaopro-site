@@ -66,8 +66,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
               O pedido é criado como pending e a liberação acontece somente
-              depois da confirmação do pagamento. Nesta etapa, o gateway está em
-              modo mock para testar o fluxo inteiro com segurança.
+              depois da confirmação do pagamento pelo gateway correto para o
+              país selecionado.
             </p>
           </div>
         </div>
@@ -91,8 +91,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             <div className="mt-6 grid gap-3">
               {[
                 "CPF/CNPJ exigido apenas para Brasil",
-                "Gateway mock para validar aprovado e recusado",
-                "Link temporário para download do PDF",
+                "Stripe para compras internacionais",
+                "Mercado Pago / Pix para compras no Brasil",
                 "Pedido registrado no painel interno"
               ].map((item) => (
                 <p className="flex gap-3 text-sm text-graphite/75" key={item}>

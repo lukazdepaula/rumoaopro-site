@@ -25,6 +25,13 @@ const productPrice = () => {
   };
 };
 
+const fixedBrlProductPrice = (basePriceUsd: number, brlPrice: number) => ({
+  base_price_usd: basePriceUsd,
+  price_usd: basePriceUsd,
+  price_brl_estimated: brlPrice,
+  price_brl: brlPrice
+});
+
 export const checkoutLinks = {
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
@@ -102,6 +109,23 @@ export const checkoutProducts: CheckoutProduct[] = [
     cover_image: "/assets/programs/elanga/elanga-cover.jpg",
     delivery_type: "member_area",
     file_id: "elanga-in-season.zip",
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "pix_webhook_test",
+    name: "Teste Pix R$ 1",
+    slug: "pix-webhook-test",
+    description:
+      "Produto interno para validar Mercado Pago, Pix, webhook e status paid.",
+    language: "Portuguese",
+    type: "other",
+    ...fixedBrlProductPrice(1, 1),
+    active: true,
+    sales_page_path: "/admin/products",
+    cover_image: "/assets/brand/rumoaopro-logo.svg",
+    delivery_type: "manual",
+    file_id: null,
     created_at: now,
     updated_at: now
   }
