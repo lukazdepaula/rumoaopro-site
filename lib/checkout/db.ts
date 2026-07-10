@@ -1125,7 +1125,6 @@ export async function consumeCustomerLoginToken(token: string) {
       {
         query: selectQuery([
           eq("token", token),
-          "used_at=is.null",
           `expires_at=gt.${encodeURIComponent(nowIso())}`,
           "limit=1"
         ])
@@ -1150,7 +1149,7 @@ export async function consumeCustomerLoginToken(token: string) {
   const row = getDatabase()
     .prepare(
       `SELECT * FROM customer_login_tokens
-       WHERE token = ? AND used_at IS NULL AND expires_at > ?`
+       WHERE token = ? AND expires_at > ?`
     )
     .get(token, nowIso());
 

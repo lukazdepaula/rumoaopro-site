@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   appendOrderLog,
+  createCustomerLoginToken,
   getOrderById,
   updateDeliveryStatus
 } from "@/lib/checkout/db";
@@ -93,12 +94,21 @@ export async function deliverOrder(orderId: string) {
   }
 
   if (product.delivery_type === "member_area") {
+    const accountPath = `/my-programs/${product.slug}`;
+    const login = await createCustomerLoginToken(
+      order.customer_email,
+      order.customer_name
+    );
+    const accountUrl = login
+      ? `${getSiteUrl()}/api/auth/verify?token=${login.token}&next=${encodeURIComponent(accountPath)}`
+      : `${getSiteUrl()}${accountPath}`;
+
     await sendProgramAccessEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       productName: product.name,
-      accountUrl: `${getSiteUrl()}/my-programs/${product.slug}`
+      accountUrl
     });
     await sendInternalSaleNotice({
       orderId: order.id,

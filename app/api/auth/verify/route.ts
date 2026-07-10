@@ -12,7 +12,12 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
+  const nextPath = url.searchParams.get("next");
   const siteUrl = url.origin;
+  const redirectPath =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : "/my-programs";
 
   if (!token) {
     return NextResponse.redirect(`${siteUrl}/login?error=missing-token`);
@@ -23,7 +28,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${siteUrl}/login?error=invalid-token`);
   }
 
-  const response = NextResponse.redirect(`${siteUrl}/my-programs`);
+  const response = NextResponse.redirect(`${siteUrl}${redirectPath}`);
   response.cookies.set(
     CUSTOMER_COOKIE_NAME,
     createCustomerSessionValue(user.id),
