@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
 import type { CheckoutProduct } from "@/lib/checkout/types";
 
@@ -13,6 +13,12 @@ type PixState = {
   qrCode?: unknown;
   qrCodeBase64?: unknown;
   ticketUrl?: unknown;
+};
+
+type OrderStatusResponse = {
+  status?: string;
+  deliveryStatus?: string;
+  error?: string;
 };
 
 const formatMoney = (amount: number, currency: string) =>
@@ -29,6 +35,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
+  const [pixStatus, setPixStatus] = useState<string | null>(null);
 
   const isBrazil = country === "BR";
   const price = useMemo(
@@ -52,6 +59,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
     event.preventDefault();
     setError("");
     setPix(null);
+    setPixStatus(null);
     setLoading(true);
 
     try {
@@ -90,6 +98,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           orderId: payload.orderId,
           ...payload.pix
         });
+        setPixStatus("pending");
       }
     } catch {
       setError("Erro de conexão ao iniciar checkout.");
@@ -102,6 +111,46 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
     if (typeof pix?.qrCode !== "string") return;
     await navigator.clipboard.writeText(pix.qrCode);
   }
+
+  useEffect(() => {
+    const orderId = pix?.orderId;
+    if (!orderId) return;
+    const activeOrderId: string = orderId;
+
+    let stopped = false;
+
+    async function checkPixStatus() {
+      try {
+        const response = await fetch(
+          `/api/checkout/status/${encodeURIComponent(activeOrderId)}`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as OrderStatusResponse;
+        if (stopped || typeof payload.status !== "string") return;
+
+        setPixStatus(payload.status);
+
+        if (payload.status === "paid") {
+          window.location.href = `/checkout/success?order_id=${encodeURIComponent(
+            activeOrderId
+          )}`;
+        }
+      } catch {
+        // Keep the QR Code available if a transient status check fails.
+      }
+    }
+
+    void checkPixStatus();
+    const interval = window.setInterval(checkPixStatus, 4000);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+    };
+  }, [pix?.orderId]);
 
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
@@ -252,9 +301,22 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         <div className="mt-6 rounded-lg border border-turf/20 bg-turf/5 p-4">
           <p className="text-sm font-bold uppercase text-turf">Pix gerado</p>
           <p className="mt-2 text-sm leading-6 text-graphite/72">
-            Pedido {pix.orderId}. O produto só será liberado após confirmação do
-            Mercado Pago via webhook.
+            Pedido {pix.orderId}. Mantenha esta tela aberta: quando o Mercado
+            Pago confirmar o Pix, o acesso será liberado automaticamente e você
+            também receberá o e-mail de acesso.
           </p>
+          <div className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-ink/10 bg-white px-3 text-sm font-bold text-ink">
+            {pixStatus === "paid" ||
+            pixStatus === "failed" ||
+            pixStatus === "cancelled" ? null : (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin text-turf" />
+            )}
+            {pixStatus === "paid"
+              ? "Pagamento recebido. Redirecionando..."
+              : pixStatus === "failed" || pixStatus === "cancelled"
+                ? "Pagamento não confirmado. Gere um novo Pix se necessário."
+                : "Aguardando confirmação do Pix..."}
+          </div>
           {typeof pix.qrCodeBase64 === "string" ? (
             <img
               alt="QR Code Pix"
