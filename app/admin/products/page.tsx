@@ -1,6 +1,8 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
+import { listMaterialsByProductId } from "@/lib/checkout/db";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +13,14 @@ export const metadata: Metadata = {
 
 export default async function AdminProductsPage() {
   await requireAdmin();
+  const rows = await Promise.all(
+    checkoutProducts.map(async (product) => ({
+      product,
+      materials: await listMaterialsByProductId(product.id, {
+        includeInactive: true
+      })
+    }))
+  );
 
   return (
     <AdminShell title="Produtos">
@@ -25,10 +35,11 @@ export default async function AdminProductsPage() {
               <th className="px-4 py-3">Estimativa BRL</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Venda</th>
+              <th className="px-4 py-3">Materiais</th>
             </tr>
           </thead>
           <tbody>
-            {checkoutProducts.map((product) => (
+            {rows.map(({ product, materials }) => (
               <tr className="border-t border-ink/10" key={product.id}>
                 <td className="px-4 py-3 font-bold text-ink">{product.name}</td>
                 <td className="px-4 py-3 text-graphite/80">{product.slug}</td>
@@ -44,6 +55,14 @@ export default async function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-3 text-graphite/80">
                   {product.sales_page_path}
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink hover:bg-smoke"
+                    href={`/admin/products/${product.id}/materials`}
+                  >
+                    Editar {materials.length}
+                  </Link>
                 </td>
               </tr>
             ))}

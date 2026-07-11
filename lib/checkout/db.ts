@@ -264,16 +264,7 @@ function seedProgramMaterials(db: SqliteDatabase) {
       file_path_private, external_url, created_at, updated_at
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      product_id = excluded.product_id,
-      title = excluded.title,
-      description = excluded.description,
-      type = excluded.type,
-      sort_order = excluded.sort_order,
-      is_active = excluded.is_active,
-      file_path_private = excluded.file_path_private,
-      external_url = excluded.external_url,
-      updated_at = excluded.updated_at
+    ON CONFLICT(id) DO NOTHING
   `);
 
   for (const material of programMaterials) {
@@ -529,7 +520,7 @@ async function ensureSupabaseSeeded() {
     method: "POST",
     query: "on_conflict=id",
     body: programMaterials.map(encodeMaterial),
-    prefer: "resolution=merge-duplicates,return=minimal"
+    prefer: "resolution=ignore-duplicates,return=minimal"
   });
 
   supabaseSeeded = true;
@@ -1395,6 +1386,35 @@ export async function getMaterialsByProductId(productId: string) {
     .map(normalizeMaterial);
 }
 
+export async function listMaterialsByProductId(
+  productId: string,
+  options: { includeInactive?: boolean } = {}
+) {
+  if (useSupabaseDriver()) {
+    await ensureSupabaseSeeded();
+    const parts = [eq("product_id", productId), "order=sort_order.asc"];
+    if (!options.includeInactive) {
+      parts.push("is_active=eq.true");
+    }
+
+    return (
+      await supabaseRequest<Record<string, unknown>[]>("program_materials", {
+        query: selectQuery(parts)
+      })
+    ).map(normalizeMaterial);
+  }
+
+  const activeClause = options.includeInactive ? "" : "AND is_active = 1";
+  return getDatabase()
+    .prepare(
+      `SELECT * FROM program_materials
+       WHERE product_id = ? ${activeClause}
+       ORDER BY sort_order ASC`
+    )
+    .all(productId)
+    .map(normalizeMaterial);
+}
+
 export async function getMaterialById(id: string) {
   if (useSupabaseDriver()) {
     await ensureSupabaseSeeded();
@@ -1412,6 +1432,119 @@ export async function getMaterialById(id: string) {
     .get(id);
 
   return row ? normalizeMaterial(row) : null;
+}
+
+export async function getMaterialByIdForAdmin(id: string) {
+  if (useSupabaseDriver()) {
+    await ensureSupabaseSeeded();
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "program_materials",
+      {
+        query: selectQuery([eq("id", id), "limit=1"])
+      }
+    );
+    return rows[0] ? normalizeMaterial(rows[0]) : null;
+  }
+
+  const row = getDatabase()
+    .prepare("SELECT * FROM program_materials WHERE id = ?")
+    .get(id);
+
+  return row ? normalizeMaterial(row) : null;
+}
+
+export type SaveProgramMaterialInput = {
+  id?: string;
+  product_id: string;
+  title: string;
+  description: string;
+  type: ProgramMaterial["type"];
+  sort_order: number;
+  is_active: boolean;
+  file_path_private?: string | null;
+  external_url?: string | null;
+};
+
+export async function saveProgramMaterial(input: SaveProgramMaterialInput) {
+  const id = input.id || randomUUID();
+  const existing = input.id ? await getMaterialByIdForAdmin(input.id) : null;
+  const timestamp = nowIso();
+  const material = {
+    id,
+    product_id: input.product_id,
+    title: input.title,
+    description: input.description,
+    type: input.type,
+    sort_order: input.sort_order,
+    is_active: input.is_active,
+    file_path_private:
+      input.file_path_private === undefined
+        ? existing?.file_path_private ?? null
+        : input.file_path_private,
+    external_url:
+      input.external_url === undefined
+        ? existing?.external_url ?? null
+        : input.external_url,
+    created_at: existing?.created_at || timestamp,
+    updated_at: timestamp
+  };
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("program_materials", {
+      method: "POST",
+      query: "on_conflict=id",
+      body: material,
+      prefer: "resolution=merge-duplicates,return=minimal"
+    });
+    return getMaterialByIdForAdmin(id);
+  }
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO program_materials (
+        id, product_id, title, description, type, sort_order, is_active,
+        file_path_private, external_url, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        product_id = excluded.product_id,
+        title = excluded.title,
+        description = excluded.description,
+        type = excluded.type,
+        sort_order = excluded.sort_order,
+        is_active = excluded.is_active,
+        file_path_private = excluded.file_path_private,
+        external_url = excluded.external_url,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      material.id,
+      material.product_id,
+      material.title,
+      material.description,
+      material.type,
+      material.sort_order,
+      material.is_active ? 1 : 0,
+      material.file_path_private,
+      material.external_url,
+      material.created_at,
+      material.updated_at
+    );
+
+  return getMaterialByIdForAdmin(id);
+}
+
+export async function deleteProgramMaterial(id: string) {
+  if (useSupabaseDriver()) {
+    await supabaseRequest("program_materials", {
+      method: "DELETE",
+      query: eq("id", id),
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  getDatabase().prepare("DELETE FROM program_materials WHERE id = ?").run(id);
 }
 
 export type OrderFilters = {
