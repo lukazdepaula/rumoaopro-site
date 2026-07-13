@@ -25,14 +25,31 @@ function sortOrder(value: string) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1;
 }
 
+function materialTitleFromName(name: string) {
+  return name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
+}
+
 function materialTitleFromFile(file: File) {
-  return file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
+  return materialTitleFromName(file.name);
 }
 
 function uploadedFiles(formData: FormData) {
   return formData
     .getAll("material_file")
     .filter((value): value is File => value instanceof File && value.size > 0);
+}
+
+function directUploadedFiles(formData: FormData) {
+  const names = formData.getAll("uploaded_file_name").map(textValue);
+
+  return formData
+    .getAll("uploaded_file_path")
+    .map(textValue)
+    .filter(Boolean)
+    .map((path, index) => ({
+      name: names[index] || path.split("/").pop() || "",
+      path
+    }));
 }
 
 export async function POST(
@@ -51,6 +68,7 @@ export async function POST(
   }
 
   const formData = await request.formData();
+  const directFiles = directUploadedFiles(formData);
   const files = uploadedFiles(formData);
   const title = textValue(formData.get("title"));
   const description = textValue(formData.get("description"));
@@ -59,6 +77,31 @@ export async function POST(
   const isActive = formData.get("is_active") === "on";
   const externalUrl = textValue(formData.get("external_url")) || null;
   const manualFilePath = textValue(formData.get("file_path_private")) || null;
+
+  if (directFiles.length > 0) {
+    await Promise.all(
+      directFiles.map(async (file, index) =>
+        saveProgramMaterial({
+          product_id: product.id,
+          title:
+            title ||
+            materialTitleFromName(file.name) ||
+            `Material ${index + 1}`,
+          description,
+          type,
+          sort_order: baseSortOrder + index,
+          is_active: isActive,
+          file_path_private: file.path,
+          external_url: null
+        })
+      )
+    );
+
+    return NextResponse.redirect(
+      new URL(`/admin/products/${product.id}/materials?created=1`, request.url),
+      303
+    );
+  }
 
   if (files.length > 0) {
     await Promise.all(

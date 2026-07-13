@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { AdminMaterialUploadBridge } from "@/components/admin-material-upload-bridge";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { listMaterialsByProductId } from "@/lib/checkout/db";
@@ -32,6 +33,8 @@ function MaterialForm({ material }: { material: ProgramMaterial }) {
     <form
       action={`/api/admin/materials/${material.id}`}
       className="grid gap-4 rounded-lg border border-ink/10 bg-white p-4"
+      data-material-upload-form
+      data-product-id={material.product_id}
       encType="multipart/form-data"
       method="post"
     >
@@ -175,6 +178,11 @@ function MaterialForm({ material }: { material: ProgramMaterial }) {
           Excluir
         </button>
       </div>
+      <p
+        aria-live="polite"
+        className="min-h-5 text-sm font-bold text-signal"
+        data-upload-status
+      />
     </form>
   );
 }
@@ -256,6 +264,8 @@ export default async function ProductMaterialsPage({
           <form
             action={`/api/admin/products/${product.id}/materials`}
             className="mt-4 grid gap-4"
+            data-material-upload-form
+            data-product-id={product.id}
             encType="multipart/form-data"
             method="post"
           >
@@ -339,9 +349,15 @@ export default async function ProductMaterialsPage({
             <button className="min-h-11 rounded-md bg-ink px-4 text-sm font-bold text-white" type="submit">
               Adicionar
             </button>
+            <p
+              aria-live="polite"
+              className="min-h-5 text-sm font-bold text-signal"
+              data-upload-status
+            />
           </form>
         </aside>
       </div>
+      <AdminMaterialUploadBridge />
     </AdminShell>
   );
 }

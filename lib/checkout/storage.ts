@@ -121,6 +121,58 @@ export async function uploadMaterialFile(input: {
   return `${SUPABASE_STORAGE_PREFIX}${config.bucket}/${objectPath}`;
 }
 
+export async function createSignedMaterialUpload(input: {
+  productId: string;
+  filename: string;
+}) {
+  await ensureBucket();
+
+  const config = storageConfig();
+  const filename = safeFilename(input.filename);
+  const objectPath = `${input.productId}/${Date.now()}-${randomUUID()}-${filename}`;
+  const response = await fetch(
+    `${config.url}/storage/v1/object/upload/sign/${config.bucket}/${encodeStoragePath(objectPath)}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        "Content-Type": "application/json",
+        "x-upsert": "true"
+      },
+      body: "{}",
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Erro ao criar upload seguro: ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    url?: string;
+    signedURL?: string;
+    signedUrl?: string;
+  };
+  const signedPath = data.url || data.signedURL || data.signedUrl;
+
+  if (!signedPath) {
+    throw new Error("Supabase não retornou uma URL de upload.");
+  }
+
+  const signedUrl = signedPath.startsWith("http")
+    ? signedPath
+    : `${config.url}/storage/v1${
+        signedPath.startsWith("/") ? signedPath : `/${signedPath}`
+      }`;
+
+  return {
+    objectPath,
+    signedUrl,
+    storagePath: `${SUPABASE_STORAGE_PREFIX}${config.bucket}/${objectPath}`
+  };
+}
+
 export async function fetchSupabaseMaterial(value: string) {
   const parsed = parseSupabaseMaterialPath(value);
   if (!parsed) return null;

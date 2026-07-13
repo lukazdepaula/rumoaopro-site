@@ -33,6 +33,15 @@ async function materialPathFromForm(
   formData: FormData,
   fallback: string | null
 ) {
+  const directUploadPath = textValue(formData.get("uploaded_file_path"));
+
+  if (directUploadPath) {
+    return {
+      filePathPrivate: directUploadPath,
+      uploaded: true
+    };
+  }
+
   const upload = formData.get("material_file");
 
   if (upload instanceof File && upload.size > 0) {
