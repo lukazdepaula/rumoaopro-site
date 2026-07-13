@@ -778,6 +778,32 @@ export async function updateOrderStatus(
   });
 }
 
+export async function deleteOrder(orderId: string) {
+  if (useSupabaseDriver()) {
+    await supabaseRequest("entitlements", {
+      method: "DELETE",
+      query: eq("order_id", orderId),
+      prefer: "return=minimal"
+    });
+    await supabaseRequest("order_logs", {
+      method: "DELETE",
+      query: eq("order_id", orderId),
+      prefer: "return=minimal"
+    });
+    await supabaseRequest("orders", {
+      method: "DELETE",
+      query: eq("id", orderId),
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  const db = getDatabase();
+  db.prepare("DELETE FROM entitlements WHERE order_id = ?").run(orderId);
+  db.prepare("DELETE FROM order_logs WHERE order_id = ?").run(orderId);
+  db.prepare("DELETE FROM orders WHERE id = ?").run(orderId);
+}
+
 export async function updateDeliveryStatus(
   orderId: string,
   deliveryStatus: DeliveryStatus,

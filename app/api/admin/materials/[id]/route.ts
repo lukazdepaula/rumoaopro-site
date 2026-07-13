@@ -30,7 +30,8 @@ function sortOrder(value: string) {
 
 async function materialPathFromForm(
   productId: string,
-  formData: FormData
+  formData: FormData,
+  fallback: string | null
 ) {
   const upload = formData.get("material_file");
 
@@ -41,8 +42,22 @@ async function materialPathFromForm(
     };
   }
 
+  if (formData.get("clear_file") === "on") {
+    return {
+      filePathPrivate: null,
+      uploaded: false
+    };
+  }
+
+  if (formData.has("file_path_private")) {
+    return {
+      filePathPrivate: textValue(formData.get("file_path_private")) || null,
+      uploaded: false
+    };
+  }
+
   return {
-    filePathPrivate: textValue(formData.get("file_path_private")) || null,
+    filePathPrivate: fallback,
     uploaded: false
   };
 }
@@ -75,7 +90,8 @@ export async function POST(
 
   const { filePathPrivate, uploaded } = await materialPathFromForm(
     material.product_id,
-    formData
+    formData,
+    material.file_path_private
   );
 
   await saveProgramMaterial({

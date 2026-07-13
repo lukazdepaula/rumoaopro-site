@@ -26,6 +26,7 @@ export default async function AdminOrdersPage({
     gateway?: string;
     country?: string;
     product?: string;
+    deleted?: string;
   }>;
 }) {
   await requireAdmin();
@@ -34,6 +35,12 @@ export default async function AdminOrdersPage({
 
   return (
     <AdminShell title="Pedidos">
+      {filters.deleted ? (
+        <p className="mb-5 rounded-lg border border-turf/20 bg-turf/10 px-4 py-3 text-sm font-bold text-turf">
+          Pedido excluído.
+        </p>
+      ) : null}
+
       <form className="grid gap-3 rounded-lg border border-ink/10 bg-white p-4 md:grid-cols-5" method="get">
         <select className="min-h-11 rounded-md border border-ink/15 px-3 text-sm" name="status" defaultValue={filters.status || ""}>
           <option value="">Todos os status</option>
@@ -76,6 +83,7 @@ export default async function AdminOrdersPage({
               <th className="px-4 py-3">Fiscal</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Câmbio</th>
+              <th className="px-4 py-3">Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -105,11 +113,19 @@ export default async function AdminOrdersPage({
                 <td className="px-4 py-3 text-graphite/80">
                   {order.exchange_rate_used ? order.exchange_rate_used.toFixed(4) : "-"}
                 </td>
+                <td className="px-4 py-3">
+                  <Link
+                    className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink"
+                    href={`/admin/orders/${order.id}`}
+                  >
+                    Abrir
+                  </Link>
+                </td>
               </tr>
             ))}
             {orders.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-graphite/60" colSpan={9}>
+                <td className="px-4 py-8 text-center text-graphite/60" colSpan={10}>
                   Nenhum pedido encontrado.
                 </td>
               </tr>

@@ -25,20 +25,14 @@ function sortOrder(value: string) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1;
 }
 
-async function materialPathFromForm(productId: string, formData: FormData) {
-  const upload = formData.get("material_file");
+function materialTitleFromFile(file: File) {
+  return file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
+}
 
-  if (upload instanceof File && upload.size > 0) {
-    return {
-      filePathPrivate: await uploadMaterialFile({ productId, file: upload }),
-      uploaded: true
-    };
-  }
-
-  return {
-    filePathPrivate: textValue(formData.get("file_path_private")) || null,
-    uploaded: false
-  };
+function uploadedFiles(formData: FormData) {
+  return formData
+    .getAll("material_file")
+    .filter((value): value is File => value instanceof File && value.size > 0);
 }
 
 export async function POST(
@@ -57,20 +51,53 @@ export async function POST(
   }
 
   const formData = await request.formData();
-  const { filePathPrivate, uploaded } = await materialPathFromForm(
-    product.id,
-    formData
-  );
+  const files = uploadedFiles(formData);
+  const title = textValue(formData.get("title"));
+  const description = textValue(formData.get("description"));
+  const type = materialType(textValue(formData.get("type")));
+  const baseSortOrder = sortOrder(textValue(formData.get("sort_order")));
+  const isActive = formData.get("is_active") === "on";
+  const externalUrl = textValue(formData.get("external_url")) || null;
+  const manualFilePath = textValue(formData.get("file_path_private")) || null;
+
+  if (files.length > 0) {
+    await Promise.all(
+      files.map(async (file, index) =>
+        saveProgramMaterial({
+          product_id: product.id,
+          title: title || materialTitleFromFile(file) || `Material ${index + 1}`,
+          description,
+          type,
+          sort_order: baseSortOrder + index,
+          is_active: isActive,
+          file_path_private: await uploadMaterialFile({ productId: product.id, file }),
+          external_url: null
+        })
+      )
+    );
+
+    return NextResponse.redirect(
+      new URL(`/admin/products/${product.id}/materials?created=1`, request.url),
+      303
+    );
+  }
+
+  if (!title) {
+    return NextResponse.json(
+      { error: "Informe um título ou suba pelo menos um arquivo." },
+      { status: 400 }
+    );
+  }
 
   await saveProgramMaterial({
     product_id: product.id,
-    title: textValue(formData.get("title")),
-    description: textValue(formData.get("description")),
-    type: materialType(textValue(formData.get("type"))),
-    sort_order: sortOrder(textValue(formData.get("sort_order"))),
-    is_active: formData.get("is_active") === "on",
-    file_path_private: filePathPrivate,
-    external_url: uploaded ? null : textValue(formData.get("external_url")) || null
+    title,
+    description,
+    type,
+    sort_order: baseSortOrder,
+    is_active: isActive,
+    file_path_private: manualFilePath,
+    external_url: externalUrl
   });
 
   return NextResponse.redirect(

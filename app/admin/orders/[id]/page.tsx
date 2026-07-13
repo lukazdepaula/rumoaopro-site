@@ -74,9 +74,18 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               Reenviar entrega/e-mail
             </button>
           </form>
+          <form action={`/api/admin/orders/${order.id}/delete`} method="post">
+            <button className="min-h-11 w-full rounded-md border border-red-200 px-4 text-sm font-bold text-red-700" type="submit">
+              Excluir pedido
+            </button>
+          </form>
           <p className="text-xs leading-5 text-graphite/60">
             Reenvio só entrega PDF se o pedido estiver paid e o arquivo privado
             existir no diretório configurado.
+          </p>
+          <p className="rounded-md bg-red-50 p-3 text-xs leading-5 text-red-700">
+            Excluir remove o pedido, os logs e qualquer acesso liberado por esse
+            pedido. Use principalmente para testes ou duplicados.
           </p>
         </aside>
       </div>

@@ -107,7 +107,7 @@ function MaterialForm({ material }: { material: ProgramMaterial }) {
       </div>
 
       <label className="grid gap-2 text-sm font-bold text-ink">
-        Link externo
+        Link externo ou vídeo
         <input
           className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
           defaultValue={material.external_url || ""}
@@ -117,15 +117,20 @@ function MaterialForm({ material }: { material: ProgramMaterial }) {
         />
       </label>
 
-      <label className="grid gap-2 text-sm font-bold text-ink">
-        Arquivo privado atual
-        <input
-          className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
-          defaultValue={material.file_path_private || ""}
-          name="file_path_private"
-          placeholder="Ex: supabase:program-materials/produto/arquivo.pdf"
-        />
-      </label>
+      {material.file_path_private ? (
+        <div className="rounded-md border border-ink/10 bg-smoke p-3">
+          <p className="text-xs font-bold uppercase text-graphite/55">
+            Arquivo conectado
+          </p>
+          <p className="mt-1 break-all text-xs text-graphite/70">
+            {material.file_path_private}
+          </p>
+          <label className="mt-3 flex items-center gap-2 text-sm font-bold text-ink">
+            <input className="h-4 w-4" name="clear_file" type="checkbox" />
+            Remover arquivo atual
+          </label>
+        </div>
+      ) : null}
 
       <label className="grid gap-2 text-sm font-bold text-ink">
         Subir novo PDF/arquivo
@@ -135,6 +140,21 @@ function MaterialForm({ material }: { material: ProgramMaterial }) {
           type="file"
         />
       </label>
+
+      <details className="rounded-md border border-ink/10 bg-smoke p-3 text-sm">
+        <summary className="cursor-pointer font-bold text-ink">
+          Configuração avançada
+        </summary>
+        <label className="mt-3 grid gap-2 text-sm font-bold text-ink">
+          Caminho privado manual
+          <input
+            className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
+            defaultValue={material.file_path_private || ""}
+            name="file_path_private"
+            placeholder="Ex: supabase:program-materials/produto/arquivo.pdf"
+          />
+        </label>
+      </details>
 
       <div className="flex flex-wrap gap-3">
         <button
@@ -203,9 +223,14 @@ export default async function ProductMaterialsPage({
         </p>
         <h2 className="mt-1 text-lg font-bold text-ink">{product.slug}</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-graphite/75">
-          Use esta tela para controlar o que aparece na área do cliente depois
-          da compra. Arquivos enviados aqui ficam privados e só abrem para quem
-          tem acesso ativo ao produto.
+          Use esta tela como uma biblioteca do produto. Adicione PDFs, vídeos,
+          links ou textos na quantidade que quiser, depois ajuste o campo
+          Ordem para definir a sequência que o atleta vê na área do cliente.
+          Arquivos enviados aqui ficam privados e só abrem para quem tem acesso
+          ativo ao produto.
+        </p>
+        <p className="mt-2 text-sm font-bold text-ink">
+          Dica: pode excluir os materiais padrão e montar sua própria ordem do zero.
         </p>
       </section>
 
@@ -224,6 +249,10 @@ export default async function ProductMaterialsPage({
 
         <aside className="self-start rounded-lg border border-ink/10 bg-white p-4">
           <h2 className="text-lg font-bold text-ink">Adicionar material</h2>
+          <p className="mt-2 text-sm leading-6 text-graphite/70">
+            Para vários PDFs, selecione todos no campo de arquivo. Se o título
+            ficar vazio, o nome de cada arquivo vira o título do material.
+          </p>
           <form
             action={`/api/admin/products/${product.id}/materials`}
             className="mt-4 grid gap-4"
@@ -235,8 +264,7 @@ export default async function ProductMaterialsPage({
               <input
                 className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
                 name="title"
-                placeholder="Ex: PDF principal"
-                required
+                placeholder="Opcional ao subir arquivos"
               />
             </label>
             <label className="grid gap-2 text-sm font-bold text-ink">
@@ -278,7 +306,7 @@ export default async function ProductMaterialsPage({
               Ativo
             </label>
             <label className="grid gap-2 text-sm font-bold text-ink">
-              Link externo
+              Link externo ou vídeo
               <input
                 className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
                 name="external_url"
@@ -287,21 +315,27 @@ export default async function ProductMaterialsPage({
               />
             </label>
             <label className="grid gap-2 text-sm font-bold text-ink">
-              Arquivo privado manual
-              <input
-                className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
-                name="file_path_private"
-                placeholder="Opcional"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
               Subir PDF/arquivo
               <input
                 className="rounded-md border border-dashed border-ink/25 bg-smoke px-3 py-3 text-sm font-normal"
+                multiple
                 name="material_file"
                 type="file"
               />
             </label>
+            <details className="rounded-md border border-ink/10 bg-smoke p-3 text-sm">
+              <summary className="cursor-pointer font-bold text-ink">
+                Configuração avançada
+              </summary>
+              <label className="mt-3 grid gap-2 text-sm font-bold text-ink">
+                Caminho privado manual
+                <input
+                  className="min-h-11 rounded-md border border-ink/15 px-3 text-sm font-normal"
+                  name="file_path_private"
+                  placeholder="Opcional"
+                />
+              </label>
+            </details>
             <button className="min-h-11 rounded-md bg-ink px-4 text-sm font-bold text-white" type="submit">
               Adicionar
             </button>
