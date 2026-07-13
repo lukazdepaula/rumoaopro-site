@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
-import { checkoutProducts, programMaterials } from "@/lib/checkout/products";
+import { checkoutProducts } from "@/lib/checkout/products";
 import type {
   AccessStatus,
   CustomerUser,
@@ -58,7 +58,7 @@ function getDatabase() {
   database.exec("PRAGMA foreign_keys = ON;");
   migrate(database);
   seedProducts(database);
-  seedProgramMaterials(database);
+  removeDefaultProgramMaterials(database);
 
   return database;
 }
@@ -257,31 +257,22 @@ function seedProducts(db: SqliteDatabase) {
   }
 }
 
-function seedProgramMaterials(db: SqliteDatabase) {
-  const statement = db.prepare(`
-    INSERT INTO program_materials (
-      id, product_id, title, description, type, sort_order, is_active,
-      file_path_private, external_url, created_at, updated_at
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO NOTHING
-  `);
+const defaultProgramMaterialSuffixes = ["overview", "main_material", "support"];
 
-  for (const material of programMaterials) {
-    statement.run(
-      material.id,
-      material.product_id,
-      material.title,
-      material.description,
-      material.type,
-      material.sort_order,
-      material.is_active ? 1 : 0,
-      material.file_path_private,
-      material.external_url,
-      material.created_at,
-      material.updated_at
-    );
-  }
+function defaultProgramMaterialIds() {
+  return checkoutProducts.flatMap((product) =>
+    defaultProgramMaterialSuffixes.map((suffix) => `${product.id}_${suffix}`)
+  );
+}
+
+function removeDefaultProgramMaterials(db: SqliteDatabase) {
+  const ids = defaultProgramMaterialIds();
+  if (ids.length === 0) return;
+
+  const placeholders = ids.map(() => "?").join(", ");
+  db.prepare(`DELETE FROM program_materials WHERE id IN (${placeholders})`).run(
+    ...ids
+  );
 }
 
 function parseMetadata(value: unknown) {
@@ -500,23 +491,18 @@ function encodeProduct(product: (typeof checkoutProducts)[number]) {
   };
 }
 
-function encodeMaterial(material: ProgramMaterial) {
-  return {
-    id: material.id,
-    product_id: material.product_id,
-    title: material.title,
-    description: material.description,
-    type: material.type,
-    sort_order: material.sort_order,
-    is_active: material.is_active,
-    file_path_private: material.file_path_private,
-    external_url: material.external_url,
-    created_at: material.created_at,
-    updated_at: material.updated_at
-  };
-}
-
 let supabaseSeeded = false;
+
+async function removeSupabaseDefaultProgramMaterials() {
+  const ids = defaultProgramMaterialIds();
+  if (ids.length === 0) return;
+
+  await supabaseRequest("program_materials", {
+    method: "DELETE",
+    query: `id=in.(${ids.map(encodeURIComponent).join(",")})`,
+    prefer: "return=minimal"
+  });
+}
 
 async function ensureSupabaseSeeded() {
   if (!useSupabaseDriver() || supabaseSeeded) return;
@@ -528,12 +514,7 @@ async function ensureSupabaseSeeded() {
     prefer: "resolution=merge-duplicates,return=minimal"
   });
 
-  await supabaseRequest("program_materials", {
-    method: "POST",
-    query: "on_conflict=id",
-    body: programMaterials.map(encodeMaterial),
-    prefer: "resolution=ignore-duplicates,return=minimal"
-  });
+  await removeSupabaseDefaultProgramMaterials();
 
   supabaseSeeded = true;
 }
