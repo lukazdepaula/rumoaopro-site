@@ -334,6 +334,18 @@ function normalizeOrder(row: Record<string, unknown>): Order {
   };
 }
 
+function isAdminDeletedOrder(order: Order) {
+  return (
+    order.metadata.admin_deleted === true ||
+    order.metadata.admin_deleted === "true"
+  );
+}
+
+function normalizeVisibleOrder(row: Record<string, unknown>) {
+  const order = normalizeOrder(row);
+  return isAdminDeletedOrder(order) ? null : order;
+}
+
 function normalizeUser(row: Record<string, unknown>): CustomerUser {
   return {
     id: String(row.id),
@@ -632,13 +644,13 @@ export async function getOrderById(id: string) {
     const rows = await supabaseRequest<Record<string, unknown>[]>("orders", {
       query: selectQuery([eq("id", id), "limit=1"])
     });
-    return rows[0] ? normalizeOrder(rows[0]) : null;
+    return rows[0] ? normalizeVisibleOrder(rows[0]) : null;
   }
 
   const row = getDatabase()
     .prepare("SELECT * FROM orders WHERE id = ?")
     .get(id);
-  return row ? normalizeOrder(row) : null;
+  return row ? normalizeVisibleOrder(row) : null;
 }
 
 export async function getOrderByGatewayPaymentId(gateway: Gateway, paymentId: string) {
@@ -651,7 +663,7 @@ export async function getOrderByGatewayPaymentId(gateway: Gateway, paymentId: st
         "limit=1"
       ])
     });
-    return rows[0] ? normalizeOrder(rows[0]) : null;
+    return rows[0] ? normalizeVisibleOrder(rows[0]) : null;
   }
 
   const row = getDatabase()
@@ -659,7 +671,7 @@ export async function getOrderByGatewayPaymentId(gateway: Gateway, paymentId: st
       "SELECT * FROM orders WHERE gateway = ? AND gateway_payment_id = ?"
     )
     .get(gateway, paymentId);
-  return row ? normalizeOrder(row) : null;
+  return row ? normalizeVisibleOrder(row) : null;
 }
 
 export async function getOrderByGatewayCheckoutId(gateway: Gateway, checkoutId: string) {
@@ -672,7 +684,7 @@ export async function getOrderByGatewayCheckoutId(gateway: Gateway, checkoutId: 
         "limit=1"
       ])
     });
-    return rows[0] ? normalizeOrder(rows[0]) : null;
+    return rows[0] ? normalizeVisibleOrder(rows[0]) : null;
   }
 
   const row = getDatabase()
@@ -680,7 +692,7 @@ export async function getOrderByGatewayCheckoutId(gateway: Gateway, checkoutId: 
       "SELECT * FROM orders WHERE gateway = ? AND gateway_checkout_id = ?"
     )
     .get(gateway, checkoutId);
-  return row ? normalizeOrder(row) : null;
+  return row ? normalizeVisibleOrder(row) : null;
 }
 
 export async function updateOrderGatewayIds(
@@ -779,6 +791,14 @@ export async function updateOrderStatus(
 }
 
 export async function deleteOrder(orderId: string) {
+  const order = await getOrderById(orderId);
+  const deletedAt = nowIso();
+  const metadata = {
+    ...(order?.metadata || {}),
+    admin_deleted: true,
+    admin_deleted_at: deletedAt
+  };
+
   if (useSupabaseDriver()) {
     await supabaseRequest("entitlements", {
       method: "DELETE",
@@ -791,8 +811,14 @@ export async function deleteOrder(orderId: string) {
       prefer: "return=minimal"
     });
     await supabaseRequest("orders", {
-      method: "DELETE",
+      method: "PATCH",
       query: eq("id", orderId),
+      body: {
+        status: "cancelled",
+        delivery_status: "not_delivered",
+        metadata,
+        updated_at: deletedAt
+      },
       prefer: "return=minimal"
     });
     return;
@@ -801,7 +827,14 @@ export async function deleteOrder(orderId: string) {
   const db = getDatabase();
   db.prepare("DELETE FROM entitlements WHERE order_id = ?").run(orderId);
   db.prepare("DELETE FROM order_logs WHERE order_id = ?").run(orderId);
-  db.prepare("DELETE FROM orders WHERE id = ?").run(orderId);
+  db.prepare(
+    `UPDATE orders
+     SET status = 'cancelled',
+         delivery_status = 'not_delivered',
+         metadata = ?,
+         updated_at = ?
+     WHERE id = ?`
+  ).run(JSON.stringify(metadata), deletedAt, orderId);
 }
 
 export async function updateDeliveryStatus(
@@ -1594,7 +1627,9 @@ export async function listOrders(filters: OrderFilters = {}) {
       await supabaseRequest<Record<string, unknown>[]>("orders", {
         query: selectQuery(parts)
       })
-    ).map(normalizeOrder);
+    )
+      .map(normalizeOrder)
+      .filter((order) => !isAdminDeletedOrder(order));
   }
 
   const conditions: string[] = [];
@@ -1625,7 +1660,7 @@ export async function listOrders(filters: OrderFilters = {}) {
     .prepare(`SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT 500`)
     .all(...values);
 
-  return rows.map(normalizeOrder);
+  return rows.map(normalizeOrder).filter((order) => !isAdminDeletedOrder(order));
 }
 
 export async function listPaidOrders() {
