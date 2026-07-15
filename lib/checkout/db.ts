@@ -7,6 +7,7 @@ import type {
   AccessStatus,
   CustomerUser,
   DeliveryStatus,
+  Discount,
   Entitlement,
   FiscalStatus,
   Gateway,
@@ -41,6 +42,29 @@ let database: SqliteDatabase | null = null;
 
 const nowIso = () => new Date().toISOString();
 
+function defaultDiscounts(): Discount[] {
+  const timestamp = "2026-07-15T00:00:00.000Z";
+
+  return [
+    {
+      id: "discount_assistente90",
+      code: "ASSISTENTE90",
+      description: "Teste interno para validar compra com 90% de desconto.",
+      type: "percent",
+      value: 90,
+      currency: null,
+      product_id: null,
+      active: true,
+      starts_at: null,
+      expires_at: null,
+      max_redemptions: null,
+      times_redeemed: 0,
+      created_at: timestamp,
+      updated_at: timestamp
+    }
+  ];
+}
+
 function databasePath() {
   return (
     process.env.CHECKOUT_DB_PATH ||
@@ -58,6 +82,7 @@ function getDatabase() {
   database.exec("PRAGMA foreign_keys = ON;");
   migrate(database);
   seedProducts(database);
+  seedDiscounts(database);
   removeDefaultProgramMaterials(database);
 
   return database;
@@ -130,6 +155,26 @@ function migrate(db: SqliteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_orders_product ON orders(product_id);
     CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(gateway_payment_id);
     CREATE INDEX IF NOT EXISTS idx_orders_checkout ON orders(gateway_checkout_id);
+
+    CREATE TABLE IF NOT EXISTS discounts (
+      id TEXT PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE,
+      description TEXT NOT NULL DEFAULT '',
+      type TEXT NOT NULL,
+      value REAL NOT NULL,
+      currency TEXT,
+      product_id TEXT,
+      active INTEGER NOT NULL,
+      starts_at TEXT,
+      expires_at TEXT,
+      max_redemptions INTEGER,
+      times_redeemed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_discounts_code ON discounts(code);
+    CREATE INDEX IF NOT EXISTS idx_discounts_active ON discounts(active);
 
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -257,6 +302,36 @@ function seedProducts(db: SqliteDatabase) {
   }
 }
 
+function seedDiscounts(db: SqliteDatabase) {
+  const statement = db.prepare(`
+    INSERT INTO discounts (
+      id, code, description, type, value, currency, product_id, active,
+      starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO NOTHING
+  `);
+
+  for (const discount of defaultDiscounts()) {
+    statement.run(
+      discount.id,
+      discount.code,
+      discount.description,
+      discount.type,
+      discount.value,
+      discount.currency,
+      discount.product_id,
+      discount.active ? 1 : 0,
+      discount.starts_at,
+      discount.expires_at,
+      discount.max_redemptions,
+      discount.times_redeemed,
+      discount.created_at,
+      discount.updated_at
+    );
+  }
+}
+
 const defaultProgramMaterialSuffixes = ["overview", "main_material", "support"];
 
 function defaultProgramMaterialIds() {
@@ -378,6 +453,38 @@ function normalizeMaterial(row: Record<string, unknown>): ProgramMaterial {
   };
 }
 
+function normalizeDiscount(row: Record<string, unknown>): Discount {
+  return {
+    id: String(row.id),
+    code: String(row.code),
+    description: String(row.description || ""),
+    type: String(row.type) as Discount["type"],
+    value: Number(row.value),
+    currency: row.currency === null || row.currency === undefined ? null : String(row.currency),
+    product_id:
+      row.product_id === null || row.product_id === undefined
+        ? null
+        : String(row.product_id),
+    active:
+      typeof row.active === "boolean" ? row.active : Number(row.active) === 1,
+    starts_at:
+      row.starts_at === null || row.starts_at === undefined
+        ? null
+        : String(row.starts_at),
+    expires_at:
+      row.expires_at === null || row.expires_at === undefined
+        ? null
+        : String(row.expires_at),
+    max_redemptions:
+      row.max_redemptions === null || row.max_redemptions === undefined
+        ? null
+        : Number(row.max_redemptions),
+    times_redeemed: Number(row.times_redeemed || 0),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at)
+  };
+}
+
 function normalizeLog(row: Record<string, unknown>): OrderLog {
   return {
     id: String(row.id),
@@ -491,7 +598,27 @@ function encodeProduct(product: (typeof checkoutProducts)[number]) {
   };
 }
 
+function encodeDiscount(discount: Discount) {
+  return {
+    id: discount.id,
+    code: discount.code,
+    description: discount.description,
+    type: discount.type,
+    value: discount.value,
+    currency: discount.currency,
+    product_id: discount.product_id,
+    active: discount.active,
+    starts_at: discount.starts_at,
+    expires_at: discount.expires_at,
+    max_redemptions: discount.max_redemptions,
+    times_redeemed: discount.times_redeemed,
+    created_at: discount.created_at,
+    updated_at: discount.updated_at
+  };
+}
+
 let supabaseSeeded = false;
+let supabaseDiscountsSeeded = false;
 
 async function removeSupabaseDefaultProgramMaterials() {
   const ids = defaultProgramMaterialIds();
@@ -517,6 +644,210 @@ async function ensureSupabaseSeeded() {
   await removeSupabaseDefaultProgramMaterials();
 
   supabaseSeeded = true;
+}
+
+async function ensureSupabaseDiscountsSeeded() {
+  if (!useSupabaseDriver() || supabaseDiscountsSeeded) return;
+
+  await supabaseRequest("discounts", {
+    method: "POST",
+    query: "on_conflict=id",
+    body: defaultDiscounts().map(encodeDiscount),
+    prefer: "resolution=ignore-duplicates,return=minimal"
+  });
+
+  supabaseDiscountsSeeded = true;
+}
+
+function normalizeDiscountCode(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+export async function listDiscounts() {
+  if (useSupabaseDriver()) {
+    await ensureSupabaseDiscountsSeeded();
+    return (
+      await supabaseRequest<Record<string, unknown>[]>("discounts", {
+        query: selectQuery(["order=created_at.desc"])
+      })
+    ).map(normalizeDiscount);
+  }
+
+  return getDatabase()
+    .prepare("SELECT * FROM discounts ORDER BY created_at DESC")
+    .all()
+    .map(normalizeDiscount);
+}
+
+export async function getDiscountById(id: string) {
+  if (useSupabaseDriver()) {
+    await ensureSupabaseDiscountsSeeded();
+    const rows = await supabaseRequest<Record<string, unknown>[]>("discounts", {
+      query: selectQuery([eq("id", id), "limit=1"])
+    });
+    return rows[0] ? normalizeDiscount(rows[0]) : null;
+  }
+
+  const row = getDatabase().prepare("SELECT * FROM discounts WHERE id = ?").get(id);
+  return row ? normalizeDiscount(row) : null;
+}
+
+export async function getDiscountByCode(code: string) {
+  const normalizedCode = normalizeDiscountCode(code);
+  if (!normalizedCode) return null;
+
+  if (useSupabaseDriver()) {
+    await ensureSupabaseDiscountsSeeded();
+    const rows = await supabaseRequest<Record<string, unknown>[]>("discounts", {
+      query: selectQuery([eq("code", normalizedCode), "limit=1"])
+    });
+    return rows[0] ? normalizeDiscount(rows[0]) : null;
+  }
+
+  const row = getDatabase()
+    .prepare("SELECT * FROM discounts WHERE code = ?")
+    .get(normalizedCode);
+  return row ? normalizeDiscount(row) : null;
+}
+
+export type SaveDiscountInput = {
+  id?: string;
+  code: string;
+  description?: string;
+  type: Discount["type"];
+  value: number;
+  currency?: string | null;
+  product_id?: string | null;
+  active: boolean;
+  starts_at?: string | null;
+  expires_at?: string | null;
+  max_redemptions?: number | null;
+};
+
+export async function saveDiscount(input: SaveDiscountInput) {
+  const id = input.id || randomUUID();
+  const existing = input.id ? await getDiscountById(input.id) : null;
+  const timestamp = nowIso();
+  const discount: Discount = {
+    id,
+    code: normalizeDiscountCode(input.code),
+    description: input.description?.trim() || "",
+    type: input.type,
+    value: input.value,
+    currency: input.type === "fixed" ? input.currency || "USD" : null,
+    product_id: input.product_id || null,
+    active: input.active,
+    starts_at: input.starts_at || null,
+    expires_at: input.expires_at || null,
+    max_redemptions: input.max_redemptions ?? null,
+    times_redeemed: existing?.times_redeemed || 0,
+    created_at: existing?.created_at || timestamp,
+    updated_at: timestamp
+  };
+
+  if (!discount.code) {
+    throw new Error("Informe um código de desconto.");
+  }
+
+  if (discount.value <= 0 || !Number.isFinite(discount.value)) {
+    throw new Error("Informe um valor válido para o desconto.");
+  }
+
+  if (discount.type === "percent" && discount.value > 100) {
+    throw new Error("Desconto percentual não pode passar de 100%.");
+  }
+
+  if (useSupabaseDriver()) {
+    await ensureSupabaseDiscountsSeeded();
+    await supabaseRequest("discounts", {
+      method: "POST",
+      query: "on_conflict=id",
+      body: encodeDiscount(discount),
+      prefer: "resolution=merge-duplicates,return=minimal"
+    });
+    return getDiscountById(id);
+  }
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO discounts (
+        id, code, description, type, value, currency, product_id, active,
+        starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        code = excluded.code,
+        description = excluded.description,
+        type = excluded.type,
+        value = excluded.value,
+        currency = excluded.currency,
+        product_id = excluded.product_id,
+        active = excluded.active,
+        starts_at = excluded.starts_at,
+        expires_at = excluded.expires_at,
+        max_redemptions = excluded.max_redemptions,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      discount.id,
+      discount.code,
+      discount.description,
+      discount.type,
+      discount.value,
+      discount.currency,
+      discount.product_id,
+      discount.active ? 1 : 0,
+      discount.starts_at,
+      discount.expires_at,
+      discount.max_redemptions,
+      discount.times_redeemed,
+      discount.created_at,
+      discount.updated_at
+    );
+
+  return getDiscountById(id);
+}
+
+export async function deleteDiscount(id: string) {
+  if (useSupabaseDriver()) {
+    await ensureSupabaseDiscountsSeeded();
+    await supabaseRequest("discounts", {
+      method: "DELETE",
+      query: eq("id", id),
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  getDatabase().prepare("DELETE FROM discounts WHERE id = ?").run(id);
+}
+
+export async function incrementDiscountRedemption(id: string) {
+  if (!id) return;
+
+  if (useSupabaseDriver()) {
+    const discount = await getDiscountById(id);
+    if (!discount) return;
+
+    await supabaseRequest("discounts", {
+      method: "PATCH",
+      query: eq("id", id),
+      body: {
+        times_redeemed: discount.times_redeemed + 1,
+        updated_at: nowIso()
+      },
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  getDatabase()
+    .prepare(
+      `UPDATE discounts
+       SET times_redeemed = times_redeemed + 1, updated_at = ?
+       WHERE id = ?`
+    )
+    .run(nowIso(), id);
 }
 
 export type CreateOrderInput = {
@@ -734,9 +1065,14 @@ export async function updateOrderStatus(
 ) {
   const order = await getOrderById(orderId);
   const paidAt = status === "paid" && !order?.paid_at ? nowIso() : order?.paid_at;
+  const shouldRedeemDiscount =
+    status === "paid" &&
+    order?.status !== "paid" &&
+    typeof order?.metadata.discount_id === "string";
   const nextMetadata = {
     ...(order?.metadata || {}),
-    ...(metadata || {})
+    ...(metadata || {}),
+    ...(shouldRedeemDiscount ? { discount_redeemed_at: nowIso() } : {})
   };
 
   if (useSupabaseDriver()) {
@@ -755,6 +1091,9 @@ export async function updateOrderStatus(
     await appendOrderLog(orderId, `order.${status}`, `Pedido atualizado para ${status}.`, {
       status
     });
+    if (shouldRedeemDiscount) {
+      await incrementDiscountRedemption(String(order.metadata.discount_id));
+    }
     return;
   }
 
@@ -769,6 +1108,9 @@ export async function updateOrderStatus(
   await appendOrderLog(orderId, `order.${status}`, `Pedido atualizado para ${status}.`, {
     status
   });
+  if (shouldRedeemDiscount) {
+    await incrementDiscountRedemption(String(order.metadata.discount_id));
+  }
 }
 
 export async function deleteOrder(orderId: string) {

@@ -20,12 +20,18 @@ export type ValidCheckoutInput = {
   country: string;
   documentType: CustomerDocumentType;
   document: string | null;
+  discountCode: string | null;
 };
 
 const normalizeText = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+export const normalizeDiscountCode = (value: unknown) =>
+  typeof value === "string"
+    ? value.trim().toUpperCase().replace(/\s+/g, "")
+    : "";
 
 export const isBrazil = (country: string) =>
   country.trim().toUpperCase() === "BR" ||
@@ -62,6 +68,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const name = normalizeText(data.name);
   const email = normalizeText(data.email).toLowerCase();
   const country = normalizeCountry(normalizeText(data.country));
+  const discountCode = normalizeDiscountCode(data.discountCode);
 
   if (!productSlug) {
     throw new CheckoutValidationError("Produto inválido.", "productSlug");
@@ -90,7 +97,8 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       email,
       country: "BR",
       documentType: document.type,
-      document: document.value
+      document: document.value,
+      discountCode: discountCode || null
     };
   }
 
@@ -100,6 +108,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     email,
     country,
     documentType: null,
-    document: null
+    document: null,
+    discountCode: discountCode || null
   };
 }

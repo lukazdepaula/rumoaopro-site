@@ -61,6 +61,26 @@ create index if not exists idx_orders_payment on public.orders(gateway_payment_i
 create index if not exists idx_orders_checkout on public.orders(gateway_checkout_id);
 create index if not exists idx_orders_user on public.orders(user_id);
 
+create table if not exists public.discounts (
+  id text primary key,
+  code text not null unique,
+  description text not null default '',
+  type text not null check (type in ('percent', 'fixed')),
+  value numeric(10, 2) not null,
+  currency text,
+  product_id text references public.products(id),
+  active boolean not null default true,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  max_redemptions integer,
+  times_redeemed integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_discounts_code on public.discounts(code);
+create index if not exists idx_discounts_active on public.discounts(active);
+
 create table if not exists public.customer_login_tokens (
   id text primary key,
   user_id text not null references public.users(id),
@@ -224,6 +244,27 @@ on conflict(id) do update set
   delivery_type = excluded.delivery_type,
   file_id = excluded.file_id,
   updated_at = now();
+
+insert into public.discounts (
+  id, code, description, type, value, currency, product_id, active,
+  starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
+) values (
+  'discount_assistente90',
+  'ASSISTENTE90',
+  'Teste interno para validar compra com 90% de desconto.',
+  'percent',
+  90,
+  null,
+  null,
+  true,
+  null,
+  null,
+  null,
+  0,
+  now(),
+  now()
+)
+on conflict(id) do nothing;
 
 insert into public.program_materials (
   id, product_id, title, description, type, sort_order, is_active,

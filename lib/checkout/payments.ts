@@ -76,7 +76,11 @@ export async function createMercadoPagoPixPayment(
       },
       metadata: {
         order_id: order.id,
-        product_id: product.id
+        product_id: product.id,
+        discount_code:
+          typeof order.metadata.discount_code === "string"
+            ? order.metadata.discount_code
+            : undefined
       }
     })
   });
@@ -143,6 +147,9 @@ export async function createStripeCheckoutSession(
   params.set("cancel_url", `${siteUrl}/checkout/${product.slug}?cancelled=1`);
   params.set("metadata[order_id]", order.id);
   params.set("metadata[product_id]", product.id);
+  if (typeof order.metadata.discount_code === "string") {
+    params.set("metadata[discount_code]", order.metadata.discount_code);
+  }
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", order.currency.toLowerCase());
   params.set(
@@ -156,6 +163,12 @@ export async function createStripeCheckoutSession(
   );
   params.set("payment_intent_data[metadata][order_id]", order.id);
   params.set("payment_intent_data[metadata][product_id]", product.id);
+  if (typeof order.metadata.discount_code === "string") {
+    params.set(
+      "payment_intent_data[metadata][discount_code]",
+      order.metadata.discount_code
+    );
+  }
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",

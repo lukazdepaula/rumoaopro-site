@@ -33,6 +33,8 @@ export type AccessStatus = "active" | "revoked" | "expired";
 
 export type MaterialType = "pdf" | "video" | "link" | "text" | "file";
 
+export type DiscountType = "percent" | "fixed";
+
 export type CheckoutProduct = {
   id: string;
   name: string;
@@ -122,10 +124,28 @@ export type ProgramMaterial = {
   updated_at: string;
 };
 
+export type Discount = {
+  id: string;
+  code: string;
+  description: string;
+  type: DiscountType;
+  value: number;
+  currency: string | null;
+  product_id: string | null;
+  active: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+  max_redemptions: number | null;
+  times_redeemed: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CheckoutCustomerInput = {
   productSlug: string;
   name: string;
   email: string;
   country: string;
   document?: string;
+  discountCode?: string;
 };

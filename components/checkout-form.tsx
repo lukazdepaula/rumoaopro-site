@@ -21,6 +21,17 @@ type OrderStatusResponse = {
   error?: string;
 };
 
+type DiscountPreview = {
+  code: string;
+  description: string;
+  type: string;
+  value: number;
+  currency: string;
+  originalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+};
+
 const formatMoney = (amount: number, currency: string) =>
   new Intl.NumberFormat(currency === "BRL" ? "pt-BR" : "en-US", {
     style: "currency",
@@ -36,15 +47,23 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixStatus, setPixStatus] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountPreview | null>(null);
 
   const isBrazil = country === "BR";
+  const checkoutCurrency = isBrazil ? "BRL" : "USD";
+  const checkoutAmount = isBrazil
+    ? product.price_brl_estimated
+    : product.base_price_usd;
   const price = useMemo(
     () =>
       formatMoney(
-        isBrazil ? product.price_brl_estimated : product.base_price_usd,
-        isBrazil ? "BRL" : "USD"
+        appliedDiscount?.finalAmount ?? checkoutAmount,
+        checkoutCurrency
       ),
-    [isBrazil, product.base_price_usd, product.price_brl_estimated]
+    [appliedDiscount?.finalAmount, checkoutAmount, checkoutCurrency]
   );
   const usdPrice = useMemo(
     () => formatMoney(product.base_price_usd, "USD"),
@@ -54,6 +73,58 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
     () => formatMoney(product.price_brl_estimated, "BRL"),
     [product.price_brl_estimated]
   );
+  const discountAmount = useMemo(
+    () =>
+      appliedDiscount
+        ? formatMoney(appliedDiscount.discountAmount, appliedDiscount.currency)
+        : null,
+    [appliedDiscount]
+  );
+
+  useEffect(() => {
+    setAppliedDiscount(null);
+    setDiscountError("");
+  }, [country, product.slug]);
+
+  async function applyDiscount() {
+    setDiscountError("");
+    setAppliedDiscount(null);
+
+    const code = discountCode.trim();
+    if (!code) {
+      setDiscountError("Informe um cupom.");
+      return;
+    }
+
+    setDiscountLoading(true);
+
+    try {
+      const response = await fetch("/api/checkout/discount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          country,
+          discountCode: code
+        })
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setDiscountError(payload.error || "Cupom inválido.");
+        return;
+      }
+
+      setAppliedDiscount(payload as DiscountPreview);
+      setDiscountCode(String(payload.code || code));
+    } catch {
+      setDiscountError("Não foi possível validar o cupom.");
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,7 +144,8 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           name,
           email,
           country,
-          document: isBrazil ? document : undefined
+          document: isBrazil ? document : undefined,
+          discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });
       const payload = await response.json();
@@ -269,6 +341,51 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           </label>
         ) : null}
 
+        <div className="grid gap-2 rounded-md border border-ink/10 bg-white p-3">
+          <label className="text-sm font-semibold text-ink" htmlFor="discount-code">
+            Cupom de desconto
+          </label>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <input
+              className="min-h-12 rounded-md border border-ink/15 px-3 text-sm uppercase text-ink"
+              id="discount-code"
+              onChange={(event) => {
+                const value = event.target.value;
+                setDiscountCode(value);
+                setDiscountError("");
+                if (
+                  appliedDiscount &&
+                  value.trim().toUpperCase().replace(/\s+/g, "") !== appliedDiscount.code
+                ) {
+                  setAppliedDiscount(null);
+                }
+              }}
+              placeholder="Ex: ASSISTENTE90"
+              type="text"
+              value={discountCode}
+            />
+            <button
+              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-ink/15 px-4 text-sm font-bold text-ink hover:bg-smoke disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={discountLoading}
+              onClick={applyDiscount}
+              type="button"
+            >
+              {discountLoading ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : null}
+              Aplicar
+            </button>
+          </div>
+          {appliedDiscount ? (
+            <p className="text-sm font-bold text-turf">
+              Cupom {appliedDiscount.code} aplicado.
+            </p>
+          ) : null}
+          {discountError ? (
+            <p className="text-sm font-semibold text-red-700">{discountError}</p>
+          ) : null}
+        </div>
+
         <div className="rounded-md border border-ink/10 bg-smoke px-3 py-2 text-sm text-graphite/75">
           <p>
             Preço internacional: <strong>{usdPrice}</strong>
@@ -277,6 +394,19 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
             Brasil: aproximadamente <strong>{brlEstimate}</strong>. O valor
             final em BRL é calculado no checkout com a taxa configurada.
           </p>
+          {appliedDiscount ? (
+            <>
+              <p className="mt-1">
+                Valor original:{" "}
+                <strong>
+                  {formatMoney(appliedDiscount.originalAmount, appliedDiscount.currency)}
+                </strong>
+              </p>
+              <p className="mt-1 text-turf">
+                Desconto: <strong>-{discountAmount}</strong>
+              </p>
+            </>
+          ) : null}
           <p className="mt-1 font-bold text-ink">Valor desta compra: {price}</p>
         </div>
 

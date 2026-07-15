@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createOrder } from "@/lib/checkout/db";
+import { createOrder, getDiscountByCode } from "@/lib/checkout/db";
+import {
+  calculateDiscountQuote,
+  discountMetadata,
+  validateDiscountForCheckout
+} from "@/lib/checkout/discounts";
 import { markOrderAsFailed } from "@/lib/checkout/order-events";
 import {
   createMercadoPagoPixPayment,
@@ -36,6 +41,23 @@ export async function POST(request: Request) {
 
     const brazil = isBrazil(input.country);
     const localizedPrice = calculateLocalizedPrice(product, brazil ? "BR" : input.country);
+    const discount = input.discountCode
+      ? await getDiscountByCode(input.discountCode)
+      : null;
+    const discountError = input.discountCode
+      ? validateDiscountForCheckout(discount, product, localizedPrice)
+      : null;
+
+    if (discountError) {
+      return NextResponse.json(
+        { error: discountError, field: "discountCode" },
+        { status: 400 }
+      );
+    }
+
+    const discountQuote = discount
+      ? calculateDiscountQuote(discount, localizedPrice)
+      : null;
     const order = await createOrder({
       product_id: product.id,
       product_name: product.name,
@@ -50,7 +72,7 @@ export async function POST(request: Request) {
             ? "mercado_pago"
             : "stripe"
           : "mock",
-      amount: localizedPrice.amount,
+      amount: discountQuote?.finalAmount ?? localizedPrice.amount,
       currency: localizedPrice.currency,
       exchange_rate_used: localizedPrice.exchangeRateUsed,
       fiscal_status: brazil ? "pending" : "not_required",
@@ -58,7 +80,8 @@ export async function POST(request: Request) {
         product_slug: product.slug,
         checkout_country: input.country,
         checkout_gateway_mode: checkoutMode(),
-        base_price_usd: localizedPrice.basePriceUsd
+        base_price_usd: localizedPrice.basePriceUsd,
+        ...discountMetadata(discountQuote)
       }
     });
 
