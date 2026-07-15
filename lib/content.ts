@@ -137,12 +137,14 @@ export const assets = {
 
 export const nav = {
   pt: [
+    { label: "Home", href: "/" },
     { label: "Assessoria", href: "/assessoria" },
     { label: "Programas", href: "/programas" },
     { label: "Links", href: "/links" },
     { label: "🇺🇸 English", href: "/en/coaching" }
   ],
   en: [
+    { label: "Home", href: "/en" },
     { label: "Coaching", href: "/en/coaching" },
     { label: "Programs", href: "/en/programs" },
     { label: "Links", href: "/en/links" },
