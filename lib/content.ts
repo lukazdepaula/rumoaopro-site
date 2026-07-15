@@ -129,12 +129,10 @@ export const assets = {
   successAmar: "/assets/success/amar-player.jpg",
   successJackson: "/assets/success/jackson-player.jpg",
   successDiogo: "/assets/success/diogo-fortunato-player.jpg",
-  preSeason:
-    "https://www.rumoaopro.com.br/cdn/shop/files/Capa_1_480x480.png?v=1742056677",
-  adama:
-    "https://www.rumoaopro.com.br/cdn/shop/files/capaadama_480x480.jpg?v=1689715757",
-  dvg:
-    "https://www.rumoaopro.com.br/cdn/shop/files/dvg_480x480.jpg?v=1689964355"
+  preSeason: "/assets/programs/pt/projeto-pre-temporada-cover.jpg",
+  adama: "/assets/programs/pt/projeto-adama-2022-cover.jpg",
+  project36Pt: "/assets/programs/project-36/project-36-cover.jpg",
+  dvg: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg"
 };
 
 export const nav = {
@@ -609,8 +607,10 @@ export const shopifyProducts = {
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
   preTemporada: "/checkout/projeto-pre-temporada",
+  adama2022: "/checkout/projeto-adama-2022",
   deVoltaAosGramados: "/checkout/de-volta-aos-gramados",
   projeto36: "/checkout/project-36",
+  projeto362022: "/checkout/projeto-36-2022",
   elanga: "/checkout/elanga-in-season"
 };
 
@@ -708,8 +708,8 @@ export const programsPtLegacy = [
     ],
     image: assets.preSeason,
     imageClass: "object-center",
-    href: legacyPortugueseProducts.preTemporada,
-    cta: "Comprar no site atual"
+    href: "/programas/projeto-pre-temporada",
+    cta: "Ver detalhes"
   },
   {
     title: "Projeto Adama (versão 2022)",
@@ -725,8 +725,8 @@ export const programsPtLegacy = [
     ],
     image: assets.adama,
     imageClass: "object-center",
-    href: legacyPortugueseProducts.adama2022,
-    cta: "Comprar no site atual"
+    href: "/programas/projeto-adama-2022",
+    cta: "Ver detalhes"
   },
   {
     title: "Projeto 36 km/h (versão 2022)",
@@ -740,10 +740,10 @@ export const programsPtLegacy = [
       "Aceleração",
       "Produto em português"
     ],
-    image: assets.programsMatchCarry,
-    imageClass: "object-[center_28%]",
-    href: legacyPortugueseProducts.projeto362022,
-    cta: "Comprar no site atual"
+    image: assets.project36Pt,
+    imageClass: "object-center",
+    href: "/programas/projeto-36-2022",
+    cta: "Ver detalhes"
   },
   {
     title: "De Volta aos Gramados",
@@ -759,10 +759,153 @@ export const programsPtLegacy = [
     ],
     image: assets.dvg,
     imageClass: "object-center",
-    href: legacyPortugueseProducts.deVoltaAosGramados,
-    cta: "Comprar no site atual"
+    href: "/programas/de-volta-aos-gramados",
+    cta: "Ver detalhes"
   }
 ];
+
+export const portugueseProgramSalesPages = {
+  preTemporada: {
+    title: "Projeto Pré Temporada",
+    eyebrow: "Programa em português",
+    slug: "projeto-pre-temporada",
+    checkoutHref: shopifyProducts.preTemporada,
+    cover: assets.preSeason,
+    heroImage: assets.programsFieldControl,
+    heroImageClass: "object-[center_20%]",
+    coverClass: "object-contain",
+    duration: "12 semanas",
+    level: "Offseason e preparação",
+    lead:
+      "Um plano em português para organizar campo, academia e condicionamento antes da temporada, peneira ou campeonato.",
+    bestFor:
+      "Jogadores que precisam chegar com base física pronta, rotina de treino clara e uma estrutura simples para seguir sem depender de ajustes semanais.",
+    outcomes: [
+      "Campo, força e condicionamento no mesmo plano",
+      "Progressão para voltar a treinar com mais organização",
+      "Boa opção para offseason longa ou pré-temporada distante"
+    ],
+    includes: [
+      "12 semanas de treino",
+      "Sessões de campo e academia",
+      "Organização de força, velocidade e resistência",
+      "Material em português na área do cliente"
+    ],
+    structure: [
+      "Base física",
+      "Construção de força",
+      "Velocidade e condicionamento",
+      "Reta final para temporada"
+    ],
+    note:
+      "Se sua rotina muda toda semana ou você está voltando de lesão, a assessoria individual pode ser mais indicada."
+  },
+  adama2022: {
+    title: "Projeto Adama 2022",
+    eyebrow: "Programa em português",
+    slug: "projeto-adama-2022",
+    checkoutHref: shopifyProducts.adama2022,
+    cover: assets.adama,
+    heroImage: assets.programsGymBriefing,
+    heroImageClass: "object-[center_18%]",
+    coverClass: "object-contain",
+    duration: "9 semanas",
+    level: "Força e hipertrofia",
+    lead:
+      "A versão original em português para o atleta que quer ganhar força, hipertrofia e mais presença física no futebol.",
+    bestFor:
+      "Jogadores com acesso à academia que querem uma base de força mais organizada para duelos, aceleração e potência.",
+    outcomes: [
+      "Mais estrutura na academia",
+      "Força útil para ações do jogo",
+      "Progressão objetiva para offseason"
+    ],
+    includes: [
+      "9 semanas de programação",
+      "Treinos de força e hipertrofia",
+      "Organização por fases",
+      "Material em português na área do cliente"
+    ],
+    structure: [
+      "Construção muscular",
+      "Força progressiva",
+      "Potência aplicada",
+      "Transferência para o futebol"
+    ],
+    note:
+      "Para uma versão mais atualizada e internacional, veja também o Adama Offseason Strength & Power em inglês."
+  },
+  projeto362022: {
+    title: "Projeto 36 km/h 2022",
+    eyebrow: "Programa em português",
+    slug: "projeto-36-2022",
+    checkoutHref: shopifyProducts.projeto362022,
+    cover: assets.project36Pt,
+    heroImage: assets.programsSprintChase,
+    heroImageClass: "object-center",
+    coverClass: "object-cover object-center",
+    duration: "12 semanas",
+    level: "Força e velocidade",
+    lead:
+      "A versão original em português para desenvolver aceleração, velocidade, força e explosão com foco em futebol.",
+    bestFor:
+      "Atletas que querem treinar velocidade com mais intenção, sem separar a preparação física das demandas reais do jogo.",
+    outcomes: [
+      "Aceleração e mudança de ritmo",
+      "Força para sprint e desaceleração",
+      "Mais clareza para treinar velocidade na semana"
+    ],
+    includes: [
+      "12 semanas de programação",
+      "Sessões de velocidade e força",
+      "Progressão por fases",
+      "Material em português na área do cliente"
+    ],
+    structure: [
+      "Fundação atlética",
+      "Aceleração",
+      "Velocidade máxima",
+      "Velocidade aplicada ao jogo"
+    ],
+    note:
+      "Também existe a versão nova Project 36 Offseason em inglês, com visual e estrutura mais atualizados."
+  },
+  deVoltaAosGramados: {
+    title: "De Volta aos Gramados",
+    eyebrow: "Programa em português",
+    slug: "de-volta-aos-gramados",
+    checkoutHref: shopifyProducts.deVoltaAosGramados,
+    cover: assets.dvg,
+    heroImage: assets.programsMatchCarry,
+    heroImageClass: "object-[center_28%]",
+    coverClass: "object-cover object-center",
+    duration: "Retorno gradual",
+    level: "Pubalgia, adutores e quadril",
+    lead:
+      "Um programa em português para organizar o retorno progressivo aos treinos depois de dor na região de pubalgia, adutores ou quadril.",
+    bestFor:
+      "Atletas liberados para voltar a treinar que precisam de uma progressão mais organizada antes de acelerar a carga no campo.",
+    outcomes: [
+      "Progressão de retorno aos treinos",
+      "Atenção a quadril, adutores e região púbica",
+      "Transição mais clara entre reabilitação e campo"
+    ],
+    includes: [
+      "Material em português",
+      "Progressões de força e controle",
+      "Organização para retorno ao campo",
+      "Acesso pela área do cliente"
+    ],
+    structure: [
+      "Controle e tolerância",
+      "Força de quadril e adutores",
+      "Corrida e mudança de direção",
+      "Retorno gradual ao futebol"
+    ],
+    note:
+      "Este programa não substitui avaliação médica ou fisioterapêutica. Use apenas quando estiver liberado para treinar."
+  }
+};
 
 export const programsEn = [
   {

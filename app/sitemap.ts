@@ -55,6 +55,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.82
     },
     {
+      url: `${baseUrl}/programas/projeto-pre-temporada`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
+      url: `${baseUrl}/programas/projeto-adama-2022`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
+      url: `${baseUrl}/programas/projeto-36-2022`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
+      url: `${baseUrl}/programas/de-volta-aos-gramados`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
       url: `${baseUrl}/en/programs`,
       lastModified,
       changeFrequency: "weekly",

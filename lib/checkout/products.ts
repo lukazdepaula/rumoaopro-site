@@ -36,8 +36,10 @@ export const checkoutLinks = {
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
   preTemporada: "/checkout/projeto-pre-temporada",
+  adama2022: "/checkout/projeto-adama-2022",
   deVoltaAosGramados: "/checkout/de-volta-aos-gramados",
   projeto36: "/checkout/project-36",
+  projeto362022: "/checkout/projeto-36-2022",
   elanga: "/checkout/elanga-in-season"
 };
 
@@ -109,6 +111,78 @@ export const checkoutProducts: CheckoutProduct[] = [
     cover_image: "/assets/programs/elanga/elanga-cover.jpg",
     delivery_type: "member_area",
     file_id: "elanga-in-season.zip",
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "projeto_pre_temporada_pt",
+    name: "Projeto Pré Temporada",
+    slug: "projeto-pre-temporada",
+    description:
+      "Programa em português de 12 semanas para organizar campo, academia e condicionamento antes da temporada.",
+    language: "Portuguese",
+    type: "training_program",
+    ...productPrice(),
+    active: true,
+    sales_page_path: "/programas/projeto-pre-temporada",
+    cover_image: "/assets/programs/pt/projeto-pre-temporada-cover.jpg",
+    delivery_type: "member_area",
+    file_id: null,
+    aliases: ["pre-temporada", "projeto-pretemporada"],
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "projeto_adama_2022_pt",
+    name: "Projeto Adama 2022",
+    slug: "projeto-adama-2022",
+    description:
+      "Programa em português para construir força, hipertrofia e presença física no futebol.",
+    language: "Portuguese",
+    type: "training_program",
+    ...productPrice(),
+    active: true,
+    sales_page_path: "/programas/projeto-adama-2022",
+    cover_image: "/assets/programs/pt/projeto-adama-2022-cover.jpg",
+    delivery_type: "member_area",
+    file_id: null,
+    aliases: ["projeto-adama", "projeto-adama-9-semanas"],
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "projeto_36_2022_pt",
+    name: "Projeto 36 km/h 2022",
+    slug: "projeto-36-2022",
+    description:
+      "Programa em português de 12 semanas para desenvolver força, aceleração e velocidade no futebol.",
+    language: "Portuguese",
+    type: "training_program",
+    ...productPrice(),
+    active: true,
+    sales_page_path: "/programas/projeto-36-2022",
+    cover_image: "/assets/programs/project-36/project-36-cover.jpg",
+    delivery_type: "member_area",
+    file_id: null,
+    aliases: ["projeto-36", "projeto-36-12-semanas"],
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "de_volta_aos_gramados_pt",
+    name: "De Volta aos Gramados",
+    slug: "de-volta-aos-gramados",
+    description:
+      "Programa em português para retorno gradual aos treinos após dores em pubalgia, adutores ou quadril.",
+    language: "Portuguese",
+    type: "training_program",
+    ...productPrice(),
+    active: true,
+    sales_page_path: "/programas/de-volta-aos-gramados",
+    cover_image: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg",
+    delivery_type: "member_area",
+    file_id: null,
+    aliases: ["de-volta-aos-gramados-rehabilitacao-de-pubalgia"],
     created_at: now,
     updated_at: now
   },

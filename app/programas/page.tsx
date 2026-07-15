@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
 import { ProgramsSection } from "@/components/programs-section";
+import { ReviewBadge } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav, programsPtLegacy } from "@/lib/content";
+import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
 export const metadata: Metadata = {
   title: "Programas de treinamento para futebol",
@@ -178,12 +180,12 @@ export default function ProgramasPage() {
                 Coleção em português
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Programas antigos para comprar em português.
+                Programas disponíveis em português.
               </h2>
               <p className="mt-4 text-base leading-7 text-graphite/75">
-                Estes produtos continuam sendo uma opção para quem prefere
-                material em português. Eles levam para o site atual da
-                RumoAoPro enquanto migramos a estrutura completa.
+                Estes produtos são uma opção para quem prefere comprar e acessar
+                o material em português dentro da nova área do cliente
+                RumoAoPro.
               </p>
             </div>
             <Link
@@ -196,43 +198,52 @@ export default function ProgramasPage() {
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {programsPtLegacy.map((program) => (
-              <a
-                className="focus-ring group block overflow-hidden rounded-lg bg-smoke shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
-                href={program.href}
-                key={program.title}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <div className="relative overflow-hidden bg-ink">
-                  <Image
-                    alt={program.title}
-                    className={`aspect-[16/12] w-full object-cover transition duration-500 group-hover:scale-105 ${program.imageClass}`}
-                    height={520}
-                    src={program.image}
-                    width={720}
-                  />
-                  <div className="absolute left-4 top-4 rounded-md bg-white/95 px-3 py-2 text-[11px] font-bold uppercase text-ink shadow-sm">
-                    {program.tag}
+            {programsPtLegacy.map((program) => {
+              const reviewGroupKey = getReviewGroupForProgramHref(program.href);
+
+              return (
+                <Link
+                  className="focus-ring group block overflow-hidden rounded-lg bg-smoke shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
+                  href={program.href}
+                  key={program.title}
+                >
+                  <div className="relative overflow-hidden bg-ink">
+                    <Image
+                      alt={program.title}
+                      className={`aspect-[16/12] w-full object-cover transition duration-500 group-hover:scale-105 ${program.imageClass}`}
+                      height={520}
+                      src={program.image}
+                      width={720}
+                    />
+                    <div className="absolute left-4 top-4 rounded-md bg-white/95 px-3 py-2 text-[11px] font-bold uppercase text-ink shadow-sm">
+                      {program.tag}
+                    </div>
                   </div>
-                </div>
-                <div className="p-5">
-                  <p className="text-xs font-bold uppercase text-signal">
-                    {program.level}
-                  </p>
-                  <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
-                    {program.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
-                    {program.body}
-                  </p>
-                  <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink">
-                    {program.cta}
-                    <ExternalLink aria-hidden="true" className="h-4 w-4" />
-                  </p>
-                </div>
-              </a>
-            ))}
+                  <div className="p-5">
+                    <p className="text-xs font-bold uppercase text-signal">
+                      {program.level}
+                    </p>
+                    {reviewGroupKey ? (
+                      <ReviewBadge
+                        className="mt-3"
+                        groupKey={reviewGroupKey}
+                        locale="pt"
+                      />
+                    ) : null}
+                    <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
+                      {program.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-graphite/72">
+                      {program.body}
+                    </p>
+                    <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink">
+                      {program.cta}
+                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -276,7 +287,7 @@ export default function ProgramasPage() {
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-graphite/75">
               Se você tem jogos, treinos do time, fadiga, lesão recente ou uma
-              rotina que muda toda semana, o plano 1:1 com suporte semanal e o
+              rotina que muda toda semana, o plano 1:1 com suporte semanal é o
               caminho mais seguro.
             </p>
           </div>
@@ -285,7 +296,7 @@ export default function ProgramasPage() {
             href="/assessoria#aplicacao"
           >
             Aplicar para assessoria
-            <ExternalLink aria-hidden="true" className="h-4 w-4" />
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>
       </section>

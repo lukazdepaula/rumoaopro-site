@@ -10,9 +10,11 @@ import {
   Target,
   Zap
 } from "lucide-react";
+import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav, shopifyProducts } from "@/lib/content";
+import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
 type ElangaSalesPageProps = {
   locale: "pt" | "en";
@@ -361,6 +363,11 @@ const copy = {
 
 export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
   const page = copy[locale];
+  const programHref =
+    locale === "pt"
+      ? "/programas/elanga-in-season"
+      : "/en/programs/elanga-in-season";
+  const reviewGroupKey = getReviewGroupForProgramHref(programHref);
 
   return (
     <main className="min-h-screen bg-smoke">
@@ -399,6 +406,14 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/76 sm:text-lg">
               {page.lead}
             </p>
+            {reviewGroupKey ? (
+              <ReviewBadge
+                className="mt-6"
+                groupKey={reviewGroupKey}
+                locale={locale}
+                tone="dark"
+              />
+            ) : null}
             <div className="mt-6 flex flex-wrap gap-2">
               {page.chips.map((chip) => (
                 <span
@@ -430,6 +445,18 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
           </div>
         </div>
       </section>
+
+      {reviewGroupKey ? (
+        <ReviewsSection
+          groupKey={reviewGroupKey}
+          locale={locale}
+          title={
+            locale === "pt"
+              ? "Avaliações de atletas em temporada"
+              : "Reviews from in-season RumoAoPro programs"
+          }
+        />
+      ) : null}
 
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[0.9fr_1.1fr] lg:px-8">

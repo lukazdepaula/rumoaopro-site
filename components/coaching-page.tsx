@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ArrowRight, CheckCircle2, ChevronDown, Star } from "lucide-react";
 import { ApplicationForm } from "@/components/application-form";
 import { CtaButton } from "@/components/cta-button";
+import { ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -548,6 +549,16 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
           </div>
         </div>
       </section>
+
+      <ReviewsSection
+        groupKey="coaching"
+        locale={copy.locale}
+        title={
+          copy.locale === "pt"
+            ? "Atletas que passaram pela assessoria"
+            : "Players who went through coaching"
+        }
+      />
 
       <section className="bg-white py-16" id={formId}>
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">

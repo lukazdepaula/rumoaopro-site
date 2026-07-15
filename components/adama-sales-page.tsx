@@ -18,9 +18,11 @@ import {
   Trophy,
   Zap
 } from "lucide-react";
+import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav, shopifyProducts, successCases } from "@/lib/content";
+import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
 type AdamaSalesPageProps = {
   locale: "pt" | "en";
@@ -429,6 +431,11 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
   const selectedSuccessCases = successCases[locale].slice(0, 3);
   const coachingHref =
     locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
+  const programHref =
+    locale === "pt"
+      ? "/programas/adama-strength-power"
+      : "/en/programs/adama-strength-power";
+  const reviewGroupKey = getReviewGroupForProgramHref(programHref);
 
   return (
     <main className="min-h-screen bg-[#070708]">
@@ -475,6 +482,14 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
               {page.lead}
             </p>
+            {reviewGroupKey ? (
+              <ReviewBadge
+                className="mt-6"
+                groupKey={reviewGroupKey}
+                locale={locale}
+                tone="dark"
+              />
+            ) : null}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.38)] transition hover:bg-[#b90f20]"
@@ -550,6 +565,19 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
           </div>
         </div>
       </section>
+
+      {reviewGroupKey ? (
+        <ReviewsSection
+          groupKey={reviewGroupKey}
+          locale={locale}
+          title={
+            locale === "pt"
+              ? "Avaliações de atletas RumoAoPro"
+              : "Reviews from equivalent RumoAoPro programs"
+          }
+          tone="dark"
+        />
+      ) : null}
 
       <section className="bg-[#070708] py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">

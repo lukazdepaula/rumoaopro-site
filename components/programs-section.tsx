@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
+import { ReviewBadge } from "@/components/reviews";
 import { programs, programsEn } from "@/lib/content";
+import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
 type ProgramsSectionProps = {
   compact?: boolean;
@@ -76,6 +78,7 @@ export function ProgramsSection({
           {visiblePrograms.map((program) => {
             const isExternal =
               !program.href.startsWith("/") && !program.href.startsWith("#");
+            const reviewGroupKey = getReviewGroupForProgramHref(program.href);
 
             const content = (
               <article
@@ -102,6 +105,13 @@ export function ProgramsSection({
                     <p className="text-xs font-bold uppercase text-signal">
                       {program.level}
                     </p>
+                    {reviewGroupKey ? (
+                      <ReviewBadge
+                        className="mt-3"
+                        groupKey={reviewGroupKey}
+                        locale={locale}
+                      />
+                    ) : null}
                     <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
                       {program.title}
                     </h3>
