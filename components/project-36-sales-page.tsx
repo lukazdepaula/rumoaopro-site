@@ -29,7 +29,7 @@ const copy = {
     nav: nav.pt,
     ctaLabel: "Comprar",
     languageHref: "/en/programs/project-36kmh",
-    languageLabel: "🇺🇸 English",
+    languageLabel: "🇧🇷 PT → EN",
     eyebrow: "Project 36km/h",
     h1: "Construa aceleração, velocidade máxima e ação de jogo em 12 semanas.",
     lead:
@@ -233,7 +233,7 @@ const copy = {
     nav: nav.en,
     ctaLabel: "Buy",
     languageHref: "/programas/projeto-36kmh",
-    languageLabel: "🇧🇷 Português",
+    languageLabel: "🇺🇸 EN → PT",
     eyebrow: "Project 36km/h",
     h1: "Build acceleration, max velocity and game-speed actions in 12 weeks.",
     lead:

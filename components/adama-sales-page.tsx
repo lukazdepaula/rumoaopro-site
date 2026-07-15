@@ -33,7 +33,7 @@ const copy = {
     nav: nav.pt,
     ctaLabel: "Comprar",
     languageHref: "/en/programs/adama-strength-power",
-    languageLabel: "🇺🇸 English",
+    languageLabel: "🇧🇷 PT → EN",
     eyebrow: "Adama Offseason Strength & Power",
     h1: "Construa força real para voltar mais potente ao campo.",
     lead:
@@ -56,7 +56,7 @@ const copy = {
     notFitLabel: "Melhor escolher assessoria",
     goodFit: [
       "Atletas com acesso a academia e campo",
-      "Jogadores em offseason ou pre-temporada distante",
+      "Jogadores em offseason ou pré-temporada distante",
       "Quem quer ganhar força sem ficar pesado ou lento",
       "Quem precisa de velocidade, potência e condicionamento como suporte"
     ],
@@ -220,7 +220,7 @@ const copy = {
     nav: nav.en,
     ctaLabel: "Buy",
     languageHref: "/programas/adama-strength-power",
-    languageLabel: "🇧🇷 Português",
+    languageLabel: "🇺🇸 EN → PT",
     eyebrow: "Adama Offseason Strength & Power",
     h1: "Build real strength so you return to the field more powerful.",
     lead:

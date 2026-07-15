@@ -624,15 +624,15 @@ export const legacyPortugueseProducts = {
 
 export const programs = [
   {
-    title: "Offseason Program 30 Days",
+    title: "Offseason 30 Days",
     tag: "Conteúdo em inglês",
     duration: "30 dias",
     level: "Últimos 30 dias da offseason",
     body:
-      "Uma estrutura curta para organizar campo, academia, velocidade e condicionamento quando a volta ao clube já está perto.",
+      "Intensifique a reta final antes da pré-temporada com campo, academia, velocidade e condicionamento em uma estrutura objetiva.",
     outcomes: [
-      "4 semanas objetivas",
-      "Campo + academia",
+      "Reta final da preparação",
+      "Campo, academia e condicionamento",
       "Conteúdo do programa em inglês"
     ],
     image: assets.programsFieldControl,
@@ -646,10 +646,10 @@ export const programs = [
     duration: "12 semanas",
     level: "Offseason - força e potência",
     body:
-      "Para construir base física, força útil, potência e presença nos duelos antes da temporada começar.",
+      "Construa força, potência e presença física para voltar mais forte, mais explosivo e melhor preparado para os duelos.",
     outcomes: [
-      "Força útil para o jogo",
-      "Potência e robustez",
+      "Base sólida na offseason",
+      "Força e potência para o jogo",
       "Conteúdo do programa em inglês"
     ],
     image: assets.programsJumpTest,
@@ -663,10 +663,10 @@ export const programs = [
     duration: "12 semanas",
     level: "Offseason - velocidade",
     body:
-      "Sistema para desenvolver aceleração, top speed, re-aceleração e velocidade aplicada ao jogo.",
+      "Desenvolva aceleração, velocidade máxima e re-aceleração com uma progressão criada para aparecer dentro do jogo.",
     outcomes: [
-      "Aceleração",
-      "Max velocity",
+      "Aceleração e top speed",
+      "Velocidade aplicada ao futebol",
       "Conteúdo do programa em inglês"
     ],
     image: assets.programsSprintChase,
@@ -675,7 +675,7 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Projeto Elanga In-Season",
+    title: "Elanga In-Season",
     tag: "Conteúdo em inglês",
     duration: "28 semanas",
     level: "Temporada",
@@ -700,10 +700,10 @@ export const programsPtLegacy = [
     duration: "12 semanas",
     level: "Preparação completa",
     body:
-      "Plano clássico em português para chegar melhor preparado ao início da temporada, peneira ou campeonato.",
+      "O programa mais completo para chegar em alto nível antes da temporada, peneira ou campeonato.",
     outcomes: [
-      "Força, velocidade e resistência",
-      "Campo + academia",
+      "Força, potência e velocidade",
+      "Campo, academia e condicionamento",
       "Produto em português"
     ],
     image: assets.preSeason,
@@ -712,15 +712,15 @@ export const programsPtLegacy = [
     cta: "Ver detalhes"
   },
   {
-    title: "Projeto Adama (versão 2022)",
+    title: "Projeto Adama",
     tag: "Português",
     duration: "9 semanas",
     level: "Força e hipertrofia",
     body:
-      "Versão original em português para atletas que querem ganhar força, hipertrofia e mais presença física.",
+      "9 semanas para aumentar força, potência, velocidade e desempenho em campo com estrutura de academia.",
     outcomes: [
-      "Força e hipertrofia",
-      "Base de academia",
+      "Força e potência",
+      "3 a 4 treinos por semana",
       "Produto em português"
     ],
     image: assets.adama,
@@ -729,15 +729,15 @@ export const programsPtLegacy = [
     cta: "Ver detalhes"
   },
   {
-    title: "Projeto 36 km/h (versão 2022)",
+    title: "Projeto 36 km/h",
     tag: "Português",
     duration: "12 semanas",
     level: "Força e velocidade",
     body:
-      "Versão original em português para desenvolver velocidade, força e explosão com foco em futebol.",
+      "12 semanas para correr mais rápido, acelerar melhor e transferir velocidade para o jogo.",
     outcomes: [
-      "Força e velocidade",
-      "Aceleração",
+      "Aceleração e velocidade máxima",
+      "Campo + academia",
       "Produto em português"
     ],
     image: assets.project36Pt,
@@ -751,7 +751,7 @@ export const programsPtLegacy = [
     duration: "Reabilitação",
     level: "Pubalgia / retorno",
     body:
-      "Programa em português para retorno gradual aos treinos após dor em pubalgia, adutores ou quadril.",
+      "Progressão em português para voltar aos treinos após dor em pubalgia, adutores ou quadril.",
     outcomes: [
       "Progressão de retorno",
       "Quadril e adutores",
@@ -777,18 +777,19 @@ export const portugueseProgramSalesPages = {
     duration: "12 semanas",
     level: "Offseason e preparação",
     lead:
-      "Um plano em português para organizar campo, academia e condicionamento antes da temporada, peneira ou campeonato.",
+      "O programa de preparação física mais completo da RumoAoPro para levar seu desempenho ao mais alto nível antes da temporada, peneira ou campeonato.",
     bestFor:
-      "Jogadores que precisam chegar com base física pronta, rotina de treino clara e uma estrutura simples para seguir sem depender de ajustes semanais.",
+      "Jogadores que querem desenvolver força, potência, velocidade, resistência, agilidade e condicionamento físico para chegar prontos para competir desde o primeiro jogo.",
     outcomes: [
-      "Campo, força e condicionamento no mesmo plano",
-      "Progressão para voltar a treinar com mais organização",
-      "Boa opção para offseason longa ou pré-temporada distante"
+      "Planejamento completo para começar a temporada em vantagem",
+      "Metodologia progressiva com campo e academia",
+      "Ideal para temporada, peneira ou campeonato importante"
     ],
     includes: [
       "12 semanas de treino",
-      "Sessões de campo e academia",
-      "Organização de força, velocidade e resistência",
+      "5 a 6 treinos por semana",
+      "Sessões de campo, academia e condicionamento",
+      "Organização de força, potência, velocidade e resistência",
       "Material em português na área do cliente"
     ],
     structure: [
@@ -798,10 +799,10 @@ export const portugueseProgramSalesPages = {
       "Reta final para temporada"
     ],
     note:
-      "Se sua rotina muda toda semana ou você está voltando de lesão, a assessoria individual pode ser mais indicada."
+      "Se você quer começar a temporada em vantagem e alcançar sua melhor forma física, este é o programa em português mais completo da RumoAoPro."
   },
   adama2022: {
-    title: "Projeto Adama 2022",
+    title: "Projeto Adama",
     eyebrow: "Programa em português",
     slug: "projeto-adama-2022",
     checkoutHref: shopifyProducts.adama2022,
@@ -812,18 +813,19 @@ export const portugueseProgramSalesPages = {
     duration: "9 semanas",
     level: "Força e hipertrofia",
     lead:
-      "A versão original em português para o atleta que quer ganhar força, hipertrofia e mais presença física no futebol.",
+      "Um programa de 9 semanas desenvolvido para aumentar sua força, potência, velocidade e desempenho em campo.",
     bestFor:
-      "Jogadores com acesso à academia que querem uma base de força mais organizada para duelos, aceleração e potência.",
+      "Jogadores com acesso à academia que querem ficar mais fortes, rápidos e explosivos sem perder mobilidade ou se sentir pesados durante os jogos.",
     outcomes: [
-      "Mais estrutura na academia",
-      "Força útil para ações do jogo",
-      "Progressão objetiva para offseason"
+      "Desenvolvimento muscular conectado à capacidade atlética",
+      "Mais força, potência e presença física em campo",
+      "Progressão clara para acompanhar sua evolução com segurança"
     ],
     includes: [
       "9 semanas de programação",
-      "Treinos de força e hipertrofia",
-      "Organização por fases",
+      "3 fases de treinamento",
+      "3 a 4 treinos por semana",
+      "Vídeos explicativos, planilhas e instruções detalhadas",
       "Material em português na área do cliente"
     ],
     structure: [
@@ -833,10 +835,10 @@ export const portugueseProgramSalesPages = {
       "Transferência para o futebol"
     ],
     note:
-      "Para uma versão mais atualizada e internacional, veja também o Adama Offseason Strength & Power em inglês."
+      "É necessário ter acesso a uma academia para realizar o programa."
   },
   projeto362022: {
-    title: "Projeto 36 km/h 2022",
+    title: "Projeto 36 km/h",
     eyebrow: "Programa em português",
     slug: "projeto-36-2022",
     checkoutHref: shopifyProducts.projeto362022,
@@ -847,18 +849,19 @@ export const portugueseProgramSalesPages = {
     duration: "12 semanas",
     level: "Força e velocidade",
     lead:
-      "A versão original em português para desenvolver aceleração, velocidade, força e explosão com foco em futebol.",
+      "O programa de velocidade da RumoAoPro para ajudar atletas a correrem mais rápido, acelerarem com mais explosão e melhorarem o desempenho em campo.",
     bestFor:
-      "Atletas que querem treinar velocidade com mais intenção, sem separar a preparação física das demandas reais do jogo.",
+      "Atletas que querem treinar velocidade de forma inteligente e progressiva, usando o método que me permitiu atingir 36 km/h durante minha carreira profissional.",
     outcomes: [
-      "Aceleração e mudança de ritmo",
-      "Força para sprint e desaceleração",
-      "Mais clareza para treinar velocidade na semana"
+      "Aceleração, velocidade máxima e re-aceleração",
+      "Força, coordenação e resistência aplicadas ao sprint",
+      "Estratégias organizadas para maximizar sua evolução"
     ],
     includes: [
       "12 semanas de programação",
-      "Sessões de velocidade e força",
-      "Progressão por fases",
+      "4 fases de treinamento",
+      "4 treinos por semana",
+      "Exercícios de pliometria, aceleração, velocidade máxima e força",
       "Material em português na área do cliente"
     ],
     structure: [
@@ -868,7 +871,7 @@ export const portugueseProgramSalesPages = {
       "Velocidade aplicada ao jogo"
     ],
     note:
-      "Também existe a versão nova Project 36 Offseason em inglês, com visual e estrutura mais atualizados."
+      "O Projeto 36 pode ser utilizado na offseason ou em fases de preparação nas quais o atleta quer priorizar velocidade."
   },
   deVoltaAosGramados: {
     title: "De Volta aos Gramados",
@@ -909,7 +912,7 @@ export const portugueseProgramSalesPages = {
 
 export const programsEn = [
   {
-    title: "Offseason Program 30 Days",
+    title: "Offseason 30 Days",
     tag: "English",
     duration: "30 days",
     level: "Final 30 days",
@@ -960,7 +963,7 @@ export const programsEn = [
     cta: "View page"
   },
   {
-    title: "Projeto Elanga In-Season",
+    title: "Elanga In-Season",
     tag: "English",
     duration: "28 weeks",
     level: "In-season",

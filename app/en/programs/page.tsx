@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 const annualPath = [
   {
     step: "01",
-    title: "Build in the offseason",
+    title: "Offseason",
     body:
-      "Use Adama for strength and power. Use Project 36 for acceleration, top speed and game-speed actions.",
+      "Build a solid base of strength, power and speed with Adama and Project 36.",
     image: assets.programsGymBriefing,
     imageClass: "object-[center_18%]",
     href: "#programas",
@@ -27,9 +27,9 @@ const annualPath = [
   },
   {
     step: "02",
-    title: "Sharpen the final 30 days",
+    title: "Final 30 days before preseason",
     body:
-      "When return to team training, preseason or trials are close, Offseason 30 Days gives the final block structure.",
+      "Use Offseason 30 Days to sharpen conditioning and arrive prepared for the return to training.",
     image: assets.programsPlayerReady,
     imageClass: "object-[center_18%]",
     href: "/en/programs/offseason-30-days",
@@ -37,9 +37,9 @@ const annualPath = [
   },
   {
     step: "03",
-    title: "Maintain during the season",
+    title: "During the season",
     body:
-      "Once matches and team sessions take over the week, Elanga keeps strength and speed alive with low volume.",
+      "Maintain performance with Elanga, preserving strength, speed and power without disrupting team training and matches.",
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/en/programs/elanga-in-season",
@@ -54,6 +54,7 @@ export default function EnglishProgramsPage() {
         navItems={nav.en}
         ctaHref="/en/coaching#application"
         ctaLabel="Apply"
+        languageHref="/programas"
       />
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
@@ -76,15 +77,15 @@ export default function EnglishProgramsPage() {
                 className="focus-ring inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-white transition hover:bg-white hover:text-ink"
                 href="/programas"
               >
-                🇧🇷 Portugues
+                🇺🇸 English → Português
               </Link>
             </div>
             <h1 className="mt-5 font-display text-4xl uppercase leading-[1.03] sm:text-5xl lg:text-6xl">
-              Train with a plan for every phase of the year.
+              Train with the right plan for each phase of your season.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
-              Four ready-to-buy programs covering offseason strength, football
-              speed, the final 30 days before return and in-season maintenance.
+              Build strength and speed in the offseason, sharpen the final block
+              before preseason and maintain performance once matches are back.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaButton href="#programas" icon={ArrowRight}>
@@ -125,14 +126,14 @@ export default function EnglishProgramsPage() {
                 Player path
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Strength, speed, final prep and season.
+                A complete method to evolve through the whole year.
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              Build strength and speed in the offseason with Adama and Project
-              36. Use Offseason 30 Days when the return date is close. Then use
-              Elanga to maintain your level once matches and team training are
-              back.
+              The ideal preparation starts in the offseason with Adama and
+              Project 36. The final 30 days before preseason are sharpened with
+              Offseason 30 Days. During the season, Elanga helps maintain
+              strength and speed without compromising recovery.
             </p>
           </div>
 
@@ -180,7 +181,7 @@ export default function EnglishProgramsPage() {
               When to choose coaching
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
-              If your week changes constantly, a fixed program is not enough.
+              Your routine changes. Your training should too.
             </h2>
             <p className="mt-5 text-base leading-8 text-white/70">
               Programs work best when the goal is clear and the schedule allows
@@ -207,11 +208,11 @@ export default function EnglishProgramsPage() {
               Need something individual?
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
-              Online coaching is still the main product.
+              High-performance individual training for athletes chasing the next level.
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-graphite/75">
-              If you have matches, team sessions, fatigue, injury history or a
-              schedule that changes every week, the 1:1 plan is the safer path.
+              If your schedule changes every week, Online Coaching is the most
+              complete option, with a plan adjusted around your real routine.
             </p>
           </div>
           <Link

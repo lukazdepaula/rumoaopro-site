@@ -25,7 +25,7 @@ const copy = {
     nav: nav.pt,
     ctaLabel: "Comprar",
     languageHref: "/en/programs/elanga-in-season",
-    languageLabel: "🇺🇸 English",
+    languageLabel: "🇧🇷 PT → EN",
     eyebrow: "Projeto Elanga In-Season",
     h1: "Mantenha força, velocidade e potência durante a temporada.",
     lead:
@@ -194,7 +194,7 @@ const copy = {
     nav: nav.en,
     ctaLabel: "Buy",
     languageHref: "/programas/elanga-in-season",
-    languageLabel: "🇧🇷 Português",
+    languageLabel: "🇺🇸 EN → PT",
     eyebrow: "Elanga Project In-Season",
     h1: "Maintain strength, speed and power during the season.",
     lead:

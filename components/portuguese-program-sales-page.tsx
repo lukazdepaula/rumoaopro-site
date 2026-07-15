@@ -153,7 +153,7 @@ export function PortugueseProgramSalesPage({
               Para quem é
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-              Uma estrutura pronta para executar com clareza.
+              Treine com a metodologia de um atleta profissional.
             </h2>
             <p className="mt-5 text-base leading-8 text-graphite/75">
               {program.bestFor}

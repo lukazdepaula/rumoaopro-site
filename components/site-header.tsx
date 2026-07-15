@@ -5,16 +5,25 @@ type SiteHeaderProps = {
   navItems: { label: string; href: string }[];
   ctaLabel?: string;
   ctaHref?: string;
+  languageHref?: string;
+};
+
+const isLanguageItem = (label: string) =>
+  label.includes("English") || label.includes("Português");
+
+const languageLabel = (label: string) => {
+  const targetIsEnglish = label.includes("English");
+
+  return targetIsEnglish ? "🇧🇷 PT → EN" : "🇺🇸 EN → PT";
 };
 
 export function SiteHeader({
   navItems,
   ctaLabel = "Aplicar",
-  ctaHref = "/assessoria#aplicacao"
+  ctaHref = "/assessoria#aplicacao",
+  languageHref
 }: SiteHeaderProps) {
-  const languageItem = navItems.find(
-    (item) => item.label.includes("English") || item.label.includes("Português")
-  );
+  const languageItem = navItems.find((item) => isLanguageItem(item.label));
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 text-white backdrop-blur">
@@ -33,8 +42,8 @@ export function SiteHeader({
         </Link>
         <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
           {navItems.map((item) => {
-            const isLanguage =
-              item.label.includes("English") || item.label.includes("Português");
+            const isLanguage = isLanguageItem(item.label);
+            const href = isLanguage && languageHref ? languageHref : item.href;
 
             return (
               <Link
@@ -43,10 +52,10 @@ export function SiteHeader({
                     ? "focus-ring rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white hover:text-ink"
                     : "focus-ring rounded-md text-sm font-semibold text-white/80 transition hover:text-white"
                 }
-                href={item.href}
+                href={href}
                 key={item.href}
               >
-                {item.label}
+                {isLanguage ? languageLabel(item.label) : item.label}
               </Link>
             );
           })}
@@ -55,9 +64,9 @@ export function SiteHeader({
           {languageItem ? (
             <Link
               className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-white/15 bg-white/10 px-3 text-sm font-bold text-white md:hidden"
-              href={languageItem.href}
+              href={languageHref || languageItem.href}
             >
-              {languageItem.label}
+              {languageLabel(languageItem.label)}
             </Link>
           ) : null}
           <Link

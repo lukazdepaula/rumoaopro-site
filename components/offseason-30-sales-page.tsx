@@ -31,7 +31,7 @@ const copy = {
     nav: nav.pt,
     ctaLabel: "Comprar",
     languageHref: "/en/programs/offseason-30-days",
-    languageLabel: "🇺🇸 English",
+    languageLabel: "🇧🇷 PT → EN",
     eyebrow: "Offseason Program 30 Days",
     h1: "Organize 30 dias de offseason com treino de verdade.",
     lead:
@@ -210,7 +210,7 @@ const copy = {
     nav: nav.en,
     ctaLabel: "Buy",
     languageHref: "/programas/offseason-30-days",
-    languageLabel: "🇧🇷 Português",
+    languageLabel: "🇺🇸 EN → PT",
     eyebrow: "Offseason Program 30 Days",
     h1: "Turn a short offseason into 30 focused training days.",
     lead:

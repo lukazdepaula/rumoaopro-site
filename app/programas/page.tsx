@@ -7,6 +7,7 @@ import { ProgramsSection } from "@/components/programs-section";
 import { ReviewBadge } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import { assets, nav, programsPtLegacy } from "@/lib/content";
 import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
@@ -19,9 +20,9 @@ export const metadata: Metadata = {
 const annualPath = [
   {
     step: "01",
-    title: "Construa na offseason",
+    title: "Offseason",
     body:
-      "Use Adama para força e potência. Use Project 36 para velocidade, aceleração e top speed.",
+      "Construa uma base sólida de força, potência e velocidade com Adama e Project 36.",
     image: assets.programsGymBriefing,
     imageClass: "object-[center_18%]",
     href: "#programas",
@@ -29,9 +30,9 @@ const annualPath = [
   },
   {
     step: "02",
-    title: "Ajuste os últimos 30 dias",
+    title: "Últimos 30 dias antes da pré-temporada",
     body:
-      "Quando a volta ao clube, peneira ou pré-temporada está perto, o Offseason 30 Days organiza a reta final.",
+      "Use o Offseason 30 Days para potencializar o condicionamento físico e chegar preparado para o retorno aos treinos.",
     image: assets.programsPlayerReady,
     imageClass: "object-[center_18%]",
     href: "/programas/offseason-30-days",
@@ -39,9 +40,9 @@ const annualPath = [
   },
   {
     step: "03",
-    title: "Mantenha durante a temporada",
+    title: "Durante a temporada",
     body:
-      "Depois que jogos e treinos do time entram na rotina, o Elanga mantém força e velocidade com dose baixa.",
+      "Mantenha o desempenho com Elanga, preservando força, velocidade e potência sem interferir nos treinos e jogos da equipe.",
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/programas/elanga-in-season",
@@ -49,10 +50,30 @@ const annualPath = [
   }
 ];
 
+const normalizeProgramPath = (href: string) =>
+  href.replace(/^\/programas\//, "").replace(/^\/checkout\//, "");
+
+const getProgramPrice = (href: string) => {
+  const path = normalizeProgramPath(href);
+  const product = checkoutProducts.find((item) =>
+    [
+      item.slug,
+      normalizeProgramPath(item.sales_page_path),
+      ...(item.aliases || [])
+    ].includes(path)
+  );
+
+  return product ? formatMoney(product.price_brl_estimated, "BRL") : null;
+};
+
 export default function ProgramasPage() {
   return (
     <main className="min-h-screen bg-smoke">
-      <SiteHeader navItems={nav.pt} ctaHref="/assessoria#aplicacao" />
+      <SiteHeader
+        navItems={nav.pt}
+        ctaHref="/assessoria#aplicacao"
+        languageHref="/en/programs"
+      />
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
@@ -74,16 +95,16 @@ export default function ProgramasPage() {
                 className="focus-ring inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-white transition hover:bg-white hover:text-ink"
                 href="/en/programs"
               >
-                🇺🇸 English
+                🇧🇷 Português → English
               </Link>
             </div>
             <h1 className="mt-5 font-display text-4xl uppercase leading-[1.03] sm:text-5xl lg:text-6xl">
-              Treine com um plano para cada fase do ano.
+              Treine com o plano certo para cada fase da sua temporada.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
-              Os quatro programas principais cobrem offseason, velocidade,
-              últimos 30 dias de preparação e manutenção em temporada. No
-              momento, essa coleção principal está em inglês.
+              Evolua o ano inteiro com uma sequência clara: construa força e
+              velocidade na offseason, acelere a reta final antes da
+              pré-temporada e mantenha o desempenho durante os jogos.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaButton href="#programas" icon={ArrowRight}>
@@ -97,7 +118,7 @@ export default function ProgramasPage() {
               {[
                 ["4", "programas globais"],
                 ["4", "opções em português"],
-                ["Ano todo", "offseason até temporada"]
+                ["Ano todo", "offseason, pré e temporada"]
               ].map(([value, label]) => (
                 <div
                   className="rounded-lg border border-white/10 bg-white/[0.06] p-4"
@@ -124,14 +145,15 @@ export default function ProgramasPage() {
                 Rota do atleta
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Força, velocidade, reta final e temporada.
+                Evolua o ano inteiro com o treinamento ideal para cada fase.
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              O jogador pode usar Adama e Project 36 durante a offseason para
-              construir força e velocidade. Nos últimos 30 dias, entra o
-              Offseason 30 Days. Em temporada, o Elanga ajuda a manter o nível
-              sem brigar com jogos e treinos do time.
+              A preparação ideal começa na offseason com Adama e Project 36,
+              desenvolvendo força, potência, velocidade e resistência física.
+              Nos 30 dias que antecedem a pré-temporada, o Offseason 30 Days
+              intensifica o trabalho. Durante a temporada, o Elanga mantém força
+              e velocidade sem comprometer a recuperação do jogador.
             </p>
           </div>
 
@@ -177,15 +199,15 @@ export default function ProgramasPage() {
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <p className="text-sm font-bold uppercase text-signal">
-                Coleção em português
+                Programas em português
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Programas disponíveis em português.
+                Programas em Português - confira nossas opções.
               </h2>
               <p className="mt-4 text-base leading-7 text-graphite/75">
-                Estes produtos são uma opção para quem prefere comprar e acessar
-                o material em português dentro da nova área do cliente
-                RumoAoPro.
+                Os melhores programas em português para você treinar com
+                clareza, escolher a fase certa da temporada e acessar tudo pela
+                área do cliente RumoAoPro.
               </p>
             </div>
             <Link
@@ -200,6 +222,7 @@ export default function ProgramasPage() {
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {programsPtLegacy.map((program) => {
               const reviewGroupKey = getReviewGroupForProgramHref(program.href);
+              const price = getProgramPrice(program.href);
 
               return (
                 <Link
@@ -220,9 +243,19 @@ export default function ProgramasPage() {
                     </div>
                   </div>
                   <div className="p-5">
-                    <p className="text-xs font-bold uppercase text-signal">
-                      {program.level}
-                    </p>
+                    <div className="flex min-h-[54px] flex-wrap items-start justify-between gap-3">
+                      <p className="max-w-[180px] text-xs font-bold uppercase leading-5 text-signal">
+                        {program.level}
+                      </p>
+                      {price ? (
+                        <div className="text-right">
+                          <p className="text-[11px] font-bold uppercase text-graphite/45">
+                            Preço
+                          </p>
+                          <p className="text-lg font-bold text-ink">{price}</p>
+                        </div>
+                      ) : null}
+                    </div>
                     {reviewGroupKey ? (
                       <ReviewBadge
                         className="mt-3"
@@ -255,13 +288,13 @@ export default function ProgramasPage() {
               Quando escolher assessoria
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
-              Se sua semana muda toda hora, programa pronto não resolve tudo.
+              Sua rotina muda. Seu treinamento também deve mudar.
             </h2>
             <p className="mt-5 text-base leading-8 text-white/70">
               Os programas funcionam melhor quando o objetivo é claro e a rotina
               permite seguir uma estrutura. Se você precisa ajustar carga por
-              jogo, fadiga, lesão ou treino do time, a assessoria é o caminho
-              mais seguro.
+              jogo, fadiga, lesão ou treino do time, a assessoria individual é o
+              caminho mais completo.
             </p>
           </div>
           <div className="overflow-hidden rounded-lg border border-white/10">
@@ -283,12 +316,12 @@ export default function ProgramasPage() {
               Precisa de algo individual?
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase text-ink sm:text-4xl">
-              A assessoria continua sendo o produto principal.
+              Treinamento individual de alta performance para atletas que buscam o próximo nível.
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-graphite/75">
-              Se você tem jogos, treinos do time, fadiga, lesão recente ou uma
-              rotina que muda toda semana, o plano 1:1 com suporte semanal é o
-              caminho mais seguro.
+              Quer alcançar seu máximo potencial? A Assessoria Esportiva é a
+              nossa solução mais completa e recomendada, com plano ajustado à
+              sua rotina real.
             </p>
           </div>
           <Link
