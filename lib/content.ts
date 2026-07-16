@@ -131,7 +131,7 @@ export const assets = {
   successDiogo: "/assets/success/diogo-fortunato-player.jpg",
   preSeason: "/assets/programs/pt/projeto-pre-temporada-cover.jpg",
   adama: "/assets/programs/pt/projeto-adama-2022-cover.jpg",
-  project36Pt: "/assets/programs/project-36/project-36-cover.jpg",
+  project36Pt: "/assets/programs/pt/projeto-36-2022-cover.jpg",
   dvg: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg"
 };
 
@@ -734,12 +734,12 @@ export const programsPtLegacy = [
     title: "Projeto 36 km/h",
     tag: "Português",
     duration: "12 semanas",
-    level: "Força e velocidade",
+    level: "Velocidade e aceleração",
     body:
-      "12 semanas para correr mais rápido, acelerar melhor e transferir velocidade para o jogo.",
+      "12 semanas para correr mais rápido, acelerar com mais explosão e transferir velocidade para o jogo.",
     outcomes: [
       "Aceleração e velocidade máxima",
-      "Campo + academia",
+      "Campo, academia e coordenação",
       "Produto em português"
     ],
     image: assets.project36Pt,
@@ -770,6 +770,8 @@ export const portugueseProgramSalesPages = {
   preTemporada: {
     title: "Projeto Pré Temporada",
     eyebrow: "Programa em português",
+    headline:
+      "Projeto Pré Temporada: chegue pronto para competir desde o primeiro jogo.",
     slug: "projeto-pre-temporada",
     checkoutHref: shopifyProducts.preTemporada,
     cover: assets.preSeason,
@@ -806,6 +808,8 @@ export const portugueseProgramSalesPages = {
   adama2022: {
     title: "Projeto Adama",
     eyebrow: "Programa em português",
+    headline:
+      "Projeto Adama: fique mais forte, potente e explosivo sem perder mobilidade.",
     slug: "projeto-adama-2022",
     checkoutHref: shopifyProducts.adama2022,
     cover: assets.adama,
@@ -841,43 +845,47 @@ export const portugueseProgramSalesPages = {
   },
   projeto362022: {
     title: "Projeto 36 km/h",
-    eyebrow: "Programa em português",
+    eyebrow: "Velocidade para futebol",
+    headline:
+      "Projeto 36 km/h: corra mais rápido e acelere com mais explosão.",
     slug: "projeto-36-2022",
     checkoutHref: shopifyProducts.projeto362022,
     cover: assets.project36Pt,
     heroImage: assets.programsSprintChase,
     heroImageClass: "object-center",
-    coverClass: "object-cover object-center",
+    coverClass: "object-contain",
     duration: "12 semanas",
-    level: "Força e velocidade",
+    level: "Velocidade e aceleração",
     lead:
       "O programa de velocidade da RumoAoPro para ajudar atletas a correrem mais rápido, acelerarem com mais explosão e melhorarem o desempenho em campo.",
     bestFor:
-      "Atletas que querem treinar velocidade de forma inteligente e progressiva, usando o método que me permitiu atingir 36 km/h durante minha carreira profissional.",
+      "Atletas de futebol que querem treinar velocidade de forma inteligente e progressiva, usando o método que me permitiu atingir 36 km/h durante minha carreira profissional.",
     outcomes: [
-      "Aceleração, velocidade máxima e re-aceleração",
-      "Força, coordenação e resistência aplicadas ao sprint",
-      "Estratégias organizadas para maximizar sua evolução"
+      "Aceleração mais explosiva nos primeiros metros",
+      "Velocidade máxima, coordenação e resistência aplicadas ao sprint",
+      "Campo e academia organizados para maximizar sua evolução"
     ],
     includes: [
-      "12 semanas de programação",
-      "4 fases de treinamento",
-      "4 treinos por semana",
-      "Exercícios de pliometria, aceleração, velocidade máxima e força",
+      "12 semanas divididas em 4 fases de treinamento",
+      "4 treinos por semana combinando campo e academia",
+      "Exercícios de pliometria, aceleração, velocidade máxima, resistência, coordenação e força",
+      "Estratégias para usar o programa na offseason ou em blocos de preparação",
       "Material em português na área do cliente"
     ],
     structure: [
-      "Fundação atlética",
-      "Aceleração",
-      "Velocidade máxima",
-      "Velocidade aplicada ao jogo"
+      "Base técnica e coordenação de sprint",
+      "Aceleração e potência nos primeiros metros",
+      "Velocidade máxima e mecânica em alta intensidade",
+      "Transferência para ações rápidas de jogo"
     ],
     note:
-      "O Projeto 36 pode ser utilizado na offseason ou em fases de preparação nas quais o atleta quer priorizar velocidade."
+      "É recomendado ter acesso a campo e academia. O Projeto 36 pode ser utilizado na offseason ou em fases de preparação nas quais o atleta quer priorizar velocidade."
   },
   deVoltaAosGramados: {
     title: "De Volta aos Gramados",
     eyebrow: "Programa em português",
+    headline:
+      "De Volta aos Gramados: retorne aos treinos com uma progressão mais segura.",
     slug: "de-volta-aos-gramados",
     checkoutHref: shopifyProducts.deVoltaAosGramados,
     cover: assets.dvg,

@@ -152,7 +152,7 @@ export const checkoutProducts: CheckoutProduct[] = [
   },
   {
     id: "projeto_36_2022_pt",
-    name: "Projeto 36 km/h 2022",
+    name: "Projeto 36 km/h",
     slug: "projeto-36-2022",
     description:
       "Programa em português de 12 semanas para desenvolver força, aceleração e velocidade no futebol.",
@@ -161,7 +161,7 @@ export const checkoutProducts: CheckoutProduct[] = [
     ...productPrice(),
     active: true,
     sales_page_path: "/programas/projeto-36-2022",
-    cover_image: "/assets/programs/project-36/project-36-cover.jpg",
+    cover_image: "/assets/programs/pt/projeto-36-2022-cover.jpg",
     delivery_type: "member_area",
     file_id: null,
     aliases: ["projeto-36", "projeto-36-12-semanas"],

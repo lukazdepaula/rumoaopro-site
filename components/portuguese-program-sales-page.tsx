@@ -71,7 +71,7 @@ export function PortugueseProgramSalesPage({
               {program.eyebrow}
             </p>
             <h1 className="mt-5 font-display text-4xl uppercase leading-[1.02] sm:text-5xl lg:text-6xl">
-              {program.title}
+              {program.headline}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/76 sm:text-lg">
               {program.lead}
