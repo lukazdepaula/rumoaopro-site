@@ -6,6 +6,7 @@ import {
 } from "@/lib/checkout/db";
 import { grantProductAccess } from "@/lib/checkout/access";
 import { deliverOrder } from "@/lib/checkout/delivery";
+import { sendInternalSaleNotice } from "@/lib/checkout/email";
 import type { Order } from "@/lib/checkout/types";
 
 async function assertOrder(orderId: string): Promise<Order> {
@@ -39,8 +40,9 @@ export async function markOrderAsPaid(
   gatewayData: Record<string, unknown> = {}
 ) {
   const order = await assertOrder(orderId);
+  const firstConfirmation = order.status !== "paid";
 
-  if (order.status !== "paid") {
+  if (firstConfirmation) {
     await updateOrderStatus(orderId, "paid", {
       gateway_data: gatewayData
     });
@@ -53,6 +55,24 @@ export async function markOrderAsPaid(
   const paidOrder = await getOrderById(orderId);
   if (paidOrder) {
     await grantProductAccess(paidOrder);
+
+    if (firstConfirmation) {
+      await sendInternalSaleNotice({
+        orderId: paidOrder.id,
+        customerName: paidOrder.customer_name,
+        customerEmail: paidOrder.customer_email,
+        customerCountry: paidOrder.customer_country,
+        customerPostalCode: paidOrder.customer_postal_code,
+        productName: paidOrder.product_name,
+        amount: paidOrder.amount,
+        currency: paidOrder.currency,
+        gateway: paidOrder.gateway,
+        discountCode:
+          typeof paidOrder.metadata.discount_code === "string"
+            ? paidOrder.metadata.discount_code
+            : null
+      });
+    }
   }
 
   await triggerDelivery(orderId);

@@ -8,7 +8,6 @@ import {
   updateDeliveryStatus
 } from "@/lib/checkout/db";
 import {
-  sendInternalSaleNotice,
   sendOnboardingEmail,
   sendPdfDeliveryEmail,
   sendProgramAccessEmail
@@ -110,14 +109,6 @@ export async function deliverOrder(orderId: string) {
       productName: product.name,
       accountUrl
     });
-    await sendInternalSaleNotice({
-      orderId: order.id,
-      customerName: order.customer_name,
-      customerEmail: order.customer_email,
-      productName: product.name,
-      amount: order.amount,
-      currency: order.currency
-    });
     await updateDeliveryStatus(order.id, "delivered", {
       delivery_type: "member_area"
     });
@@ -130,14 +121,6 @@ export async function deliverOrder(orderId: string) {
       await updateDeliveryStatus(order.id, "manual_required", {
         reason: "private_file_missing",
         expected_file_id: product.file_id
-      });
-      await sendInternalSaleNotice({
-        orderId: order.id,
-        customerName: order.customer_name,
-        customerEmail: order.customer_email,
-        productName: product.name,
-        amount: order.amount,
-        currency: order.currency
       });
       return;
     }
@@ -156,14 +139,6 @@ export async function deliverOrder(orderId: string) {
       name: order.customer_name,
       productName: product.name,
       downloadUrl
-    });
-    await sendInternalSaleNotice({
-      orderId: order.id,
-      customerName: order.customer_name,
-      customerEmail: order.customer_email,
-      productName: product.name,
-      amount: order.amount,
-      currency: order.currency
     });
     await updateDeliveryStatus(order.id, "delivered", {
       download_url_expires_in_seconds: dayInSeconds

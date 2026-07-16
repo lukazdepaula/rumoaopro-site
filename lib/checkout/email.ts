@@ -1,7 +1,7 @@
 import { appendOrderLog } from "@/lib/checkout/db";
 
 type EmailInput = {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   orderId?: string;
@@ -140,25 +140,57 @@ export async function sendInternalSaleNotice(input: {
   orderId: string;
   customerName: string;
   customerEmail: string;
+  customerCountry: string;
+  customerPostalCode?: string | null;
   productName: string;
   amount: number;
   currency: string;
+  gateway: string;
+  discountCode?: string | null;
 }) {
-  const to = process.env.INTERNAL_SALES_EMAIL || process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-  if (!to) return;
+  const configuredRecipients =
+    process.env.INTERNAL_SALES_EMAIL ||
+    process.env.ADMIN_EMAILS ||
+    process.env.NEXT_PUBLIC_CONTACT_EMAIL;
+  if (!configuredRecipients) return;
+
+  const to = configuredRecipients
+    .split(/[;,]/)
+    .map((email) => email.trim())
+    .filter(Boolean);
+  if (to.length === 0) return;
+
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const orderUrl = siteUrl ? `${siteUrl}/admin/orders/${input.orderId}` : null;
+  const amount = new Intl.NumberFormat(
+    input.currency === "BRL" ? "pt-BR" : "en-US",
+    { style: "currency", currency: input.currency }
+  ).format(input.amount);
 
   await sendEmail({
     to,
-    subject: `Nova venda paga - ${input.productName}`,
+    subject: `Venda confirmada: ${input.productName} · ${amount}`,
     orderId: input.orderId,
     html: `
-      <p>Nova venda confirmada.</p>
-      <ul>
-        <li>Pedido: ${input.orderId}</li>
-        <li>Cliente: ${input.customerName} (${input.customerEmail})</li>
-        <li>Produto: ${input.productName}</li>
-        <li>Valor: ${input.currency} ${input.amount}</li>
-      </ul>
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+        <div style="background:#08090b;color:#fff;padding:24px">
+          <p style="margin:0 0 8px;color:#c8a24c;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro Admin</p>
+          <h1 style="margin:0;font-size:26px">Nova venda confirmada</h1>
+        </div>
+        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+          <p style="margin:0 0 18px;font-size:22px;font-weight:700">${input.productName}</p>
+          <table style="border-collapse:collapse;width:100%;font-size:14px">
+            <tr><td style="padding:8px 0;color:#68707d">Valor</td><td style="padding:8px 0;text-align:right;font-weight:700">${amount}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">Gateway</td><td style="padding:8px 0;text-align:right;font-weight:700">${input.gateway}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">Cliente</td><td style="padding:8px 0;text-align:right;font-weight:700">${input.customerName}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">E-mail</td><td style="padding:8px 0;text-align:right">${input.customerEmail}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">País / CEP</td><td style="padding:8px 0;text-align:right">${input.customerCountry}${input.customerPostalCode ? ` · ${input.customerPostalCode}` : ""}</td></tr>
+            ${input.discountCode ? `<tr><td style="padding:8px 0;color:#68707d">Cupom</td><td style="padding:8px 0;text-align:right">${input.discountCode}</td></tr>` : ""}
+            <tr><td style="padding:8px 0;color:#68707d">Pedido</td><td style="padding:8px 0;text-align:right;font-family:monospace">${input.orderId}</td></tr>
+          </table>
+          ${orderUrl ? `<p style="margin:24px 0 0"><a href="${orderUrl}" style="display:inline-block;background:#d5162a;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Abrir pedido no admin</a></p>` : ""}
+        </div>
+      </div>
     `
   });
 }
