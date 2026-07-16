@@ -141,14 +141,14 @@ export const nav = {
     { label: "Assessoria", href: "/assessoria" },
     { label: "Programas", href: "/programas" },
     { label: "Links", href: "/links" },
-    { label: "🇺🇸 English", href: "/en/coaching" }
+    { label: "🇺🇸 English", href: "/en" }
   ],
   en: [
     { label: "Home", href: "/en" },
     { label: "Coaching", href: "/en/coaching" },
     { label: "Programs", href: "/en/programs" },
     { label: "Links", href: "/en/links" },
-    { label: "🇧🇷 Português", href: "/assessoria" }
+    { label: "🇧🇷 Português", href: "/" }
   ]
 };
 
