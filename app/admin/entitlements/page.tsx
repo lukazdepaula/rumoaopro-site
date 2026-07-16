@@ -57,11 +57,20 @@ export default async function AdminEntitlementsPage() {
                   </td>
                   <td className="px-4 py-3">
                     {entitlement.access_status === "active" ? (
-                      <form action={`/api/admin/entitlements/${entitlement.id}/revoke`} method="post">
-                        <button className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink" type="submit">
-                          Revogar
-                        </button>
-                      </form>
+                      <div className="flex flex-wrap gap-2">
+                        {entitlement.order_id ? (
+                          <form action={`/api/admin/orders/${entitlement.order_id}/access`} method="post">
+                            <button className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink" type="submit">
+                              Reenviar acesso
+                            </button>
+                          </form>
+                        ) : null}
+                        <form action={`/api/admin/entitlements/${entitlement.id}/revoke`} method="post">
+                          <button className="rounded-md border border-red-200 px-3 py-2 text-xs font-bold text-red-700" type="submit">
+                            Revogar
+                          </button>
+                        </form>
+                      </div>
                     ) : (
                       "-"
                     )}

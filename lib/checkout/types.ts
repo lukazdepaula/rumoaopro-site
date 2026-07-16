@@ -66,6 +66,7 @@ export type Order = {
   customer_country: string;
   customer_document_type: CustomerDocumentType;
   customer_document: string | null;
+  customer_postal_code: string | null;
   gateway: Gateway;
   gateway_payment_id: string | null;
   gateway_checkout_id: string | null;
@@ -147,5 +148,6 @@ export type CheckoutCustomerInput = {
   email: string;
   country: string;
   document?: string;
+  postalCode?: string;
   discountCode?: string;
 };

@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       customer_country: brazil ? "BR" : input.country,
       customer_document_type: input.documentType,
       customer_document: input.document,
+      customer_postal_code: input.postalCode,
       gateway:
         checkoutMode() === "live"
           ? brazil

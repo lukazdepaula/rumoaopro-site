@@ -10,15 +10,20 @@ export const dynamic = "force-dynamic";
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ access?: string }>;
 };
 
 export const metadata: Metadata = {
   title: "Admin - Pedido"
 };
 
-export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
+export default async function OrderDetailPage({
+  params,
+  searchParams
+}: OrderDetailPageProps) {
   await requireAdmin();
   const { id } = await params;
+  const query = await searchParams;
   const order = await getOrderById(id);
 
   if (!order) {
@@ -34,6 +39,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
     ["E-mail", order.customer_email],
     ["País", order.customer_country],
     ["Documento", order.customer_document ? `${order.customer_document_type}: ${order.customer_document}` : "-"],
+    ["CEP", order.customer_postal_code || "-"],
     ["Gateway", order.gateway],
     ["Gateway payment", order.gateway_payment_id || "-"],
     ["Gateway checkout", order.gateway_checkout_id || "-"],
@@ -51,6 +57,22 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       <Link className="text-sm font-bold text-signal underline" href="/admin/orders">
         Voltar para pedidos
       </Link>
+
+      {query.access === "sent" ? (
+        <p className="mt-5 rounded-lg border border-turf/20 bg-turf/10 px-4 py-3 text-sm font-bold text-turf">
+          Link de acesso reenviado para o cliente.
+        </p>
+      ) : null}
+      {query.access === "not_paid" ? (
+        <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+          Só é possível reenviar acesso quando o pedido está paid.
+        </p>
+      ) : null}
+      {query.access === "error" ? (
+        <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+          Não foi possível gerar o link de acesso. Tente novamente.
+        </p>
+      ) : null}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.45fr]">
         <section className="rounded-lg border border-ink/10 bg-white">
@@ -74,6 +96,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               Reenviar entrega/e-mail
             </button>
           </form>
+          <form action={`/api/admin/orders/${order.id}/access`} method="post">
+            <button className="min-h-11 w-full rounded-md border border-ink/15 px-4 text-sm font-bold text-ink" type="submit">
+              Reenviar link de acesso
+            </button>
+          </form>
           <form action={`/api/admin/orders/${order.id}/delete`} method="post">
             <button className="min-h-11 w-full rounded-md border border-red-200 px-4 text-sm font-bold text-red-700" type="submit">
               Excluir pedido
@@ -82,6 +109,10 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <p className="text-xs leading-5 text-graphite/60">
             Reenvio só entrega PDF se o pedido estiver paid e o arquivo privado
             existir no diretório configurado.
+          </p>
+          <p className="text-xs leading-5 text-graphite/60">
+            O cliente entra por link seguro. Se ele perder o acesso, reenvie o
+            link de acesso acima.
           </p>
           <p className="rounded-md bg-red-50 p-3 text-xs leading-5 text-red-700">
             Excluir remove o pedido, os logs e qualquer acesso liberado por esse

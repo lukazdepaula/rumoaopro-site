@@ -38,11 +38,19 @@ const formatMoney = (amount: number, currency: string) =>
     currency
   }).format(amount);
 
+const formatPostalCode = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  return digits.length > 5
+    ? `${digits.slice(0, 5)}-${digits.slice(5)}`
+    : digits;
+};
+
 export function CheckoutForm({ product }: CheckoutFormProps) {
   const [country, setCountry] = useState("BR");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
@@ -145,6 +153,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           email,
           country,
           document: isBrazil ? document : undefined,
+          postalCode: isBrazil ? postalCode : undefined,
           discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });
@@ -327,18 +336,34 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         </label>
 
         {isBrazil ? (
-          <label className="grid gap-2 text-sm font-semibold text-ink">
-            CPF ou CNPJ
-            <input
-              className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
-              inputMode="numeric"
-              onChange={(event) => setDocument(event.target.value)}
-              placeholder="Somente números"
-              required
-              type="text"
-              value={document}
-            />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
+              CPF ou CNPJ
+              <input
+                className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
+                inputMode="numeric"
+                onChange={(event) => setDocument(event.target.value)}
+                placeholder="Somente números"
+                required
+                type="text"
+                value={document}
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-ink">
+              CEP
+              <input
+                className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
+                inputMode="numeric"
+                onChange={(event) =>
+                  setPostalCode(formatPostalCode(event.target.value))
+                }
+                placeholder="00000-000"
+                required
+                type="text"
+                value={postalCode}
+              />
+            </label>
+          </div>
         ) : null}
 
         <div className="grid gap-2 rounded-md border border-ink/10 bg-white p-3">

@@ -365,6 +365,15 @@ function parseMetadata(value: unknown) {
 }
 
 function normalizeOrder(row: Record<string, unknown>): Order {
+  const metadata = parseMetadata(row.metadata);
+  const metadataPostalCode = metadata.customer_postal_code;
+  const customerPostalCode =
+    row.customer_postal_code === null || row.customer_postal_code === undefined
+      ? typeof metadataPostalCode === "string"
+        ? metadataPostalCode
+        : null
+      : String(row.customer_postal_code);
+
   return {
     id: String(row.id),
     product_id: String(row.product_id),
@@ -374,11 +383,14 @@ function normalizeOrder(row: Record<string, unknown>): Order {
     customer_email: String(row.customer_email),
     customer_country: String(row.customer_country),
     customer_document_type:
-      row.customer_document_type === null
+      row.customer_document_type === null || row.customer_document_type === undefined
         ? null
         : (String(row.customer_document_type) as Order["customer_document_type"]),
     customer_document:
-      row.customer_document === null ? null : String(row.customer_document),
+      row.customer_document === null || row.customer_document === undefined
+        ? null
+        : String(row.customer_document),
+    customer_postal_code: customerPostalCode,
     gateway: String(row.gateway) as Gateway,
     gateway_payment_id:
       row.gateway_payment_id === null ? null : String(row.gateway_payment_id),
@@ -393,7 +405,7 @@ function normalizeOrder(row: Record<string, unknown>): Order {
     status: String(row.status) as OrderStatus,
     delivery_status: String(row.delivery_status) as DeliveryStatus,
     fiscal_status: String(row.fiscal_status) as FiscalStatus,
-    metadata: parseMetadata(row.metadata),
+    metadata,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
     paid_at: row.paid_at === null ? null : String(row.paid_at)
@@ -859,6 +871,7 @@ export type CreateOrderInput = {
   customer_country: string;
   customer_document_type: Order["customer_document_type"];
   customer_document: string | null;
+  customer_postal_code?: string | null;
   gateway: Gateway;
   amount: number;
   currency: string;
@@ -868,6 +881,13 @@ export type CreateOrderInput = {
 };
 
 export async function createOrder(input: CreateOrderInput) {
+  const metadata = {
+    ...(input.metadata || {}),
+    ...(input.customer_postal_code
+      ? { customer_postal_code: input.customer_postal_code }
+      : {})
+  };
+
   if (useSupabaseDriver()) {
     await ensureSupabaseSeeded();
     const id = randomUUID();
@@ -891,7 +911,7 @@ export async function createOrder(input: CreateOrderInput) {
         status: "pending",
         delivery_status: "not_delivered",
         fiscal_status: input.fiscal_status,
-        metadata: jsonMetadata(input.metadata),
+        metadata: jsonMetadata(metadata),
         created_at: createdAt,
         updated_at: createdAt
       },
@@ -936,7 +956,7 @@ export async function createOrder(input: CreateOrderInput) {
     "pending",
     "not_delivered",
     input.fiscal_status,
-    JSON.stringify(input.metadata || {}),
+    JSON.stringify(metadata),
     createdAt,
     createdAt
   );

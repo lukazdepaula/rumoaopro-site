@@ -20,6 +20,7 @@ export type ValidCheckoutInput = {
   country: string;
   documentType: CustomerDocumentType;
   document: string | null;
+  postalCode: string | null;
   discountCode: string | null;
 };
 
@@ -91,6 +92,15 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
 
   if (isBrazil(country)) {
     const document = detectBrazilianDocument(normalizeText(data.document));
+    const postalCode = onlyDigits(normalizeText(data.postalCode));
+
+    if (postalCode.length !== 8) {
+      throw new CheckoutValidationError(
+        "Informe um CEP com 8 dígitos.",
+        "postalCode"
+      );
+    }
+
     return {
       productSlug,
       name,
@@ -98,6 +108,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       country: "BR",
       documentType: document.type,
       document: document.value,
+      postalCode,
       discountCode: discountCode || null
     };
   }
@@ -109,6 +120,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     country,
     documentType: null,
     document: null,
+    postalCode: null,
     discountCode: discountCode || null
   };
 }

@@ -40,6 +40,7 @@ export default async function AdminFiscalPage() {
               <th className="px-4 py-3">Pago em</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Documento</th>
+              <th className="px-4 py-3">CEP</th>
               <th className="px-4 py-3">País</th>
               <th className="px-4 py-3">Produto</th>
               <th className="px-4 py-3">Valor</th>
@@ -65,6 +66,9 @@ export default async function AdminFiscalPage() {
                 </td>
                 <td className="px-4 py-3 text-graphite/80">
                   {order.customer_document || "-"}
+                </td>
+                <td className="px-4 py-3 text-graphite/80">
+                  {order.customer_postal_code || "-"}
                 </td>
                 <td className="px-4 py-3 text-graphite/80">{order.customer_country}</td>
                 <td className="px-4 py-3 text-graphite/80">{order.product_name}</td>
@@ -93,7 +97,7 @@ export default async function AdminFiscalPage() {
             ))}
             {orders.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-graphite/60" colSpan={10}>
+                <td className="px-4 py-8 text-center text-graphite/60" colSpan={11}>
                   Nenhuma venda paga ainda.
                 </td>
               </tr>

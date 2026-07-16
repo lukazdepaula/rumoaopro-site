@@ -121,10 +121,12 @@ export async function sendMagicLoginEmail(input: {
   to: string;
   name?: string | null;
   loginUrl: string;
+  orderId?: string;
 }) {
   await sendEmail({
     to: input.to,
     subject: "Seu link de acesso RumoAoPro",
+    orderId: input.orderId,
     html: `
       <p>Fala${input.name ? `, ${input.name}` : ""}.</p>
       <p>Use o link abaixo para entrar na sua conta RumoAoPro:</p>
