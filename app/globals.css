@@ -38,6 +38,11 @@ img {
   max-width: 100%;
 }
 
+.font-display {
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 .surface-grid {
   background-image:
     linear-gradient(rgba(8, 9, 11, 0.08) 1px, transparent 1px),
@@ -72,6 +77,26 @@ img {
   .hero-image,
   .hero-image-alt {
     background-position: 54% top;
+  }
+}
+
+@media (max-width: 639px) {
+  h1.font-display {
+    font-size: 2rem;
+    line-height: 1.06;
+    overflow-wrap: break-word;
+  }
+
+  h2.font-display {
+    font-size: 1.625rem;
+    line-height: 1.12;
+    overflow-wrap: break-word;
+  }
+
+  h3.font-display {
+    font-size: 1.25rem;
+    line-height: 1.18;
+    overflow-wrap: break-word;
   }
 }
 

@@ -31,6 +31,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75
     },
     {
+      url: `${baseUrl}/cursos`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8
+    },
+    {
+      url: `${baseUrl}/en/courses`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.72
+    },
+    {
       url: `${baseUrl}/programas/adama-strength-power`,
       lastModified,
       changeFrequency: "monthly",

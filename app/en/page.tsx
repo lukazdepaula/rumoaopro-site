@@ -52,14 +52,14 @@ const entryCards = [
     cta: "View programs"
   },
   {
-    title: "Courses",
-    href: "#courses",
-    eyebrow: "Coming soon",
+    title: "Preparador PRO",
+    href: "/en/courses",
+    eyebrow: "Course for coaches",
     image: assets.programsGymBriefing,
     icon: GraduationCap,
     body:
-      "Educational content for players and coaches who want to understand football performance better.",
-    cta: "See the idea"
+      "Learn how to organize and apply physical preparation for football players. Available in Portuguese.",
+    cta: "Explore the course"
   }
 ];
 
@@ -95,19 +95,19 @@ const productBlocks = [
     cta: "Compare programs"
   },
   {
-    title: "Courses",
-    eyebrow: "The next RumoAoPro layer",
+    title: "Preparador PRO",
+    eyebrow: "Practical education for coaches",
     icon: BookOpen,
     image: assets.coachGym,
     body:
-      "Courses will help players and coaches understand the why behind the method: physical preparation, routine, recovery, speed, and better training decisions.",
+      "A direct platform to learn how to plan power, periodization, assessments, speed and endurance for football players.",
     points: [
-      "Direct educational content",
-      "Built from practical football experience",
-      "Planned for a future phase of the site"
+      "Online content currently in Portuguese",
+      "Practical application for performance coaches",
+      "Purchase and access processed by Kiwify"
     ],
-    href: "#courses",
-    cta: "See what is coming"
+    href: "/en/courses",
+    cta: "Explore Preparador PRO"
   }
 ];
 
@@ -253,7 +253,7 @@ export default function EnglishHomePage() {
               return (
                 <article
                   className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm"
-                  id={item.href === "#courses" ? "courses" : undefined}
+                  id={item.href.includes("course") ? "courses" : undefined}
                   key={item.title}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">

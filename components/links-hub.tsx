@@ -39,10 +39,10 @@ const copy = {
     reviews: "avaliações",
     seeProgram: "Ver programa",
     courses: "Cursos",
-    coursesTitle: "Entenda o método por trás do treino",
+    coursesTitle: "Preparador PRO",
     coursesBody:
-      "Conteúdos para atletas e treinadores sobre preparação física, velocidade, recuperação e rotina de alto rendimento.",
-    coursesButton: "Ver cursos e novidades",
+      "Aprenda a planejar e aplicar treinos de potência, velocidade, resistência e preparação física para jogadores de futebol.",
+    coursesButton: "Conhecer o curso",
     youtubeTitle: "Treinos, bastidores e carreira no futebol",
     youtubeBody:
       "Acompanhe conteúdos práticos da RumoAoPro e a rotina de Lukaz de Paula como treinador e jogador.",
@@ -51,7 +51,7 @@ const copy = {
     languageLabel: "🇧🇷 PT",
     languageTarget: "English",
     coachingHref: "/assessoria#aplicacao",
-    coursesHref: "/#cursos"
+    coursesHref: "/cursos"
   },
   en: {
     profile: "CBF A performance coach · Former professional player",
@@ -70,10 +70,10 @@ const copy = {
     reviews: "reviews",
     seeProgram: "View program",
     courses: "Courses",
-    coursesTitle: "Understand the method behind the training",
+    coursesTitle: "Preparador PRO",
     coursesBody:
-      "Content for players and coaches about physical preparation, speed, recovery and high-performance routines.",
-    coursesButton: "See courses and updates",
+      "Learn how to plan and apply power, speed, endurance and physical preparation sessions for football players. Course in Portuguese.",
+    coursesButton: "Explore the course",
     youtubeTitle: "Training, football life and behind the scenes",
     youtubeBody:
       "Follow practical RumoAoPro content and Lukaz de Paula's routine as a coach and player.",
@@ -82,7 +82,7 @@ const copy = {
     languageLabel: "🇺🇸 EN",
     languageTarget: "Português",
     coachingHref: "/en/coaching#application",
-    coursesHref: "/en#courses"
+    coursesHref: "/en/courses"
   }
 } satisfies Record<LinksLocale, Record<string, string>>;
 

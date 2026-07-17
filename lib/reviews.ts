@@ -6,7 +6,8 @@ export type ReviewGroupKey =
   | "project36"
   | "deVolta"
   | "inSeason"
-  | "coaching";
+  | "coaching"
+  | "preparadorPro";
 
 type LocalizedText = Record<ReviewLocale, string>;
 
@@ -26,6 +27,54 @@ export type ReviewGroup = {
 };
 
 export const reviewGroups: Record<ReviewGroupKey, ReviewGroup> = {
+  preparadorPro: {
+    average: 4.5,
+    count: 6,
+    sourceNote: {
+      pt:
+        "Avaliações importadas do Loox da loja anterior, referentes à Plataforma Preparador PRO.",
+      en:
+        "Reviews imported from the previous Loox store for the Preparador PRO platform."
+    },
+    reviews: [
+      {
+        date: "loox-import-tiago",
+        name: "Tiago T.",
+        quote: {
+          pt:
+            "Mini curso raiz, direto ao ponto. O conteúdo é fácil de aprender e aplicar já no dia seguinte.",
+          en:
+            "A direct, practical course. The content is easy to learn and apply the very next day."
+        },
+        rating: 5,
+        verified: true
+      },
+      {
+        date: "loox-import-antonio",
+        name: "António D.",
+        quote: {
+          pt:
+            "Bem estruturado e de fácil aplicação. Uma boa ajuda no meu trabalho como preparador físico.",
+          en:
+            "Well structured and easy to apply. A valuable resource for my work as a physical coach."
+        },
+        rating: 5,
+        verified: true
+      },
+      {
+        date: "loox-import-davi",
+        name: "Davi P.",
+        quote: {
+          pt:
+            "O programa me deu exatamente a visão que eu esperava para a profissão que quero exercer.",
+          en:
+            "The program gave me exactly the perspective I wanted for the profession I plan to pursue."
+        },
+        rating: 5,
+        verified: false
+      }
+    ]
+  },
   preSeason: {
     average: 4.74,
     count: 116,

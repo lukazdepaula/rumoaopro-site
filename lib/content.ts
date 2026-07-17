@@ -132,7 +132,8 @@ export const assets = {
   preSeason: "/assets/programs/pt/projeto-pre-temporada-cover.jpg",
   adama: "/assets/programs/pt/projeto-adama-2022-cover.jpg",
   project36Pt: "/assets/programs/pt/projeto-36-2022-cover.jpg",
-  dvg: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg"
+  dvg: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg",
+  preparadorProCover: "/assets/courses/preparador-pro/cover.png"
 };
 
 export const nav = {
@@ -140,6 +141,7 @@ export const nav = {
     { label: "Home", href: "/" },
     { label: "Assessoria", href: "/assessoria" },
     { label: "Programas", href: "/programas" },
+    { label: "Cursos", href: "/cursos" },
     { label: "Links", href: "/links" },
     { label: "🇺🇸 English", href: "/en" }
   ],
@@ -147,6 +149,7 @@ export const nav = {
     { label: "Home", href: "/en" },
     { label: "Coaching", href: "/en/coaching" },
     { label: "Programs", href: "/en/programs" },
+    { label: "Courses", href: "/en/courses" },
     { label: "Links", href: "/en/links" },
     { label: "🇧🇷 Português", href: "/" }
   ]

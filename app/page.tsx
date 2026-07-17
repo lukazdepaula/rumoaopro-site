@@ -52,14 +52,14 @@ const entryCards = [
     cta: "Ver programas"
   },
   {
-    title: "Cursos",
-    href: "#cursos",
-    eyebrow: "Em breve",
+    title: "Preparador PRO",
+    href: "/cursos",
+    eyebrow: "Curso para treinadores",
     image: assets.programsGymBriefing,
     icon: GraduationCap,
     body:
-      "Conteúdos educacionais para atletas e treinadores entenderem performance com mais clareza.",
-    cta: "Conhecer a ideia"
+      "Aprenda a organizar e aplicar a preparação física para jogadores de futebol.",
+    cta: "Conhecer o curso"
   }
 ];
 
@@ -95,19 +95,19 @@ const productBlocks = [
     cta: "Comparar programas"
   },
   {
-    title: "Cursos",
-    eyebrow: "A próxima camada da RumoAoPro",
+    title: "Preparador PRO",
+    eyebrow: "Formação prática para treinadores",
     icon: BookOpen,
     image: assets.coachGym,
     body:
-      "Os cursos vão ajudar atletas e treinadores a entenderem o porquê dos métodos: preparação física, rotina, recuperação, velocidade e tomada de decisão no treino.",
+      "Uma plataforma direta ao ponto para aprender a planejar potência, periodização, avaliações, velocidade e resistência para jogadores de futebol.",
     points: [
-      "Conteúdo educacional direto ao ponto",
-      "Baseado em experiência prática no futebol",
-      "Planejado para uma próxima fase do site"
+      "Conteúdo online em português",
+      "Aplicação prática na rotina do preparador",
+      "Compra e acesso processados pela Kiwify"
     ],
-    href: "#cursos",
-    cta: "Ver previsão"
+    href: "/cursos",
+    cta: "Conhecer Preparador PRO"
   }
 ];
 
@@ -254,7 +254,7 @@ export default function HomePage() {
               return (
                 <article
                   className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm"
-                  id={item.href === "#cursos" ? "cursos" : undefined}
+                  id={item.href.includes("curs") ? "cursos" : undefined}
                   key={item.title}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">

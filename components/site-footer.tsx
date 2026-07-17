@@ -50,6 +50,12 @@ export function SiteFooter() {
             <Link className="block hover:text-white" href="/en/programs">
               Programs
             </Link>
+            <Link className="block hover:text-white" href="/cursos">
+              Cursos
+            </Link>
+            <Link className="block hover:text-white" href="/en/courses">
+              Courses
+            </Link>
             <Link className="block hover:text-white" href="/links">
               Links
             </Link>
