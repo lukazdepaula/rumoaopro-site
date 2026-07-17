@@ -3,13 +3,17 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Admin - Login"
+  title: "Admin - Login",
+  robots: {
+    index: false,
+    follow: false
+  }
 };
 
 export default async function AdminLoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: "invalid" | "rate-limit" | "unavailable" }>;
 }) {
   const params = await searchParams;
 
@@ -25,17 +29,41 @@ export default async function AdminLoginPage({
         </p>
         <form action="/api/admin/login" className="mt-6 grid gap-4" method="post">
           <label className="grid gap-2 text-sm font-semibold">
+            E-mail
+            <input
+              autoCapitalize="none"
+              autoComplete="username"
+              className="min-h-12 rounded-md border border-white/15 bg-white px-3 text-sm text-ink"
+              inputMode="email"
+              name="email"
+              required
+              spellCheck={false}
+              type="email"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
             Senha
             <input
+              autoComplete="current-password"
               className="min-h-12 rounded-md border border-white/15 bg-white px-3 text-sm text-ink"
               name="password"
               required
               type="password"
             />
           </label>
-          {params.error ? (
+          {params.error === "invalid" ? (
             <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
-              Senha inválida ou ADMIN_PASSWORD não configurado.
+              E-mail ou senha inválidos.
+            </p>
+          ) : null}
+          {params.error === "rate-limit" ? (
+            <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
+              Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.
+            </p>
+          ) : null}
+          {params.error === "unavailable" ? (
+            <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
+              Acesso temporariamente indisponível. Tente novamente mais tarde.
             </p>
           ) : null}
           <button

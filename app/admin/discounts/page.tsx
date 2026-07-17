@@ -96,7 +96,7 @@ export default async function AdminDiscountsPage({
             Código
             <input
               className="min-h-11 rounded-md border border-ink/15 px-3 uppercase"
-              defaultValue="ASSISTENTE90"
+              placeholder="Ex: LANCAMENTO10"
               name="code"
               required
             />
@@ -112,7 +112,7 @@ export default async function AdminDiscountsPage({
             Valor
             <input
               className="min-h-11 rounded-md border border-ink/15 px-3"
-              defaultValue="90"
+              defaultValue="10"
               min="0"
               name="value"
               required

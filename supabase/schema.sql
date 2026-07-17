@@ -245,27 +245,6 @@ on conflict(id) do update set
   file_id = excluded.file_id,
   updated_at = now();
 
-insert into public.discounts (
-  id, code, description, type, value, currency, product_id, active,
-  starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
-) values (
-  'discount_assistente90',
-  'ASSISTENTE90',
-  'Teste interno para validar compra com 90% de desconto.',
-  'percent',
-  90,
-  null,
-  null,
-  true,
-  null,
-  null,
-  null,
-  0,
-  now(),
-  now()
-)
-on conflict(id) do nothing;
-
 insert into public.program_materials (
   id, product_id, title, description, type, sort_order, is_active,
   file_path_private, external_url, created_at, updated_at

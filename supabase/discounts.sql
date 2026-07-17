@@ -17,24 +17,3 @@ create table if not exists public.discounts (
 
 create index if not exists idx_discounts_code on public.discounts(code);
 create index if not exists idx_discounts_active on public.discounts(active);
-
-insert into public.discounts (
-  id, code, description, type, value, currency, product_id, active,
-  starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
-) values (
-  'discount_assistente90',
-  'ASSISTENTE90',
-  'Teste interno para validar compra com 90% de desconto.',
-  'percent',
-  90,
-  null,
-  null,
-  true,
-  null,
-  null,
-  null,
-  0,
-  now(),
-  now()
-)
-on conflict(id) do nothing;

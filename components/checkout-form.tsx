@@ -385,7 +385,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
                   setAppliedDiscount(null);
                 }
               }}
-              placeholder="Ex: ASSISTENTE90"
+              placeholder="Digite seu código"
               type="text"
               value={discountCode}
             />

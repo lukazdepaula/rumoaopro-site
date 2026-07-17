@@ -1,34 +1,68 @@
 import { NextResponse } from "next/server";
 import {
   ADMIN_COOKIE_NAME,
+  adminCookieOptions,
   createAdminSessionValue,
-  verifyAdminPassword
+  isAdminAuthConfigured,
+  verifyAdminCredentials
 } from "@/lib/checkout/admin-auth";
+import {
+  checkAdminLoginRateLimit,
+  clearAdminLoginFailures,
+  recordAdminLoginFailure
+} from "@/lib/checkout/admin-login-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const formData = await request.formData();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const redirectTo = new URL("/admin", request.url);
 
-  if (!verifyAdminPassword(password)) {
+  if (!isAdminAuthConfigured()) {
+    console.error("[admin.login] Variáveis de autenticação incompletas.");
     redirectTo.pathname = "/admin/login";
-    redirectTo.searchParams.set("error", "1");
+    redirectTo.searchParams.set("error", "unavailable");
     return NextResponse.redirect(redirectTo, 303);
   }
 
+  const rateLimit = checkAdminLoginRateLimit(request, email);
+  if (!rateLimit.allowed) {
+    redirectTo.pathname = "/admin/login";
+    redirectTo.searchParams.set("error", "rate-limit");
+    const response = NextResponse.redirect(redirectTo, 303);
+    response.headers.set("Retry-After", String(rateLimit.retryAfterSeconds));
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
+
+  const authorizedEmail = verifyAdminCredentials(email, password);
+  if (!authorizedEmail) {
+    recordAdminLoginFailure(request, email);
+    redirectTo.pathname = "/admin/login";
+    redirectTo.searchParams.set("error", "invalid");
+    const response = NextResponse.redirect(redirectTo, 303);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
+
+  const sessionValue = createAdminSessionValue(authorizedEmail);
+  if (!sessionValue) {
+    redirectTo.pathname = "/admin/login";
+    redirectTo.searchParams.set("error", "unavailable");
+    return NextResponse.redirect(redirectTo, 303);
+  }
+
+  clearAdminLoginFailures(request, email);
   const response = NextResponse.redirect(redirectTo, 303);
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
-    value: createAdminSessionValue(),
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 8
+    value: sessionValue,
+    ...adminCookieOptions()
   });
+  response.headers.set("Cache-Control", "no-store");
 
   return response;
 }

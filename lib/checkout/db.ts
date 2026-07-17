@@ -42,29 +42,6 @@ let database: SqliteDatabase | null = null;
 
 const nowIso = () => new Date().toISOString();
 
-function defaultDiscounts(): Discount[] {
-  const timestamp = "2026-07-15T00:00:00.000Z";
-
-  return [
-    {
-      id: "discount_assistente90",
-      code: "ASSISTENTE90",
-      description: "Teste interno para validar compra com 90% de desconto.",
-      type: "percent",
-      value: 90,
-      currency: null,
-      product_id: null,
-      active: true,
-      starts_at: null,
-      expires_at: null,
-      max_redemptions: null,
-      times_redeemed: 0,
-      created_at: timestamp,
-      updated_at: timestamp
-    }
-  ];
-}
-
 function databasePath() {
   return (
     process.env.CHECKOUT_DB_PATH ||
@@ -82,7 +59,6 @@ function getDatabase() {
   database.exec("PRAGMA foreign_keys = ON;");
   migrate(database);
   seedProducts(database);
-  seedDiscounts(database);
   removeDefaultProgramMaterials(database);
 
   return database;
@@ -298,36 +274,6 @@ function seedProducts(db: SqliteDatabase) {
       product.file_id,
       product.created_at,
       product.updated_at
-    );
-  }
-}
-
-function seedDiscounts(db: SqliteDatabase) {
-  const statement = db.prepare(`
-    INSERT INTO discounts (
-      id, code, description, type, value, currency, product_id, active,
-      starts_at, expires_at, max_redemptions, times_redeemed, created_at, updated_at
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO NOTHING
-  `);
-
-  for (const discount of defaultDiscounts()) {
-    statement.run(
-      discount.id,
-      discount.code,
-      discount.description,
-      discount.type,
-      discount.value,
-      discount.currency,
-      discount.product_id,
-      discount.active ? 1 : 0,
-      discount.starts_at,
-      discount.expires_at,
-      discount.max_redemptions,
-      discount.times_redeemed,
-      discount.created_at,
-      discount.updated_at
     );
   }
 }
@@ -630,7 +576,6 @@ function encodeDiscount(discount: Discount) {
 }
 
 let supabaseSeeded = false;
-let supabaseDiscountsSeeded = false;
 
 async function removeSupabaseDefaultProgramMaterials() {
   const ids = defaultProgramMaterialIds();
@@ -658,26 +603,12 @@ async function ensureSupabaseSeeded() {
   supabaseSeeded = true;
 }
 
-async function ensureSupabaseDiscountsSeeded() {
-  if (!useSupabaseDriver() || supabaseDiscountsSeeded) return;
-
-  await supabaseRequest("discounts", {
-    method: "POST",
-    query: "on_conflict=id",
-    body: defaultDiscounts().map(encodeDiscount),
-    prefer: "resolution=ignore-duplicates,return=minimal"
-  });
-
-  supabaseDiscountsSeeded = true;
-}
-
 function normalizeDiscountCode(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "");
 }
 
 export async function listDiscounts() {
   if (useSupabaseDriver()) {
-    await ensureSupabaseDiscountsSeeded();
     return (
       await supabaseRequest<Record<string, unknown>[]>("discounts", {
         query: selectQuery(["order=created_at.desc"])
@@ -693,7 +624,6 @@ export async function listDiscounts() {
 
 export async function getDiscountById(id: string) {
   if (useSupabaseDriver()) {
-    await ensureSupabaseDiscountsSeeded();
     const rows = await supabaseRequest<Record<string, unknown>[]>("discounts", {
       query: selectQuery([eq("id", id), "limit=1"])
     });
@@ -709,7 +639,6 @@ export async function getDiscountByCode(code: string) {
   if (!normalizedCode) return null;
 
   if (useSupabaseDriver()) {
-    await ensureSupabaseDiscountsSeeded();
     const rows = await supabaseRequest<Record<string, unknown>[]>("discounts", {
       query: selectQuery([eq("code", normalizedCode), "limit=1"])
     });
@@ -770,7 +699,6 @@ export async function saveDiscount(input: SaveDiscountInput) {
   }
 
   if (useSupabaseDriver()) {
-    await ensureSupabaseDiscountsSeeded();
     await supabaseRequest("discounts", {
       method: "POST",
       query: "on_conflict=id",
@@ -822,7 +750,6 @@ export async function saveDiscount(input: SaveDiscountInput) {
 
 export async function deleteDiscount(id: string) {
   if (useSupabaseDriver()) {
-    await ensureSupabaseDiscountsSeeded();
     await supabaseRequest("discounts", {
       method: "DELETE",
       query: eq("id", id),
