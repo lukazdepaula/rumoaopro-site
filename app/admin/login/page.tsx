@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 export default async function AdminLoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: "invalid" | "rate-limit" | "unavailable" }>;
+  searchParams: Promise<{
+    error?: "invalid" | "rate-limit" | "unavailable";
+    reset?: "success";
+  }>;
 }) {
   const params = await searchParams;
 
@@ -66,12 +70,23 @@ export default async function AdminLoginPage({
               Acesso temporariamente indisponível. Tente novamente mais tarde.
             </p>
           ) : null}
+          {params.reset === "success" ? (
+            <p className="rounded-md bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-100">
+              Senha criada com sucesso. Entre com sua nova senha.
+            </p>
+          ) : null}
           <button
             className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
             type="submit"
           >
             Entrar
           </button>
+          <Link
+            className="text-center text-sm font-semibold text-white/75 underline decoration-white/30 underline-offset-4 hover:text-white"
+            href="/admin/forgot-password"
+          >
+            Criar ou redefinir minha senha
+          </Link>
         </form>
       </section>
     </main>

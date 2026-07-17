@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { verifyAdminPasswordHash } from "@/lib/checkout/admin-password";
+import { getAdminAccountByEmail } from "@/lib/checkout/db";
 
 export const ADMIN_COOKIE_NAME = "rap_admin_session";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 4;
@@ -8,7 +10,7 @@ export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 4;
 type AdminSession = {
   email: string;
   expires: number;
-  credentialVersion: string;
+  authVersion: string;
 };
 
 function normalizeEmail(email: string) {
@@ -24,7 +26,7 @@ function adminSecret() {
     : "development-admin-session-secret";
 }
 
-function adminPassword() {
+function legacyAdminPassword() {
   return process.env.ADMIN_PASSWORD || null;
 }
 
@@ -38,10 +40,15 @@ export function getAllowedAdminEmails() {
     .filter(Boolean);
 }
 
-export function isAdminAuthConfigured() {
-  return Boolean(
-    adminSecret() && adminPassword() && getAllowedAdminEmails().length > 0
+export function isAllowedAdminEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+  return getAllowedAdminEmails().some((allowedEmail) =>
+    safeEqual(normalizedEmail, allowedEmail)
   );
+}
+
+export function isAdminAuthConfigured() {
+  return Boolean(adminSecret() && getAllowedAdminEmails().length > 0);
 }
 
 function safeEqual(leftValue: string, rightValue: string) {
@@ -56,36 +63,56 @@ function sign(payload: string) {
   return crypto.createHmac("sha256", secret).update(payload).digest("hex");
 }
 
-function credentialVersion() {
-  const password = adminPassword();
+function legacyCredentialVersion() {
+  const password = legacyAdminPassword();
   if (!password) return null;
-
-  return crypto.createHash("sha256").update(password).digest("hex").slice(0, 16);
+  return `legacy:${crypto
+    .createHash("sha256")
+    .update(password)
+    .digest("hex")
+    .slice(0, 16)}`;
 }
 
-export function verifyAdminCredentials(email: string, password: string) {
+export async function verifyAdminCredentials(email: string, password: string) {
   const normalizedEmail = normalizeEmail(email);
-  const configuredPassword = adminPassword();
-  const allowedEmails = getAllowedAdminEmails();
+  if (!isAllowedAdminEmail(normalizedEmail)) return null;
 
-  if (!configuredPassword || allowedEmails.length === 0) return null;
+  const account = await getAdminAccountByEmail(normalizedEmail);
+  if (account) {
+    if (!account.active) return null;
+    const passwordMatches = await verifyAdminPasswordHash(
+      password,
+      account.password_hash
+    );
+    return passwordMatches
+      ? {
+          email: normalizedEmail,
+          authVersion: account.password_updated_at,
+          usesIndividualPassword: true
+        }
+      : null;
+  }
 
-  const emailAllowed = allowedEmails.some((allowedEmail) =>
-    safeEqual(normalizedEmail, allowedEmail)
-  );
-  const passwordMatches = safeEqual(password, configuredPassword);
+  const configuredPassword = legacyAdminPassword();
+  const version = legacyCredentialVersion();
+  if (!configuredPassword || !version || !safeEqual(password, configuredPassword)) {
+    return null;
+  }
 
-  return emailAllowed && passwordMatches ? normalizedEmail : null;
+  return {
+    email: normalizedEmail,
+    authVersion: version,
+    usesIndividualPassword: false
+  };
 }
 
-export function createAdminSessionValue(email: string) {
-  const version = credentialVersion();
-  if (!adminSecret() || !version) return null;
+export function createAdminSessionValue(email: string, authVersion: string) {
+  if (!adminSecret()) return null;
 
   const session: AdminSession = {
     email: normalizeEmail(email),
     expires: Date.now() + ADMIN_SESSION_MAX_AGE * 1000,
-    credentialVersion: version
+    authVersion
   };
   const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
   const signature = sign(payload);
@@ -93,7 +120,7 @@ export function createAdminSessionValue(email: string) {
   return signature ? `${payload}.${signature}` : null;
 }
 
-export function readAdminSession(value?: string | null) {
+function readSignedAdminSession(value?: string | null) {
   if (!value) return null;
   const [payload, signature] = value.split(".");
   if (!payload || !signature) return null;
@@ -105,34 +132,40 @@ export function readAdminSession(value?: string | null) {
     const session = JSON.parse(
       Buffer.from(payload, "base64url").toString("utf8")
     ) as Partial<AdminSession>;
-    const version = credentialVersion();
 
     if (
       typeof session.email !== "string" ||
       typeof session.expires !== "number" ||
-      typeof session.credentialVersion !== "string" ||
-      session.expires < Date.now() ||
-      !version ||
-      !safeEqual(session.credentialVersion, version)
+      typeof session.authVersion !== "string" ||
+      session.expires < Date.now()
     ) {
       return null;
     }
 
-    const normalizedEmail = normalizeEmail(session.email);
-    const emailAllowed = getAllowedAdminEmails().some((allowedEmail) =>
-      safeEqual(normalizedEmail, allowedEmail)
-    );
-
-    return emailAllowed
-      ? { email: normalizedEmail, expires: session.expires }
+    const email = normalizeEmail(session.email);
+    return isAllowedAdminEmail(email)
+      ? { email, expires: session.expires, authVersion: session.authVersion }
       : null;
   } catch {
     return null;
   }
 }
 
-export function isValidAdminSession(value?: string | null) {
-  return Boolean(readAdminSession(value));
+export async function readAdminSession(value?: string | null) {
+  const session = readSignedAdminSession(value);
+  if (!session) return null;
+
+  const account = await getAdminAccountByEmail(session.email);
+  if (account) {
+    return account.active && safeEqual(session.authVersion, account.password_updated_at)
+      ? { email: session.email, expires: session.expires }
+      : null;
+  }
+
+  const legacyVersion = legacyCredentialVersion();
+  return legacyVersion && safeEqual(session.authVersion, legacyVersion)
+    ? { email: session.email, expires: session.expires }
+    : null;
 }
 
 export function adminCookieOptions() {
@@ -148,22 +181,27 @@ export function adminCookieOptions() {
 
 export async function requireAdmin() {
   const cookieStore = await cookies();
-  const session = readAdminSession(cookieStore.get(ADMIN_COOKIE_NAME)?.value);
+  const session = await readAdminSession(
+    cookieStore.get(ADMIN_COOKIE_NAME)?.value
+  );
 
-  if (!session) {
-    redirect("/admin/login");
-  }
-
+  if (!session) redirect("/admin/login");
   return session;
 }
 
-export function isAdminRequest(request: Request) {
+export async function getAdminRequestSession(request: Request) {
   const cookieHeader = request.headers.get("cookie") || "";
-  const cookie = cookieHeader
+  const match = cookieHeader
     .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`));
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(`${ADMIN_COOKIE_NAME}=`));
 
-  if (!cookie) return false;
-  return isValidAdminSession(decodeURIComponent(cookie.split("=")[1] || ""));
+  const value = match
+    ? decodeURIComponent(match.slice(`${ADMIN_COOKIE_NAME}=`.length))
+    : null;
+  return readAdminSession(value);
+}
+
+export async function isAdminRequest(request: Request) {
+  return Boolean(await getAdminRequestSession(request));
 }

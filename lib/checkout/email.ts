@@ -136,6 +136,29 @@ export async function sendMagicLoginEmail(input: {
   });
 }
 
+export async function sendAdminPasswordResetEmail(input: {
+  to: string;
+  resetUrl: string;
+}) {
+  await sendEmail({
+    to: input.to,
+    subject: "Crie ou redefina sua senha de admin RumoAoPro",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#17191d">
+        <div style="background:#08090b;color:#fff;padding:24px">
+          <p style="margin:0 0 8px;color:#c8a24c;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro Admin</p>
+          <h1 style="margin:0;font-size:24px">Defina sua senha</h1>
+        </div>
+        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+          <p>Recebemos uma solicitação para criar ou redefinir sua senha de administrador.</p>
+          <p style="margin:24px 0"><a href="${input.resetUrl}" style="display:inline-block;background:#d5162a;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Definir minha senha</a></p>
+          <p style="color:#68707d;font-size:13px">O link expira em 30 minutos e só pode ser usado uma vez. Se você não fez esta solicitação, ignore este e-mail.</p>
+        </div>
+      </div>
+    `
+  });
+}
+
 export async function sendInternalSaleNotice(input: {
   orderId: string;
   customerName: string;

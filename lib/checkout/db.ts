@@ -169,6 +169,32 @@ function migrate(db: SqliteDatabase) {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS admin_accounts (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,
+      password_updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_accounts_email ON admin_accounts(email);
+
+    CREATE TABLE IF NOT EXISTS admin_password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_password_reset_tokens_hash
+      ON admin_password_reset_tokens(token_hash);
+    CREATE INDEX IF NOT EXISTS idx_admin_password_reset_tokens_email
+      ON admin_password_reset_tokens(email);
+
     CREATE TABLE IF NOT EXISTS entitlements (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -375,6 +401,29 @@ function normalizeUser(row: Record<string, unknown>): CustomerUser {
     id: String(row.id),
     email: String(row.email),
     name: row.name === null ? null : String(row.name),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at)
+  };
+}
+
+export type AdminAccountRecord = {
+  id: string;
+  email: string;
+  password_hash: string;
+  active: boolean;
+  password_updated_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+function normalizeAdminAccount(row: Record<string, unknown>): AdminAccountRecord {
+  return {
+    id: String(row.id),
+    email: String(row.email),
+    password_hash: String(row.password_hash),
+    active:
+      typeof row.active === "boolean" ? row.active : Number(row.active) === 1,
+    password_updated_at: String(row.password_updated_at),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
   };
@@ -1374,6 +1423,164 @@ export async function getOrCreateUserByEmail(email: string, name?: string | null
   ).run(id, normalizedEmail, name || null, updatedAt, updatedAt);
 
   return getUserById(id);
+}
+
+export async function getAdminAccountByEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>("admin_accounts", {
+      query: selectQuery([eq("email", normalizedEmail), "limit=1"])
+    });
+    return rows[0] ? normalizeAdminAccount(rows[0]) : null;
+  }
+
+  const row = getDatabase()
+    .prepare("SELECT * FROM admin_accounts WHERE email = ? LIMIT 1")
+    .get(normalizedEmail);
+  return row ? normalizeAdminAccount(row) : null;
+}
+
+export async function saveAdminAccountPassword(
+  email: string,
+  passwordHash: string
+) {
+  const normalizedEmail = normalizeEmail(email);
+  const existing = await getAdminAccountByEmail(normalizedEmail);
+  const timestamp = nowIso();
+  const account: AdminAccountRecord = {
+    id: existing?.id || randomUUID(),
+    email: normalizedEmail,
+    password_hash: passwordHash,
+    active: true,
+    password_updated_at: timestamp,
+    created_at: existing?.created_at || timestamp,
+    updated_at: timestamp
+  };
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_accounts", {
+      method: "POST",
+      query: "on_conflict=email",
+      body: account,
+      prefer: "resolution=merge-duplicates,return=minimal"
+    });
+    return getAdminAccountByEmail(normalizedEmail);
+  }
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO admin_accounts (
+        id, email, password_hash, active, password_updated_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(email) DO UPDATE SET
+        password_hash = excluded.password_hash,
+        active = 1,
+        password_updated_at = excluded.password_updated_at,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      account.id,
+      account.email,
+      account.password_hash,
+      1,
+      account.password_updated_at,
+      account.created_at,
+      account.updated_at
+    );
+
+  return getAdminAccountByEmail(normalizedEmail);
+}
+
+export async function createAdminPasswordResetToken(input: {
+  email: string;
+  tokenHash: string;
+  expiresAt: string;
+}) {
+  const email = normalizeEmail(input.email);
+  const timestamp = nowIso();
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_password_reset_tokens", {
+      method: "PATCH",
+      query: `${eq("email", email)}&used_at=is.null`,
+      body: { used_at: timestamp },
+      prefer: "return=minimal"
+    });
+    await supabaseRequest("admin_password_reset_tokens", {
+      method: "POST",
+      body: {
+        id: randomUUID(),
+        email,
+        token_hash: input.tokenHash,
+        expires_at: input.expiresAt,
+        created_at: timestamp
+      },
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  const db = getDatabase();
+  db.prepare(
+    "UPDATE admin_password_reset_tokens SET used_at = ? WHERE email = ? AND used_at IS NULL"
+  ).run(timestamp, email);
+  db.prepare(
+    `INSERT INTO admin_password_reset_tokens
+      (id, email, token_hash, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(randomUUID(), email, input.tokenHash, input.expiresAt, timestamp);
+}
+
+export async function consumeAdminPasswordResetToken(tokenHash: string) {
+  const timestamp = nowIso();
+
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_password_reset_tokens",
+      {
+        query: selectQuery([
+          eq("token_hash", tokenHash),
+          "used_at=is.null",
+          `expires_at=gt.${encodeURIComponent(timestamp)}`,
+          "limit=1"
+        ])
+      }
+    );
+    const row = rows[0];
+    if (!row) return null;
+
+    const consumedRows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_password_reset_tokens",
+      {
+        method: "PATCH",
+        query: `${eq("id", String(row.id))}&used_at=is.null`,
+        body: { used_at: timestamp },
+        prefer: "return=representation"
+      }
+    );
+    return consumedRows.length > 0
+      ? normalizeEmail(String(row.email))
+      : null;
+  }
+
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT * FROM admin_password_reset_tokens
+       WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?
+       LIMIT 1`
+    )
+    .get(tokenHash, timestamp);
+  if (!row) return null;
+
+  const result = db
+    .prepare(
+      "UPDATE admin_password_reset_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL"
+    )
+    .run(timestamp, String(row.id));
+
+  return result.changes === 1 ? normalizeEmail(String(row.email)) : null;
 }
 
 export async function updateOrderUserId(orderId: string, userId: string) {

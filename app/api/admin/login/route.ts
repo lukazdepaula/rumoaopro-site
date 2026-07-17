@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const authorizedEmail = verifyAdminCredentials(email, password);
-  if (!authorizedEmail) {
+  const authorizedAdmin = await verifyAdminCredentials(email, password);
+  if (!authorizedAdmin) {
     recordAdminLoginFailure(request, email);
     redirectTo.pathname = "/admin/login";
     redirectTo.searchParams.set("error", "invalid");
@@ -48,7 +48,10 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const sessionValue = createAdminSessionValue(authorizedEmail);
+  const sessionValue = createAdminSessionValue(
+    authorizedAdmin.email,
+    authorizedAdmin.authVersion
+  );
   if (!sessionValue) {
     redirectTo.pathname = "/admin/login";
     redirectTo.searchParams.set("error", "unavailable");

@@ -33,6 +33,9 @@ export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellPro
             <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/fiscal">
               Fiscal
             </Link>
+            <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/account">
+              Minha conta
+            </Link>
             <form action="/api/admin/logout" method="post">
               <button className="rounded-md bg-ink px-3 py-2 text-white" type="submit">
                 Sair

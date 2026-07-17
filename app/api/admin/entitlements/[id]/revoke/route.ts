@@ -10,7 +10,7 @@ type RevokeRouteProps = {
 };
 
 export async function POST(request: Request, { params }: RevokeRouteProps) {
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

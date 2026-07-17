@@ -35,7 +35,7 @@ function discountType(value: string): Discount["type"] {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
