@@ -7,6 +7,19 @@ type EmailInput = {
   orderId?: string;
 };
 
+const escapeHtml = (value: string) =>
+  value.replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      })[character] || character
+  );
+
 export async function sendEmail(input: EmailInput) {
   const provider = process.env.EMAIL_PROVIDER || "mock";
 
@@ -165,6 +178,8 @@ export async function sendInternalSaleNotice(input: {
   customerEmail: string;
   customerCountry: string;
   customerPostalCode?: string | null;
+  customerAddress?: string | null;
+  customerWhatsapp?: string | null;
   productName: string;
   amount: number;
   currency: string;
@@ -189,6 +204,21 @@ export async function sendInternalSaleNotice(input: {
     input.currency === "BRL" ? "pt-BR" : "en-US",
     { style: "currency", currency: input.currency }
   ).format(input.amount);
+  const customerName = escapeHtml(input.customerName);
+  const customerEmail = escapeHtml(input.customerEmail);
+  const customerCountry = escapeHtml(input.customerCountry);
+  const customerPostalCode = input.customerPostalCode
+    ? escapeHtml(input.customerPostalCode)
+    : null;
+  const customerAddress = input.customerAddress
+    ? escapeHtml(input.customerAddress)
+    : null;
+  const customerWhatsapp = input.customerWhatsapp
+    ? escapeHtml(input.customerWhatsapp)
+    : null;
+  const discountCode = input.discountCode
+    ? escapeHtml(input.discountCode)
+    : null;
 
   await sendEmail({
     to,
@@ -205,10 +235,12 @@ export async function sendInternalSaleNotice(input: {
           <table style="border-collapse:collapse;width:100%;font-size:14px">
             <tr><td style="padding:8px 0;color:#68707d">Valor</td><td style="padding:8px 0;text-align:right;font-weight:700">${amount}</td></tr>
             <tr><td style="padding:8px 0;color:#68707d">Gateway</td><td style="padding:8px 0;text-align:right;font-weight:700">${input.gateway}</td></tr>
-            <tr><td style="padding:8px 0;color:#68707d">Cliente</td><td style="padding:8px 0;text-align:right;font-weight:700">${input.customerName}</td></tr>
-            <tr><td style="padding:8px 0;color:#68707d">E-mail</td><td style="padding:8px 0;text-align:right">${input.customerEmail}</td></tr>
-            <tr><td style="padding:8px 0;color:#68707d">País / CEP</td><td style="padding:8px 0;text-align:right">${input.customerCountry}${input.customerPostalCode ? ` · ${input.customerPostalCode}` : ""}</td></tr>
-            ${input.discountCode ? `<tr><td style="padding:8px 0;color:#68707d">Cupom</td><td style="padding:8px 0;text-align:right">${input.discountCode}</td></tr>` : ""}
+            <tr><td style="padding:8px 0;color:#68707d">Cliente</td><td style="padding:8px 0;text-align:right;font-weight:700">${customerName}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">E-mail</td><td style="padding:8px 0;text-align:right">${customerEmail}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">WhatsApp</td><td style="padding:8px 0;text-align:right">${customerWhatsapp || "-"}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">País / CEP</td><td style="padding:8px 0;text-align:right">${customerCountry}${customerPostalCode ? ` · ${customerPostalCode}` : ""}</td></tr>
+            <tr><td style="padding:8px 0;color:#68707d">Endereço</td><td style="padding:8px 0;text-align:right">${customerAddress || "-"}</td></tr>
+            ${discountCode ? `<tr><td style="padding:8px 0;color:#68707d">Cupom</td><td style="padding:8px 0;text-align:right">${discountCode}</td></tr>` : ""}
             <tr><td style="padding:8px 0;color:#68707d">Pedido</td><td style="padding:8px 0;text-align:right;font-family:monospace">${input.orderId}</td></tr>
           </table>
           ${orderUrl ? `<p style="margin:24px 0 0"><a href="${orderUrl}" style="display:inline-block;background:#d5162a;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Abrir pedido no admin</a></p>` : ""}

@@ -63,12 +63,20 @@ export default async function AdminFiscalPage() {
                     {order.customer_name}
                   </Link>
                   <p className="text-xs text-graphite/60">{order.customer_email}</p>
+                  <p className="text-xs text-graphite/60">
+                    {order.customer_whatsapp || "Sem WhatsApp"}
+                  </p>
                 </td>
                 <td className="px-4 py-3 text-graphite/80">
                   {order.customer_document || "-"}
                 </td>
                 <td className="px-4 py-3 text-graphite/80">
                   {order.customer_postal_code || "-"}
+                  {order.customer_address ? (
+                    <p className="mt-1 max-w-56 text-xs text-graphite/60">
+                      {order.customer_address}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-graphite/80">{order.customer_country}</td>
                 <td className="px-4 py-3 text-graphite/80">{order.product_name}</td>

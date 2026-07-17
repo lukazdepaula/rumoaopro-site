@@ -40,6 +40,8 @@ export default async function OrderDetailPage({
     ["País", order.customer_country],
     ["Documento", order.customer_document ? `${order.customer_document_type}: ${order.customer_document}` : "-"],
     ["CEP", order.customer_postal_code || "-"],
+    ["Endereço", order.customer_address || "-"],
+    ["WhatsApp", order.customer_whatsapp || "-"],
     ["Gateway", order.gateway],
     ["Gateway payment", order.gateway_payment_id || "-"],
     ["Gateway checkout", order.gateway_checkout_id || "-"],

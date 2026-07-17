@@ -339,6 +339,8 @@ function parseMetadata(value: unknown) {
 function normalizeOrder(row: Record<string, unknown>): Order {
   const metadata = parseMetadata(row.metadata);
   const metadataPostalCode = metadata.customer_postal_code;
+  const metadataAddress = metadata.customer_address;
+  const metadataWhatsapp = metadata.customer_whatsapp;
   const customerPostalCode =
     row.customer_postal_code === null || row.customer_postal_code === undefined
       ? typeof metadataPostalCode === "string"
@@ -363,6 +365,10 @@ function normalizeOrder(row: Record<string, unknown>): Order {
         ? null
         : String(row.customer_document),
     customer_postal_code: customerPostalCode,
+    customer_address:
+      typeof metadataAddress === "string" ? metadataAddress : null,
+    customer_whatsapp:
+      typeof metadataWhatsapp === "string" ? metadataWhatsapp : null,
     gateway: String(row.gateway) as Gateway,
     gateway_payment_id:
       row.gateway_payment_id === null ? null : String(row.gateway_payment_id),
@@ -848,6 +854,8 @@ export type CreateOrderInput = {
   customer_document_type: Order["customer_document_type"];
   customer_document: string | null;
   customer_postal_code?: string | null;
+  customer_address?: string | null;
+  customer_whatsapp?: string | null;
   gateway: Gateway;
   amount: number;
   currency: string;
@@ -861,6 +869,12 @@ export async function createOrder(input: CreateOrderInput) {
     ...(input.metadata || {}),
     ...(input.customer_postal_code
       ? { customer_postal_code: input.customer_postal_code }
+      : {}),
+    ...(input.customer_address
+      ? { customer_address: input.customer_address }
+      : {}),
+    ...(input.customer_whatsapp
+      ? { customer_whatsapp: input.customer_whatsapp }
       : {})
   };
 

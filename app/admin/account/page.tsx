@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin-shell";
+import { PasswordField } from "@/components/password-field";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -33,41 +34,27 @@ export default async function AdminAccountPage({
           className="mt-6 grid gap-4"
           method="post"
         >
-          <label className="grid gap-2 text-sm font-bold text-ink">
-            Senha atual
-            <input
-              autoComplete="current-password"
-              className="min-h-12 rounded-md border border-ink/15 px-3"
-              name="current_password"
-              required
-              type="password"
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-bold text-ink">
-            Nova senha
-            <input
-              autoComplete="new-password"
-              className="min-h-12 rounded-md border border-ink/15 px-3"
-              minLength={12}
-              name="password"
-              required
-              type="password"
-            />
-            <span className="text-xs font-medium text-graphite/60">
-              Mínimo de 12 caracteres, com pelo menos uma letra e um número.
-            </span>
-          </label>
-          <label className="grid gap-2 text-sm font-bold text-ink">
-            Confirmar nova senha
-            <input
-              autoComplete="new-password"
-              className="min-h-12 rounded-md border border-ink/15 px-3"
-              minLength={12}
-              name="confirm_password"
-              required
-              type="password"
-            />
-          </label>
+          <PasswordField
+            autoComplete="current-password"
+            label="Senha atual"
+            name="current_password"
+            theme="light"
+          />
+          <PasswordField
+            autoComplete="new-password"
+            hint="Mínimo de 12 caracteres, com pelo menos uma letra e um número."
+            label="Nova senha"
+            minLength={12}
+            name="password"
+            theme="light"
+          />
+          <PasswordField
+            autoComplete="new-password"
+            label="Confirmar nova senha"
+            minLength={12}
+            name="confirm_password"
+            theme="light"
+          />
 
           {params.error ? (
             <p className="rounded-md bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">

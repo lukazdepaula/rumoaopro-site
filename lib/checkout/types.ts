@@ -67,6 +67,8 @@ export type Order = {
   customer_document_type: CustomerDocumentType;
   customer_document: string | null;
   customer_postal_code: string | null;
+  customer_address: string | null;
+  customer_whatsapp: string | null;
   gateway: Gateway;
   gateway_payment_id: string | null;
   gateway_checkout_id: string | null;
@@ -149,5 +151,7 @@ export type CheckoutCustomerInput = {
   country: string;
   document?: string;
   postalCode?: string;
+  address?: string;
+  whatsapp?: string;
   discountCode?: string;
 };

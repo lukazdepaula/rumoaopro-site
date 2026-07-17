@@ -51,6 +51,8 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [address, setAddress] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
@@ -153,7 +155,9 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           email,
           country,
           document: isBrazil ? document : undefined,
-          postalCode: isBrazil ? postalCode : undefined,
+          postalCode,
+          address,
+          whatsapp,
           discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });
@@ -335,8 +339,58 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           />
         </label>
 
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
+            WhatsApp com código do país (DDI)
+            <input
+              autoComplete="tel"
+              className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
+              inputMode="tel"
+              maxLength={24}
+              onChange={(event) => setWhatsapp(event.target.value)}
+              placeholder={isBrazil ? "+55 11 99999-9999" : "+1 555 123 4567"}
+              required
+              type="tel"
+              value={whatsapp}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-ink">
+            {isBrazil ? "CEP" : "Código postal / ZIP code"}
+            <input
+              autoComplete="postal-code"
+              className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
+              inputMode={isBrazil ? "numeric" : "text"}
+              maxLength={20}
+              onChange={(event) =>
+                setPostalCode(
+                  isBrazil
+                    ? formatPostalCode(event.target.value)
+                    : event.target.value.slice(0, 20)
+                )
+              }
+              placeholder={isBrazil ? "00000-000" : "Postal code"}
+              required
+              type="text"
+              value={postalCode}
+            />
+          </label>
+        </div>
+
+        <label className="grid gap-2 text-sm font-semibold text-ink">
+          Endereço completo
+          <textarea
+            autoComplete="street-address"
+            className="min-h-24 rounded-md border border-ink/15 p-3 text-sm text-ink"
+            maxLength={240}
+            onChange={(event) => setAddress(event.target.value)}
+            placeholder="Rua, número, complemento, cidade e região/estado"
+            required
+            value={address}
+          />
+        </label>
+
         {isBrazil ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4">
             <label className="grid gap-2 text-sm font-semibold text-ink">
               CPF ou CNPJ
               <input
@@ -347,20 +401,6 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
                 required
                 type="text"
                 value={document}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-ink">
-              CEP
-              <input
-                className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
-                inputMode="numeric"
-                onChange={(event) =>
-                  setPostalCode(formatPostalCode(event.target.value))
-                }
-                placeholder="00000-000"
-                required
-                type="text"
-                value={postalCode}
               />
             </label>
           </div>

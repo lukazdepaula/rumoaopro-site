@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PasswordField } from "@/components/password-field";
 
 export const dynamic = "force-dynamic";
 
@@ -46,28 +47,18 @@ export default async function AdminResetPasswordPage({
             method="post"
           >
             <input name="token" type="hidden" value={params.token} />
-            <label className="grid gap-2 text-sm font-semibold">
-              Nova senha
-              <input
-                autoComplete="new-password"
-                className="min-h-12 rounded-md border border-white/15 bg-white px-3 text-sm text-ink"
-                minLength={12}
-                name="password"
-                required
-                type="password"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold">
-              Confirmar nova senha
-              <input
-                autoComplete="new-password"
-                className="min-h-12 rounded-md border border-white/15 bg-white px-3 text-sm text-ink"
-                minLength={12}
-                name="confirm_password"
-                required
-                type="password"
-              />
-            </label>
+            <PasswordField
+              autoComplete="new-password"
+              label="Nova senha"
+              minLength={12}
+              name="password"
+            />
+            <PasswordField
+              autoComplete="new-password"
+              label="Confirmar nova senha"
+              minLength={12}
+              name="confirm_password"
+            />
             {params.error === "password" ? (
               <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
                 A senha precisa ter 12 caracteres, uma letra e um número.

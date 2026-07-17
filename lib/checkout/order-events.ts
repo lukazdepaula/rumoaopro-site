@@ -63,6 +63,8 @@ export async function markOrderAsPaid(
         customerEmail: paidOrder.customer_email,
         customerCountry: paidOrder.customer_country,
         customerPostalCode: paidOrder.customer_postal_code,
+        customerAddress: paidOrder.customer_address,
+        customerWhatsapp: paidOrder.customer_whatsapp,
         productName: paidOrder.product_name,
         amount: paidOrder.amount,
         currency: paidOrder.currency,

@@ -102,6 +102,11 @@ export default async function AdminOrdersPage({
                       CEP: {order.customer_postal_code}
                     </p>
                   ) : null}
+                  {order.customer_whatsapp ? (
+                    <p className="text-xs text-graphite/60">
+                      WhatsApp: {order.customer_whatsapp}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-graphite/80">{order.product_name}</td>
                 <td className="px-4 py-3 text-graphite/80">{order.gateway}</td>

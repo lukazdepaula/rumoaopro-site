@@ -20,7 +20,9 @@ export type ValidCheckoutInput = {
   country: string;
   documentType: CustomerDocumentType;
   document: string | null;
-  postalCode: string | null;
+  postalCode: string;
+  address: string;
+  whatsapp: string;
   discountCode: string | null;
 };
 
@@ -69,6 +71,9 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const name = normalizeText(data.name);
   const email = normalizeText(data.email).toLowerCase();
   const country = normalizeCountry(normalizeText(data.country));
+  const address = normalizeText(data.address).replace(/\s+/g, " ");
+  const whatsappDigits = onlyDigits(normalizeText(data.whatsapp));
+  const rawPostalCode = normalizeText(data.postalCode);
   const discountCode = normalizeDiscountCode(data.discountCode);
 
   if (!productSlug) {
@@ -90,9 +95,23 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     throw new CheckoutValidationError("Informe seu país.", "country");
   }
 
+  if (address.length < 8 || address.length > 240) {
+    throw new CheckoutValidationError(
+      "Informe seu endereço completo, incluindo cidade e região/estado.",
+      "address"
+    );
+  }
+
+  if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
+    throw new CheckoutValidationError(
+      "Informe um WhatsApp válido com o código do país (DDI).",
+      "whatsapp"
+    );
+  }
+
   if (isBrazil(country)) {
     const document = detectBrazilianDocument(normalizeText(data.document));
-    const postalCode = onlyDigits(normalizeText(data.postalCode));
+    const postalCode = onlyDigits(rawPostalCode);
 
     if (postalCode.length !== 8) {
       throw new CheckoutValidationError(
@@ -109,8 +128,18 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       documentType: document.type,
       document: document.value,
       postalCode,
+      address,
+      whatsapp: `+${whatsappDigits}`,
       discountCode: discountCode || null
     };
+  }
+
+  const postalCode = rawPostalCode.replace(/\s+/g, " ");
+  if (postalCode.length < 3 || postalCode.length > 20) {
+    throw new CheckoutValidationError(
+      "Informe seu código postal.",
+      "postalCode"
+    );
   }
 
   return {
@@ -120,7 +149,9 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     country,
     documentType: null,
     document: null,
-    postalCode: null,
+    postalCode,
+    address,
+    whatsapp: `+${whatsappDigits}`,
     discountCode: discountCode || null
   };
 }

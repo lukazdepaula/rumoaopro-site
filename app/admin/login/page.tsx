@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PasswordField } from "@/components/password-field";
 
 export const dynamic = "force-dynamic";
 
@@ -45,16 +46,11 @@ export default async function AdminLoginPage({
               type="email"
             />
           </label>
-          <label className="grid gap-2 text-sm font-semibold">
-            Senha
-            <input
-              autoComplete="current-password"
-              className="min-h-12 rounded-md border border-white/15 bg-white px-3 text-sm text-ink"
-              name="password"
-              required
-              type="password"
-            />
-          </label>
+          <PasswordField
+            autoComplete="current-password"
+            label="Senha"
+            name="password"
+          />
           {params.error === "invalid" ? (
             <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
               E-mail ou senha inválidos.
