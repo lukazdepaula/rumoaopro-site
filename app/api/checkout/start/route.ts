@@ -7,6 +7,7 @@ import {
 } from "@/lib/checkout/discounts";
 import { markOrderAsFailed } from "@/lib/checkout/order-events";
 import {
+  createMercadoPagoCheckoutPreference,
   createMercadoPagoPixPayment,
   createStripeCheckoutSession,
   PaymentConfigurationError,
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
     }
 
     const brazil = isBrazil(input.country);
+    const paymentMethod = brazil ? input.paymentMethod : "stripe";
     const localizedPrice = calculateLocalizedPrice(product, brazil ? "BR" : input.country);
     const discount = input.discountCode
       ? await getDiscountByCode(input.discountCode)
@@ -71,9 +73,9 @@ export async function POST(request: Request) {
       customer_whatsapp: input.whatsapp,
       gateway:
         checkoutMode() === "live"
-          ? brazil
-            ? "mercado_pago"
-            : "stripe"
+          ? paymentMethod === "stripe"
+            ? "stripe"
+            : "mercado_pago"
           : "mock",
       amount: discountQuote?.finalAmount ?? localizedPrice.amount,
       currency: localizedPrice.currency,
@@ -83,6 +85,7 @@ export async function POST(request: Request) {
         product_slug: product.slug,
         checkout_country: input.country,
         checkout_gateway_mode: checkoutMode(),
+        checkout_payment_method: paymentMethod,
         base_price_usd: localizedPrice.basePriceUsd,
         ...discountMetadata(discountQuote)
       }
@@ -104,18 +107,33 @@ export async function POST(request: Request) {
     }
 
     try {
-      if (brazil) {
+      if (paymentMethod === "pix") {
         const pix = await createMercadoPagoPixPayment(order, product);
         return NextResponse.json({
           gateway: "mercado_pago",
+          paymentMethod: "pix",
           orderId: order.id,
           pix
+        });
+      }
+
+      if (paymentMethod === "mercado_pago") {
+        const mercadoPago = await createMercadoPagoCheckoutPreference(
+          order,
+          product
+        );
+        return NextResponse.json({
+          gateway: "mercado_pago",
+          paymentMethod: "mercado_pago",
+          orderId: order.id,
+          redirectUrl: mercadoPago.url
         });
       }
 
       const stripe = await createStripeCheckoutSession(order, product);
       return NextResponse.json({
         gateway: "stripe",
+        paymentMethod: "stripe",
         orderId: order.id,
         redirectUrl: stripe.url
       });

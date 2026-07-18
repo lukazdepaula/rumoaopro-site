@@ -1,5 +1,6 @@
 import type {
   CheckoutCustomerInput,
+  CheckoutPaymentMethod,
   CustomerDocumentType
 } from "@/lib/checkout/types";
 
@@ -24,6 +25,7 @@ export type ValidCheckoutInput = {
   address: string;
   whatsapp: string;
   discountCode: string | null;
+  paymentMethod: CheckoutPaymentMethod;
 };
 
 const normalizeText = (value: unknown) =>
@@ -75,6 +77,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const whatsappDigits = onlyDigits(normalizeText(data.whatsapp));
   const rawPostalCode = normalizeText(data.postalCode);
   const discountCode = normalizeDiscountCode(data.discountCode);
+  const requestedPaymentMethod = normalizeText(data.paymentMethod);
 
   if (!productSlug) {
     throw new CheckoutValidationError("Produto inválido.", "productSlug");
@@ -120,6 +123,13 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       );
     }
 
+    const paymentMethod: CheckoutPaymentMethod =
+      requestedPaymentMethod === "pix" ||
+      requestedPaymentMethod === "stripe" ||
+      requestedPaymentMethod === "mercado_pago"
+        ? requestedPaymentMethod
+        : "mercado_pago";
+
     return {
       productSlug,
       name,
@@ -130,7 +140,8 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       postalCode,
       address,
       whatsapp: `+${whatsappDigits}`,
-      discountCode: discountCode || null
+      discountCode: discountCode || null,
+      paymentMethod
     };
   }
 
@@ -152,6 +163,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     postalCode,
     address,
     whatsapp: `+${whatsappDigits}`,
-    discountCode: discountCode || null
+    discountCode: discountCode || null,
+    paymentMethod: "stripe"
   };
 }

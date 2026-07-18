@@ -87,7 +87,7 @@ function migrate(db: SqliteDatabase) {
       description TEXT NOT NULL,
       language TEXT NOT NULL DEFAULT 'English',
       type TEXT NOT NULL,
-      base_price_usd REAL NOT NULL DEFAULT 40,
+      base_price_usd REAL NOT NULL DEFAULT 38.95,
       price_brl_estimated REAL NOT NULL DEFAULT 0,
       price_brl REAL NOT NULL,
       price_usd REAL NOT NULL,
@@ -246,7 +246,7 @@ function migrate(db: SqliteDatabase) {
   `);
 
   ensureColumn(db, "products", "language", "language TEXT NOT NULL DEFAULT 'English'");
-  ensureColumn(db, "products", "base_price_usd", "base_price_usd REAL NOT NULL DEFAULT 40");
+  ensureColumn(db, "products", "base_price_usd", "base_price_usd REAL NOT NULL DEFAULT 38.95");
   ensureColumn(db, "products", "price_brl_estimated", "price_brl_estimated REAL NOT NULL DEFAULT 0");
   ensureColumn(db, "products", "sales_page_path", "sales_page_path TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "products", "cover_image", "cover_image TEXT NOT NULL DEFAULT ''");

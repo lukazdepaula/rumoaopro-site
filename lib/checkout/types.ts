@@ -13,6 +13,8 @@ export type DeliveryType =
 
 export type Gateway = "mock" | "mercado_pago" | "stripe";
 
+export type CheckoutPaymentMethod = "mercado_pago" | "pix" | "stripe";
+
 export type OrderStatus =
   | "pending"
   | "paid"
@@ -154,4 +156,5 @@ export type CheckoutCustomerInput = {
   address?: string;
   whatsapp?: string;
   discountCode?: string;
+  paymentMethod?: CheckoutPaymentMethod;
 };

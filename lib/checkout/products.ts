@@ -1,5 +1,4 @@
 import type { CheckoutProduct, ProgramMaterial } from "@/lib/checkout/types";
-import { usdToBrl } from "@/lib/checkout/pricing";
 
 const now = "2026-07-07T00:00:00.000Z";
 
@@ -11,17 +10,15 @@ const envPrice = (key: string, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-const englishProgramUsd = 40;
-
 const productPrice = () => {
-  const basePriceUsd = envPrice("RAP_PROGRAM_BASE_PRICE_USD", englishProgramUsd);
-  const brlEstimate = usdToBrl(basePriceUsd);
+  const basePriceUsd = envPrice("RAP_PROGRAM_PRICE_USD", 38.95);
+  const brlPrice = envPrice("RAP_PROGRAM_PRICE_BRL", 199);
 
   return {
     base_price_usd: basePriceUsd,
     price_usd: basePriceUsd,
-    price_brl_estimated: brlEstimate,
-    price_brl: brlEstimate
+    price_brl_estimated: brlPrice,
+    price_brl: brlPrice
   };
 };
 

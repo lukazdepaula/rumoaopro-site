@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { ArrowRight, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
-import type { CheckoutProduct } from "@/lib/checkout/types";
+import type {
+  CheckoutPaymentMethod,
+  CheckoutProduct
+} from "@/lib/checkout/types";
 
 type CheckoutFormProps = {
   product: CheckoutProduct;
@@ -45,8 +49,100 @@ const formatPostalCode = (value: string) => {
     : digits;
 };
 
+type PaymentOptionProps = {
+  active: boolean;
+  children: ReactNode;
+  description: string;
+  icon: ReactNode;
+  label: string;
+  name: string;
+  onSelect: () => void;
+  value: CheckoutPaymentMethod;
+};
+
+function PaymentOption({
+  active,
+  children,
+  description,
+  icon,
+  label,
+  name,
+  onSelect,
+  value
+}: PaymentOptionProps) {
+  return (
+    <label
+      className={`grid cursor-pointer gap-3 rounded-md border p-3 transition sm:grid-cols-[auto_1fr_auto] sm:items-center ${
+        active
+          ? "border-signal bg-signal/[0.035] shadow-sm"
+          : "border-ink/10 bg-white hover:border-ink/25"
+      }`}
+    >
+      <input
+        checked={active}
+        className="h-4 w-4 accent-signal"
+        name={name}
+        onChange={onSelect}
+        type="radio"
+        value={value}
+      />
+      <span className="flex min-w-0 items-start gap-3">
+        <span className="mt-0.5 text-ink">{icon}</span>
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-ink">{label}</span>
+          <span className="mt-1 block text-xs leading-5 text-graphite/65">
+            {description}
+          </span>
+        </span>
+      </span>
+      <span className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+        {children}
+      </span>
+    </label>
+  );
+}
+
+function MercadoPagoBadge() {
+  return (
+    <span className="inline-flex min-h-8 items-center rounded-sm bg-[#ffe600] px-2.5 text-xs font-black text-[#263238]">
+      mercado pago
+    </span>
+  );
+}
+
+function PixBadge() {
+  return (
+    <span className="inline-flex min-h-8 items-center rounded-sm bg-[#32bcad] px-2.5 text-xs font-black text-white">
+      Pix
+    </span>
+  );
+}
+
+function StripeBadge() {
+  return (
+    <span className="inline-flex min-h-8 items-center rounded-sm bg-[#635bff] px-2.5 text-xs font-black lowercase text-white">
+      stripe
+    </span>
+  );
+}
+
+function CardNetworkBadges() {
+  return (
+    <>
+      <span className="inline-flex min-h-8 items-center rounded-sm bg-[#1434cb] px-2 text-[10px] font-black italic text-white">
+        VISA
+      </span>
+      <span className="inline-flex min-h-8 items-center rounded-sm bg-ink px-2 text-[10px] font-black text-white">
+        Mastercard
+      </span>
+    </>
+  );
+}
+
 export function CheckoutForm({ product }: CheckoutFormProps) {
   const [country, setCountry] = useState("BR");
+  const [paymentMethod, setPaymentMethod] =
+    useState<CheckoutPaymentMethod>("mercado_pago");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
@@ -158,6 +254,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           postalCode,
           address,
           whatsapp,
+          paymentMethod,
           discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });
@@ -173,12 +270,16 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         return;
       }
 
-      if (payload.gateway === "stripe" && payload.redirectUrl) {
+      if (payload.redirectUrl) {
         window.location.href = payload.redirectUrl;
         return;
       }
 
-      if (payload.gateway === "mercado_pago") {
+      if (
+        payload.gateway === "mercado_pago" &&
+        payload.paymentMethod === "pix" &&
+        payload.pix
+      ) {
         setPix({
           orderId: payload.orderId,
           ...payload.pix
@@ -248,64 +349,88 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           </p>
         </div>
         <div className="rounded-md bg-ink px-3 py-2 text-right text-sm font-bold text-white">
-          <p>{usdPrice}</p>
+          <p>{isBrazil ? brlEstimate : usdPrice}</p>
           <p className="mt-1 text-[11px] font-semibold text-white/65">
-            aprox. {brlEstimate}
+            {isBrazil ? `${usdPrice} internacional` : `${brlEstimate} no Brasil`}
           </p>
         </div>
       </div>
 
       <form className="mt-5 grid gap-4" onSubmit={submit}>
-        <div className="rounded-md border border-ink/10 bg-white p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase text-graphite/55">
-                Pagamentos disponíveis
-              </p>
-              <p className="mt-1 text-sm font-semibold text-ink">
-                Brasil no Pix. Exterior no cartão internacional.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <div
-                className={`flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
-                  !isBrazil
-                    ? "border-[#635bff] bg-[#f4f2ff] text-[#302a85]"
-                    : "border-ink/10 bg-smoke text-graphite/70"
-                }`}
-              >
-                <CreditCard aria-hidden="true" className="h-4 w-4" />
-                <span className="rounded-sm bg-[#635bff] px-2 py-1 text-xs font-black lowercase tracking-normal text-white">
-                  stripe
-                </span>
-              </div>
-              <div
-                className={`flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
-                  isBrazil
-                    ? "border-[#00a650] bg-[#ecfff5] text-[#006b3c]"
-                    : "border-ink/10 bg-smoke text-graphite/70"
-                }`}
-              >
-                <QrCode aria-hidden="true" className="h-4 w-4" />
-                <span className="rounded-sm bg-[#00a650] px-2 py-1 text-xs font-black text-white">
-                  Pix
-                </span>
-                <span className="hidden text-xs font-bold sm:inline">
-                  Mercado Pago
-                </span>
-              </div>
-            </div>
-          </div>
-          <p className="mt-3 text-xs font-semibold text-graphite/60">
-            Forma deste checkout: {isBrazil ? "Mercado Pago / Pix" : "Stripe / Cartão"}.
+        <fieldset className="grid gap-3 rounded-md border border-ink/10 bg-white p-3">
+          <legend className="px-1 text-xs font-bold uppercase text-graphite/55">
+            Escolha como pagar
+          </legend>
+          <p className="text-sm font-semibold text-ink">
+            {isBrazil
+              ? "Cartão parcelado, Pix ou cartão internacional."
+              : "Pagamento internacional seguro via Stripe."}
           </p>
-        </div>
+
+          {isBrazil ? (
+            <div className="grid gap-2">
+              <PaymentOption
+                active={paymentMethod === "mercado_pago"}
+                description="Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
+                icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
+                label="Cartão e parcelamento"
+                name="payment-method"
+                onSelect={() => setPaymentMethod("mercado_pago")}
+                value="mercado_pago"
+              >
+                <MercadoPagoBadge />
+                <CardNetworkBadges />
+              </PaymentOption>
+              <PaymentOption
+                active={paymentMethod === "pix"}
+                description="QR Code e Pix Copia e Cola, com aprovação rápida."
+                icon={<QrCode aria-hidden="true" className="h-5 w-5" />}
+                label="Pix"
+                name="payment-method"
+                onSelect={() => setPaymentMethod("pix")}
+                value="pix"
+              >
+                <PixBadge />
+              </PaymentOption>
+              <PaymentOption
+                active={paymentMethod === "stripe"}
+                description="Cartão de crédito em checkout internacional seguro."
+                icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
+                label="Cartão via Stripe"
+                name="payment-method"
+                onSelect={() => setPaymentMethod("stripe")}
+                value="stripe"
+              >
+                <StripeBadge />
+              </PaymentOption>
+            </div>
+          ) : (
+            <PaymentOption
+              active
+              description="Cartão de crédito em checkout internacional seguro."
+              icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
+              label="Credit or debit card"
+              name="payment-method"
+              onSelect={() => setPaymentMethod("stripe")}
+              value="stripe"
+            >
+              <StripeBadge />
+              <CardNetworkBadges />
+            </PaymentOption>
+          )}
+        </fieldset>
 
         <label className="grid gap-2 text-sm font-semibold text-ink">
           País
           <select
             className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
-            onChange={(event) => setCountry(event.target.value)}
+            onChange={(event) => {
+              const nextCountry = event.target.value;
+              setCountry(nextCountry);
+              setPaymentMethod(
+                nextCountry === "BR" ? "mercado_pago" : "stripe"
+              );
+            }}
             value={country}
           >
             <option value="BR">Brasil</option>
@@ -456,8 +581,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
             Preço internacional: <strong>{usdPrice}</strong>
           </p>
           <p className="mt-1">
-            Brasil: aproximadamente <strong>{brlEstimate}</strong>. O valor
-            final em BRL é calculado no checkout com a taxa configurada.
+            Preço no Brasil: <strong>{brlEstimate}</strong>
           </p>
           {appliedDiscount ? (
             <>

@@ -49,8 +49,8 @@ A estrutura inicial de vendas diretas está documentada em
 
 Ela inclui:
 
-- Mercado Pago/Pix para Brasil com CPF/CNPJ obrigatório;
-- Stripe Checkout para clientes internacionais;
+- Mercado Pago com cartão parcelado e Pix para o Brasil, com CPF/CNPJ obrigatório;
+- Stripe Checkout para cartão no Brasil e para clientes internacionais;
 - banco SQLite local para pedidos;
 - webhooks para confirmação real de pagamento;
 - entrega digital por link temporário assinado;

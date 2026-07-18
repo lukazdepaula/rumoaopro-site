@@ -65,9 +65,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               Checkout RumoAoPro
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
-              O pedido é criado como pending e a liberação acontece somente
-              depois da confirmação do pagamento pelo gateway correto para o
-              país selecionado.
+              Escolha a forma de pagamento ideal para o seu país. Seu acesso é
+              liberado automaticamente assim que o pagamento for confirmado.
             </p>
           </div>
         </div>
@@ -81,18 +80,18 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               <LockKeyhole aria-hidden="true" className="h-5 w-5" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-ink">
-              Liberação protegida por status
+              Compra e acesso protegidos
             </h2>
             <p className="mt-3 text-sm leading-6 text-graphite/72">
-              O pedido nasce como pending. O acesso ao PDF ou onboarding só é
-              liberado quando o pedido muda para paid pela função central de
-              pagamento, pronta para receber webhooks oficiais depois.
+              Seus dados são enviados diretamente aos provedores de pagamento.
+              O programa aparece na sua conta após a confirmação da compra.
             </p>
             <div className="mt-6 grid gap-3">
               {[
                 "CPF/CNPJ exigido apenas para Brasil",
-                "Stripe para compras internacionais",
-                "Mercado Pago / Pix para compras no Brasil",
+                "Cartão e parcelamento via Mercado Pago no Brasil",
+                "Pix com QR Code e aprovação rápida",
+                "Stripe para cartão no Brasil e no exterior",
                 "Pedido registrado no painel interno"
               ].map((item) => (
                 <p className="flex gap-3 text-sm text-graphite/75" key={item}>

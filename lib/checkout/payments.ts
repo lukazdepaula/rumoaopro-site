@@ -132,6 +132,107 @@ export async function createMercadoPagoPixPayment(
   };
 }
 
+export async function createMercadoPagoCheckoutPreference(
+  order: Order,
+  product: CheckoutProduct
+) {
+  const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
+  const siteUrl = getSiteUrl();
+  const nameParts = order.customer_name.trim().split(/\s+/);
+
+  const response = await fetch(
+    "https://api.mercadopago.com/checkout/preferences",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey(order, "checkout")
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            id: product.id,
+            title: product.name,
+            description: product.description,
+            quantity: 1,
+            currency_id: "BRL",
+            unit_price: order.amount
+          }
+        ],
+        payer: {
+          name: nameParts[0] || order.customer_name,
+          surname: nameParts.slice(1).join(" "),
+          email: order.customer_email
+        },
+        external_reference: order.id,
+        notification_url: `${siteUrl}/api/webhooks/mercado-pago`,
+        back_urls: {
+          success: `${siteUrl}/checkout/success?order_id=${order.id}`,
+          pending: `${siteUrl}/checkout/success?order_id=${order.id}`,
+          failure: `${siteUrl}/checkout/${product.slug}?payment=failed`
+        },
+        auto_return: "approved",
+        payment_methods: {
+          installments: 12
+        },
+        metadata: {
+          order_id: order.id,
+          product_id: product.id,
+          discount_code:
+            typeof order.metadata.discount_code === "string"
+              ? order.metadata.discount_code
+              : undefined
+        }
+      })
+    }
+  );
+
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+
+  if (!response.ok) {
+    await appendOrderLog(
+      order.id,
+      "payment.mercado_pago.checkout.error",
+      "Erro ao criar checkout no Mercado Pago.",
+      { status: response.status, payload }
+    );
+    throw new PaymentGatewayError(
+      "Mercado Pago recusou a criação do checkout.",
+      payload
+    );
+  }
+
+  const preferenceId = String(payload.id || "");
+  const url = String(payload.init_point || payload.sandbox_init_point || "");
+
+  if (!preferenceId || !url) {
+    throw new PaymentGatewayError(
+      "Mercado Pago não retornou o endereço do checkout.",
+      payload
+    );
+  }
+
+  await updateOrderGatewayIds(order.id, {
+    gateway_checkout_id: preferenceId,
+    metadata: {
+      mercado_pago_preference_id: preferenceId
+    }
+  });
+
+  await appendOrderLog(
+    order.id,
+    "payment.mercado_pago.checkout.created",
+    "Checkout com cartão e parcelamento criado no Mercado Pago.",
+    { preferenceId }
+  );
+
+  return { preferenceId, url };
+}
+
 export async function createStripeCheckoutSession(
   order: Order,
   product: CheckoutProduct
