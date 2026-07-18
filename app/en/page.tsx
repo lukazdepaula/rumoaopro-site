@@ -505,6 +505,7 @@ export default function EnglishHomePage() {
         eyebrow="Reviews"
         groupKey="coaching"
         locale="en"
+        showSourceNote={false}
         title="What players say about training with RumoAoPro"
       />
 

@@ -20,6 +20,7 @@ type ReviewsSectionProps = {
   groupKey: ReviewGroupKey;
   limit?: number;
   locale: ReviewLocale;
+  showSourceNote?: boolean;
   title?: string;
   tone?: ReviewTone;
 };
@@ -89,6 +90,7 @@ export function ReviewsSection({
   groupKey,
   limit = 3,
   locale,
+  showSourceNote = true,
   title,
   tone = "light"
 }: ReviewsSectionProps) {
@@ -115,13 +117,15 @@ export function ReviewsSection({
             >
               {title || copy[locale].defaultTitle}
             </h2>
-            <p
-              className={`mt-4 max-w-2xl text-sm leading-6 ${
-                isDark ? "text-white/58" : "text-graphite/65"
-              }`}
-            >
-              {group.sourceNote[locale]}
-            </p>
+            {showSourceNote ? (
+              <p
+                className={`mt-4 max-w-2xl text-sm leading-6 ${
+                  isDark ? "text-white/58" : "text-graphite/65"
+                }`}
+              >
+                {group.sourceNote[locale]}
+              </p>
+            ) : null}
           </div>
           <ReviewBadge groupKey={groupKey} locale={locale} tone={tone} />
         </div>

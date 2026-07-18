@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 
 export const contact = {
-  whatsapp:
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") ||
-    "5519981331996",
+  whatsapp: "5519992811078",
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contato@rumoaopro.com.br",
   shopify: process.env.NEXT_PUBLIC_SHOPIFY_URL || "https://www.rumoaopro.com.br"
 };

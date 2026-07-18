@@ -504,6 +504,7 @@ export default function HomePage() {
         eyebrow="Avaliações"
         groupKey="coaching"
         locale="pt"
+        showSourceNote={false}
         title="O que atletas dizem sobre treinar com a RumoAoPro"
       />
 
