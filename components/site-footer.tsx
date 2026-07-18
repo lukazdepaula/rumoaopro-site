@@ -4,7 +4,7 @@ import { assets, contact } from "@/lib/content";
 export function SiteFooter() {
   return (
     <footer className="bg-ink text-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.3fr_1fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.35fr_0.8fr_0.8fr_0.9fr] lg:px-8">
         <div>
           <div className="flex items-center gap-3">
             <img
@@ -64,6 +64,32 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
+        <div>
+          <p className="text-sm font-bold uppercase text-white/50">Legal</p>
+          <div className="mt-3 space-y-2 text-sm text-white/70">
+            <Link className="block hover:text-white" href="/termos">
+              Termos de uso
+            </Link>
+            <Link className="block hover:text-white" href="/privacidade">
+              Privacidade
+            </Link>
+            <Link className="block hover:text-white" href="/reembolsos">
+              Reembolsos
+            </Link>
+            <Link className="block hover:text-white" href="/en/terms">
+              Terms of use
+            </Link>
+            <Link className="block hover:text-white" href="/en/privacy">
+              Privacy
+            </Link>
+            <Link className="block hover:text-white" href="/en/refunds">
+              Refunds
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/50 sm:px-6">
+        © {new Date().getFullYear()} RumoAoPro. Todos os direitos reservados.
       </div>
     </footer>
   );

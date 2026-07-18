@@ -131,6 +131,42 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 0.68
+    },
+    {
+      url: `${baseUrl}/termos`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.25
+    },
+    {
+      url: `${baseUrl}/privacidade`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.25
+    },
+    {
+      url: `${baseUrl}/reembolsos`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.25
+    },
+    {
+      url: `${baseUrl}/en/terms`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2
+    },
+    {
+      url: `${baseUrl}/en/privacy`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2
+    },
+    {
+      url: `${baseUrl}/en/refunds`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2
     }
   ];
 }
