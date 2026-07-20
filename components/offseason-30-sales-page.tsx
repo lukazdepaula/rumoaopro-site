@@ -16,6 +16,7 @@ import {
   Trophy,
   Zap
 } from "lucide-react";
+import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -448,7 +449,8 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
                 tone="dark"
               />
             ) : null}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ProgramPurchaseSummary locale={locale} />
+            <div className="mt-5 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#126eff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(18,110,255,0.34)] transition hover:bg-[#0c55cc]"
                 href={shopifyProducts.offseason30}

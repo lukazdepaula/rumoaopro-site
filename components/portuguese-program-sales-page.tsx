@@ -12,6 +12,7 @@ import {
   Zap
 } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
+import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -84,7 +85,8 @@ export function PortugueseProgramSalesPage({
                 tone="dark"
               />
             ) : null}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ProgramPurchaseSummary locale="pt" />
+            <div className="mt-5 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <CtaButton href={program.checkoutHref} icon={ArrowRight}>
                 Comprar programa
               </CtaButton>

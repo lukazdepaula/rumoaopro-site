@@ -14,6 +14,7 @@ import {
   Trophy,
   Zap
 } from "lucide-react";
+import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -486,7 +487,8 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 tone="dark"
               />
             ) : null}
-            <div className="mt-6 flex flex-wrap gap-2">
+            <ProgramPurchaseSummary locale={locale} />
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
               {page.chips.map((chip) => (
                 <span
                   className="rounded-md border border-white/12 bg-white/[0.08] px-3 py-2 text-xs font-bold uppercase text-white/80"
@@ -496,7 +498,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 </span>
               ))}
             </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-lime-400 px-5 text-sm font-bold uppercase text-ink transition hover:bg-lime-300"
                 href={shopifyProducts.projeto36}

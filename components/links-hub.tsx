@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   Dumbbell,
   Globe2,
-  GraduationCap,
   Instagram,
   MessageCircle,
   Star,
@@ -161,7 +160,11 @@ function ProgramRail({
             href={salesPage}
             key={product.id}
           >
-            <div className="relative aspect-square overflow-hidden bg-smoke">
+            <div
+              className={`relative overflow-hidden bg-ink ${
+                language === "English" ? "aspect-[3/4]" : "aspect-square"
+              }`}
+            >
               <Image
                 alt={product.name}
                 className="object-cover transition duration-500 group-hover:scale-[1.03]"
@@ -363,11 +366,19 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
 
         <section className="scroll-mt-8 grid gap-4 pt-10 sm:grid-cols-2" id="courses">
           <Link
-            className="group flex min-h-72 flex-col justify-between overflow-hidden rounded-lg border border-white/12 bg-white p-6 text-ink shadow-clean"
+            className="group overflow-hidden rounded-lg border border-white/12 bg-white text-ink shadow-clean transition hover:-translate-y-1"
             href={page.coursesHref}
           >
-            <GraduationCap aria-hidden="true" className="h-8 w-8 text-signal" />
-            <div className="mt-12">
+            <div className="relative aspect-square overflow-hidden bg-ink">
+              <Image
+                alt={page.coursesTitle}
+                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                fill
+                sizes="(max-width: 640px) 100vw, 380px"
+                src={assets.preparadorProCover}
+              />
+            </div>
+            <div className="p-6">
               <p className="text-xs font-bold uppercase text-signal">{page.courses}</p>
               <h2 className="mt-2 text-2xl font-black leading-tight">
                 {page.coursesTitle}
@@ -381,7 +392,7 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
           </Link>
 
           <a
-            className="group relative min-h-72 overflow-hidden rounded-lg border border-white/12 shadow-clean"
+            className="group relative min-h-[440px] overflow-hidden rounded-lg border border-white/12 shadow-clean sm:min-h-0"
             href="https://www.youtube.com/@RumoAoPro"
             rel="noreferrer"
             target="_blank"
