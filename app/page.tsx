@@ -13,6 +13,7 @@ import {
   Users,
   Zap
 } from "lucide-react";
+import { HomeProgramCollections } from "@/components/home-program-collections";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -227,6 +228,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeProgramCollections locale="pt" />
 
       <section className="bg-smoke py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
