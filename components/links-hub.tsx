@@ -31,6 +31,11 @@ const copy = {
       "Planejamento individual, controle de carga e acompanhamento direto para evoluir sem perder o timing da temporada.",
     coachingButton: "Conhecer a assessoria",
     spots: "Vagas limitadas",
+    professionalsNav: "Profissionais",
+    professionalsEyebrow: "Metodologia comprovada no futebol",
+    professionalsTitle: "Jogadores profissionais que confiam na RumoAoPro",
+    professionalsLead:
+      "A mesma metodologia acompanha atletas em diferentes clubes, seleções e fases da carreira.",
     proofNav: "Avaliações",
     proofEyebrow: "Resultados reais",
     proofTitle: "Atletas que evoluíram com a RumoAoPro",
@@ -69,6 +74,11 @@ const copy = {
       "Individual planning, load management and direct support to help you improve throughout the season.",
     coachingButton: "Explore online coaching",
     spots: "Limited spots",
+    professionalsNav: "Pro players",
+    professionalsEyebrow: "Proven in professional football",
+    professionalsTitle: "Professional players who trust RumoAoPro",
+    professionalsLead:
+      "The same methodology supports players across different clubs, national teams and stages of their careers.",
     proofNav: "Reviews",
     proofEyebrow: "Real results",
     proofTitle: "Athletes who improved with RumoAoPro",
@@ -134,6 +144,70 @@ const socialLinks = [
     icon: Youtube
   }
 ];
+
+const professionalAthletes = {
+  pt: [
+    {
+      name: 'Matheos "Theo" Ferreira',
+      credential: "Newcastle United",
+      description:
+        "Da base Sub-16 ao ambiente profissional Sub-21, com trabalho individual de força e velocidade.",
+      image: assets.successTheo,
+      imagePosition: "object-[58%_42%]"
+    },
+    {
+      name: "Haroune Camara",
+      credential: "Seleção da Arábia Saudita",
+      description:
+        "Preparação física individual em um ciclo de retorno à seleção e melhor marca de gols da carreira.",
+      image: assets.successHaroune,
+      imagePosition: "object-[50%_28%]"
+    },
+    {
+      name: "Gabriel",
+      credential: "Mirassol FC",
+      description:
+        "Mais de 5 anos de trabalho contínuo com a RumoAoPro, acompanhando diferentes fases da carreira.",
+      image: assets.successGabriel,
+      imagePosition: "object-[50%_28%]"
+    }
+  ],
+  en: [
+    {
+      name: 'Matheos "Theo" Ferreira',
+      credential: "Newcastle United",
+      description:
+        "From the U16 academy to the professional U21 environment, with individual strength and speed work.",
+      image: assets.successTheo,
+      imagePosition: "object-[58%_42%]"
+    },
+    {
+      name: "Haroune Camara",
+      credential: "Saudi Arabia national team",
+      description:
+        "Individual preparation during a return-to-national-team cycle and the highest-scoring season of his career.",
+      image: assets.successHaroune,
+      imagePosition: "object-[50%_28%]"
+    },
+    {
+      name: "Gabriel",
+      credential: "Mirassol FC",
+      description:
+        "More than 5 years of continuous work with RumoAoPro across different stages of his career.",
+      image: assets.successGabriel,
+      imagePosition: "object-[50%_28%]"
+    }
+  ]
+} satisfies Record<
+  LinksLocale,
+  Array<{
+    name: string;
+    credential: string;
+    description: string;
+    image: string;
+    imagePosition: string;
+  }>
+>;
 
 function ProgramRail({
   language,
@@ -285,13 +359,14 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
 
         <nav
           aria-label={locale === "pt" ? "Categorias" : "Categories"}
-          className="mt-8 flex gap-2 overflow-x-auto border-y border-white/10 py-3"
+          className="mt-8 flex gap-2 overflow-x-auto border-y border-white/10 py-3 sm:flex-wrap sm:overflow-visible"
         >
           {[
             [page.coachingLabel, "#coaching"],
-            [page.proofNav, "#reviews"],
+            [page.professionalsNav, "#professionals"],
             [page.programsPt, "#programas-pt"],
             [page.programsEn, "#programs-en"],
+            [page.proofNav, "#reviews"],
             [page.courses, "#courses"]
           ].map(([label, href]) => (
             <a
@@ -345,6 +420,77 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
               </span>
             </div>
           </Link>
+        </section>
+
+        <section className="scroll-mt-8 pt-12" id="professionals">
+          <p className="text-sm font-bold uppercase text-gold">
+            {page.professionalsEyebrow}
+          </p>
+          <h2 className="mt-2 max-w-2xl text-2xl font-black leading-tight sm:text-3xl">
+            {page.professionalsTitle}
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
+            {page.professionalsLead}
+          </p>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {professionalAthletes[locale].map((athlete) => (
+              <article
+                className="overflow-hidden rounded-lg border border-white/12 bg-white/[0.07]"
+                key={athlete.name}
+              >
+                <div className="relative aspect-[4/5] overflow-hidden bg-ink">
+                  <Image
+                    alt={`${athlete.name} · ${athlete.credential}`}
+                    className={`object-cover ${athlete.imagePosition}`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 244px"
+                    src={athlete.image}
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(8,9,11,0.92)_100%)]" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <h3 className="text-xl font-black leading-tight">
+                      {athlete.name}
+                    </h3>
+                    <p className="mt-1 text-xs font-bold uppercase text-gold">
+                      {athlete.credential}
+                    </p>
+                  </div>
+                </div>
+                <p className="p-4 text-sm leading-6 text-white/68">
+                  {athlete.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="scroll-mt-8 pt-12" id="programas-pt">
+          <div className="flex items-end justify-between gap-5">
+            <div>
+              <p className="text-sm font-bold uppercase text-gold">RumoAoPro</p>
+              <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+                {page.programsPt}
+              </h2>
+              <p className="mt-2 text-sm text-white/60">{page.programsPtLead}</p>
+            </div>
+            <Dumbbell aria-hidden="true" className="h-7 w-7 shrink-0 text-white/35" />
+          </div>
+          <ProgramRail language="Portuguese" locale={locale} />
+        </section>
+
+        <section className="scroll-mt-8 pt-8" id="programs-en">
+          <div className="flex items-end justify-between gap-5">
+            <div>
+              <p className="text-sm font-bold uppercase text-ice">International</p>
+              <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+                {page.programsEn}
+              </h2>
+              <p className="mt-2 text-sm text-white/60">{page.programsEnLead}</p>
+            </div>
+            <Globe2 aria-hidden="true" className="h-7 w-7 shrink-0 text-white/35" />
+          </div>
+          <ProgramRail language="English" locale={locale} />
         </section>
 
         <section className="scroll-mt-8 pt-12" id="reviews">
@@ -408,34 +554,6 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
             {page.proofButton}
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
-        </section>
-
-        <section className="scroll-mt-8 pt-12" id="programas-pt">
-          <div className="flex items-end justify-between gap-5">
-            <div>
-              <p className="text-sm font-bold uppercase text-gold">RumoAoPro</p>
-              <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                {page.programsPt}
-              </h2>
-              <p className="mt-2 text-sm text-white/60">{page.programsPtLead}</p>
-            </div>
-            <Dumbbell aria-hidden="true" className="h-7 w-7 shrink-0 text-white/35" />
-          </div>
-          <ProgramRail language="Portuguese" locale={locale} />
-        </section>
-
-        <section className="scroll-mt-8 pt-8" id="programs-en">
-          <div className="flex items-end justify-between gap-5">
-            <div>
-              <p className="text-sm font-bold uppercase text-ice">International</p>
-              <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                {page.programsEn}
-              </h2>
-              <p className="mt-2 text-sm text-white/60">{page.programsEnLead}</p>
-            </div>
-            <Globe2 aria-hidden="true" className="h-7 w-7 shrink-0 text-white/35" />
-          </div>
-          <ProgramRail language="English" locale={locale} />
         </section>
 
         <section className="scroll-mt-8 grid gap-4 pt-10 sm:grid-cols-2" id="courses">

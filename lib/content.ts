@@ -124,6 +124,7 @@ export const assets = {
   programsMatchCarry: "/assets/photos/programs/programs-match-carry.jpg",
   successTheo: "/assets/success/theo-ferreira-player.jpg",
   successHaroune: "/assets/success/haroune-camara-player.jpg",
+  successGabriel: "/assets/success/gabriel-mirassol.jpg",
   successAmar: "/assets/success/amar-player.jpg",
   successJackson: "/assets/success/jackson-player.jpg",
   successDiogo: "/assets/success/diogo-fortunato-player.jpg",

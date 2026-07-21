@@ -453,7 +453,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
           alt="Project 36km/h Speed and Acceleration Program cover"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center] opacity-80"
+          className="absolute inset-0 -z-20 h-full w-full object-contain object-right opacity-80"
           fill
           priority
           sizes="100vw"

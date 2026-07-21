@@ -381,7 +381,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
           alt="Elanga Project in-season program cover"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center] opacity-82"
+          className="absolute inset-0 -z-20 h-full w-full object-contain object-right opacity-82"
           fill
           priority
           sizes="100vw"
