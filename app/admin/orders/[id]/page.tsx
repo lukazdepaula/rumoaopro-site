@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { AdminPaymentLinkButton } from "@/components/admin-payment-link-button";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { getOrderById, listOrderLogs } from "@/lib/checkout/db";
@@ -88,6 +89,9 @@ export default async function OrderDetailPage({
 
         <aside className="grid gap-3 self-start rounded-lg border border-ink/10 bg-white p-4">
           <h2 className="text-lg font-bold text-ink">Ações</h2>
+          {order.status === "pending" && order.currency === "BRL" ? (
+            <AdminPaymentLinkButton orderId={order.id} />
+          ) : null}
           <form action={`/api/admin/orders/${order.id}/fiscal`} method="post">
             <button className="min-h-11 w-full rounded-md bg-ink px-4 text-sm font-bold text-white" type="submit">
               Marcar nota como emitida
@@ -116,6 +120,12 @@ export default async function OrderDetailPage({
             O cliente entra por link seguro. Se ele perder o acesso, reenvie o
             link de acesso acima.
           </p>
+          {order.status === "pending" && order.currency === "BRL" ? (
+            <p className="text-xs leading-5 text-graphite/60">
+              O link parcelado mantém este pedido e libera o acesso somente
+              depois da confirmação do Mercado Pago.
+            </p>
+          ) : null}
           <p className="rounded-md bg-red-50 p-3 text-xs leading-5 text-red-700">
             Excluir remove o pedido, os logs e qualquer acesso liberado por esse
             pedido. Use principalmente para testes ou duplicados.
