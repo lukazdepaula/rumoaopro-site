@@ -31,6 +31,13 @@ const copy = {
       "Planejamento individual, controle de carga e acompanhamento direto para evoluir sem perder o timing da temporada.",
     coachingButton: "Conhecer a assessoria",
     spots: "Vagas limitadas",
+    proofNav: "Avaliações",
+    proofEyebrow: "Resultados reais",
+    proofTitle: "Atletas que evoluíram com a RumoAoPro",
+    proofLead:
+      "Experiências de atletas que treinaram com a nossa metodologia.",
+    proofVerified: "Atleta verificado",
+    proofButton: "Conhecer a assessoria",
     programsPt: "Programas em português",
     programsPtLead: "Escolha seu objetivo e comece com um plano completo.",
     programsEn: "Programs in English",
@@ -49,7 +56,7 @@ const copy = {
     languageHref: "/en/links",
     languageLabel: "🇧🇷 PT",
     languageTarget: "English",
-    coachingHref: "/assessoria#aplicacao",
+    coachingHref: "/assessoria",
     coursesHref: "/cursos"
   },
   en: {
@@ -62,6 +69,13 @@ const copy = {
       "Individual planning, load management and direct support to help you improve throughout the season.",
     coachingButton: "Explore online coaching",
     spots: "Limited spots",
+    proofNav: "Reviews",
+    proofEyebrow: "Real results",
+    proofTitle: "Athletes who improved with RumoAoPro",
+    proofLead:
+      "Experiences from athletes who trained with our methodology.",
+    proofVerified: "Verified athlete",
+    proofButton: "Explore online coaching",
     programsPt: "Programas em português",
     programsPtLead: "A coleção original da RumoAoPro em português.",
     programsEn: "Programs in English",
@@ -80,7 +94,7 @@ const copy = {
     languageHref: "/links",
     languageLabel: "🇺🇸 EN",
     languageTarget: "Português",
-    coachingHref: "/en/coaching#application",
+    coachingHref: "/en/coaching",
     coursesHref: "/en/courses"
   }
 } satisfies Record<LinksLocale, Record<string, string>>;
@@ -160,14 +174,10 @@ function ProgramRail({
             href={salesPage}
             key={product.id}
           >
-            <div
-              className={`relative overflow-hidden bg-ink ${
-                language === "English" ? "aspect-[3/4]" : "aspect-square"
-              }`}
-            >
+            <div className="relative aspect-[4/5] overflow-hidden bg-ink">
               <Image
                 alt={product.name}
-                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                className="object-contain p-2 transition duration-500 group-hover:scale-[1.03]"
                 fill
                 sizes="(max-width: 640px) 78vw, 292px"
                 src={product.cover_image}
@@ -279,6 +289,7 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
         >
           {[
             [page.coachingLabel, "#coaching"],
+            [page.proofNav, "#reviews"],
             [page.programsPt, "#programas-pt"],
             [page.programsEn, "#programs-en"],
             [page.courses, "#courses"]
@@ -333,6 +344,69 @@ export function LinksHub({ locale }: { locale: LinksLocale }) {
                 <ArrowRight aria-hidden="true" className="h-5 w-5" />
               </span>
             </div>
+          </Link>
+        </section>
+
+        <section className="scroll-mt-8 pt-12" id="reviews">
+          <div className="flex items-end justify-between gap-5">
+            <div>
+              <p className="text-sm font-bold uppercase text-gold">
+                {page.proofEyebrow}
+              </p>
+              <h2 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
+                {page.proofTitle}
+              </h2>
+              <p className="mt-2 text-sm text-white/60">{page.proofLead}</p>
+            </div>
+            <p className="shrink-0 text-right text-sm font-bold text-white/75">
+              <span className="flex items-center justify-end gap-1 text-gold">
+                <Star aria-hidden="true" className="h-4 w-4 fill-current" />
+                {coachingReview.average.toFixed(1)}
+              </span>
+              <span className="mt-1 block text-xs font-medium text-white/45">
+                {coachingReview.count} {page.reviews}
+              </span>
+            </p>
+          </div>
+
+          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
+            {coachingReview.reviews.map((review) => (
+              <article
+                className="flex w-[82vw] max-w-[300px] shrink-0 snap-start flex-col justify-between rounded-lg border border-white/12 bg-white/[0.07] p-5"
+                key={`${review.name}-${review.date}`}
+              >
+                <div>
+                  <div className="flex gap-1 text-gold">
+                    {Array.from({ length: review.rating }).map((_, index) => (
+                      <Star
+                        aria-hidden="true"
+                        className="h-4 w-4 fill-current"
+                        key={index}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-4 text-base font-medium leading-7 text-white/88">
+                    {review.quote[locale]}
+                  </p>
+                </div>
+                <div className="mt-6 border-t border-white/10 pt-4">
+                  <p className="font-bold">{review.name}</p>
+                  {review.verified ? (
+                    <p className="mt-1 text-xs font-bold uppercase text-white/45">
+                      {page.proofVerified}
+                    </p>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <Link
+            className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-bold transition hover:bg-white hover:text-ink"
+            href={page.coachingHref}
+          >
+            {page.proofButton}
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
         </section>
 
