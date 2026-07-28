@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout-form";
@@ -29,6 +29,11 @@ export async function generateMetadata({
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { slug } = await params;
+
+  if (slug === "projeto-36-2022") {
+    permanentRedirect("/checkout/project-36");
+  }
+
   const product = getProductBySlug(slug);
 
   if (!product) {

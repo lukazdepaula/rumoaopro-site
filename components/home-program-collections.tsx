@@ -37,6 +37,18 @@ const findCheckoutProduct = (href: string): CheckoutProduct | undefined => {
   });
 };
 
+const translatedProject36 = programs.find(
+  (program) => program.href === "/programas/projeto-36kmh"
+);
+
+const portuguesePrograms = translatedProject36
+  ? [
+      ...programsPtLegacy.slice(0, 2),
+      translatedProject36,
+      ...programsPtLegacy.slice(2)
+    ]
+  : programsPtLegacy;
+
 export function HomeProgramCollections({
   locale
 }: HomeProgramCollectionsProps) {
@@ -86,7 +98,7 @@ export function HomeProgramCollections({
             title: copy.portugueseTitle,
             body: copy.portugueseBody,
             label: "Português",
-            programs: programsPtLegacy,
+            programs: portuguesePrograms,
             href: "/programas#programas-portugues",
             linkLabel: copy.portugueseLink
           },
@@ -112,7 +124,7 @@ export function HomeProgramCollections({
             title: copy.portugueseTitle,
             body: copy.portugueseBody,
             label: "Português",
-            programs: programsPtLegacy,
+            programs: portuguesePrograms,
             href: "/programas#programas-portugues",
             linkLabel: copy.portugueseLink
           }

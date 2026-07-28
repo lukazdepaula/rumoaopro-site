@@ -109,16 +109,20 @@ const copy = {
   }
 } satisfies Record<LinksLocale, Record<string, string>>;
 
-const productOrder = [
-  "projeto_pre_temporada_pt",
-  "projeto_adama_2022_pt",
-  "projeto_36_2022_pt",
-  "de_volta_aos_gramados_pt",
-  "offseason_30_days",
-  "adama_strength_power",
-  "project_36",
-  "elanga_in_season"
-];
+const productOrder = {
+  Portuguese: [
+    "projeto_pre_temporada_pt",
+    "projeto_adama_2022_pt",
+    "project_36",
+    "de_volta_aos_gramados_pt"
+  ],
+  English: [
+    "offseason_30_days",
+    "adama_strength_power",
+    "project_36",
+    "elanga_in_season"
+  ]
+} satisfies Record<"Portuguese" | "English", string[]>;
 
 const englishSalesPages: Record<string, string> = {
   offseason_30_days: "/en/programs/offseason-30-days",
@@ -218,26 +222,45 @@ function ProgramRail({
 }) {
   const page = copy[locale];
   const products = checkoutProducts
-    .filter(
-      (product) =>
-        product.active &&
-        product.type === "training_program" &&
-        product.language === language
-    )
+    .filter((product) => {
+      if (
+        !product.active ||
+        product.type !== "training_program" ||
+        product.id === "projeto_36_2022_pt"
+      ) {
+        return false;
+      }
+
+      if (language === "Portuguese") {
+        return product.language === "Portuguese" || product.id === "project_36";
+      }
+
+      return product.language === "English";
+    })
     .sort(
       (left, right) =>
-        productOrder.indexOf(left.id) - productOrder.indexOf(right.id)
+        productOrder[language].indexOf(left.id) -
+        productOrder[language].indexOf(right.id)
     );
 
   return (
     <div className="-mx-4 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
       {products.map((product) => {
-        const reviewKey = getReviewGroupForProgramHref(product.sales_page_path);
-        const review = reviewKey ? reviewGroups[reviewKey] : null;
-        const salesPage =
-          locale === "en" && product.language === "English"
+        const usePtPresentation =
+          language === "Portuguese" && product.id === "project_36";
+        const displayName = usePtPresentation
+          ? "Projeto 36: Velocidade e Aceleração"
+          : product.name;
+        const coverImage = usePtPresentation
+          ? assets.project36Pt
+          : product.cover_image;
+        const salesPage = usePtPresentation
+          ? "/programas/projeto-36kmh"
+          : locale === "en" && product.language === "English"
             ? englishSalesPages[product.id] ?? product.sales_page_path
             : product.sales_page_path;
+        const reviewKey = getReviewGroupForProgramHref(salesPage);
+        const review = reviewKey ? reviewGroups[reviewKey] : null;
         const currency = language === "Portuguese" ? "BRL" : "USD";
         const amount =
           language === "Portuguese" ? product.price_brl : product.price_usd;
@@ -250,11 +273,11 @@ function ProgramRail({
           >
             <div className="relative aspect-[4/5] overflow-hidden bg-ink">
               <Image
-                alt={product.name}
+                alt={displayName}
                 className="object-contain p-2 transition duration-500 group-hover:scale-[1.03]"
                 fill
                 sizes="(max-width: 640px) 78vw, 292px"
-                src={product.cover_image}
+                src={coverImage}
               />
             </div>
             <div className="p-4">
@@ -268,7 +291,7 @@ function ProgramRail({
                 </p>
               ) : null}
               <h3 className="mt-2 min-h-12 text-lg font-bold leading-6">
-                {product.name}
+                {displayName}
               </h3>
               <div className="mt-4 flex items-end justify-between gap-3 border-t border-ink/10 pt-3">
                 <p className="text-lg font-black">

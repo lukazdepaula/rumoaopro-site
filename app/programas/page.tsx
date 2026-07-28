@@ -8,7 +8,7 @@ import { ReviewBadge } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
-import { assets, nav, programsPtLegacy } from "@/lib/content";
+import { assets, nav, programs, programsPtLegacy } from "@/lib/content";
 import { getReviewGroupForProgramHref } from "@/lib/reviews";
 
 export const metadata: Metadata = {
@@ -52,6 +52,18 @@ const annualPath = [
 
 const normalizeProgramPath = (href: string) =>
   href.replace(/^\/programas\//, "").replace(/^\/checkout\//, "");
+
+const translatedProject36 = programs.find(
+  (program) => program.href === "/programas/projeto-36kmh"
+);
+
+const portuguesePrograms = translatedProject36
+  ? [
+      ...programsPtLegacy.slice(0, 2),
+      translatedProject36,
+      ...programsPtLegacy.slice(2)
+    ]
+  : programsPtLegacy;
 
 const getProgramPrice = (href: string) => {
   const path = normalizeProgramPath(href);
@@ -220,7 +232,7 @@ export default function ProgramasPage() {
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {programsPtLegacy.map((program) => {
+            {portuguesePrograms.map((program) => {
               const reviewGroupKey = getReviewGroupForProgramHref(program.href);
               const price = getProgramPrice(program.href);
 

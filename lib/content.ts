@@ -130,7 +130,8 @@ export const assets = {
   successDiogo: "/assets/success/diogo-fortunato-player.jpg",
   preSeason: "/assets/programs/pt/projeto-pre-temporada-cover.jpg",
   adama: "/assets/programs/pt/projeto-adama-2022-cover.jpg",
-  project36Pt: "/assets/programs/pt/projeto-36-2022-cover.jpg",
+  project36Pt: "/assets/programs/project-36/project-36-cover.jpg",
+  project36LegacyPt: "/assets/programs/pt/projeto-36-2022-cover.jpg",
   dvg: "/assets/programs/pt/de-volta-aos-gramados-cover.jpg",
   preparadorProCover: "/assets/courses/preparador-pro/cover.png"
 };
@@ -662,8 +663,8 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Project 36 Offseason",
-    tag: "Conteúdo em inglês",
+    title: "Projeto 36: Velocidade e Aceleração",
+    tag: "Português e inglês",
     duration: "12 semanas",
     level: "Offseason - velocidade",
     body:
@@ -671,10 +672,10 @@ export const programs = [
     outcomes: [
       "Aceleração e top speed",
       "Velocidade aplicada ao futebol",
-      "Conteúdo do programa em inglês"
+      "Disponível em português e inglês"
     ],
-    image: assets.programsSprintChase,
-    imageClass: "object-center",
+    image: assets.project36Pt,
+    imageClass: "object-contain bg-ink",
     href: "/programas/projeto-36kmh",
     cta: "Ver detalhes"
   },
@@ -730,23 +731,6 @@ export const programsPtLegacy = [
     image: assets.adama,
     imageClass: "object-center",
     href: "/programas/projeto-adama-2022",
-    cta: "Ver detalhes"
-  },
-  {
-    title: "Projeto 36 km/h",
-    tag: "Português",
-    duration: "12 semanas",
-    level: "Velocidade e aceleração",
-    body:
-      "12 semanas para correr mais rápido, acelerar com mais explosão e transferir velocidade para o jogo.",
-    outcomes: [
-      "Aceleração e velocidade máxima",
-      "Campo, academia e coordenação",
-      "Produto em português"
-    ],
-    image: assets.project36Pt,
-    imageClass: "object-center",
-    href: "/programas/projeto-36-2022",
     cta: "Ver detalhes"
   },
   {
@@ -852,7 +836,7 @@ export const portugueseProgramSalesPages = {
       "Projeto 36 km/h: corra mais rápido e acelere com mais explosão.",
     slug: "projeto-36-2022",
     checkoutHref: shopifyProducts.projeto362022,
-    cover: assets.project36Pt,
+    cover: assets.project36LegacyPt,
     heroImage: assets.programsSprintChase,
     heroImageClass: "object-center",
     coverClass: "object-contain",
@@ -958,8 +942,8 @@ export const programsEn = [
     cta: "View page"
   },
   {
-    title: "Project 36 Offseason",
-    tag: "English",
+    title: "Project 36: Speed & Acceleration",
+    tag: "Portuguese & English",
     duration: "12 weeks",
     level: "Offseason speed",
     body:
@@ -967,10 +951,10 @@ export const programsEn = [
     outcomes: [
       "Athletic Foundation",
       "Acceleration Power",
-      "Max Velocity & Game Speed"
+      "Available in Portuguese and English"
     ],
-    image: assets.programsSprintChase,
-    imageClass: "object-center",
+    image: assets.project36Cover,
+    imageClass: "object-contain bg-ink",
     href: "/en/programs/project-36kmh",
     cta: "View page"
   },

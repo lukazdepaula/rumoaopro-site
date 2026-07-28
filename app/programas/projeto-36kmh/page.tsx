@@ -3,9 +3,9 @@ import { Project36SalesPage } from "@/components/project-36-sales-page";
 import { assets } from "@/lib/content";
 
 export const metadata: Metadata = {
-  title: "Projeto 36km/h Speed & Acceleration",
+  title: "Projeto 36: Velocidade e Aceleração",
   description:
-    "Programa de 12 semanas para jogadores de futebol melhorarem aceleração, velocidade máxima, re-aceleração e ações de velocidade no jogo.",
+    "Programa bilíngue de 12 semanas para jogadores de futebol desenvolverem aceleração, velocidade máxima e velocidade de jogo.",
   alternates: {
     canonical: "/programas/projeto-36kmh",
     languages: {
@@ -14,10 +14,10 @@ export const metadata: Metadata = {
     }
   },
   openGraph: {
-    title: "Projeto 36km/h Speed & Acceleration",
+    title: "Projeto 36: Velocidade e Aceleração",
     description:
-      "Sistema de offseason em 3 fases para construir base atlética, aceleração forte e velocidade de jogo.",
-    images: [assets.project36Cover],
+      "Método de offseason em 3 fases, disponível em português e inglês, para correr mais rápido e transferir velocidade para o jogo.",
+    images: [assets.project36Pt],
     locale: "pt_BR",
     type: "website"
   }
