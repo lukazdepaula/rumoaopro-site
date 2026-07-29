@@ -438,6 +438,8 @@ const copy = {
 
 export function Project36SalesPage({ locale }: Project36SalesPageProps) {
   const page = copy[locale];
+  const checkoutHref =
+    locale === "en" ? "/en/checkout/project-36" : shopifyProducts.projeto36;
   const programHref =
     locale === "pt" ? "/programas/projeto-36kmh" : "/en/programs/project-36kmh";
   const reviewGroupKey = getReviewGroupForProgramHref(programHref);
@@ -446,21 +448,21 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
     <main className="min-h-screen bg-smoke">
       <SiteHeader
         navItems={page.nav}
-        ctaHref={shopifyProducts.projeto36}
+        ctaHref={checkoutHref}
         ctaLabel={page.ctaLabel}
       />
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
           alt="Project 36km/h Speed and Acceleration Program cover"
-          className="absolute inset-0 -z-20 h-full w-full object-contain object-right opacity-80"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-center opacity-65 lg:hidden"
           fill
           priority
           sizes="100vw"
           src={assets.project36Cover}
         />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.98)_0%,rgba(8,9,11,0.88)_42%,rgba(8,9,11,0.34)_100%)]" />
-        <div className="mx-auto flex min-h-[calc(74svh-var(--header-height))] max-w-7xl items-center px-4 py-8 sm:px-6 md:min-h-[calc(70vh-var(--header-height))] lg:px-8">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.98)_0%,rgba(8,9,11,0.88)_58%,rgba(8,9,11,0.58)_100%)] lg:bg-[radial-gradient(circle_at_78%_45%,rgba(163,230,53,0.12),transparent_28%),linear-gradient(135deg,#08090b_0%,#11151a_100%)]" />
+        <div className="mx-auto grid min-h-[calc(74svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-8 sm:px-6 md:min-h-[calc(70vh-var(--header-height))] lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)] lg:px-8 lg:py-12">
           <div className="max-w-3xl">
             <div className="flex flex-wrap gap-3">
               <p className="inline-flex rounded-md border border-lime-400/35 bg-lime-400/10 px-3 py-2 text-sm font-bold uppercase text-lime-300">
@@ -501,7 +503,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-lime-400 px-5 text-sm font-bold uppercase text-ink transition hover:bg-lime-300"
-                href={shopifyProducts.projeto36}
+                href={checkoutHref}
               >
                 {page.primaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -516,6 +518,36 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-white/48">
               {page.storeNote}
             </p>
+          </div>
+          <div className="relative hidden h-full min-h-[560px] items-center justify-end lg:flex">
+            <div className="relative w-full max-w-[430px] rounded-[1.4rem] border border-white/15 bg-white/[0.05] p-3 shadow-[0_32px_90px_rgba(0,0,0,0.55)]">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-[1rem]">
+                <Image
+                  alt="Project 36km/h training system"
+                  className="h-full w-full object-cover object-top"
+                  fill
+                  priority
+                  sizes="430px"
+                  src={assets.project36Cover}
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/85 to-transparent px-6 pb-6 pt-24">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-lime-300">
+                    {locale === "en" ? "Inside RumoAoPro" : "Dentro da RumoAoPro"}
+                  </p>
+                  <p className="mt-2 text-xl font-black uppercase text-white">
+                    {locale === "en"
+                      ? "12 weeks. Every session organized."
+                      : "12 semanas. Cada sessão organizada."}
+                  </p>
+                </div>
+              </div>
+              <div className="absolute -left-8 top-12 rounded-lg border border-lime-400/30 bg-ink/95 px-4 py-3 shadow-xl backdrop-blur">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                  {locale === "en" ? "Speed system" : "Sistema de velocidade"}
+                </p>
+                <p className="mt-1 font-display text-2xl uppercase text-lime-300">3 phases</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -827,7 +859,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <a
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-lime-400 px-5 text-sm font-bold uppercase text-ink transition hover:bg-lime-300"
-              href={shopifyProducts.projeto36}
+              href={checkoutHref}
             >
               {page.finalCta}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />

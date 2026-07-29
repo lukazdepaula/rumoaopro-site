@@ -8,11 +8,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
 import { getProductBySlug } from "@/lib/checkout/products";
+import { getLocalizedProductCopy } from "@/lib/checkout/localization";
 
 export const dynamic = "force-dynamic";
 
 type CheckoutPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ locale?: string }>;
 };
 
 export async function generateMetadata({
@@ -27,8 +29,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function CheckoutPage({ params }: CheckoutPageProps) {
+export default async function CheckoutPage({ params, searchParams }: CheckoutPageProps) {
   const { slug } = await params;
+  const { locale: requestedLocale } = await searchParams;
+  const locale = requestedLocale === "en" ? "en" : "pt";
+  const isEnglish = locale === "en";
 
   if (slug === "projeto-36-2022") {
     permanentRedirect("/checkout/project-36");
@@ -40,9 +45,15 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     notFound();
   }
 
+  const productCopy = getLocalizedProductCopy(product, locale);
+
   return (
     <main className="min-h-screen bg-smoke">
-      <SiteHeader navItems={nav.pt} ctaHref="/programas" ctaLabel="Programas" />
+      <SiteHeader
+        navItems={isEnglish ? nav.en : nav.pt}
+        ctaHref={isEnglish ? "/en/programs" : "/programas"}
+        ctaLabel={isEnglish ? "Programs" : "Programas"}
+      />
 
       <section className="relative isolate overflow-hidden bg-ink py-12 text-white">
         <Image
@@ -57,21 +68,22 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link
             className="focus-ring inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white"
-            href="/programas"
+            href={isEnglish ? productCopy.salesPagePath : "/programas"}
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            Voltar aos programas
+            {isEnglish ? `Back to ${productCopy.name}` : "Voltar aos programas"}
           </Link>
           <div className="mt-8 max-w-3xl">
             <p className="text-sm font-bold uppercase text-gold">
-              Pagamento seguro
+              {isEnglish ? "Secure payment" : "Pagamento seguro"}
             </p>
             <h1 className="mt-3 font-display text-4xl uppercase leading-tight sm:text-5xl">
-              Checkout RumoAoPro
+              {isEnglish ? "Complete your order" : "Checkout RumoAoPro"}
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
-              Escolha a forma de pagamento ideal para o seu país. Seu acesso é
-              liberado automaticamente assim que o pagamento for confirmado.
+              {isEnglish
+                ? "Pay securely in USD. Your program access is activated automatically after payment confirmation."
+                : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
             </p>
           </div>
         </div>
@@ -79,26 +91,35 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
       <section className="py-14">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_0.55fr] lg:px-8">
-          <CheckoutForm product={product} />
+          <CheckoutForm locale={locale} product={product} />
           <aside className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
             <div className="flex h-11 w-11 items-center justify-center rounded-md bg-ink text-white">
               <LockKeyhole aria-hidden="true" className="h-5 w-5" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-ink">
-              Compra e acesso protegidos
+              {isEnglish ? "Protected payment and access" : "Compra e acesso protegidos"}
             </h2>
             <p className="mt-3 text-sm leading-6 text-graphite/72">
-              Seus dados são enviados diretamente aos provedores de pagamento.
-              O programa aparece na sua conta após a confirmação da compra.
+              {isEnglish
+                ? `Payment is securely processed by Stripe. ${productCopy.name} appears in your account after confirmation.`
+                : "Seus dados são enviados diretamente aos provedores de pagamento. O programa aparece na sua conta após a confirmação da compra."}
             </p>
             <div className="mt-6 grid gap-3">
-              {[
-                "CPF/CNPJ exigido apenas para Brasil",
-                "Cartão e parcelamento via Mercado Pago no Brasil",
-                "Pix com QR Code e aprovação rápida",
-                "Stripe para cartão no Brasil e no exterior",
-                "Pedido registrado no painel interno"
-              ].map((item) => (
+              {(isEnglish
+                ? [
+                    "Secure international card payment via Stripe",
+                    "Price charged in US dollars",
+                    "Automatic access after confirmation",
+                    "Training materials protected in your account",
+                    "Support directly from RumoAoPro"
+                  ]
+                : [
+                    "CPF/CNPJ exigido apenas para Brasil",
+                    "Cartão e parcelamento via Mercado Pago no Brasil",
+                    "Pix com QR Code e aprovação rápida",
+                    "Stripe para cartão no Brasil e no exterior",
+                    "Pedido registrado no painel interno"
+                  ]).map((item) => (
                 <p className="flex gap-3 text-sm text-graphite/75" key={item}>
                   <ShieldCheck
                     aria-hidden="true"

@@ -21,9 +21,9 @@ export type ValidCheckoutInput = {
   country: string;
   documentType: CustomerDocumentType;
   document: string | null;
-  postalCode: string;
-  address: string;
-  whatsapp: string;
+  postalCode: string | null;
+  address: string | null;
+  whatsapp: string | null;
   discountCode: string | null;
   paymentMethod: CheckoutPaymentMethod;
 };
@@ -98,21 +98,21 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     throw new CheckoutValidationError("Informe seu país.", "country");
   }
 
-  if (address.length < 8 || address.length > 240) {
-    throw new CheckoutValidationError(
-      "Informe seu endereço completo, incluindo cidade e região/estado.",
-      "address"
-    );
-  }
-
-  if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
-    throw new CheckoutValidationError(
-      "Informe um WhatsApp válido com o código do país (DDI).",
-      "whatsapp"
-    );
-  }
-
   if (isBrazil(country)) {
+    if (address.length < 8 || address.length > 240) {
+      throw new CheckoutValidationError(
+        "Informe seu endereço completo, incluindo cidade e região/estado.",
+        "address"
+      );
+    }
+
+    if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
+      throw new CheckoutValidationError(
+        "Informe um WhatsApp válido com o código do país (DDI).",
+        "whatsapp"
+      );
+    }
+
     const document = detectBrazilianDocument(normalizeText(data.document));
     const postalCode = onlyDigits(rawPostalCode);
 
@@ -145,14 +145,6 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     };
   }
 
-  const postalCode = rawPostalCode.replace(/\s+/g, " ");
-  if (postalCode.length < 3 || postalCode.length > 20) {
-    throw new CheckoutValidationError(
-      "Informe seu código postal.",
-      "postalCode"
-    );
-  }
-
   return {
     productSlug,
     name,
@@ -160,9 +152,9 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     country,
     documentType: null,
     document: null,
-    postalCode,
-    address,
-    whatsapp: `+${whatsappDigits}`,
+    postalCode: rawPostalCode.replace(/\s+/g, " ") || null,
+    address: address || null,
+    whatsapp: whatsappDigits ? `+${whatsappDigits}` : null,
     discountCode: discountCode || null,
     paymentMethod: "stripe"
   };

@@ -240,12 +240,21 @@ export async function createStripeCheckoutSession(
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const siteUrl = getSiteUrl();
   const params = new URLSearchParams();
+  const international = order.customer_country !== "BR";
 
   params.set("mode", "payment");
   params.set("customer_email", order.customer_email);
   params.set("client_reference_id", order.id);
-  params.set("success_url", `${siteUrl}/checkout/success?order_id=${order.id}`);
-  params.set("cancel_url", `${siteUrl}/checkout/${product.slug}?cancelled=1`);
+  params.set(
+    "success_url",
+    `${siteUrl}/checkout/success?order_id=${order.id}${international ? "&locale=en" : ""}`
+  );
+  params.set(
+    "cancel_url",
+    international
+      ? `${siteUrl}/en/checkout/${product.slug}?cancelled=1`
+      : `${siteUrl}/checkout/${product.slug}?cancelled=1`
+  );
   params.set("metadata[order_id]", order.id);
   params.set("metadata[product_id]", product.id);
   if (typeof order.metadata.discount_code === "string") {

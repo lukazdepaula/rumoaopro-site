@@ -7,9 +7,11 @@ import type {
   CheckoutPaymentMethod,
   CheckoutProduct
 } from "@/lib/checkout/types";
+import { getLocalizedProductCopy } from "@/lib/checkout/localization";
 
 type CheckoutFormProps = {
   product: CheckoutProduct;
+  locale?: "pt" | "en";
 };
 
 type PixState = {
@@ -139,10 +141,12 @@ function CardNetworkBadges() {
   );
 }
 
-export function CheckoutForm({ product }: CheckoutFormProps) {
-  const [country, setCountry] = useState("BR");
+export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
+  const isEnglish = locale === "en";
+  const productCopy = getLocalizedProductCopy(product, locale);
+  const [country, setCountry] = useState(isEnglish ? "US" : "BR");
   const [paymentMethod, setPaymentMethod] =
-    useState<CheckoutPaymentMethod>("mercado_pago");
+    useState<CheckoutPaymentMethod>(isEnglish ? "stripe" : "mercado_pago");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
@@ -198,7 +202,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
 
     const code = discountCode.trim();
     if (!code) {
-      setDiscountError("Informe um cupom.");
+      setDiscountError(isEnglish ? "Enter a discount code." : "Informe um cupom.");
       return;
     }
 
@@ -219,14 +223,20 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
       const payload = await response.json();
 
       if (!response.ok) {
-        setDiscountError(payload.error || "Cupom inválido.");
+        setDiscountError(
+          payload.error || (isEnglish ? "Invalid discount code." : "Cupom inválido.")
+        );
         return;
       }
 
       setAppliedDiscount(payload as DiscountPreview);
       setDiscountCode(String(payload.code || code));
     } catch {
-      setDiscountError("Não foi possível validar o cupom.");
+      setDiscountError(
+        isEnglish
+          ? "We could not validate this discount code."
+          : "Não foi possível validar o cupom."
+      );
     } finally {
       setDiscountLoading(false);
     }
@@ -261,7 +271,12 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload.error || "Não foi possível iniciar o checkout.");
+        setError(
+          payload.error ||
+            (isEnglish
+              ? "We could not start the secure checkout."
+              : "Não foi possível iniciar o checkout.")
+        );
         return;
       }
 
@@ -287,7 +302,11 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         setPixStatus("pending");
       }
     } catch {
-      setError("Erro de conexão ao iniciar checkout.");
+      setError(
+        isEnglish
+          ? "Connection error while starting checkout. Please try again."
+          : "Erro de conexão ao iniciar checkout."
+      );
     } finally {
       setLoading(false);
     }
@@ -343,15 +362,19 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
       <div className="flex items-start justify-between gap-4 border-b border-ink/10 pb-5">
         <div>
           <p className="text-sm font-bold uppercase text-signal">Checkout</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">{product.name}</h2>
+          <h2 className="mt-2 text-2xl font-bold text-ink">{productCopy.name}</h2>
           <p className="mt-2 text-sm leading-6 text-graphite/70">
-            {product.description}
+            {productCopy.description}
           </p>
         </div>
         <div className="rounded-md bg-ink px-3 py-2 text-right text-sm font-bold text-white">
           <p>{isBrazil ? brlEstimate : usdPrice}</p>
           <p className="mt-1 text-[11px] font-semibold text-white/65">
-            {isBrazil ? `${usdPrice} internacional` : `${brlEstimate} no Brasil`}
+            {isBrazil
+              ? `${usdPrice} internacional`
+              : isEnglish
+                ? "One-time payment"
+                : `${brlEstimate} no Brasil`}
           </p>
         </div>
       </div>
@@ -359,12 +382,14 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
       <form className="mt-5 grid gap-4" onSubmit={submit}>
         <fieldset className="grid gap-3 rounded-md border border-ink/10 bg-white p-3">
           <legend className="px-1 text-xs font-bold uppercase text-graphite/55">
-            Escolha como pagar
+            {isEnglish ? "Secure payment" : "Escolha como pagar"}
           </legend>
           <p className="text-sm font-semibold text-ink">
             {isBrazil
               ? "Cartão parcelado, Pix ou cartão internacional."
-              : "Pagamento internacional seguro via Stripe."}
+              : isEnglish
+                ? "International card payment securely processed by Stripe."
+                : "Pagamento internacional seguro via Stripe."}
           </p>
 
           {isBrazil ? (
@@ -407,7 +432,11 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           ) : (
             <PaymentOption
               active
-              description="Cartão de crédito em checkout internacional seguro."
+              description={
+                isEnglish
+                  ? "You will complete payment on Stripe's secure checkout."
+                  : "Cartão de crédito em checkout internacional seguro."
+              }
               icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
               label="Credit or debit card"
               name="payment-method"
@@ -421,7 +450,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         </fieldset>
 
         <label className="grid gap-2 text-sm font-semibold text-ink">
-          País
+          {isEnglish ? "Country" : "País"}
           <select
             className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
             onChange={(event) => {
@@ -433,7 +462,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
             }}
             value={country}
           >
-            <option value="BR">Brasil</option>
+            {!isEnglish ? <option value="BR">Brasil</option> : null}
             <option value="US">United States</option>
             <option value="PT">Portugal</option>
             <option value="GB">United Kingdom</option>
@@ -443,7 +472,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         </label>
 
         <label className="grid gap-2 text-sm font-semibold text-ink">
-          Nome completo
+          {isEnglish ? "Full name" : "Nome completo"}
           <input
             className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
             onChange={(event) => setName(event.target.value)}
@@ -454,7 +483,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         </label>
 
         <label className="grid gap-2 text-sm font-semibold text-ink">
-          E-mail
+          {isEnglish ? "Email" : "E-mail"}
           <input
             className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
             onChange={(event) => setEmail(event.target.value)}
@@ -464,7 +493,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        {!isEnglish || isBrazil ? <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold text-ink">
             WhatsApp com código do país (DDI)
             <input
@@ -499,9 +528,9 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
               value={postalCode}
             />
           </label>
-        </div>
+        </div> : null}
 
-        <label className="grid gap-2 text-sm font-semibold text-ink">
+        {!isEnglish || isBrazil ? <label className="grid gap-2 text-sm font-semibold text-ink">
           Endereço completo
           <textarea
             autoComplete="street-address"
@@ -512,7 +541,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
             required
             value={address}
           />
-        </label>
+        </label> : null}
 
         {isBrazil ? (
           <div className="grid gap-4">
@@ -533,7 +562,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
 
         <div className="grid gap-2 rounded-md border border-ink/10 bg-white p-3">
           <label className="text-sm font-semibold text-ink" htmlFor="discount-code">
-            Cupom de desconto
+            {isEnglish ? "Discount code" : "Cupom de desconto"}
           </label>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
             <input
@@ -550,7 +579,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
                   setAppliedDiscount(null);
                 }
               }}
-              placeholder="Digite seu código"
+              placeholder={isEnglish ? "Enter your code" : "Digite seu código"}
               type="text"
               value={discountCode}
             />
@@ -563,12 +592,14 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
               {discountLoading ? (
                 <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
               ) : null}
-              Aplicar
+              {isEnglish ? "Apply" : "Aplicar"}
             </button>
           </div>
           {appliedDiscount ? (
             <p className="text-sm font-bold text-turf">
-              Cupom {appliedDiscount.code} aplicado.
+              {isEnglish
+                ? `Code ${appliedDiscount.code} applied.`
+                : `Cupom ${appliedDiscount.code} aplicado.`}
             </p>
           ) : null}
           {discountError ? (
@@ -577,26 +608,36 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         </div>
 
         <div className="rounded-md border border-ink/10 bg-smoke px-3 py-2 text-sm text-graphite/75">
-          <p>
-            Preço internacional: <strong>{usdPrice}</strong>
-          </p>
-          <p className="mt-1">
-            Preço no Brasil: <strong>{brlEstimate}</strong>
-          </p>
+          {isEnglish ? (
+            <p>
+              International price: <strong>{usdPrice}</strong>
+            </p>
+          ) : (
+            <>
+              <p>
+                Preço internacional: <strong>{usdPrice}</strong>
+              </p>
+              <p className="mt-1">
+                Preço no Brasil: <strong>{brlEstimate}</strong>
+              </p>
+            </>
+          )}
           {appliedDiscount ? (
             <>
               <p className="mt-1">
-                Valor original:{" "}
+                {isEnglish ? "Original price:" : "Valor original:"}{" "}
                 <strong>
                   {formatMoney(appliedDiscount.originalAmount, appliedDiscount.currency)}
                 </strong>
               </p>
               <p className="mt-1 text-turf">
-                Desconto: <strong>-{discountAmount}</strong>
+                {isEnglish ? "Discount:" : "Desconto:"} <strong>-{discountAmount}</strong>
               </p>
             </>
           ) : null}
-          <p className="mt-1 font-bold text-ink">Valor desta compra: {price}</p>
+          <p className="mt-1 font-bold text-ink">
+            {isEnglish ? "Total today:" : "Valor desta compra:"} {price}
+          </p>
         </div>
 
         {error ? (
@@ -611,7 +652,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           type="submit"
         >
           {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          Continuar para pagamento
+          {isEnglish ? "Continue to secure payment" : "Continuar para pagamento"}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </button>
       </form>

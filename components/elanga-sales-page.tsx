@@ -364,6 +364,8 @@ const copy = {
 
 export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
   const page = copy[locale];
+  const checkoutHref =
+    locale === "en" ? "/en/checkout/elanga-in-season" : shopifyProducts.elanga;
   const programHref =
     locale === "pt"
       ? "/programas/elanga-in-season"
@@ -374,7 +376,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
     <main className="min-h-screen bg-smoke">
       <SiteHeader
         navItems={page.nav}
-        ctaHref={shopifyProducts.elanga}
+        ctaHref={checkoutHref}
         ctaLabel={page.ctaLabel}
       />
 
@@ -429,7 +431,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
             <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-orange-500 px-5 text-sm font-bold uppercase text-white transition hover:bg-orange-400"
-                href={shopifyProducts.elanga}
+                href={checkoutHref}
               >
                 {page.primaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -717,7 +719,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <a
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-orange-500 px-5 text-sm font-bold uppercase text-white transition hover:bg-orange-400"
-              href={shopifyProducts.elanga}
+              href={checkoutHref}
             >
               {page.finalCta}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />

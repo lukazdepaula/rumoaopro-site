@@ -390,6 +390,10 @@ const copy = {
 
 export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
   const page = copy[locale];
+  const checkoutHref =
+    locale === "en"
+      ? "/en/checkout/offseason-30-days"
+      : shopifyProducts.offseason30;
   const coachingHref =
     locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
   const programHref =
@@ -402,7 +406,7 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
     <main className="min-h-screen bg-[#050608]">
       <SiteHeader
         navItems={page.nav}
-        ctaHref={shopifyProducts.offseason30}
+        ctaHref={checkoutHref}
         ctaLabel={page.ctaLabel}
       />
 
@@ -453,7 +457,7 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
             <div className="mt-5 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#126eff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(18,110,255,0.34)] transition hover:bg-[#0c55cc]"
-                href={shopifyProducts.offseason30}
+                href={checkoutHref}
               >
                 {page.primaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -818,7 +822,7 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <a
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#126eff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(18,110,255,0.34)] transition hover:bg-[#0c55cc]"
-              href={shopifyProducts.offseason30}
+              href={checkoutHref}
             >
               {page.finalCta}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />

@@ -429,6 +429,10 @@ const authorityLogos = [
 
 export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
   const page = copy[locale];
+  const checkoutHref =
+    locale === "en"
+      ? "/en/checkout/adama-offseason-strength-and-power"
+      : shopifyProducts.adama;
   const selectedSuccessCases = successCases[locale].slice(0, 3);
   const coachingHref =
     locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
@@ -442,7 +446,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
     <main className="min-h-screen bg-[#070708]">
       <SiteHeader
         navItems={page.nav}
-        ctaHref={shopifyProducts.adama}
+        ctaHref={checkoutHref}
         ctaLabel={page.ctaLabel}
       />
 
@@ -495,7 +499,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
             <div className="mt-5 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <a
                 className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.38)] transition hover:bg-[#b90f20]"
-                href={shopifyProducts.adama}
+                href={checkoutHref}
               >
                 {page.primaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -984,7 +988,7 @@ export function AdamaSalesPage({ locale }: AdamaSalesPageProps) {
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <a
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 py-3 text-sm font-bold text-white shadow-[0_16px_48px_rgba(231,18,38,0.36)] transition hover:bg-[#b90f20]"
-              href={shopifyProducts.adama}
+              href={checkoutHref}
             >
               {page.finalCta}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
