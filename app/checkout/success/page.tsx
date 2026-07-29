@@ -20,6 +20,7 @@ type CheckoutSuccessPageProps = {
   searchParams: Promise<{
     order_id?: string;
     mock?: string;
+    locale?: string;
   }>;
 };
 
@@ -28,21 +29,29 @@ export default async function CheckoutSuccessPage({
 }: CheckoutSuccessPageProps) {
   const params = await searchParams;
   const order = params.order_id ? await getOrderById(params.order_id) : null;
+  const isEnglish = params.locale === "en" || order?.metadata.checkout_locale === "en";
   const product = order ? getProductById(order.product_id) : null;
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
   const accessHref =
     order?.status === "paid" && product ? `/my-programs/${product.slug}` : "/my-programs";
-  const title =
-    order?.status === "paid" ? "Pagamento confirmado" : "Pagamento em confirmação";
+  const title = order?.status === "paid"
+    ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
+    : isEnglish ? "Payment processing" : "Pagamento em confirmação";
   const description = order?.status === "paid"
-    ? "Pagamento aprovado. Seu acesso foi liberado e o e-mail de confirmação será enviado automaticamente."
+    ? isEnglish
+      ? "Payment approved. Your program access is ready and a confirmation email will be sent automatically."
+      : "Pagamento aprovado. Seu acesso foi liberado e o e-mail de confirmação será enviado automaticamente."
     : showMockActions
-      ? "Recebemos o retorno do checkout. No modo mock, use os botões abaixo para simular a confirmação."
-      : "Recebemos o retorno do checkout. Por segurança, o produto só é liberado quando o pagamento for confirmado pelo gateway.";
+      ? isEnglish
+        ? "We received the checkout response. In mock mode, use the buttons below to simulate confirmation."
+        : "Recebemos o retorno do checkout. No modo mock, use os botões abaixo para simular a confirmação."
+      : isEnglish
+        ? "We received the checkout response. Access is released only after the payment provider confirms it."
+        : "Recebemos o retorno do checkout. Por segurança, o produto só é liberado quando o pagamento for confirmado pelo gateway.";
 
   return (
     <main className="min-h-screen bg-smoke">
-      <SiteHeader navItems={nav.pt} ctaHref="/programas" ctaLabel="Programas" />
+      <SiteHeader navItems={isEnglish ? nav.en : nav.pt} ctaHref={isEnglish ? "/en/programs" : "/programas"} ctaLabel={isEnglish ? "Programs" : "Programas"} />
       <section className="bg-ink py-20 text-white">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <CheckCircle2
@@ -57,13 +66,13 @@ export default async function CheckoutSuccessPage({
           </p>
           {order ? (
             <div className="mt-8 rounded-lg border border-white/15 bg-white/10 p-4 text-left">
-              <p className="text-xs font-bold uppercase text-white/55">Pedido</p>
+              <p className="text-xs font-bold uppercase text-white/55">{isEnglish ? "Order" : "Pedido"}</p>
               <p className="mt-1 break-all text-sm font-semibold text-white">
                 {order.id}
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <div>
-                  <p className="text-xs font-bold uppercase text-white/45">Produto</p>
+                  <p className="text-xs font-bold uppercase text-white/45">{isEnglish ? "Product" : "Produto"}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {order.product_name}
                   </p>
@@ -75,7 +84,7 @@ export default async function CheckoutSuccessPage({
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase text-white/45">Valor</p>
+                  <p className="text-xs font-bold uppercase text-white/45">{isEnglish ? "Amount" : "Valor"}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {formatMoney(order.amount, order.currency)}
                   </p>
@@ -89,13 +98,15 @@ export default async function CheckoutSuccessPage({
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
               href={accessHref}
             >
-              {order?.status === "paid" ? "Acessar programa" : "Ir para minha conta"}
+              {order?.status === "paid"
+                ? isEnglish ? "Access program" : "Acessar programa"
+                : isEnglish ? "Go to my account" : "Ir para minha conta"}
             </Link>
             <Link
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/15 px-5 text-sm font-bold uppercase text-white"
-              href="/programas"
+              href={isEnglish ? "/en/programs" : "/programas"}
             >
-              Voltar aos programas
+              {isEnglish ? "Back to programs" : "Voltar aos programas"}
             </Link>
           </div>
         </div>

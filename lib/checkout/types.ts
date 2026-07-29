@@ -157,4 +157,5 @@ export type CheckoutCustomerInput = {
   whatsapp?: string;
   discountCode?: string;
   paymentMethod?: CheckoutPaymentMethod;
+  locale?: "pt" | "en";
 };

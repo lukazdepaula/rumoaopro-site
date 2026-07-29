@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         checkout_country: input.country,
         checkout_gateway_mode: checkoutMode(),
         checkout_payment_method: paymentMethod,
+        checkout_locale: input.locale,
         base_price_usd: localizedPrice.basePriceUsd,
         ...discountMetadata(discountQuote)
       }
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         gateway: "mock",
         orderId: order.id,
-        redirectUrl: `/checkout/success?order_id=${order.id}&mock=1`
+        redirectUrl: `/checkout/success?order_id=${order.id}&mock=1${input.locale === "en" ? "&locale=en" : ""}`
       });
     }
 

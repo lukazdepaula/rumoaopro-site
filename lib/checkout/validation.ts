@@ -26,6 +26,7 @@ export type ValidCheckoutInput = {
   whatsapp: string | null;
   discountCode: string | null;
   paymentMethod: CheckoutPaymentMethod;
+  locale: "pt" | "en";
 };
 
 const normalizeText = (value: unknown) =>
@@ -78,6 +79,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const rawPostalCode = normalizeText(data.postalCode);
   const discountCode = normalizeDiscountCode(data.discountCode);
   const requestedPaymentMethod = normalizeText(data.paymentMethod);
+  const locale = data.locale === "en" ? "en" : "pt";
 
   if (!productSlug) {
     throw new CheckoutValidationError("Produto inválido.", "productSlug");
@@ -141,7 +143,8 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       address,
       whatsapp: `+${whatsappDigits}`,
       discountCode: discountCode || null,
-      paymentMethod
+      paymentMethod,
+      locale
     };
   }
 
@@ -156,6 +159,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     address: address || null,
     whatsapp: whatsappDigits ? `+${whatsappDigits}` : null,
     discountCode: discountCode || null,
-    paymentMethod: "stripe"
+    paymentMethod: "stripe",
+    locale
   };
 }

@@ -62,12 +62,20 @@ export default async function AdminDashboardPage() {
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
   const monthPaidOrders = paidOrders.filter((order) => paidDate(order) >= monthStart);
+  const monthOrders = orders.filter((order) => new Date(order.created_at) >= monthStart);
+  const monthConvertedOrders = monthOrders.filter((order) => order.status === "paid");
   const lastMonthPaidOrders = paidOrders.filter((order) => {
     const date = paidDate(order);
     return date >= lastMonthStart && date < monthStart;
   });
   const todayPaidOrders = paidOrders.filter((order) => paidDate(order) >= todayStart);
   const pendingOrders = orders.filter((order) => order.status === "pending");
+  const monthConversion = monthOrders.length > 0
+    ? (monthConvertedOrders.length / monthOrders.length) * 100
+    : 0;
+  const monthFailedOrders = monthOrders.filter((order) =>
+    order.status === "failed" || order.status === "cancelled"
+  );
   const monthRevenue = sumRevenue(monthPaidOrders);
   const lastMonthRevenue = sumRevenue(lastMonthPaidOrders);
   const todayRevenue = sumRevenue(todayPaidOrders);
@@ -168,16 +176,47 @@ export default async function AdminDashboardPage() {
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Pendentes
+            Conversão do checkout
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
-            {pendingOrders.length}
+            {monthConversion.toFixed(1)}%
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Pix ou checkout aguardando confirmação
+            {monthConvertedOrders.length} de {monthOrders.length} pedidos iniciados no mês
           </p>
         </article>
       </div>
+
+      <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-ink">Funil comercial do mês</h2>
+            <p className="mt-1 text-sm text-graphite/60">
+              Fonte: pedidos criados e confirmações recebidas pelos webhooks.
+            </p>
+          </div>
+          <p className="rounded-full bg-smoke px-3 py-1 text-xs font-bold text-graphite/70">
+            {pendingOrders.length} pendente{pendingOrders.length === 1 ? "" : "s"} no total
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-md bg-ink p-4 text-white">
+            <p className="text-xs font-bold uppercase text-white/55">Checkout iniciado</p>
+            <p className="mt-2 text-3xl font-black">{monthOrders.length}</p>
+            <p className="mt-2 text-xs text-white/60">100% da base do funil</p>
+          </div>
+          <div className="rounded-md bg-turf p-4 text-white">
+            <p className="text-xs font-bold uppercase text-white/70">Venda confirmada</p>
+            <p className="mt-2 text-3xl font-black">{monthConvertedOrders.length}</p>
+            <p className="mt-2 text-xs text-white/75">{monthConversion.toFixed(1)}% dos pedidos iniciados</p>
+          </div>
+          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-graphite/55">Falhou ou cancelou</p>
+            <p className="mt-2 text-3xl font-black">{monthFailedOrders.length}</p>
+            <p className="mt-2 text-xs text-graphite/60">Ponto de recuperação comercial</p>
+          </div>
+        </div>
+      </section>
 
       <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">

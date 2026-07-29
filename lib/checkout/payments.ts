@@ -240,7 +240,8 @@ export async function createStripeCheckoutSession(
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const siteUrl = getSiteUrl();
   const params = new URLSearchParams();
-  const international = order.customer_country !== "BR";
+  const international =
+    order.metadata.checkout_locale === "en" || order.customer_country !== "BR";
 
   params.set("mode", "payment");
   params.set("customer_email", order.customer_email);

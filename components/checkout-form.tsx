@@ -265,6 +265,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           address,
           whatsapp,
           paymentMethod,
+          locale,
           discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });
@@ -341,7 +342,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         if (payload.status === "paid") {
           window.location.href = `/checkout/success?order_id=${encodeURIComponent(
             activeOrderId
-          )}`;
+          )}${isEnglish ? "&locale=en" : ""}`;
         }
       } catch {
         // Keep the QR Code available if a transient status check fails.
@@ -355,7 +356,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       stopped = true;
       window.clearInterval(interval);
     };
-  }, [pix?.orderId]);
+  }, [isEnglish, pix?.orderId]);
 
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
