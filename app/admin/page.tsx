@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
-import { listOrders } from "@/lib/checkout/db";
-import { formatMoney } from "@/lib/checkout/products";
+import { listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
+import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import type { Gateway, Order } from "@/lib/checkout/types";
 
 export const dynamic = "force-dynamic";
@@ -51,15 +51,17 @@ function formatBrl(value: number) {
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
-  const orders = await listOrders({});
-  const paidOrders = orders
-    .filter((order) => order.status === "paid")
-    .sort((a, b) => paidDate(b).getTime() - paidDate(a).getTime());
-
   const now = new Date();
   const todayStart = startOfDay(now);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const [orders, monthAnalyticsEvents] = await Promise.all([
+    listOrders({}),
+    listAnalyticsEvents(monthStart)
+  ]);
+  const paidOrders = orders
+    .filter((order) => order.status === "paid")
+    .sort((a, b) => paidDate(b).getTime() - paidDate(a).getTime());
 
   const monthPaidOrders = paidOrders.filter((order) => paidDate(order) >= monthStart);
   const monthOrders = orders.filter((order) => new Date(order.created_at) >= monthStart);
@@ -73,9 +75,23 @@ export default async function AdminDashboardPage() {
   const monthConversion = monthOrders.length > 0
     ? (monthConvertedOrders.length / monthOrders.length) * 100
     : 0;
-  const monthFailedOrders = monthOrders.filter((order) =>
-    order.status === "failed" || order.status === "cancelled"
-  );
+  const trackingStart = monthAnalyticsEvents.length > 0
+    ? new Date(
+        Math.min(...monthAnalyticsEvents.map((event) => new Date(event.created_at).getTime()))
+      )
+    : null;
+  const trackedOrders = trackingStart
+    ? monthOrders.filter((order) => new Date(order.created_at) >= trackingStart)
+    : [];
+  const trackedPaidOrders = trackedOrders.filter((order) => order.status === "paid");
+  const eventCount = (type: "product_view" | "checkout_click" | "checkout_view") =>
+    monthAnalyticsEvents.filter((event) => event.type === type).length;
+  const productViews = eventCount("product_view");
+  const checkoutClicks = eventCount("checkout_click");
+  const checkoutViews = eventCount("checkout_view");
+  const viewToSaleConversion = productViews > 0
+    ? (trackedPaidOrders.length / productViews) * 100
+    : 0;
   const monthRevenue = sumRevenue(monthPaidOrders);
   const lastMonthRevenue = sumRevenue(lastMonthPaidOrders);
   const todayRevenue = sumRevenue(todayPaidOrders);
@@ -134,6 +150,57 @@ export default async function AdminDashboardPage() {
   )
     .map(([, value]) => value)
     .sort((a, b) => b.revenue - a.revenue);
+
+  const productFunnelRows = checkoutProducts
+    .filter((product) => product.active && product.id !== "pix_webhook_test")
+    .map((product) => {
+      const productEvents = monthAnalyticsEvents.filter(
+        (event) => event.product_id === product.id
+      );
+      const productOrders = trackedOrders.filter(
+        (order) => order.product_id === product.id
+      );
+      const views = productEvents.filter((event) => event.type === "product_view").length;
+      const sales = productOrders.filter((order) => order.status === "paid").length;
+      return {
+        id: product.id,
+        name: product.name,
+        views,
+        clicks: productEvents.filter((event) => event.type === "checkout_click").length,
+        checkouts: productEvents.filter((event) => event.type === "checkout_view").length,
+        starts: productOrders.length,
+        sales,
+        conversion: views > 0 ? (sales / views) * 100 : 0
+      };
+    })
+    .filter((row) => row.views > 0 || row.clicks > 0 || row.checkouts > 0 || row.starts > 0)
+    .sort((a, b) => b.views - a.views);
+
+  const localeRows = (["pt", "en"] as const).map((locale) => {
+    const localeEvents = monthAnalyticsEvents.filter((event) => event.locale === locale);
+    const localeOrders = trackedOrders.filter(
+      (order) => (order.metadata.checkout_locale === "en" ? "en" : "pt") === locale
+    );
+    return {
+      locale,
+      views: localeEvents.filter((event) => event.type === "product_view").length,
+      starts: localeOrders.length,
+      sales: localeOrders.filter((order) => order.status === "paid").length
+    };
+  });
+
+  const countryRows = Array.from(
+    trackedOrders.reduce((map, order) => {
+      const country = order.customer_country || "—";
+      const current = map.get(country) || { country, starts: 0, sales: 0 };
+      current.starts += 1;
+      if (order.status === "paid") current.sales += 1;
+      map.set(country, current);
+      return map;
+    }, new Map<string, { country: string; starts: number; sales: number }>())
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => b.starts - a.starts);
 
   return (
     <AdminShell title="Painel">
@@ -199,24 +266,71 @@ export default async function AdminDashboardPage() {
             {pendingOrders.length} pendente{pendingOrders.length === 1 ? "" : "s"} no total
           </p>
         </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-md bg-ink p-4 text-white">
-            <p className="text-xs font-bold uppercase text-white/55">Checkout iniciado</p>
-            <p className="mt-2 text-3xl font-black">{monthOrders.length}</p>
-            <p className="mt-2 text-xs text-white/60">100% da base do funil</p>
+            <p className="text-xs font-bold uppercase text-white/55">Visita no produto</p>
+            <p className="mt-2 text-3xl font-black">{productViews}</p>
+            <p className="mt-2 text-xs text-white/60">Sessões únicas por produto</p>
+          </div>
+          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-graphite/55">Clique em comprar</p>
+            <p className="mt-2 text-3xl font-black">{checkoutClicks}</p>
+            <p className="mt-2 text-xs text-graphite/60">{productViews > 0 ? ((checkoutClicks / productViews) * 100).toFixed(1) : "0.0"}% das visitas</p>
+          </div>
+          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-graphite/55">Abriu checkout</p>
+            <p className="mt-2 text-3xl font-black">{checkoutViews}</p>
+            <p className="mt-2 text-xs text-graphite/60">Página carregada</p>
+          </div>
+          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-graphite/55">Iniciou pagamento</p>
+            <p className="mt-2 text-3xl font-black">{trackedOrders.length}</p>
+            <p className="mt-2 text-xs text-graphite/60">Pedido criado no gateway</p>
           </div>
           <div className="rounded-md bg-turf p-4 text-white">
             <p className="text-xs font-bold uppercase text-white/70">Venda confirmada</p>
-            <p className="mt-2 text-3xl font-black">{monthConvertedOrders.length}</p>
-            <p className="mt-2 text-xs text-white/75">{monthConversion.toFixed(1)}% dos pedidos iniciados</p>
-          </div>
-          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
-            <p className="text-xs font-bold uppercase text-graphite/55">Falhou ou cancelou</p>
-            <p className="mt-2 text-3xl font-black">{monthFailedOrders.length}</p>
-            <p className="mt-2 text-xs text-graphite/60">Ponto de recuperação comercial</p>
+            <p className="mt-2 text-3xl font-black">{trackedPaidOrders.length}</p>
+            <p className="mt-2 text-xs text-white/75">{viewToSaleConversion.toFixed(1)}% das visitas rastreadas</p>
           </div>
         </div>
+        <p className="mt-4 text-xs text-graphite/55">
+          {trackingStart
+            ? `Janela rastreada desde ${trackingStart.toLocaleString("pt-BR")}.`
+            : "A coleta começa após a publicação desta versão; ainda não há visitas rastreadas."}
+        </p>
       </section>
+
+      <section className="mt-5 rounded-lg border border-ink/10 bg-white">
+        <div className="border-b border-ink/10 p-4">
+          <h2 className="text-lg font-bold text-ink">Conversão por produto</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <thead className="bg-smoke text-xs uppercase text-graphite/65">
+              <tr><th className="px-4 py-3">Produto</th><th className="px-4 py-3">Visitas</th><th className="px-4 py-3">Cliques</th><th className="px-4 py-3">Checkout</th><th className="px-4 py-3">Pedidos</th><th className="px-4 py-3">Vendas</th><th className="px-4 py-3">Conversão</th></tr>
+            </thead>
+            <tbody>
+              {productFunnelRows.map((row) => (
+                <tr className="border-t border-ink/10" key={row.id}>
+                  <td className="px-4 py-3 font-bold text-ink">{row.name}</td><td className="px-4 py-3">{row.views}</td><td className="px-4 py-3">{row.clicks}</td><td className="px-4 py-3">{row.checkouts}</td><td className="px-4 py-3">{row.starts}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3 font-bold">{row.conversion.toFixed(1)}%</td>
+                </tr>
+              ))}
+              {productFunnelRows.length === 0 ? <tr><td className="px-4 py-8 text-center text-graphite/60" colSpan={7}>Aguardando as primeiras visitas rastreadas.</td></tr> : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <section className="rounded-lg border border-ink/10 bg-white">
+          <div className="border-b border-ink/10 p-4"><h2 className="text-lg font-bold text-ink">Idioma</h2></div>
+          <div className="divide-y divide-ink/10">{localeRows.map((row) => <div className="grid grid-cols-4 gap-2 p-4 text-sm" key={row.locale}><p className="font-bold text-ink">{row.locale === "en" ? "English" : "Português"}</p><p>{row.views} visitas</p><p>{row.starts} pedidos</p><p>{row.sales} vendas</p></div>)}</div>
+        </section>
+        <section className="rounded-lg border border-ink/10 bg-white">
+          <div className="border-b border-ink/10 p-4"><h2 className="text-lg font-bold text-ink">País do checkout</h2></div>
+          <div className="divide-y divide-ink/10">{countryRows.slice(0, 8).map((row) => <div className="grid grid-cols-3 gap-2 p-4 text-sm" key={row.country}><p className="font-bold text-ink">{row.country}</p><p>{row.starts} pedidos</p><p>{row.sales} vendas</p></div>)}{countryRows.length === 0 ? <p className="p-4 text-sm text-graphite/60">Aguardando novos pedidos rastreados.</p> : null}</div>
+        </section>
+      </div>
 
       <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">

@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { checkoutProducts } from "@/lib/checkout/products";
 import type {
   AccessStatus,
+  AnalyticsEvent,
   CustomerUser,
   DeliveryStatus,
   Discount,
@@ -1246,7 +1247,7 @@ export async function updateFiscalStatus(orderId: string, fiscalStatus: FiscalSt
 }
 
 export async function recordWebhookEvent(
-  provider: Gateway,
+  provider: Gateway | "analytics",
   eventId: string,
   payload: Record<string, unknown>
 ) {
@@ -1302,6 +1303,65 @@ export async function recordWebhookEvent(
     );
 
   return result.changes > 0;
+}
+
+function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent | null {
+  const payload = parseMetadata(row.payload);
+  const type = payload.type;
+
+  if (
+    type !== "product_view" &&
+    type !== "checkout_click" &&
+    type !== "checkout_view"
+  ) {
+    return null;
+  }
+
+  return {
+    id: String(row.id),
+    event_id: String(row.event_id),
+    type,
+    session_id: String(payload.session_id || ""),
+    product_id: String(payload.product_id || ""),
+    product_slug: String(payload.product_slug || ""),
+    locale: payload.locale === "en" ? "en" : "pt",
+    path: String(payload.path || ""),
+    source_path: typeof payload.source_path === "string" ? payload.source_path : null,
+    referrer_host:
+      typeof payload.referrer_host === "string" ? payload.referrer_host : null,
+    created_at: String(row.created_at)
+  };
+}
+
+export async function listAnalyticsEvents(since?: Date) {
+  if (useSupabaseDriver()) {
+    const parts = [eq("provider", "analytics"), "order=created_at.desc", "limit=10000"];
+    if (since) parts.push(`created_at=gte.${encodeURIComponent(since.toISOString())}`);
+
+    const rows = await supabaseRequest<Record<string, unknown>[]>("webhook_events", {
+      query: selectQuery(parts)
+    });
+
+    return rows
+      .map(normalizeAnalyticsEvent)
+      .filter((event): event is AnalyticsEvent => event !== null);
+  }
+
+  const rows = since
+    ? getDatabase()
+        .prepare(
+          "SELECT * FROM webhook_events WHERE provider = 'analytics' AND created_at >= ? ORDER BY created_at DESC LIMIT 10000"
+        )
+        .all(since.toISOString())
+    : getDatabase()
+        .prepare(
+          "SELECT * FROM webhook_events WHERE provider = 'analytics' ORDER BY created_at DESC LIMIT 10000"
+        )
+        .all();
+
+  return rows
+    .map(normalizeAnalyticsEvent)
+    .filter((event): event is AnalyticsEvent => event !== null);
 }
 
 export async function appendOrderLog(

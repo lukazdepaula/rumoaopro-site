@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
+import { ConversionTracker } from "@/components/conversion-tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         {children}
+        <ConversionTracker />
         <WhatsAppFloat />
         <Analytics />
       </body>

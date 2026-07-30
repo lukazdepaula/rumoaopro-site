@@ -13,6 +13,25 @@ export type DeliveryType =
 
 export type Gateway = "mock" | "mercado_pago" | "stripe";
 
+export type AnalyticsEventType =
+  | "product_view"
+  | "checkout_click"
+  | "checkout_view";
+
+export type AnalyticsEvent = {
+  id: string;
+  event_id: string;
+  type: AnalyticsEventType;
+  session_id: string;
+  product_id: string;
+  product_slug: string;
+  locale: "pt" | "en";
+  path: string;
+  source_path: string | null;
+  referrer_host: string | null;
+  created_at: string;
+};
+
 export type CheckoutPaymentMethod = "mercado_pago" | "pix" | "stripe";
 
 export type OrderStatus =
