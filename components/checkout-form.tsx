@@ -8,6 +8,7 @@ import type {
   CheckoutProduct
 } from "@/lib/checkout/types";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
+import { trackCheckoutEvent } from "@/components/conversion-tracker";
 
 type CheckoutFormProps = {
   product: CheckoutProduct;
@@ -249,6 +250,10 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
     setPix(null);
     setPixStatus(null);
     setLoading(true);
+    void trackCheckoutEvent("checkout_submit", product.slug, {
+      country,
+      paymentMethod
+    });
 
     try {
       const response = await fetch("/api/checkout/start", {
@@ -273,6 +278,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       const payload = await response.json();
 
       if (!response.ok) {
+        void trackCheckoutEvent("checkout_error", product.slug, {
+          country,
+          paymentMethod,
+          errorCode: `api_${response.status}`
+        });
         setError(
           payload.error ||
             (isEnglish
@@ -304,6 +314,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         setPixStatus("pending");
       }
     } catch {
+      void trackCheckoutEvent("checkout_error", product.slug, {
+        country,
+        paymentMethod,
+        errorCode: "network"
+      });
       setError(
         isEnglish
           ? "Connection error while starting checkout. Please try again."

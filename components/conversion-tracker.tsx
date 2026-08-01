@@ -3,7 +3,18 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-type EventType = "product_view" | "checkout_click" | "checkout_view";
+type EventType =
+  | "product_view"
+  | "checkout_click"
+  | "checkout_view"
+  | "checkout_submit"
+  | "checkout_error";
+
+type CheckoutEventDetails = {
+  country?: string;
+  paymentMethod?: string;
+  errorCode?: string;
+};
 
 const productPaths: Record<string, string> = {
   "/programas/offseason-30-days": "offseason-30-days",
@@ -48,7 +59,13 @@ function referrerHost() {
   }
 }
 
-async function sendEvent(type: EventType, productSlug: string, path: string, sourcePath?: string) {
+async function sendEvent(
+  type: EventType,
+  productSlug: string,
+  path: string,
+  sourcePath?: string,
+  details: CheckoutEventDetails = {}
+) {
   const payload = JSON.stringify({
     type,
     productSlug,
@@ -56,7 +73,8 @@ async function sendEvent(type: EventType, productSlug: string, path: string, sou
     locale: localeForPath(path),
     path,
     sourcePath: sourcePath || null,
-    referrerHost: referrerHost()
+    referrerHost: referrerHost(),
+    ...details
   });
   const storageKey = `rap_event:${type}:${productSlug}:${localeForPath(path)}`;
 
@@ -73,6 +91,14 @@ async function sendEvent(type: EventType, productSlug: string, path: string, sou
   } catch {
     // A later navigation can retry the event when the network is available.
   }
+}
+
+export function trackCheckoutEvent(
+  type: "checkout_submit" | "checkout_error",
+  productSlug: string,
+  details: CheckoutEventDetails
+) {
+  return sendEvent(type, productSlug, window.location.pathname, undefined, details);
 }
 
 export function ConversionTracker() {

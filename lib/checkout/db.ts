@@ -1312,7 +1312,9 @@ function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent |
   if (
     type !== "product_view" &&
     type !== "checkout_click" &&
-    type !== "checkout_view"
+    type !== "checkout_view" &&
+    type !== "checkout_submit" &&
+    type !== "checkout_error"
   ) {
     return null;
   }
@@ -1329,6 +1331,14 @@ function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent |
     source_path: typeof payload.source_path === "string" ? payload.source_path : null,
     referrer_host:
       typeof payload.referrer_host === "string" ? payload.referrer_host : null,
+    country: typeof payload.country === "string" ? payload.country : null,
+    payment_method:
+      payload.payment_method === "mercado_pago" ||
+      payload.payment_method === "pix" ||
+      payload.payment_method === "stripe"
+        ? payload.payment_method
+        : null,
+    error_code: typeof payload.error_code === "string" ? payload.error_code : null,
     created_at: String(row.created_at)
   };
 }

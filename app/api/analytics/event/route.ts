@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 const allowedTypes = new Set<AnalyticsEventType>([
   "product_view",
   "checkout_click",
-  "checkout_view"
+  "checkout_view",
+  "checkout_submit",
+  "checkout_error"
 ]);
 
 const cleanText = (value: unknown, maxLength: number) =>
@@ -51,6 +53,9 @@ export async function POST(request: Request) {
     const path = cleanText(body.path, 240);
     const sourcePath = cleanText(body.sourcePath, 240);
     const referrerHost = cleanText(body.referrerHost, 160);
+    const country = cleanText(body.country, 2).toUpperCase();
+    const paymentMethod = cleanText(body.paymentMethod, 32);
+    const errorCode = cleanText(body.errorCode, 80);
     const product = getProductBySlug(productSlug);
 
     if (!allowedTypes.has(type) || !sessionId || !product || !path.startsWith("/")) {
@@ -67,6 +72,9 @@ export async function POST(request: Request) {
       path,
       source_path: sourcePath || null,
       referrer_host: referrerHost || null,
+      country: country || null,
+      payment_method: paymentMethod || null,
+      error_code: errorCode || null,
       request_id: randomUUID()
     });
 

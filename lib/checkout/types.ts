@@ -16,7 +16,9 @@ export type Gateway = "mock" | "mercado_pago" | "stripe";
 export type AnalyticsEventType =
   | "product_view"
   | "checkout_click"
-  | "checkout_view";
+  | "checkout_view"
+  | "checkout_submit"
+  | "checkout_error";
 
 export type AnalyticsEvent = {
   id: string;
@@ -29,6 +31,9 @@ export type AnalyticsEvent = {
   path: string;
   source_path: string | null;
   referrer_host: string | null;
+  country: string | null;
+  payment_method: CheckoutPaymentMethod | null;
+  error_code: string | null;
   created_at: string;
 };
 

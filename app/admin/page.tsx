@@ -109,11 +109,13 @@ export default async function AdminDashboardPage({
     ? monthOrders.filter((order) => new Date(order.created_at) >= trackingStart)
     : [];
   const trackedPaidOrders = trackedOrders.filter((order) => order.status === "paid");
-  const eventCount = (type: "product_view" | "checkout_click" | "checkout_view") =>
+  const eventCount = (type: "product_view" | "checkout_click" | "checkout_view" | "checkout_submit" | "checkout_error") =>
     selectedAnalyticsEvents.filter((event) => event.type === type).length;
   const productViews = eventCount("product_view");
   const checkoutClicks = eventCount("checkout_click");
   const checkoutViews = eventCount("checkout_view");
+  const checkoutSubmits = eventCount("checkout_submit");
+  const checkoutErrors = eventCount("checkout_error");
   const viewToSaleConversion = productViews > 0
     ? (trackedPaidOrders.length / productViews) * 100
     : 0;
@@ -199,6 +201,8 @@ export default async function AdminDashboardPage({
         views,
         clicks: productEvents.filter((event) => event.type === "checkout_click").length,
         checkouts: productEvents.filter((event) => event.type === "checkout_view").length,
+        submits: productEvents.filter((event) => event.type === "checkout_submit").length,
+        errors: productEvents.filter((event) => event.type === "checkout_error").length,
         starts: productOrders.length,
         sales,
         conversion: views > 0 ? (sales / views) * 100 : 0
@@ -315,7 +319,7 @@ export default async function AdminDashboardPage({
             {pendingOrders.length} pendente{pendingOrders.length === 1 ? "" : "s"} no total
           </p>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <div className="rounded-md bg-ink p-4 text-white">
             <p className="text-xs font-bold uppercase text-white/55">Visita no produto</p>
             <p className="mt-2 text-3xl font-black">{productViews}</p>
@@ -330,6 +334,16 @@ export default async function AdminDashboardPage({
             <p className="text-xs font-bold uppercase text-graphite/55">Abriu checkout</p>
             <p className="mt-2 text-3xl font-black">{checkoutViews}</p>
             <p className="mt-2 text-xs text-graphite/60">Página carregada</p>
+          </div>
+          <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-graphite/55">Tentou pagar</p>
+            <p className="mt-2 text-3xl font-black">{checkoutSubmits}</p>
+            <p className="mt-2 text-xs text-graphite/60">Formulário enviado</p>
+          </div>
+          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-ink">
+            <p className="text-xs font-bold uppercase text-red-700">Erro no checkout</p>
+            <p className="mt-2 text-3xl font-black">{checkoutErrors}</p>
+            <p className="mt-2 text-xs text-red-700/70">Falha antes do gateway</p>
           </div>
           <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
             <p className="text-xs font-bold uppercase text-graphite/55">Iniciou pagamento</p>
@@ -356,15 +370,15 @@ export default async function AdminDashboardPage({
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left text-sm">
             <thead className="bg-smoke text-xs uppercase text-graphite/65">
-              <tr><th className="px-4 py-3">Produto</th><th className="px-4 py-3">Visitas</th><th className="px-4 py-3">Cliques</th><th className="px-4 py-3">Checkout</th><th className="px-4 py-3">Pedidos</th><th className="px-4 py-3">Vendas</th><th className="px-4 py-3">Conversão</th></tr>
+              <tr><th className="px-4 py-3">Produto</th><th className="px-4 py-3">Visitas</th><th className="px-4 py-3">Cliques</th><th className="px-4 py-3">Checkout</th><th className="px-4 py-3">Tentativas</th><th className="px-4 py-3">Erros</th><th className="px-4 py-3">Pedidos</th><th className="px-4 py-3">Vendas</th><th className="px-4 py-3">Conversão</th></tr>
             </thead>
             <tbody>
               {productFunnelRows.map((row) => (
                 <tr className="border-t border-ink/10" key={row.id}>
-                  <td className="px-4 py-3 font-bold text-ink">{row.name}</td><td className="px-4 py-3">{row.views}</td><td className="px-4 py-3">{row.clicks}</td><td className="px-4 py-3">{row.checkouts}</td><td className="px-4 py-3">{row.starts}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3 font-bold">{row.conversion.toFixed(1)}%</td>
+                  <td className="px-4 py-3 font-bold text-ink">{row.name}</td><td className="px-4 py-3">{row.views}</td><td className="px-4 py-3">{row.clicks}</td><td className="px-4 py-3">{row.checkouts}</td><td className="px-4 py-3">{row.submits}</td><td className="px-4 py-3">{row.errors}</td><td className="px-4 py-3">{row.starts}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3 font-bold">{row.conversion.toFixed(1)}%</td>
                 </tr>
               ))}
-              {productFunnelRows.length === 0 ? <tr><td className="px-4 py-8 text-center text-graphite/60" colSpan={7}>Aguardando as primeiras visitas rastreadas.</td></tr> : null}
+              {productFunnelRows.length === 0 ? <tr><td className="px-4 py-8 text-center text-graphite/60" colSpan={9}>Aguardando as primeiras visitas rastreadas.</td></tr> : null}
             </tbody>
           </table>
         </div>
