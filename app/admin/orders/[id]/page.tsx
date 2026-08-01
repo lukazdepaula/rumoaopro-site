@@ -49,6 +49,8 @@ export default async function OrderDetailPage({
     ["Valor", formatMoney(order.amount, order.currency)],
     ["Câmbio usado", order.exchange_rate_used ? order.exchange_rate_used.toFixed(4) : "-"],
     ["Pagamento", order.status],
+    ["Assinatura", typeof order.metadata.subscription_status === "string" ? order.metadata.subscription_status : "-"],
+    ["ID da assinatura", typeof order.metadata.mercado_pago_subscription_id === "string" ? order.metadata.mercado_pago_subscription_id : typeof order.metadata.stripe_subscription_id === "string" ? order.metadata.stripe_subscription_id : "-"],
     ["Entrega", order.delivery_status],
     ["Fiscal", order.fiscal_status],
     ["Criado em", new Date(order.created_at).toLocaleString("pt-BR")],

@@ -163,6 +163,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountPreview | null>(null);
 
   const isBrazil = country === "BR";
+  const isSubscription = product.type === "subscription";
   const checkoutCurrency = isBrazil ? "BRL" : "USD";
   const checkoutAmount = isBrazil
     ? product.price_brl_estimated
@@ -371,7 +372,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         <div className="rounded-md bg-ink px-3 py-2 text-right text-sm font-bold text-white">
           <p>{isBrazil ? brlEstimate : usdPrice}</p>
           <p className="mt-1 text-[11px] font-semibold text-white/65">
-            {isBrazil
+            {isSubscription
+              ? isEnglish
+                ? "per month"
+                : "por mês · preço fundador"
+              : isBrazil
               ? `${usdPrice} internacional`
               : isEnglish
                 ? "One-time payment"
@@ -386,7 +391,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             {isEnglish ? "Secure payment" : "Escolha como pagar"}
           </legend>
           <p className="text-sm font-semibold text-ink">
-            {isBrazil
+            {isSubscription
+              ? isEnglish
+                ? "Monthly card subscription. Cancel anytime."
+                : "Assinatura mensal no cartão. Cancele quando quiser."
+              : isBrazil
               ? "Cartão parcelado, Pix ou cartão internacional."
               : isEnglish
                 ? "International card payment securely processed by Stripe."
@@ -397,9 +406,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             <div className="grid gap-2">
               <PaymentOption
                 active={paymentMethod === "mercado_pago"}
-                description="Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
+                description={
+                  isSubscription
+                    ? "Cobrança automática mensal de R$ 49,90 enquanto a assinatura permanecer ativa."
+                    : "Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
+                }
                 icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
-                label="Cartão e parcelamento"
+                label={isSubscription ? "Cartão · assinatura mensal" : "Cartão e parcelamento"}
                 name="payment-method"
                 onSelect={() => setPaymentMethod("mercado_pago")}
                 value="mercado_pago"
@@ -407,20 +420,26 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 <MercadoPagoBadge />
                 <CardNetworkBadges />
               </PaymentOption>
-              <PaymentOption
-                active={paymentMethod === "pix"}
-                description="QR Code e Pix Copia e Cola, com aprovação rápida."
-                icon={<QrCode aria-hidden="true" className="h-5 w-5" />}
-                label="Pix"
-                name="payment-method"
-                onSelect={() => setPaymentMethod("pix")}
-                value="pix"
-              >
-                <PixBadge />
-              </PaymentOption>
+              {!isSubscription ? (
+                <PaymentOption
+                  active={paymentMethod === "pix"}
+                  description="QR Code e Pix Copia e Cola, com aprovação rápida."
+                  icon={<QrCode aria-hidden="true" className="h-5 w-5" />}
+                  label="Pix"
+                  name="payment-method"
+                  onSelect={() => setPaymentMethod("pix")}
+                  value="pix"
+                >
+                  <PixBadge />
+                </PaymentOption>
+              ) : null}
               <PaymentOption
                 active={paymentMethod === "stripe"}
-                description="Cartão de crédito em checkout internacional seguro."
+                description={
+                  isSubscription
+                    ? "Alternativa de assinatura mensal processada com segurança pela Stripe."
+                    : "Cartão de crédito em checkout internacional seguro."
+                }
                 icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
                 label="Cartão via Stripe"
                 name="payment-method"
@@ -637,8 +656,21 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             </>
           ) : null}
           <p className="mt-1 font-bold text-ink">
-            {isEnglish ? "Total today:" : "Valor desta compra:"} {price}
+            {isSubscription
+              ? isEnglish
+                ? "Monthly subscription:"
+                : "Assinatura mensal:"
+              : isEnglish
+                ? "Total today:"
+                : "Valor desta compra:"} {price}
           </p>
+          {isSubscription ? (
+            <p className="mt-1 text-xs text-graphite/65">
+              {isEnglish
+                ? "The founding price remains locked while the subscription stays active."
+                : "O preço fundador permanece protegido enquanto a assinatura continuar ativa."}
+            </p>
+          ) : null}
         </div>
 
         {error ? (
@@ -653,7 +685,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           type="submit"
         >
           {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          {isEnglish ? "Continue to secure payment" : "Continuar para pagamento"}
+          {isSubscription
+            ? isEnglish
+              ? "Start subscription"
+              : "Assinar com segurança"
+            : isEnglish
+              ? "Continue to secure payment"
+              : "Continuar para pagamento"}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </button>
       </form>

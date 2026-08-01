@@ -233,6 +233,82 @@ export async function createMercadoPagoCheckoutPreference(
   return { preferenceId, url };
 }
 
+export async function createMercadoPagoSubscription(
+  order: Order,
+  product: CheckoutProduct
+) {
+  const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
+  requireEnv("MERCADO_PAGO_WEBHOOK_SECRET");
+  const siteUrl = getSiteUrl();
+
+  const response = await fetch("https://api.mercadopago.com/preapproval", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": idempotencyKey(order, "subscription")
+    },
+    body: JSON.stringify({
+      reason: product.name,
+      external_reference: order.id,
+      payer_email: order.customer_email,
+      back_url: `${siteUrl}/checkout/success?order_id=${order.id}`,
+      status: "pending",
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: order.amount,
+        currency_id: "BRL"
+      }
+    })
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+
+  if (!response.ok) {
+    await appendOrderLog(
+      order.id,
+      "subscription.mercado_pago.error",
+      "Erro ao criar assinatura no Mercado Pago.",
+      { status: response.status, payload }
+    );
+    throw new PaymentGatewayError(
+      "Mercado Pago recusou a criação da assinatura.",
+      payload
+    );
+  }
+
+  const subscriptionId = String(payload.id || "");
+  const url = String(payload.init_point || "");
+  if (!subscriptionId || !url) {
+    throw new PaymentGatewayError(
+      "Mercado Pago não retornou o endereço da assinatura.",
+      payload
+    );
+  }
+
+  await updateOrderGatewayIds(order.id, {
+    gateway_checkout_id: subscriptionId,
+    metadata: {
+      billing_type: "subscription",
+      billing_interval: product.billing_interval || "month",
+      mercado_pago_subscription_id: subscriptionId,
+      subscription_status: payload.status || "pending"
+    }
+  });
+  await appendOrderLog(
+    order.id,
+    "subscription.mercado_pago.created",
+    "Assinatura mensal criada no Mercado Pago.",
+    { subscriptionId }
+  );
+
+  return { subscriptionId, url, status: payload.status };
+}
+
 export async function createStripeCheckoutSession(
   order: Order,
   product: CheckoutProduct
@@ -243,7 +319,9 @@ export async function createStripeCheckoutSession(
   const international =
     order.metadata.checkout_locale === "en" || order.customer_country !== "BR";
 
-  params.set("mode", "payment");
+  const isSubscription = product.type === "subscription";
+  if (isSubscription) requireEnv("STRIPE_WEBHOOK_SECRET");
+  params.set("mode", isSubscription ? "subscription" : "payment");
   params.set("customer_email", order.customer_email);
   params.set("client_reference_id", order.id);
   params.set(
@@ -272,13 +350,23 @@ export async function createStripeCheckoutSession(
     "line_items[0][price_data][product_data][description]",
     product.description
   );
-  params.set("payment_intent_data[metadata][order_id]", order.id);
-  params.set("payment_intent_data[metadata][product_id]", product.id);
-  if (typeof order.metadata.discount_code === "string") {
+  if (isSubscription) {
     params.set(
-      "payment_intent_data[metadata][discount_code]",
-      order.metadata.discount_code
+      "line_items[0][price_data][recurring][interval]",
+      product.billing_interval || "month"
     );
+    params.set("subscription_data[metadata][order_id]", order.id);
+    params.set("subscription_data[metadata][product_id]", product.id);
+    params.set("subscription_data[metadata][plan_code]", product.id);
+  } else {
+    params.set("payment_intent_data[metadata][order_id]", order.id);
+    params.set("payment_intent_data[metadata][product_id]", product.id);
+    if (typeof order.metadata.discount_code === "string") {
+      params.set(
+        "payment_intent_data[metadata][discount_code]",
+        order.metadata.discount_code
+      );
+    }
   }
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -310,6 +398,8 @@ export async function createStripeCheckoutSession(
   await updateOrderGatewayIds(order.id, {
     gateway_checkout_id: sessionId,
     metadata: {
+      billing_type: isSubscription ? "subscription" : "one_time",
+      billing_interval: isSubscription ? product.billing_interval || "month" : null,
       stripe_payment_status: payload.payment_status,
       stripe_session_status: payload.status
     }
@@ -357,7 +447,7 @@ export function verifyMercadoPagoWebhookSignature(
   signatureHeader: string | null
 ) {
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.CHECKOUT_GATEWAY_MODE !== "live";
   if (!requestId || !signatureHeader) return false;
 
   const parts = Object.fromEntries(
@@ -411,6 +501,48 @@ export async function fetchMercadoPagoPayment(paymentId: string) {
     });
   }
 
+  return payload;
+}
+
+export async function fetchMercadoPagoSubscription(subscriptionId: string) {
+  const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
+  const response = await fetch(
+    `https://api.mercadopago.com/preapproval/${encodeURIComponent(subscriptionId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  );
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok) {
+    throw new PaymentGatewayError("Não foi possível confirmar a assinatura.", {
+      status: response.status,
+      payload
+    });
+  }
+  return payload;
+}
+
+export async function fetchStripeSubscription(subscriptionId: string) {
+  const secretKey = requireEnv("STRIPE_SECRET_KEY");
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    { headers: { Authorization: `Bearer ${secretKey}` } }
+  );
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok) {
+    throw new PaymentGatewayError("Não foi possível confirmar a assinatura Stripe.", {
+      status: response.status,
+      payload
+    });
+  }
   return payload;
 }
 

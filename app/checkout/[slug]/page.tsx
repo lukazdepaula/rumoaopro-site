@@ -46,6 +46,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   }
 
   const productCopy = getLocalizedProductCopy(product, locale);
+  const loadProWhatsapp = (process.env.NEXT_PUBLIC_LOADPRO_WHATSAPP || "5519992811078").replace(/\D/g, "");
 
   return (
     <main className="min-h-screen bg-smoke">
@@ -68,7 +69,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link
             className="focus-ring inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white"
-            href={isEnglish ? productCopy.salesPagePath : "/programas"}
+            href={product.type === "subscription" ? productCopy.salesPagePath : isEnglish ? productCopy.salesPagePath : "/programas"}
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             {isEnglish ? `Back to ${productCopy.name}` : "Voltar aos programas"}
@@ -81,7 +82,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
               {isEnglish ? "Complete your order" : "Checkout RumoAoPro"}
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
-              {isEnglish
+              {product.type === "subscription"
+                ? "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
+                : isEnglish
                 ? "Pay securely in USD. Your program access is activated automatically after payment confirmation."
                 : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
             </p>
@@ -105,7 +108,15 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                 : "Seus dados são enviados diretamente aos provedores de pagamento. O programa aparece na sua conta após a confirmação da compra."}
             </p>
             <div className="mt-6 grid gap-3">
-              {(isEnglish
+              {(product.type === "subscription"
+                ? [
+                    "Plano fundador de R$ 49,90 por mês",
+                    "Até 2 equipes e 25 atletas por equipe",
+                    "Preço protegido enquanto a assinatura permanecer ativa",
+                    "Convite seguro enviado após a confirmação",
+                    "Pedido e assinatura acompanhados no admin RumoAoPro"
+                  ]
+                : isEnglish
                 ? [
                     "Secure international card payment via Stripe",
                     "Price charged in US dollars",
@@ -129,6 +140,16 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                 </p>
               ))}
             </div>
+            {product.type === "subscription" ? (
+              <a
+                className="focus-ring mt-6 inline-flex min-h-11 items-center justify-center rounded-md border border-ink/15 px-4 text-sm font-bold text-ink"
+                href={`https://wa.me/${loadProWhatsapp}?text=${encodeURIComponent("Olá! Tenho uma dúvida sobre o Plano Treinadores Fundadores do LoadPro.")}`}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Falar com o suporte do LoadPro
+              </a>
+            ) : null}
           </aside>
         </div>
       </section>

@@ -183,6 +183,25 @@ insert into public.products (
   cover_image, delivery_type, file_id, created_at, updated_at
 ) values
   (
+    'loadpro_founders',
+    'LoadPro · Plano Treinadores Fundadores',
+    'loadpro-founders',
+    'Assinatura mensal do LoadPro para organizar microciclos, coletar prontidão e PSE e gerar relatórios de até duas equipes.',
+    'Portuguese',
+    'subscription',
+    9.90,
+    49.90,
+    49.90,
+    9.90,
+    true,
+    'https://loadpro.rumoaopro.com.br/',
+    '/assets/brand/rumoaopro-logo.svg',
+    'onboarding_email',
+    null,
+    now(),
+    now()
+  ),
+  (
     'offseason_30_days',
     'Offseason 30 Days',
     'offseason-30-days',

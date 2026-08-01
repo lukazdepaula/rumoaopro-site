@@ -72,6 +72,10 @@ export type CheckoutProduct = {
   cover_image: string;
   delivery_type: DeliveryType;
   file_id: string | null;
+  billing_interval?: "month";
+  team_limit?: number;
+  players_per_team_limit?: number;
+  founding_price_lock?: boolean;
   aliases?: string[];
   created_at: string;
   updated_at: string;

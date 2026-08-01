@@ -8,6 +8,7 @@ import {
   updateDeliveryStatus
 } from "@/lib/checkout/db";
 import {
+  sendLoadProAccessEmail,
   sendOnboardingEmail,
   sendPdfDeliveryEmail,
   sendProgramAccessEmail
@@ -88,6 +89,25 @@ export async function deliverOrder(orderId: string) {
   if (!product) {
     await updateDeliveryStatus(order.id, "manual_required", {
       reason: "product_not_found"
+    });
+    return;
+  }
+
+  if (product.id === "loadpro_founders") {
+    if (order.metadata.loadpro_provisioning_status !== "synced") {
+      await updateDeliveryStatus(order.id, "manual_required", {
+        reason: "loadpro_provisioning_not_confirmed"
+      });
+      return;
+    }
+    await sendLoadProAccessEmail({
+      orderId: order.id,
+      to: order.customer_email,
+      name: order.customer_name,
+      appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
+    });
+    await updateDeliveryStatus(order.id, "delivered", {
+      delivery_type: "loadpro_access"
     });
     return;
   }
