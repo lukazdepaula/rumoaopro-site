@@ -253,6 +253,7 @@ export async function createMercadoPagoSubscription(
       external_reference: order.id,
       payer_email: order.customer_email,
       back_url: `${siteUrl}/checkout/success?order_id=${order.id}`,
+      notification_url: `${siteUrl}/api/webhooks/mercado-pago`,
       status: "pending",
       auto_recurring: {
         frequency: 1,
