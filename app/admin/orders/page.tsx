@@ -26,6 +26,7 @@ export default async function AdminOrdersPage({
     gateway?: string;
     country?: string;
     product?: string;
+    customer?: string;
     deleted?: string;
   }>;
 }) {
@@ -41,7 +42,8 @@ export default async function AdminOrdersPage({
         </p>
       ) : null}
 
-      <form className="grid gap-3 rounded-lg border border-ink/10 bg-white p-4 md:grid-cols-5" method="get">
+      <form className="grid gap-3 rounded-lg border border-ink/10 bg-white p-4 md:grid-cols-2 xl:grid-cols-6" method="get">
+        <input className="min-h-11 rounded-md border border-ink/15 px-3 text-sm" defaultValue={filters.customer || ""} name="customer" placeholder="Nome ou e-mail" />
         <select className="min-h-11 rounded-md border border-ink/15 px-3 text-sm" name="status" defaultValue={filters.status || ""}>
           <option value="">Todos os status</option>
           <option value="pending">pending</option>

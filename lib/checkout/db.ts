@@ -1515,6 +1515,20 @@ export async function getAdminAccountByEmail(email: string) {
   return row ? normalizeAdminAccount(row) : null;
 }
 
+export async function listAdminAccounts() {
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>("admin_accounts", {
+      query: selectQuery(["order=created_at.asc", "limit=100"])
+    });
+    return rows.map(normalizeAdminAccount);
+  }
+
+  return getDatabase()
+    .prepare("SELECT * FROM admin_accounts ORDER BY created_at ASC LIMIT 100")
+    .all()
+    .map(normalizeAdminAccount);
+}
+
 export async function saveAdminAccountPassword(
   email: string,
   passwordHash: string
@@ -2162,6 +2176,7 @@ export type OrderFilters = {
   gateway?: string;
   country?: string;
   product?: string;
+  customer?: string;
 };
 
 export async function listOrders(filters: OrderFilters = {}) {
@@ -2174,13 +2189,21 @@ export async function listOrders(filters: OrderFilters = {}) {
     if (filters.country) parts.push(eq("customer_country", filters.country));
     if (filters.product) parts.push(eq("product_id", filters.product));
 
-    return (
+    const orders = (
       await supabaseRequest<Record<string, unknown>[]>("orders", {
         query: selectQuery(parts)
       })
     )
       .map(normalizeOrder)
       .filter((order) => !isAdminDeletedOrder(order));
+    const customer = filters.customer?.trim().toLowerCase();
+    return customer
+      ? orders.filter(
+          (order) =>
+            order.customer_name.toLowerCase().includes(customer) ||
+            order.customer_email.toLowerCase().includes(customer)
+        )
+      : orders;
   }
 
   const conditions: string[] = [];
@@ -2204,6 +2227,12 @@ export async function listOrders(filters: OrderFilters = {}) {
   if (filters.product) {
     conditions.push("product_id = ?");
     values.push(filters.product);
+  }
+
+  if (filters.customer) {
+    conditions.push("(LOWER(customer_name) LIKE ? OR LOWER(customer_email) LIKE ?)");
+    const customer = `%${filters.customer.trim().toLowerCase()}%`;
+    values.push(customer, customer);
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";

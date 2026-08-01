@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAllowedAdminEmail } from "@/lib/checkout/admin-auth";
+import { isEligibleAdminEmail } from "@/lib/checkout/admin-auth";
 import {
   createAdminResetToken,
   hashAdminResetToken
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
   if (
     email.includes("@") &&
-    isAllowedAdminEmail(email) &&
+    (await isEligibleAdminEmail(email)) &&
     checkAdminResetRateLimit(request, email)
   ) {
     try {

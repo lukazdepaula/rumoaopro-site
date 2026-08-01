@@ -75,8 +75,6 @@ function legacyCredentialVersion() {
 
 export async function verifyAdminCredentials(email: string, password: string) {
   const normalizedEmail = normalizeEmail(email);
-  if (!isAllowedAdminEmail(normalizedEmail)) return null;
-
   const account = await getAdminAccountByEmail(normalizedEmail);
   if (account) {
     if (!account.active) return null;
@@ -92,6 +90,8 @@ export async function verifyAdminCredentials(email: string, password: string) {
         }
       : null;
   }
+
+  if (!isAllowedAdminEmail(normalizedEmail)) return null;
 
   const configuredPassword = legacyAdminPassword();
   const version = legacyCredentialVersion();
@@ -143,9 +143,7 @@ function readSignedAdminSession(value?: string | null) {
     }
 
     const email = normalizeEmail(session.email);
-    return isAllowedAdminEmail(email)
-      ? { email, expires: session.expires, authVersion: session.authVersion }
-      : null;
+    return { email, expires: session.expires, authVersion: session.authVersion };
   } catch {
     return null;
   }
@@ -163,9 +161,15 @@ export async function readAdminSession(value?: string | null) {
   }
 
   const legacyVersion = legacyCredentialVersion();
-  return legacyVersion && safeEqual(session.authVersion, legacyVersion)
+  return legacyVersion && isAllowedAdminEmail(session.email) && safeEqual(session.authVersion, legacyVersion)
     ? { email: session.email, expires: session.expires }
     : null;
+}
+
+export async function isEligibleAdminEmail(email: string) {
+  if (isAllowedAdminEmail(email)) return true;
+  const account = await getAdminAccountByEmail(email);
+  return Boolean(account?.active);
 }
 
 export function adminCookieOptions() {

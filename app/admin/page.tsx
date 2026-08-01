@@ -13,8 +13,6 @@ export const metadata: Metadata = {
 };
 
 const BRL_FALLBACK_RATE = 5.5;
-const DAY_COUNT = 14;
-
 const gatewayLabels: Record<Gateway, string> = {
   mercado_pago: "Mercado Pago",
   mock: "Mock",
@@ -49,35 +47,62 @@ function formatBrl(value: number) {
   return formatMoney(value, "BRL");
 }
 
-export default async function AdminDashboardPage() {
+function periodKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export default async function AdminDashboardPage({
+  searchParams
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
   await requireAdmin();
+  const params = await searchParams;
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const requestedPeriod: string = /^\d{4}-\d{2}$/.test(params.period || "")
+    ? (params.period as string)
+    : periodKey(now);
+  const [requestedYear, requestedMonth] = requestedPeriod.split("-").map(Number);
+  const requestedStart = new Date(requestedYear, requestedMonth - 1, 1);
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthStart = requestedStart > currentMonthStart ? currentMonthStart : requestedStart;
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+  const lastMonthStart = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1);
+  const nextMonthKey = periodKey(monthEnd);
+  const previousMonthKey = periodKey(lastMonthStart);
+  const selectedPeriodKey = periodKey(monthStart);
+  const isCurrentPeriod = selectedPeriodKey === periodKey(now);
   const [orders, monthAnalyticsEvents] = await Promise.all([
     listOrders({}),
     listAnalyticsEvents(monthStart)
   ]);
+  const selectedAnalyticsEvents = monthAnalyticsEvents.filter(
+    (event) => new Date(event.created_at) < monthEnd
+  );
   const paidOrders = orders
     .filter((order) => order.status === "paid")
     .sort((a, b) => paidDate(b).getTime() - paidDate(a).getTime());
 
-  const monthPaidOrders = paidOrders.filter((order) => paidDate(order) >= monthStart);
-  const monthOrders = orders.filter((order) => new Date(order.created_at) >= monthStart);
+  const monthPaidOrders = paidOrders.filter((order) => {
+    const date = paidDate(order);
+    return date >= monthStart && date < monthEnd;
+  });
+  const monthOrders = orders.filter((order) => {
+    const date = new Date(order.created_at);
+    return date >= monthStart && date < monthEnd;
+  });
   const monthConvertedOrders = monthOrders.filter((order) => order.status === "paid");
   const lastMonthPaidOrders = paidOrders.filter((order) => {
     const date = paidDate(order);
     return date >= lastMonthStart && date < monthStart;
   });
-  const todayPaidOrders = paidOrders.filter((order) => paidDate(order) >= todayStart);
   const pendingOrders = orders.filter((order) => order.status === "pending");
   const monthConversion = monthOrders.length > 0
     ? (monthConvertedOrders.length / monthOrders.length) * 100
     : 0;
-  const trackingStart = monthAnalyticsEvents.length > 0
+  const trackingStart = selectedAnalyticsEvents.length > 0
     ? new Date(
-        Math.min(...monthAnalyticsEvents.map((event) => new Date(event.created_at).getTime()))
+        Math.min(...selectedAnalyticsEvents.map((event) => new Date(event.created_at).getTime()))
       )
     : null;
   const trackedOrders = trackingStart
@@ -85,7 +110,7 @@ export default async function AdminDashboardPage() {
     : [];
   const trackedPaidOrders = trackedOrders.filter((order) => order.status === "paid");
   const eventCount = (type: "product_view" | "checkout_click" | "checkout_view") =>
-    monthAnalyticsEvents.filter((event) => event.type === type).length;
+    selectedAnalyticsEvents.filter((event) => event.type === type).length;
   const productViews = eventCount("product_view");
   const checkoutClicks = eventCount("checkout_click");
   const checkoutViews = eventCount("checkout_view");
@@ -94,7 +119,6 @@ export default async function AdminDashboardPage() {
     : 0;
   const monthRevenue = sumRevenue(monthPaidOrders);
   const lastMonthRevenue = sumRevenue(lastMonthPaidOrders);
-  const todayRevenue = sumRevenue(todayPaidOrders);
   const averageTicket =
     monthPaidOrders.length > 0 ? monthRevenue / monthPaidOrders.length : 0;
   const revenueDelta =
@@ -102,9 +126,16 @@ export default async function AdminDashboardPage() {
       ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : null;
 
-  const dailySeries = Array.from({ length: DAY_COUNT }, (_, index) => {
-    const date = startOfDay(now);
-    date.setDate(todayStart.getDate() - (DAY_COUNT - 1 - index));
+  const seriesEnd = isCurrentPeriod
+    ? new Date(startOfDay(now).getTime() + 86400000)
+    : monthEnd;
+  const dayCount = Math.max(
+    1,
+    Math.round((seriesEnd.getTime() - monthStart.getTime()) / 86400000)
+  );
+  const dailySeries = Array.from({ length: dayCount }, (_, index) => {
+    const date = new Date(monthStart);
+    date.setDate(monthStart.getDate() + index);
     const key = dateKey(date);
     const dayOrders = paidOrders.filter((order) => dateKey(paidDate(order)) === key);
     return {
@@ -154,7 +185,7 @@ export default async function AdminDashboardPage() {
   const productFunnelRows = checkoutProducts
     .filter((product) => product.active && product.id !== "pix_webhook_test")
     .map((product) => {
-      const productEvents = monthAnalyticsEvents.filter(
+      const productEvents = selectedAnalyticsEvents.filter(
         (event) => event.product_id === product.id
       );
       const productOrders = trackedOrders.filter(
@@ -177,7 +208,7 @@ export default async function AdminDashboardPage() {
     .sort((a, b) => b.views - a.views);
 
   const localeRows = (["pt", "en"] as const).map((locale) => {
-    const localeEvents = monthAnalyticsEvents.filter((event) => event.locale === locale);
+    const localeEvents = selectedAnalyticsEvents.filter((event) => event.locale === locale);
     const localeOrders = trackedOrders.filter(
       (order) => (order.metadata.checkout_locale === "en" ? "en" : "pt") === locale
     );
@@ -204,6 +235,24 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminShell title="Painel">
+      <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink/10 bg-white p-4">
+        <div>
+          <p className="text-xs font-bold uppercase text-graphite/55">Período dos resultados</p>
+          <p className="mt-1 text-lg font-black capitalize text-ink">
+            {monthStart.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink" href={`/admin?period=${previousMonthKey}`}>
+            ← Mês anterior
+          </Link>
+          {!isCurrentPeriod ? (
+            <Link className="rounded-md bg-ink px-3 py-2 text-xs font-bold text-white" href={`/admin?period=${nextMonthKey}`}>
+              Próximo mês →
+            </Link>
+          ) : null}
+        </div>
+      </section>
       <div className="grid gap-4 md:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
@@ -221,13 +270,13 @@ export default async function AdminDashboardPage() {
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Hoje
+            Vendas confirmadas
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(todayRevenue)}
+            {monthPaidOrders.length}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            {todayPaidOrders.length} venda{todayPaidOrders.length === 1 ? "" : "s"} confirmada{todayPaidOrders.length === 1 ? "" : "s"}
+            {formatBrl(monthRevenue)} no período selecionado
           </p>
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
@@ -337,7 +386,7 @@ export default async function AdminDashboardPage() {
           <div>
             <h2 className="text-lg font-bold text-ink">Vendas diárias</h2>
             <p className="mt-1 text-sm text-graphite/60">
-              Últimos {DAY_COUNT} dias, em BRL estimado quando a venda foi em USD.
+              Período selecionado, em BRL estimado quando a venda foi em USD.
             </p>
           </div>
           <Link
