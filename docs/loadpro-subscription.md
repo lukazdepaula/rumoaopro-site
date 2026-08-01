@@ -11,6 +11,8 @@ It is a monthly subscription for two teams and up to 25 active players per team.
 2. In the RumoAoPro Vercel project, configure the server-only LoadPro bridge:
    `LOADPRO_SUPABASE_URL`, `LOADPRO_SUPABASE_SERVICE_ROLE_KEY` and
    `LOADPRO_APP_URL`.
+   `LOADPRO_SUPABASE_SERVICE_ROLE_KEY` accepts the recommended Supabase
+   `sb_secret_...` key as well as the legacy JWT-based `service_role` key.
 3. Keep the LoadPro service-role key only in Vercel. Never expose it as a
    `NEXT_PUBLIC_` variable or add it to Git.
 4. Configure payment provider credentials and webhook secrets in Vercel.
@@ -64,4 +66,3 @@ approved renewals, payment failures, pauses and cancellations.
 5. Confirm a legacy coach still has unrestricted lifetime access.
 6. Simulate a failed renewal and cancellation in the provider test environment.
 7. Confirm no credentials or service-role keys appear in browser source or logs.
-

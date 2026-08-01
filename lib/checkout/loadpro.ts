@@ -49,14 +49,17 @@ function periodEnd(value: SyncInput["currentPeriodEnd"]) {
 async function requestLoadPro(path: string, init: RequestInit = {}) {
   const environment = config();
   if (!environment) throw new Error("LoadPro provisioning environment is not configured.");
+  const headers = new Headers(init.headers);
+  headers.set("apikey", environment.serviceRoleKey);
+  headers.set("Content-Type", "application/json");
+  if (environment.serviceRoleKey.startsWith("sb_secret_")) {
+    headers.delete("Authorization");
+  } else {
+    headers.set("Authorization", `Bearer ${environment.serviceRoleKey}`);
+  }
   return fetch(`${environment.url}${path}`, {
     ...init,
-    headers: {
-      apikey: environment.serviceRoleKey,
-      Authorization: `Bearer ${environment.serviceRoleKey}`,
-      "Content-Type": "application/json",
-      ...(init.headers || {})
-    },
+    headers,
     cache: "no-store"
   });
 }
