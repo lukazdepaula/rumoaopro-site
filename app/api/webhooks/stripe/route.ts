@@ -2,15 +2,20 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import {
   getOrderByGatewayCheckoutId,
+  getOrderByGatewayPaymentId,
   getOrderById,
   recordWebhookEvent,
   updateOrderGatewayIds
 } from "@/lib/checkout/db";
 import {
   markOrderAsFailed,
-  markOrderAsPaid
+  markOrderAsPaid,
+  syncOrderSubscription
 } from "@/lib/checkout/order-events";
-import { verifyStripeWebhookSignature } from "@/lib/checkout/payments";
+import {
+  fetchStripeSubscription,
+  verifyStripeWebhookSignature
+} from "@/lib/checkout/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,10 +23,44 @@ export const dynamic = "force-dynamic";
 type StripeEvent = {
   id?: string;
   type?: string;
-  data?: {
-    object?: Record<string, unknown>;
-  };
+  data?: { object?: Record<string, unknown> };
 };
+
+const textValue = (value: unknown) =>
+  typeof value === "string" && value ? value : undefined;
+
+function metadataOf(object: Record<string, unknown>) {
+  return typeof object.metadata === "object" && object.metadata !== null
+    ? (object.metadata as Record<string, unknown>)
+    : {};
+}
+
+function stripePeriodEnd(object: Record<string, unknown>) {
+  if (typeof object.current_period_end === "number") return object.current_period_end;
+  const lines =
+    typeof object.lines === "object" && object.lines !== null
+      ? (object.lines as Record<string, unknown>)
+      : {};
+  const data = Array.isArray(lines.data) ? lines.data : [];
+  const first =
+    typeof data[0] === "object" && data[0] !== null
+      ? (data[0] as Record<string, unknown>)
+      : {};
+  const period =
+    typeof first.period === "object" && first.period !== null
+      ? (first.period as Record<string, unknown>)
+      : {};
+  return typeof period.end === "number" ? period.end : undefined;
+}
+
+function accessStatus(status: unknown) {
+  if (status === "active" || status === "trialing") return "active" as const;
+  if (status === "past_due" || status === "incomplete") return "past_due" as const;
+  if (status === "paused") return "paused" as const;
+  if (status === "unpaid") return "unpaid" as const;
+  if (status === "canceled" || status === "incomplete_expired") return "canceled" as const;
+  return null;
+}
 
 export async function POST(request: Request) {
   const payload = await request.text();
@@ -35,30 +74,27 @@ export async function POST(request: Request) {
     const event = JSON.parse(payload) as StripeEvent;
     const eventId = event.id || randomUUID();
     const firstDelivery = await recordWebhookEvent("stripe", eventId, event);
-
     if (!firstDelivery) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
     const object = event.data?.object || {};
-    const metadata =
-      typeof object.metadata === "object" && object.metadata !== null
-        ? (object.metadata as Record<string, unknown>)
-        : {};
-    const orderId =
-      typeof metadata.order_id === "string" ? metadata.order_id : undefined;
-    const sessionId = typeof object.id === "string" ? object.id : undefined;
-    const paymentIntent =
-      typeof object.payment_intent === "string"
-        ? object.payment_intent
-        : undefined;
+    const metadata = metadataOf(object);
+    const orderId = textValue(metadata.order_id);
+    const objectId = textValue(object.id);
+    const sessionId = event.type?.startsWith("checkout.session.") ? objectId : undefined;
+    const subscriptionId =
+      textValue(object.subscription) ||
+      (event.type?.startsWith("customer.subscription.") ? objectId : undefined);
+    const paymentIntent = textValue(object.payment_intent);
 
-    const order = orderId
-      ? await getOrderById(orderId)
-      : sessionId
-        ? await getOrderByGatewayCheckoutId("stripe", sessionId)
-        : null;
-
+    let order = orderId ? await getOrderById(orderId) : null;
+    if (!order && subscriptionId) {
+      order = await getOrderByGatewayPaymentId("stripe", subscriptionId);
+    }
+    if (!order && sessionId) {
+      order = await getOrderByGatewayCheckoutId("stripe", sessionId);
+    }
     if (!order) {
       return NextResponse.json({ received: true, order: "not_found" });
     }
@@ -68,30 +104,78 @@ export async function POST(request: Request) {
       event.type === "checkout.session.async_payment_succeeded"
     ) {
       const paymentStatus = object.payment_status;
-      if (paymentStatus === "paid" || event.type.includes("succeeded")) {
+      const paid = paymentStatus === "paid" || event.type.includes("succeeded");
+      if (paid) {
+        const subscription = subscriptionId
+          ? await fetchStripeSubscription(subscriptionId)
+          : null;
         await updateOrderGatewayIds(order.id, {
           gateway_checkout_id: sessionId,
-          gateway_payment_id: paymentIntent,
+          gateway_payment_id: subscriptionId || paymentIntent,
           metadata: {
             stripe_event_id: eventId,
             stripe_payment_status: paymentStatus,
-            stripe_session_status: object.status
+            stripe_session_status: object.status,
+            stripe_subscription_id: subscriptionId || null,
+            subscription_status: subscription?.status || (subscriptionId ? "active" : null)
           }
         });
         await markOrderAsPaid(order.id, {
+          event_id: eventId,
           stripe_event_id: eventId,
-          stripe_payment_status: paymentStatus
+          stripe_payment_status: paymentStatus,
+          provider_customer_id: textValue(object.customer),
+          provider_subscription_id: subscriptionId,
+          current_period_end: subscription ? stripePeriodEnd(subscription) : undefined
         });
       }
     }
 
-    if (
+    if (event.type === "invoice.paid" && subscriptionId) {
+      if (order.status !== "paid") {
+        await markOrderAsPaid(order.id, {
+          event_id: eventId,
+          provider_customer_id: textValue(object.customer),
+          provider_subscription_id: subscriptionId,
+          current_period_end: stripePeriodEnd(object)
+        });
+      } else {
+        await syncOrderSubscription(order.id, "active", {
+          event_id: eventId,
+          provider_customer_id: textValue(object.customer),
+          provider_subscription_id: subscriptionId,
+          current_period_end: stripePeriodEnd(object)
+        });
+      }
+    }
+
+    if (event.type?.startsWith("customer.subscription.")) {
+      const status =
+        event.type === "customer.subscription.deleted"
+          ? "canceled"
+          : accessStatus(object.status);
+      if (status) {
+        await syncOrderSubscription(order.id, status, {
+          event_id: eventId,
+          provider_customer_id: textValue(object.customer),
+          provider_subscription_id: subscriptionId,
+          current_period_end: stripePeriodEnd(object)
+        });
+      }
+    }
+
+    if (event.type === "invoice.payment_failed" && subscriptionId) {
+      await syncOrderSubscription(order.id, "past_due", {
+        event_id: eventId,
+        provider_customer_id: textValue(object.customer),
+        provider_subscription_id: subscriptionId,
+        current_period_end: stripePeriodEnd(object)
+      });
+    } else if (
       event.type === "checkout.session.async_payment_failed" ||
       event.type === "payment_intent.payment_failed"
     ) {
-      await markOrderAsFailed(order.id, {
-        stripe_event_id: eventId
-      });
+      await markOrderAsFailed(order.id, { stripe_event_id: eventId });
     }
 
     return NextResponse.json({ received: true });

@@ -6,9 +6,11 @@ import {
   validateDiscountForCheckout
 } from "@/lib/checkout/discounts";
 import { markOrderAsFailed } from "@/lib/checkout/order-events";
+import { assertLoadProProvisioningReady } from "@/lib/checkout/loadpro";
 import {
   createMercadoPagoCheckoutPreference,
   createMercadoPagoPixPayment,
+  createMercadoPagoSubscription,
   createStripeCheckoutSession,
   PaymentConfigurationError,
   PaymentGatewayError
@@ -42,6 +44,27 @@ export async function POST(request: Request) {
 
     const brazil = isBrazil(input.country);
     const paymentMethod = brazil ? input.paymentMethod : "stripe";
+    if (product.type === "subscription" && paymentMethod === "pix") {
+      return NextResponse.json(
+        { error: "Assinaturas mensais exigem um cartão." },
+        { status: 400 }
+      );
+    }
+
+    if (checkoutMode() === "live" && product.id === "loadpro_founders") {
+      try {
+        await assertLoadProProvisioningReady();
+      } catch (error) {
+        console.error("[checkout.start.loadpro_preflight]", error);
+        return NextResponse.json(
+          {
+            error:
+              "As assinaturas do LoadPro estão temporariamente indisponíveis. Nenhuma cobrança foi realizada."
+          },
+          { status: 503 }
+        );
+      }
+    }
     const localizedPrice = calculateLocalizedPrice(product, brazil ? "BR" : input.country);
     const discount = input.discountCode
       ? await getDiscountByCode(input.discountCode)
@@ -119,6 +142,15 @@ export async function POST(request: Request) {
       }
 
       if (paymentMethod === "mercado_pago") {
+        if (product.type === "subscription") {
+          const subscription = await createMercadoPagoSubscription(order, product);
+          return NextResponse.json({
+            gateway: "mercado_pago",
+            paymentMethod: "mercado_pago",
+            orderId: order.id,
+            redirectUrl: subscription.url
+          });
+        }
         const mercadoPago = await createMercadoPagoCheckoutPreference(
           order,
           product

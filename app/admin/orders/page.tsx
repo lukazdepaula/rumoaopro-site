@@ -116,6 +116,11 @@ export default async function AdminOrdersPage({
                   <span className={`rounded-md px-2 py-1 text-xs font-bold ${statusClass(order.status)}`}>
                     {order.status}
                   </span>
+                  {typeof order.metadata.subscription_status === "string" ? (
+                    <p className="mt-2 text-xs font-semibold text-graphite/65">
+                      Assinatura: {order.metadata.subscription_status}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-graphite/80">{order.delivery_status}</td>
                 <td className="px-4 py-3 text-graphite/80">{order.fiscal_status}</td>

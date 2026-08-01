@@ -2,11 +2,13 @@ import {
   appendOrderLog,
   getOrderById,
   revokeProductAccessByOrder,
+  updateOrderGatewayIds,
   updateOrderStatus
 } from "@/lib/checkout/db";
 import { grantProductAccess } from "@/lib/checkout/access";
 import { deliverOrder } from "@/lib/checkout/delivery";
 import { sendInternalSaleNotice } from "@/lib/checkout/email";
+import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
 import type { Order } from "@/lib/checkout/types";
 
 async function assertOrder(orderId: string): Promise<Order> {
@@ -16,6 +18,70 @@ async function assertOrder(orderId: string): Promise<Order> {
   }
 
   return order;
+}
+
+async function syncLoadProSafely(
+  order: Order,
+  status: "active" | "past_due" | "canceled" | "unpaid" | "paused",
+  gatewayData: Record<string, unknown>,
+  invite = false
+) {
+  if (!isLoadProOrder(order)) return;
+  try {
+    const result = await syncLoadProAccess(order, {
+      status,
+      currentPeriodEnd:
+        (gatewayData.current_period_end as string | number | null | undefined) ||
+        (gatewayData.next_payment_date as string | null | undefined),
+      providerCustomerId:
+        typeof gatewayData.provider_customer_id === "string"
+          ? gatewayData.provider_customer_id
+          : null,
+      providerSubscriptionId:
+        typeof gatewayData.provider_subscription_id === "string"
+          ? gatewayData.provider_subscription_id
+          : null,
+      eventId:
+        typeof gatewayData.event_id === "string"
+          ? gatewayData.event_id
+          : null,
+      invite
+    });
+    await updateOrderGatewayIds(order.id, {
+      metadata: {
+        loadpro_provisioning_status:
+          result.configured === false ? "pending_configuration" : "synced"
+      }
+    });
+  } catch (error) {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { loadpro_provisioning_status: "error" }
+    });
+    await appendOrderLog(
+      order.id,
+      "loadpro.provisioning.error",
+      "O pagamento foi preservado, mas o acesso automático ao LoadPro precisa ser reprocessado.",
+      { error: error instanceof Error ? error.message : String(error), status }
+    );
+  }
+}
+
+export async function syncOrderSubscription(
+  orderId: string,
+  status: "active" | "past_due" | "canceled" | "unpaid" | "paused",
+  gatewayData: Record<string, unknown> = {}
+) {
+  const order = await assertOrder(orderId);
+  await updateOrderGatewayIds(order.id, {
+    metadata: {
+      subscription_status: status,
+      subscription_updated_at: new Date().toISOString(),
+      subscription_gateway_data: gatewayData
+    }
+  });
+  const updated = (await getOrderById(order.id)) || order;
+  await syncLoadProSafely(updated, status, gatewayData, false);
+  return getOrderById(order.id);
 }
 
 export async function triggerDelivery(orderId: string) {
@@ -54,7 +120,8 @@ export async function markOrderAsPaid(
 
   const paidOrder = await getOrderById(orderId);
   if (paidOrder) {
-    await grantProductAccess(paidOrder);
+    await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
+    if (!isLoadProOrder(paidOrder)) await grantProductAccess(paidOrder);
 
     if (firstConfirmation) {
       await sendInternalSaleNotice({
@@ -101,6 +168,8 @@ export async function markOrderAsRefunded(
     gateway_data: gatewayData
   });
   await revokeProductAccessByOrder(orderId);
+  const order = await getOrderById(orderId);
+  if (order) await syncLoadProSafely(order, "canceled", gatewayData);
   return getOrderById(orderId);
 }
 
@@ -112,5 +181,7 @@ export async function markOrderAsCancelled(
   await updateOrderStatus(orderId, "cancelled", {
     gateway_data: gatewayData
   });
+  const order = await getOrderById(orderId);
+  if (order) await syncLoadProSafely(order, "canceled", gatewayData);
   return getOrderById(orderId);
 }

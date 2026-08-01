@@ -30,6 +30,7 @@ const fixedBrlProductPrice = (basePriceUsd: number, brlPrice: number) => ({
 });
 
 export const checkoutLinks = {
+  loadProFounders: "/checkout/loadpro-founders",
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
   preTemporada: "/checkout/projeto-pre-temporada",
@@ -41,6 +42,30 @@ export const checkoutLinks = {
 };
 
 export const checkoutProducts: CheckoutProduct[] = [
+  {
+    id: "loadpro_founders",
+    name: "LoadPro · Plano Treinadores Fundadores",
+    slug: "loadpro-founders",
+    description:
+      "Assinatura mensal do LoadPro para organizar microciclos, coletar prontidão e PSE e gerar relatórios de até duas equipes.",
+    language: "Portuguese",
+    type: "subscription",
+    ...fixedBrlProductPrice(
+      envPrice("LOADPRO_FOUNDERS_PRICE_USD", 9.9),
+      envPrice("LOADPRO_FOUNDERS_PRICE_BRL", 49.9)
+    ),
+    active: true,
+    sales_page_path: "https://loadpro.rumoaopro.com.br/",
+    cover_image: "/assets/brand/rumoaopro-logo.svg",
+    delivery_type: "onboarding_email",
+    file_id: null,
+    billing_interval: "month",
+    team_limit: 2,
+    players_per_team_limit: 25,
+    founding_price_lock: true,
+    created_at: now,
+    updated_at: now
+  },
   {
     id: "offseason_30_days",
     name: "Offseason 30 Days",
