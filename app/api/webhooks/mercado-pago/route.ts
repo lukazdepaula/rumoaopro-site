@@ -14,6 +14,7 @@ import {
   syncOrderSubscription
 } from "@/lib/checkout/order-events";
 import {
+  fetchMercadoPagoAuthorizedPayment,
   fetchMercadoPagoPayment,
   fetchMercadoPagoSubscription,
   mapMercadoPagoStatus,
@@ -30,8 +31,20 @@ type MercadoPagoNotification = {
   data?: { id?: string | number };
 };
 
-function subscriptionTopic(value: string) {
-  return value.includes("preapproval") || value.includes("subscription");
+function subscriptionPreapprovalTopic(value: string) {
+  return (
+    value === "preapproval" ||
+    value === "subscription" ||
+    value.includes("subscription_preapproval")
+  );
+}
+
+function subscriptionAuthorizedPaymentTopic(value: string) {
+  return value.includes("subscription_authorized_payment");
+}
+
+function subscriptionPlanTopic(value: string) {
+  return value.includes("subscription_preapproval_plan");
 }
 
 export async function POST(request: Request) {
@@ -65,7 +78,94 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
-    if (subscriptionTopic(topic)) {
+    if (subscriptionAuthorizedPaymentTopic(topic)) {
+      const invoice = await fetchMercadoPagoAuthorizedPayment(dataId);
+      const subscriptionId =
+        typeof invoice.preapproval_id === "string"
+          ? invoice.preapproval_id
+          : null;
+      const externalReference =
+        typeof invoice.external_reference === "string" ||
+        typeof invoice.external_reference === "number"
+          ? String(invoice.external_reference)
+          : null;
+      const order = externalReference
+        ? await getOrderById(externalReference)
+        : subscriptionId
+          ? await getOrderByGatewayCheckoutId("mercado_pago", subscriptionId)
+          : null;
+      if (!order) {
+        return NextResponse.json({ received: true, order: "not_found" });
+      }
+
+      const invoicePayment =
+        invoice.payment && typeof invoice.payment === "object"
+          ? (invoice.payment as Record<string, unknown>)
+          : {};
+      const paymentId =
+        invoicePayment.id === undefined ? null : String(invoicePayment.id);
+      const paymentStatus = mapMercadoPagoStatus(invoicePayment.status);
+
+      await updateOrderGatewayIds(order.id, {
+        metadata: {
+          billing_type: "subscription",
+          mercado_pago_subscription_id: subscriptionId,
+          mercado_pago_last_authorized_payment_id: dataId,
+          mercado_pago_last_payment_id: paymentId,
+          mercado_pago_authorized_payment_status: invoice.status,
+          mercado_pago_payment_status: invoicePayment.status,
+          mercado_pago_event_id: eventId
+        }
+      });
+
+      if (paymentStatus === "paid") {
+        await markOrderAsPaid(order.id, {
+          event_id: eventId,
+          provider_subscription_id: subscriptionId,
+          mercado_pago_authorized_payment_id: dataId,
+          mercado_pago_payment_id: paymentId
+        });
+      } else if (paymentStatus === "failed") {
+        if (order.status === "paid" && subscriptionId) {
+          await syncOrderSubscription(order.id, "past_due", {
+            event_id: eventId,
+            provider_subscription_id: subscriptionId,
+            mercado_pago_authorized_payment_id: dataId
+          });
+        } else {
+          await markOrderAsFailed(order.id, {
+            mercado_pago_event_id: eventId,
+            mercado_pago_authorized_payment_id: dataId
+          });
+        }
+      } else if (paymentStatus === "refunded") {
+        await markOrderAsRefunded(order.id, {
+          mercado_pago_event_id: eventId,
+          mercado_pago_authorized_payment_id: dataId
+        });
+      } else if (paymentStatus === "cancelled") {
+        if (order.status === "paid" && subscriptionId) {
+          await syncOrderSubscription(order.id, "canceled", {
+            event_id: eventId,
+            provider_subscription_id: subscriptionId,
+            mercado_pago_authorized_payment_id: dataId
+          });
+        } else {
+          await markOrderAsCancelled(order.id, {
+            mercado_pago_event_id: eventId,
+            mercado_pago_authorized_payment_id: dataId
+          });
+        }
+      }
+
+      return NextResponse.json({ received: true, type: "subscription_payment" });
+    }
+
+    if (subscriptionPlanTopic(topic)) {
+      return NextResponse.json({ received: true, ignored: "subscription_plan" });
+    }
+
+    if (subscriptionPreapprovalTopic(topic)) {
       const subscription = await fetchMercadoPagoSubscription(dataId);
       const externalReference =
         typeof subscription.external_reference === "string"

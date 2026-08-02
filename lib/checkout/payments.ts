@@ -528,6 +528,36 @@ export async function fetchMercadoPagoSubscription(subscriptionId: string) {
   return payload;
 }
 
+export async function fetchMercadoPagoAuthorizedPayment(
+  authorizedPaymentId: string
+) {
+  const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
+  const response = await fetch(
+    `https://api.mercadopago.com/authorized_payments/${encodeURIComponent(
+      authorizedPaymentId
+    )}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  );
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok) {
+    throw new PaymentGatewayError(
+      "Não foi possível confirmar a cobrança recorrente.",
+      {
+        status: response.status,
+        payload
+      }
+    );
+  }
+  return payload;
+}
+
 export async function fetchStripeSubscription(subscriptionId: string) {
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const response = await fetch(
