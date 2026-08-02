@@ -69,10 +69,10 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link
             className="focus-ring inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white"
-            href={product.type === "subscription" ? productCopy.salesPagePath : isEnglish ? productCopy.salesPagePath : "/programas"}
+            href={productCopy.salesPagePath}
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            {isEnglish ? `Back to ${productCopy.name}` : "Voltar aos programas"}
+            {isEnglish ? `Back to ${productCopy.name}` : `Voltar para ${productCopy.name}`}
           </Link>
           <div className="mt-8 max-w-3xl">
             <p className="text-sm font-bold uppercase text-gold">
@@ -83,7 +83,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
               {product.type === "subscription"
-                ? "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
+                ? isEnglish
+                  ? "Enter your details and confirm the monthly subscription. Your LoadPro access is provisioned after payment approval."
+                  : "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
                 : isEnglish
                 ? "Pay securely in USD. Your program access is activated automatically after payment confirmation."
                 : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
@@ -109,7 +111,15 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             </p>
             <div className="mt-6 grid gap-3">
               {(product.type === "subscription"
-                ? [
+                ? isEnglish
+                  ? [
+                      "Founding plan billed monthly",
+                      "Up to 2 teams and 25 athletes per team",
+                      "Founding price locked while your subscription remains active",
+                      "Secure invitation sent after confirmation",
+                      "Cancel whenever you need"
+                    ]
+                  : [
                     "Plano fundador de R$ 49,90 por mês",
                     "Até 2 equipes e 25 atletas por equipe",
                     "Preço protegido enquanto a assinatura permanecer ativa",
@@ -143,18 +153,18 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             {product.type === "subscription" ? (
               <a
                 className="focus-ring mt-6 inline-flex min-h-11 items-center justify-center rounded-md border border-ink/15 px-4 text-sm font-bold text-ink"
-                href={`https://wa.me/${loadProWhatsapp}?text=${encodeURIComponent("Olá! Tenho uma dúvida sobre o Plano Treinadores Fundadores do LoadPro.")}`}
+                href={`https://wa.me/${loadProWhatsapp}?text=${encodeURIComponent(isEnglish ? "Hi! I have a question about the LoadPro Founding Coaches Plan." : "Olá! Tenho uma dúvida sobre o Plano Treinadores Fundadores do LoadPro.")}`}
                 rel="noreferrer"
                 target="_blank"
               >
-                Falar com o suporte do LoadPro
+                {isEnglish ? "Talk to LoadPro support" : "Falar com o suporte do LoadPro"}
               </a>
             ) : null}
           </aside>
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

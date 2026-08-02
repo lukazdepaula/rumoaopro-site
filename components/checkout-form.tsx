@@ -401,6 +401,34 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       </div>
 
       <form className="mt-5 grid gap-4" onSubmit={submit}>
+        <label className="grid gap-2 text-sm font-semibold text-ink">
+          {isEnglish ? "Country" : "País"}
+          <select
+            autoComplete="country"
+            className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
+            onChange={(event) => {
+              const nextCountry = event.target.value;
+              setCountry(nextCountry);
+              setPaymentMethod(
+                nextCountry === "BR" ? "mercado_pago" : "stripe"
+              );
+            }}
+            value={country}
+          >
+            {!isEnglish ? <option value="BR">Brasil</option> : null}
+            <option value="US">United States</option>
+            <option value="PT">Portugal</option>
+            <option value="GB">United Kingdom</option>
+            <option value="ES">Spain</option>
+            <option value="OTHER">Other country</option>
+          </select>
+          <span className="text-xs font-normal leading-5 text-graphite/60">
+            {isEnglish
+              ? "Your country defines the currency and available payment method."
+              : "O país define a moeda e as formas de pagamento disponíveis."}
+          </span>
+        </label>
+
         <fieldset className="grid gap-3 rounded-md border border-ink/10 bg-white p-3">
           <legend className="px-1 text-xs font-bold uppercase text-graphite/55">
             {isEnglish ? "Secure payment" : "Escolha como pagar"}
@@ -485,30 +513,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         </fieldset>
 
         <label className="grid gap-2 text-sm font-semibold text-ink">
-          {isEnglish ? "Country" : "País"}
-          <select
-            className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
-            onChange={(event) => {
-              const nextCountry = event.target.value;
-              setCountry(nextCountry);
-              setPaymentMethod(
-                nextCountry === "BR" ? "mercado_pago" : "stripe"
-              );
-            }}
-            value={country}
-          >
-            {!isEnglish ? <option value="BR">Brasil</option> : null}
-            <option value="US">United States</option>
-            <option value="PT">Portugal</option>
-            <option value="GB">United Kingdom</option>
-            <option value="ES">Spain</option>
-            <option value="OTHER">Other country</option>
-          </select>
-        </label>
-
-        <label className="grid gap-2 text-sm font-semibold text-ink">
           {isEnglish ? "Full name" : "Nome completo"}
           <input
+            autoComplete="name"
             className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
             onChange={(event) => setName(event.target.value)}
             required
@@ -520,6 +527,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         <label className="grid gap-2 text-sm font-semibold text-ink">
           {isEnglish ? "Email" : "E-mail"}
           <input
+            autoComplete="email"
             className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
             onChange={(event) => setEmail(event.target.value)}
             required
@@ -528,7 +536,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           />
         </label>
 
-        {!isEnglish || isBrazil ? <div className="grid gap-4 sm:grid-cols-2">
+        {isBrazil ? <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold text-ink">
             WhatsApp com código do país (DDI)
             <input
@@ -565,7 +573,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           </label>
         </div> : null}
 
-        {!isEnglish || isBrazil ? <label className="grid gap-2 text-sm font-semibold text-ink">
+        {isBrazil ? <label className="grid gap-2 text-sm font-semibold text-ink">
           Endereço completo
           <textarea
             autoComplete="street-address"
@@ -595,8 +603,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           </div>
         ) : null}
 
-        <div className="grid gap-2 rounded-md border border-ink/10 bg-white p-3">
-          <label className="text-sm font-semibold text-ink" htmlFor="discount-code">
+        <details className="group rounded-md border border-ink/10 bg-white p-3">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-graphite/75">
+            {isEnglish ? "Have a discount code?" : "Tem um cupom de desconto?"}
+            <span className="ml-2 text-signal group-open:hidden">+</span>
+          </summary>
+          <div className="mt-3 grid gap-2">
+          <label className="sr-only" htmlFor="discount-code">
             {isEnglish ? "Discount code" : "Cupom de desconto"}
           </label>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -640,7 +653,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           {discountError ? (
             <p className="text-sm font-semibold text-red-700">{discountError}</p>
           ) : null}
-        </div>
+          </div>
+        </details>
 
         <div className="rounded-md border border-ink/10 bg-smoke px-3 py-2 text-sm text-graphite/75">
           {isEnglish ? (
@@ -709,6 +723,17 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               : "Continuar para pagamento"}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </button>
+        <p className="text-center text-xs leading-5 text-graphite/60">
+          {isEnglish
+            ? "You will review the payment securely with Stripe before any charge is confirmed."
+            : paymentMethod === "pix"
+              ? "O Pix será gerado nesta página. O acesso é liberado após a confirmação."
+              : `Você será redirecionado para ${paymentMethod === "stripe" ? "a Stripe" : "o Mercado Pago"} e poderá revisar antes de confirmar.`}
+          {" "}
+          <a className="font-semibold underline" href={isEnglish ? "/en/refunds" : "/reembolsos"}>
+            {isEnglish ? "Refund policy" : "Política de reembolso"}
+          </a>
+        </p>
       </form>
 
       {pix ? (
