@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
-import { LinksHub } from "@/components/links-hub";
+import { PremiumLinksHub } from "@/components/premium-links-hub";
 
 export const metadata: Metadata = {
   title: "Links",
   description:
-    "Online coaching, football training programs, courses and official RumoAoPro channels."
+    "Football performance programs, online coaching, courses and official RumoAoPro channels.",
+  alternates: {
+    canonical: "/en/links",
+    languages: { "pt-BR": "/links", en: "/en/links" }
+  }
 };
 
 export default function EnglishLinksPage() {
-  return <LinksHub locale="en" />;
+  return <PremiumLinksHub locale="en" />;
 }
