@@ -613,6 +613,39 @@ export async function fetchStripeSubscription(subscriptionId: string) {
   return payload;
 }
 
+export async function createStripeBillingPortalSession(
+  customerId: string,
+  returnUrl: string
+) {
+  const secretKey = requireEnv("STRIPE_SECRET_KEY");
+  const params = new URLSearchParams({
+    customer: customerId,
+    return_url: returnUrl
+  });
+  const response = await fetch(
+    "https://api.stripe.com/v1/billing_portal/sessions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: params
+    }
+  );
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok || typeof payload.url !== "string") {
+    throw new PaymentGatewayError(
+      "Nao foi possivel abrir o portal de assinatura Stripe.",
+      payload
+    );
+  }
+  return payload.url;
+}
+
 export function mapMercadoPagoStatus(status: unknown): OrderStatus | null {
   switch (status) {
     case "approved":
