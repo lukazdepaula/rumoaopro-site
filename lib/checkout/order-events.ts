@@ -69,18 +69,23 @@ async function syncLoadProSafely(
 export async function syncOrderSubscription(
   orderId: string,
   status: "active" | "past_due" | "canceled" | "unpaid" | "paused",
-  gatewayData: Record<string, unknown> = {}
+  gatewayData: Record<string, unknown> = {},
+  options: { invite?: boolean } = {}
 ) {
   const order = await assertOrder(orderId);
+  const providerStatus =
+    typeof gatewayData.provider_subscription_status === "string"
+      ? gatewayData.provider_subscription_status
+      : status;
   await updateOrderGatewayIds(order.id, {
     metadata: {
-      subscription_status: status,
+      subscription_status: providerStatus,
       subscription_updated_at: new Date().toISOString(),
       subscription_gateway_data: gatewayData
     }
   });
   const updated = (await getOrderById(order.id)) || order;
-  await syncLoadProSafely(updated, status, gatewayData, false);
+  await syncLoadProSafely(updated, status, gatewayData, options.invite === true);
   return getOrderById(order.id);
 }
 

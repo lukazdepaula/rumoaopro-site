@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { CheckoutProduct, Order, OrderStatus } from "@/lib/checkout/types";
 import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
+import { getLocalizedProductCopy } from "@/lib/checkout/localization";
 
 export class PaymentConfigurationError extends Error {
   constructor(message: string) {
@@ -39,6 +40,19 @@ function requireEnv(key: string) {
 
 function idempotencyKey(order: Order, suffix: string) {
   return `${order.id}:${suffix}`;
+}
+
+function stripeCatalogPriceId(order: Order, product: CheckoutProduct) {
+  if (product.id !== "loadpro_founders" || order.currency !== "BRL") {
+    return null;
+  }
+
+  const configuredAmount = Math.round(product.price_brl * 100);
+  const orderAmount = Math.round(order.amount * 100);
+  const hasDiscount = typeof order.metadata.discount_code === "string";
+
+  if (hasDiscount || configuredAmount !== orderAmount) return null;
+  return requireEnv("STRIPE_LOADPRO_FOUNDERS_PRICE_ID");
 }
 
 export async function createMercadoPagoPixPayment(
@@ -321,6 +335,12 @@ export async function createStripeCheckoutSession(
     order.metadata.checkout_locale === "en" || order.customer_country !== "BR";
 
   const isSubscription = product.type === "subscription";
+  const locale = order.metadata.checkout_locale === "en" ? "en" : "pt";
+  const productCopy = getLocalizedProductCopy(product, locale);
+  const trialDays = isSubscription
+    ? Math.max(0, Math.floor(product.trial_days || 0))
+    : 0;
+  const catalogPriceId = stripeCatalogPriceId(order, product);
   if (isSubscription) requireEnv("STRIPE_WEBHOOK_SECRET");
   params.set("mode", isSubscription ? "subscription" : "payment");
   params.set("customer_email", order.customer_email);
@@ -337,25 +357,39 @@ export async function createStripeCheckoutSession(
   );
   params.set("metadata[order_id]", order.id);
   params.set("metadata[product_id]", product.id);
+  if (trialDays > 0) {
+    params.set("metadata[trial_days]", String(trialDays));
+  }
   if (typeof order.metadata.discount_code === "string") {
     params.set("metadata[discount_code]", order.metadata.discount_code);
   }
   params.set("line_items[0][quantity]", "1");
-  params.set("line_items[0][price_data][currency]", order.currency.toLowerCase());
-  params.set(
-    "line_items[0][price_data][unit_amount]",
-    String(Math.round(order.amount * 100))
-  );
-  params.set("line_items[0][price_data][product_data][name]", product.name);
-  params.set(
-    "line_items[0][price_data][product_data][description]",
-    product.description
-  );
-  if (isSubscription) {
+  if (catalogPriceId) {
+    params.set("line_items[0][price]", catalogPriceId);
+  } else {
+    params.set("line_items[0][price_data][currency]", order.currency.toLowerCase());
     params.set(
-      "line_items[0][price_data][recurring][interval]",
-      product.billing_interval || "month"
+      "line_items[0][price_data][unit_amount]",
+      String(Math.round(order.amount * 100))
     );
+    params.set("line_items[0][price_data][product_data][name]", productCopy.name);
+    params.set(
+      "line_items[0][price_data][product_data][description]",
+      productCopy.description
+    );
+  }
+  if (isSubscription) {
+    if (!catalogPriceId) {
+      params.set(
+        "line_items[0][price_data][recurring][interval]",
+        product.billing_interval || "month"
+      );
+    }
+    if (trialDays > 0) {
+      params.set("payment_method_collection", "always");
+      params.set("subscription_data[trial_period_days]", String(trialDays));
+      params.set("subscription_data[metadata][trial_days]", String(trialDays));
+    }
     params.set("subscription_data[metadata][order_id]", order.id);
     params.set("subscription_data[metadata][product_id]", product.id);
     params.set("subscription_data[metadata][plan_code]", product.id);
@@ -401,6 +435,8 @@ export async function createStripeCheckoutSession(
     metadata: {
       billing_type: isSubscription ? "subscription" : "one_time",
       billing_interval: isSubscription ? product.billing_interval || "month" : null,
+      stripe_catalog_price_id: catalogPriceId,
+      trial_days: trialDays || null,
       stripe_payment_status: payload.payment_status,
       stripe_session_status: payload.status
     }

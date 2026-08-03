@@ -43,7 +43,12 @@ export async function POST(request: Request) {
     }
 
     const brazil = isBrazil(input.country);
-    const paymentMethod = brazil ? input.paymentMethod : "stripe";
+    const stripeOnly = product.id === "loadpro_founders";
+    const paymentMethod = stripeOnly
+      ? "stripe"
+      : brazil
+        ? input.paymentMethod
+        : "stripe";
     if (product.type === "subscription" && paymentMethod === "pix") {
       return NextResponse.json(
         { error: "Assinaturas mensais exigem um cartão." },
@@ -110,6 +115,7 @@ export async function POST(request: Request) {
         checkout_gateway_mode: checkoutMode(),
         checkout_payment_method: paymentMethod,
         checkout_locale: input.locale,
+        trial_days: product.trial_days || null,
         base_price_usd: localizedPrice.basePriceUsd,
         ...discountMetadata(discountQuote)
       }

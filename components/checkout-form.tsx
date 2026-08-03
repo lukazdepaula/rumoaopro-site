@@ -144,10 +144,13 @@ function CardNetworkBadges() {
 
 export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const isEnglish = locale === "en";
+  const isLoadProFounders = product.id === "loadpro_founders";
   const productCopy = getLocalizedProductCopy(product, locale);
   const [country, setCountry] = useState(isEnglish ? "US" : "BR");
   const [paymentMethod, setPaymentMethod] =
-    useState<CheckoutPaymentMethod>(isEnglish ? "stripe" : "mercado_pago");
+    useState<CheckoutPaymentMethod>(
+      isEnglish || isLoadProFounders ? "stripe" : "mercado_pago"
+    );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
@@ -389,8 +392,12 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           <p className="mt-1 text-[11px] font-semibold text-white/65">
             {isSubscription
               ? isEnglish
-                ? "per month"
-                : "por mês · preço fundador"
+                ? isLoadProFounders
+                  ? "per month · 7-day free trial"
+                  : "per month"
+                : isLoadProFounders
+                  ? "por mês · 7 dias grátis · preço fundador"
+                  : "por mês · preço fundador"
               : isBrazil
               ? `${usdPrice} internacional`
               : isEnglish
@@ -410,7 +417,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               const nextCountry = event.target.value;
               setCountry(nextCountry);
               setPaymentMethod(
-                nextCountry === "BR" ? "mercado_pago" : "stripe"
+                isLoadProFounders || nextCountry !== "BR"
+                  ? "stripe"
+                  : "mercado_pago"
               );
             }}
             value={country}
@@ -434,7 +443,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             {isEnglish ? "Secure payment" : "Escolha como pagar"}
           </legend>
           <p className="text-sm font-semibold text-ink">
-            {isSubscription
+            {isLoadProFounders
+              ? isEnglish
+                ? "Add a card securely. You pay nothing today and can cancel anytime."
+                : "Cadastre o cartão com segurança. Você não paga nada hoje e pode cancelar quando quiser."
+              : isSubscription
               ? isEnglish
                 ? "Monthly card subscription. Cancel anytime."
                 : "Assinatura mensal no cartão. Cancele quando quiser."
@@ -445,7 +458,24 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 : "Pagamento internacional seguro via Stripe."}
           </p>
 
-          {isBrazil ? (
+          {isLoadProFounders ? (
+            <PaymentOption
+              active
+              description={
+                isEnglish
+                  ? "Stripe securely stores your card. The first monthly charge happens after the 7-day free trial."
+                  : "A Stripe protege os dados do cartão. A primeira mensalidade será cobrada somente após os 7 dias grátis."
+              }
+              icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
+              label={isEnglish ? "Card · 7-day free trial" : "Cartão · 7 dias grátis"}
+              name="payment-method"
+              onSelect={() => setPaymentMethod("stripe")}
+              value="stripe"
+            >
+              <StripeBadge />
+              <CardNetworkBadges />
+            </PaymentOption>
+          ) : isBrazil ? (
             <div className="grid gap-2">
               <PaymentOption
                 active={paymentMethod === "mercado_pago"}
@@ -685,14 +715,25 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             </>
           ) : null}
           <p className="mt-1 font-bold text-ink">
-            {isSubscription
+            {isLoadProFounders
+              ? isEnglish
+                ? "Due today:"
+                : "Cobrança hoje:"
+              : isSubscription
               ? isEnglish
                 ? "Monthly subscription:"
                 : "Assinatura mensal:"
               : isEnglish
                 ? "Total today:"
-                : "Valor desta compra:"} {price}
+                : "Valor desta compra:"} {isLoadProFounders ? formatMoney(0, checkoutCurrency) : price}
           </p>
+          {isLoadProFounders ? (
+            <p className="mt-1 font-semibold text-ink">
+              {isEnglish
+                ? `After 7 days: ${price} per month.`
+                : `Depois de 7 dias: ${price} por mês.`}
+            </p>
+          ) : null}
           {isSubscription ? (
             <p className="mt-1 text-xs text-graphite/65">
               {isEnglish
@@ -715,16 +756,24 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         >
           {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {isSubscription
-            ? isEnglish
-              ? "Start subscription"
-              : "Assinar com segurança"
+            ? isLoadProFounders
+              ? isEnglish
+                ? "Start 7-day free trial"
+                : "Começar 7 dias grátis"
+              : isEnglish
+                ? "Start subscription"
+                : "Assinar com segurança"
             : isEnglish
               ? "Continue to secure payment"
               : "Continuar para pagamento"}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </button>
         <p className="text-center text-xs leading-5 text-graphite/60">
-          {isEnglish
+          {isLoadProFounders
+            ? isEnglish
+              ? "Stripe will request a valid card, but no charge is made today. Cancel before the trial ends to avoid the first monthly charge."
+              : "A Stripe solicitará um cartão válido, mas não haverá cobrança hoje. Cancele antes do fim do teste para evitar a primeira mensalidade."
+            : isEnglish
             ? "You will review the payment securely with Stripe before any charge is confirmed."
             : paymentMethod === "pix"
               ? "O Pix será gerado nesta página. O acesso é liberado após a confirmação."

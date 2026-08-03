@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { appendOrderLog } from "@/lib/checkout/db";
+import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
 import { getProductById } from "@/lib/checkout/products";
 import type { Order } from "@/lib/checkout/types";
 
@@ -93,6 +93,9 @@ async function existingAccess(email: string) {
 async function inviteCoach(order: Order) {
   const environment = config();
   if (!environment) return false;
+  if (typeof order.metadata.loadpro_invite_sent_at === "string") {
+    return false;
+  }
   const redirectTo = `${environment.appUrl}/?view=login`;
   const response = await requestLoadPro(
     `/auth/v1/invite?redirect_to=${encodeURIComponent(redirectTo)}`,
@@ -110,6 +113,9 @@ async function inviteCoach(order: Order) {
   );
 
   if (response.ok) {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { loadpro_invite_sent_at: new Date().toISOString() }
+    });
     await appendOrderLog(
       order.id,
       "loadpro.invite.sent",

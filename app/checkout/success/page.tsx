@@ -32,12 +32,25 @@ export default async function CheckoutSuccessPage({
   const isEnglish = params.locale === "en" || order?.metadata.checkout_locale === "en";
   const product = order ? getProductById(order.product_id) : null;
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
-  const accessHref =
-    order?.status === "paid" && product ? `/my-programs/${product.slug}` : "/my-programs";
-  const title = order?.status === "paid"
+  const isLoadProTrial =
+    order?.gateway === "stripe" &&
+    order?.product_id === "loadpro_founders" &&
+    Number(order.metadata.trial_days || 0) > 0;
+  const accessHref = isLoadProTrial
+    ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
+    : order?.status === "paid" && product
+      ? `/my-programs/${product.slug}`
+      : "/my-programs";
+  const title = isLoadProTrial
+    ? isEnglish ? "Free trial started" : "Teste gratuito iniciado"
+    : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
-  const description = order?.status === "paid"
+  const description = isLoadProTrial
+    ? isEnglish
+      ? "Your card was registered and no charge was made today. We are activating your 7-day LoadPro access and will send the login instructions by email."
+      : "Seu cartão foi cadastrado e nenhuma cobrança foi feita hoje. Estamos ativando seus 7 dias de acesso ao LoadPro e enviaremos as instruções de login por e-mail."
+    : order?.status === "paid"
     ? isEnglish
       ? "Payment approved. Your program access is ready and a confirmation email will be sent automatically."
       : "Pagamento aprovado. Seu acesso foi liberado e o e-mail de confirmação será enviado automaticamente."
@@ -100,6 +113,8 @@ export default async function CheckoutSuccessPage({
             >
               {order?.status === "paid"
                 ? isEnglish ? "Access program" : "Acessar programa"
+                : isLoadProTrial
+                  ? isEnglish ? "Open LoadPro" : "Abrir LoadPro"
                 : isEnglish ? "Go to my account" : "Ir para minha conta"}
             </Link>
             <Link

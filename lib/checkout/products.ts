@@ -60,6 +60,7 @@ export const checkoutProducts: CheckoutProduct[] = [
     delivery_type: "onboarding_email",
     file_id: null,
     billing_interval: "month",
+    trial_days: 7,
     team_limit: 2,
     players_per_team_limit: 25,
     founding_price_lock: true,
