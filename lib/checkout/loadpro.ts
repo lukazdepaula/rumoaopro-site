@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
 import {
   sendLoadProExistingAccountEmail,
+  sendLoadProPasswordRecoveryEmail,
   sendLoadProTrialInviteEmail
 } from "@/lib/checkout/email";
 import { getProductById } from "@/lib/checkout/products";
@@ -196,6 +197,48 @@ async function inviteCoach(order: Order) {
     return emailSent;
   }
   throw new Error(`LoadPro invite failed: ${response.status} ${message}`);
+}
+
+export async function sendLoadProPasswordRecovery(input: {
+  email: string;
+  locale?: "pt" | "en";
+}) {
+  const environment = config();
+  if (!environment) throw new Error("LoadPro recovery environment is not configured.");
+
+  const redirectUrl = new URL(`${environment.appUrl}/`);
+  redirectUrl.searchParams.set("view", "login");
+  redirectUrl.searchParams.set("lang", input.locale === "en" ? "en" : "pt");
+
+  const response = await requestLoadPro("/auth/v1/admin/generate_link", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "recovery",
+      email: input.email.trim().toLowerCase(),
+      redirect_to: redirectUrl.toString()
+    })
+  });
+
+  if (!response.ok) return false;
+
+  const payload = (await response.json()) as Record<string, unknown>;
+  const properties =
+    typeof payload.properties === "object" && payload.properties !== null
+      ? (payload.properties as Record<string, unknown>)
+      : {};
+  const actionLink =
+    typeof payload.action_link === "string"
+      ? payload.action_link
+      : typeof properties.action_link === "string"
+        ? properties.action_link
+        : null;
+  if (!actionLink) return false;
+
+  return sendLoadProPasswordRecoveryEmail({
+    to: input.email,
+    recoveryUrl: actionLink,
+    locale: input.locale
+  });
 }
 
 export async function syncLoadProAccess(order: Order, input: SyncInput) {
