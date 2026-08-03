@@ -33,6 +33,22 @@ async function syncLoadProSafely(
       currentPeriodEnd:
         (gatewayData.current_period_end as string | number | null | undefined) ||
         (gatewayData.next_payment_date as string | null | undefined),
+      currentPeriodStart:
+        gatewayData.current_period_start as string | number | null | undefined,
+      trialStart:
+        gatewayData.trial_start as string | number | null | undefined,
+      trialEnd:
+        gatewayData.trial_end as string | number | null | undefined,
+      providerSubscriptionStatus:
+        typeof gatewayData.provider_subscription_status === "string"
+          ? gatewayData.provider_subscription_status
+          : null,
+      cancelAtPeriodEnd:
+        typeof gatewayData.cancel_at_period_end === "boolean"
+          ? gatewayData.cancel_at_period_end
+          : null,
+      canceledAt:
+        gatewayData.canceled_at as string | number | null | undefined,
       providerCustomerId:
         typeof gatewayData.provider_customer_id === "string"
           ? gatewayData.provider_customer_id

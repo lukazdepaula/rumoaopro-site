@@ -18,10 +18,37 @@ type LoadProSubscriptionStatus =
 type SyncInput = {
   status: LoadProSubscriptionStatus;
   currentPeriodEnd?: string | number | null;
+  currentPeriodStart?: string | number | null;
+  trialStart?: string | number | null;
+  trialEnd?: string | number | null;
+  providerSubscriptionStatus?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
+  canceledAt?: string | number | null;
   providerCustomerId?: string | null;
   providerSubscriptionId?: string | null;
   invite?: boolean;
   eventId?: string | null;
+};
+
+export type LoadProBillingAccess = {
+  id: string;
+  email: string;
+  user_id: string | null;
+  status: string;
+  access_kind: string;
+  plan_code: string;
+  current_period_end: string | null;
+  billing_provider: string | null;
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
+  team_limit: number | null;
+  players_per_team_limit: number | null;
+  price_cents: number | null;
+  currency: string | null;
+  price_locked: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 };
 
 export function isLoadProOrder(order: Order) {
@@ -67,6 +94,49 @@ async function requestLoadPro(path: string, init: RequestInit = {}) {
     headers,
     cache: "no-store"
   });
+}
+
+export async function resolveLoadProBillingAccess(accessToken: string) {
+  const environment = config();
+  if (!environment || !accessToken) return null;
+
+  const identityResponse = await fetch(`${environment.url}/auth/v1/user`, {
+    headers: {
+      apikey: environment.serviceRoleKey,
+      Authorization: `Bearer ${accessToken}`
+    },
+    cache: "no-store"
+  });
+  if (!identityResponse.ok) return null;
+
+  const identity = (await identityResponse.json()) as Record<string, unknown>;
+  const userId = typeof identity.id === "string" ? identity.id : "";
+  const email =
+    typeof identity.email === "string" ? identity.email.trim().toLowerCase() : "";
+  if (!userId || !email) return null;
+
+  const select = encodeURIComponent(
+    "id,email,user_id,status,access_kind,plan_code,current_period_end,billing_provider,provider_customer_id,provider_subscription_id,team_limit,players_per_team_limit,price_cents,currency,price_locked,metadata,created_at,updated_at"
+  );
+  let response = await requestLoadPro(
+    `/rest/v1/billing_access?select=${select}&user_id=eq.${encodeURIComponent(userId)}&limit=1`
+  );
+  let rows = response.ok
+    ? ((await response.json()) as LoadProBillingAccess[])
+    : [];
+
+  if (!rows[0]) {
+    response = await requestLoadPro(
+      `/rest/v1/billing_access?select=${select}&email=eq.${encodeURIComponent(email)}&limit=1`
+    );
+    rows = response.ok
+      ? ((await response.json()) as LoadProBillingAccess[])
+      : [];
+  }
+
+  const access = rows[0] || null;
+  if (!access || access.email !== email) return null;
+  return { identity: { id: userId, email }, access, appUrl: environment.appUrl };
 }
 
 export async function assertLoadProProvisioningReady() {
@@ -303,6 +373,12 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
           source: "rumoaopro_checkout",
           gateway: order.gateway,
           event_id: input.eventId || null,
+          provider_subscription_status: input.providerSubscriptionStatus || null,
+          current_period_start: input.currentPeriodStart || null,
+          trial_start: input.trialStart || null,
+          trial_end: input.trialEnd || null,
+          cancel_at_period_end: input.cancelAtPeriodEnd === true,
+          canceled_at: input.canceledAt || null,
           sync_token: crypto.randomUUID()
         },
         updated_at: new Date().toISOString()

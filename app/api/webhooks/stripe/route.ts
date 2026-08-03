@@ -35,6 +35,48 @@ function metadataOf(object: Record<string, unknown>) {
     : {};
 }
 
+function recordOf(value: unknown) {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function stripeSubscriptionId(
+  object: Record<string, unknown>,
+  eventType?: string
+) {
+  const direct = textValue(object.subscription);
+  if (direct) return direct;
+  const parent = recordOf(object.parent);
+  const subscriptionDetails = recordOf(parent.subscription_details);
+  const nested = textValue(subscriptionDetails.subscription);
+  if (nested) return nested;
+  return eventType?.startsWith("customer.subscription.")
+    ? textValue(object.id)
+    : undefined;
+}
+
+function subscriptionFields(
+  object: Record<string, unknown>,
+  fallbackStatus?: string
+) {
+  return {
+    provider_subscription_status: textValue(object.status) || fallbackStatus,
+    current_period_start:
+      typeof object.current_period_start === "number"
+        ? object.current_period_start
+        : undefined,
+    current_period_end: stripePeriodEnd(object),
+    trial_start:
+      typeof object.trial_start === "number" ? object.trial_start : undefined,
+    trial_end:
+      typeof object.trial_end === "number" ? object.trial_end : undefined,
+    cancel_at_period_end: object.cancel_at_period_end === true,
+    canceled_at:
+      typeof object.canceled_at === "number" ? object.canceled_at : undefined
+  };
+}
+
 function stripePeriodEnd(object: Record<string, unknown>) {
   if (object.status === "trialing" && typeof object.trial_end === "number") {
     return object.trial_end;
@@ -86,9 +128,7 @@ export async function POST(request: Request) {
     const orderId = textValue(metadata.order_id);
     const objectId = textValue(object.id);
     const sessionId = event.type?.startsWith("checkout.session.") ? objectId : undefined;
-    const subscriptionId =
-      textValue(object.subscription) ||
-      (event.type?.startsWith("customer.subscription.") ? objectId : undefined);
+    const subscriptionId = stripeSubscriptionId(object, event.type);
     const paymentIntent = textValue(object.payment_intent);
 
     let order = orderId ? await getOrderById(orderId) : null;
@@ -137,8 +177,7 @@ export async function POST(request: Request) {
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
-            provider_subscription_status: subscriptionStatus,
-            current_period_end: stripePeriodEnd(subscription || {})
+            ...subscriptionFields(subscription || {}, subscriptionStatus)
           },
           { invite: true }
         );
@@ -149,7 +188,7 @@ export async function POST(request: Request) {
           stripe_payment_status: paymentStatus,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
-          current_period_end: subscription ? stripePeriodEnd(subscription) : undefined
+          ...subscriptionFields(subscription || {}, subscriptionStatus)
         });
       }
     }
@@ -170,8 +209,7 @@ export async function POST(request: Request) {
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
-            provider_subscription_status: "trialing",
-            current_period_end: stripePeriodEnd(object)
+            ...subscriptionFields(object, "trialing")
           },
           { invite: true }
         );
@@ -180,14 +218,14 @@ export async function POST(request: Request) {
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
-          current_period_end: stripePeriodEnd(object)
+          ...subscriptionFields(object, "active")
         });
       } else {
         await syncOrderSubscription(order.id, "active", {
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
-          current_period_end: stripePeriodEnd(object)
+          ...subscriptionFields(object, "active")
         });
       }
     }
@@ -205,8 +243,7 @@ export async function POST(request: Request) {
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
-            provider_subscription_status: textValue(object.status),
-            current_period_end: stripePeriodEnd(object)
+            ...subscriptionFields(object, textValue(object.status))
           },
           {
             invite:
@@ -217,12 +254,17 @@ export async function POST(request: Request) {
       }
     }
 
-    if (event.type === "invoice.payment_failed" && subscriptionId) {
+    if (
+      (event.type === "invoice.payment_failed" ||
+        event.type === "invoice.payment_action_required" ||
+        event.type === "invoice.finalization_failed") &&
+      subscriptionId
+    ) {
       await syncOrderSubscription(order.id, "past_due", {
         event_id: eventId,
         provider_customer_id: textValue(object.customer),
         provider_subscription_id: subscriptionId,
-        current_period_end: stripePeriodEnd(object)
+        ...subscriptionFields(object, "past_due")
       });
     } else if (
       event.type === "checkout.session.async_payment_failed" ||
