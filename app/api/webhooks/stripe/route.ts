@@ -36,6 +36,9 @@ function metadataOf(object: Record<string, unknown>) {
 }
 
 function stripePeriodEnd(object: Record<string, unknown>) {
+  if (object.status === "trialing" && typeof object.trial_end === "number") {
+    return object.trial_end;
+  }
   if (typeof object.current_period_end === "number") return object.current_period_end;
   const lines =
     typeof object.lines === "object" && object.lines !== null
@@ -105,21 +108,25 @@ export async function POST(request: Request) {
     ) {
       const paymentStatus = object.payment_status;
       const paid = paymentStatus === "paid" || event.type.includes("succeeded");
+      const subscription = subscriptionId
+        ? await fetchStripeSubscription(subscriptionId)
+        : null;
+      const subscriptionStatus = textValue(subscription?.status);
+
+      await updateOrderGatewayIds(order.id, {
+        gateway_checkout_id: sessionId,
+        gateway_payment_id: subscriptionId || paymentIntent,
+        metadata: {
+          stripe_event_id: eventId,
+          stripe_payment_status: paymentStatus,
+          stripe_session_status: object.status,
+          stripe_subscription_id: subscriptionId || null,
+          subscription_status:
+            subscriptionStatus || (subscriptionId ? "active" : null)
+        }
+      });
+
       if (paid) {
-        const subscription = subscriptionId
-          ? await fetchStripeSubscription(subscriptionId)
-          : null;
-        await updateOrderGatewayIds(order.id, {
-          gateway_checkout_id: sessionId,
-          gateway_payment_id: subscriptionId || paymentIntent,
-          metadata: {
-            stripe_event_id: eventId,
-            stripe_payment_status: paymentStatus,
-            stripe_session_status: object.status,
-            stripe_subscription_id: subscriptionId || null,
-            subscription_status: subscription?.status || (subscriptionId ? "active" : null)
-          }
-        });
         await markOrderAsPaid(order.id, {
           event_id: eventId,
           stripe_event_id: eventId,
@@ -128,11 +135,44 @@ export async function POST(request: Request) {
           provider_subscription_id: subscriptionId,
           current_period_end: subscription ? stripePeriodEnd(subscription) : undefined
         });
+      } else if (subscriptionStatus === "trialing" && subscriptionId) {
+        await syncOrderSubscription(
+          order.id,
+          "active",
+          {
+            event_id: eventId,
+            provider_customer_id: textValue(object.customer),
+            provider_subscription_id: subscriptionId,
+            provider_subscription_status: subscriptionStatus,
+            current_period_end: stripePeriodEnd(subscription || {})
+          },
+          { invite: true }
+        );
       }
     }
 
     if (event.type === "invoice.paid" && subscriptionId) {
-      if (order.status !== "paid") {
+      const amountPaid =
+        typeof object.amount_paid === "number" ? object.amount_paid : null;
+      const zeroValueTrialInvoice =
+        order.product_id === "loadpro_founders" &&
+        amountPaid === 0 &&
+        Number(order.metadata.trial_days || 0) > 0;
+
+      if (zeroValueTrialInvoice) {
+        await syncOrderSubscription(
+          order.id,
+          "active",
+          {
+            event_id: eventId,
+            provider_customer_id: textValue(object.customer),
+            provider_subscription_id: subscriptionId,
+            provider_subscription_status: "trialing",
+            current_period_end: stripePeriodEnd(object)
+          },
+          { invite: true }
+        );
+      } else if (order.status !== "paid") {
         await markOrderAsPaid(order.id, {
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
@@ -155,12 +195,22 @@ export async function POST(request: Request) {
           ? "canceled"
           : accessStatus(object.status);
       if (status) {
-        await syncOrderSubscription(order.id, status, {
-          event_id: eventId,
-          provider_customer_id: textValue(object.customer),
-          provider_subscription_id: subscriptionId,
-          current_period_end: stripePeriodEnd(object)
-        });
+        await syncOrderSubscription(
+          order.id,
+          status,
+          {
+            event_id: eventId,
+            provider_customer_id: textValue(object.customer),
+            provider_subscription_id: subscriptionId,
+            provider_subscription_status: textValue(object.status),
+            current_period_end: stripePeriodEnd(object)
+          },
+          {
+            invite:
+              event.type === "customer.subscription.created" &&
+              object.status === "trialing"
+          }
+        );
       }
     }
 

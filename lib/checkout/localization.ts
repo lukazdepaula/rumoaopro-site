@@ -2,8 +2,14 @@ import type { CheckoutProduct } from "@/lib/checkout/types";
 
 const englishProductCopy: Record<
   string,
-  { description: string; salesPagePath: string }
+  { description: string; name?: string; salesPagePath: string }
 > = {
+  "loadpro-founders": {
+    name: "LoadPro · Founding Coaches Plan",
+    description:
+      "Monthly LoadPro subscription for planning microcycles, collecting readiness and RPE, and reporting across up to two teams.",
+    salesPagePath: "https://loadpro.rumoaopro.com.br/"
+  },
   "offseason-30-days": {
     description:
       "30-day program combining field work, gym sessions, speed and conditioning for a short offseason.",
@@ -34,7 +40,7 @@ export function getLocalizedProductCopy(
 
   if (locale === "en" && english) {
     return {
-      name: product.name,
+      name: english.name ?? product.name,
       description: english.description,
       salesPagePath: english.salesPagePath
     };

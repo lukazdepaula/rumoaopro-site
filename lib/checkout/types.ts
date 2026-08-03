@@ -78,6 +78,7 @@ export type CheckoutProduct = {
   delivery_type: DeliveryType;
   file_id: string | null;
   billing_interval?: "month";
+  trial_days?: number;
   team_limit?: number;
   players_per_team_limit?: number;
   founding_price_lock?: boolean;
