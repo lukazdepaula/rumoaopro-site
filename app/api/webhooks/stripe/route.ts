@@ -126,16 +126,10 @@ export async function POST(request: Request) {
         }
       });
 
-      if (paid) {
-        await markOrderAsPaid(order.id, {
-          event_id: eventId,
-          stripe_event_id: eventId,
-          stripe_payment_status: paymentStatus,
-          provider_customer_id: textValue(object.customer),
-          provider_subscription_id: subscriptionId,
-          current_period_end: subscription ? stripePeriodEnd(subscription) : undefined
-        });
-      } else if (subscriptionStatus === "trialing" && subscriptionId) {
+      // Stripe reports a zero-value trial checkout as paid. The subscription
+      // status is the source of truth here so a trial does not become a sale,
+      // fiscal event, or paid-delivery email before the first real invoice.
+      if (subscriptionStatus === "trialing" && subscriptionId) {
         await syncOrderSubscription(
           order.id,
           "active",
@@ -148,6 +142,15 @@ export async function POST(request: Request) {
           },
           { invite: true }
         );
+      } else if (paid) {
+        await markOrderAsPaid(order.id, {
+          event_id: eventId,
+          stripe_event_id: eventId,
+          stripe_payment_status: paymentStatus,
+          provider_customer_id: textValue(object.customer),
+          provider_subscription_id: subscriptionId,
+          current_period_end: subscription ? stripePeriodEnd(subscription) : undefined
+        });
       }
     }
 
