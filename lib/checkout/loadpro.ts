@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
+import {
+  sendLoadProExistingAccountEmail,
+  sendLoadProTrialInviteEmail
+} from "@/lib/checkout/email";
 import { getProductById } from "@/lib/checkout/products";
 import type { Order } from "@/lib/checkout/types";
 
@@ -97,42 +101,99 @@ async function inviteCoach(order: Order) {
     return false;
   }
   const redirectTo = `${environment.appUrl}/?view=login`;
+  const locale = order.metadata.checkout_locale === "en" ? "en" : "pt";
   const response = await requestLoadPro(
-    `/auth/v1/invite?redirect_to=${encodeURIComponent(redirectTo)}`,
+    "/auth/v1/admin/generate_link",
     {
       method: "POST",
       body: JSON.stringify({
+        type: "invite",
         email: order.customer_email.trim().toLowerCase(),
         data: {
           full_name: order.customer_name,
           source: "rumoaopro_checkout",
           order_id: order.id
-        }
+        },
+        redirect_to: redirectTo
       })
     }
   );
 
   if (response.ok) {
+    const payload = (await response.json()) as Record<string, unknown>;
+    const properties =
+      typeof payload.properties === "object" && payload.properties !== null
+        ? (payload.properties as Record<string, unknown>)
+        : {};
+    const actionLink =
+      typeof payload.action_link === "string"
+        ? payload.action_link
+        : typeof properties.action_link === "string"
+          ? properties.action_link
+          : null;
+    if (!actionLink) {
+      await appendOrderLog(
+        order.id,
+        "loadpro.invite.error",
+        "O Supabase não retornou o link seguro de criação de senha."
+      );
+      return false;
+    }
+    const emailSent = await sendLoadProTrialInviteEmail({
+      orderId: order.id,
+      to: order.customer_email,
+      name: order.customer_name,
+      inviteUrl: actionLink,
+      amount: order.amount,
+      currency: order.currency,
+      locale
+    });
+    if (!emailSent) {
+      await updateOrderGatewayIds(order.id, {
+        metadata: { loadpro_invite_status: "email_error" }
+      });
+      return false;
+    }
     await updateOrderGatewayIds(order.id, {
-      metadata: { loadpro_invite_sent_at: new Date().toISOString() }
+      metadata: {
+        loadpro_invite_sent_at: new Date().toISOString(),
+        loadpro_invite_status: "sent_by_rumoaopro"
+      }
     });
     await appendOrderLog(
       order.id,
       "loadpro.invite.sent",
-      "Convite de acesso ao LoadPro enviado pelo Supabase."
+      "Convite de criação de senha do LoadPro enviado pela RumoAoPro."
     );
     return true;
   }
 
   const message = await response.text().catch(() => "");
   if (response.status === 400 || response.status === 422) {
+    const emailSent = await sendLoadProExistingAccountEmail({
+      orderId: order.id,
+      to: order.customer_email,
+      name: order.customer_name,
+      appUrl: environment.appUrl,
+      amount: order.amount,
+      currency: order.currency,
+      locale
+    });
+    if (emailSent) {
+      await updateOrderGatewayIds(order.id, {
+        metadata: {
+          loadpro_invite_sent_at: new Date().toISOString(),
+          loadpro_invite_status: "existing_account_notified"
+        }
+      });
+    }
     await appendOrderLog(
       order.id,
       "loadpro.invite.existing_user",
-      "O e-mail já existe no LoadPro; o acesso pago foi atualizado sem criar outra conta.",
+      "O e-mail já existe no LoadPro; o acesso foi atualizado e a orientação de login foi enviada pela RumoAoPro.",
       { status: response.status }
     );
-    return false;
+    return emailSent;
   }
   throw new Error(`LoadPro invite failed: ${response.status} ${message}`);
 }

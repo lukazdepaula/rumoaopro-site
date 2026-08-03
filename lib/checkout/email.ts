@@ -20,6 +20,16 @@ const escapeHtml = (value: string) =>
       })[character] || character
   );
 
+const formatEmailMoney = (
+  amount: number,
+  currency: string,
+  locale: "pt" | "en"
+) =>
+  new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-BR", {
+    style: "currency",
+    currency
+  }).format(amount);
+
 export async function sendEmail(input: EmailInput) {
   const provider = process.env.EMAIL_PROVIDER || "mock";
 
@@ -50,7 +60,7 @@ export async function sendEmail(input: EmailInput) {
           subject: input.subject
         });
       }
-      return;
+      return true;
     }
 
     console.info("[email:mock]", {
@@ -64,13 +74,111 @@ export async function sendEmail(input: EmailInput) {
         subject: input.subject
       });
     }
+    return true;
   } catch (error) {
     if (input.orderId) {
       await appendOrderLog(input.orderId, "email.error", "Falha ao enviar e-mail.", {
         error: error instanceof Error ? error.message : String(error)
       });
     }
+    return false;
   }
+}
+
+export async function sendLoadProTrialInviteEmail(input: {
+  orderId: string;
+  to: string;
+  name: string;
+  inviteUrl: string;
+  amount: number;
+  currency: string;
+  locale?: "pt" | "en";
+}) {
+  const isEnglish = input.locale === "en";
+  const inviteUrl = escapeHtml(input.inviteUrl);
+  const name = escapeHtml(input.name);
+  const renewalPrice = formatEmailMoney(
+    input.amount,
+    input.currency,
+    isEnglish ? "en" : "pt"
+  );
+
+  return sendEmail({
+    to: input.to,
+    subject: isEnglish
+      ? "Create your password and access LoadPro"
+      : "Crie sua senha e acesse o LoadPro",
+    orderId: input.orderId,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
+          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
+          <h1 style="margin:0;font-size:26px">${isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo"}</h1>
+        </div>
+        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+          <p>${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
+          <p>${isEnglish
+            ? "Create your password now to access LoadPro and set up your first club."
+            : "Crie sua senha agora para acessar o LoadPro e configurar seu primeiro clube."}</p>
+          <p style="margin:24px 0"><a href="${inviteUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Create my password" : "Criar minha senha"}</a></p>
+          <div style="background:#f4f5f7;border-radius:8px;padding:16px;font-size:14px;line-height:1.6">
+            <strong>${isEnglish ? "No charge today." : "Nenhuma cobrança foi feita hoje."}</strong><br>
+            ${isEnglish
+              ? `After 7 days, the subscription renews for ${renewalPrice} per month. You can cancel at any time.`
+              : `Depois de 7 dias, a assinatura será renovada por ${renewalPrice}/mês. Você pode cancelar quando quiser.`}
+          </div>
+          <p style="color:#68707d;font-size:13px;margin-top:20px">${isEnglish
+            ? "For security, this link expires and can only be used to activate your own account. Never share your password."
+            : "Por segurança, este link expira e deve ser usado apenas para ativar sua própria conta. Nunca compartilhe sua senha."}</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+export async function sendLoadProExistingAccountEmail(input: {
+  orderId: string;
+  to: string;
+  name: string;
+  appUrl: string;
+  amount: number;
+  currency: string;
+  locale?: "pt" | "en";
+}) {
+  const isEnglish = input.locale === "en";
+  const appUrl = escapeHtml(input.appUrl.replace(/\/$/, ""));
+  const name = escapeHtml(input.name);
+  const renewalPrice = formatEmailMoney(
+    input.amount,
+    input.currency,
+    isEnglish ? "en" : "pt"
+  );
+
+  return sendEmail({
+    to: input.to,
+    subject: isEnglish
+      ? "Your LoadPro trial is active"
+      : "Seu teste do LoadPro está ativo",
+    orderId: input.orderId,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
+          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
+          <h1 style="margin:0;font-size:26px">${isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo"}</h1>
+        </div>
+        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+          <p>${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
+          <p>${isEnglish
+            ? "This email already has a LoadPro account. Sign in with your existing password; if needed, use Forgot password on the login screen."
+            : "Este e-mail já possui uma conta no LoadPro. Entre com sua senha atual; se precisar, use Esqueci minha senha na tela de login."}</p>
+          <p style="margin:24px 0"><a href="${appUrl}/?view=login" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Open LoadPro" : "Abrir o LoadPro"}</a></p>
+          <p style="color:#68707d;font-size:13px">${isEnglish
+            ? `No charge was made today. After 7 days, the subscription renews for ${renewalPrice} per month.`
+            : `Nenhuma cobrança foi feita hoje. Depois de 7 dias, a assinatura será renovada por ${renewalPrice}/mês.`}</p>
+        </div>
+      </div>
+    `
+  });
 }
 
 export async function sendPdfDeliveryEmail(input: {

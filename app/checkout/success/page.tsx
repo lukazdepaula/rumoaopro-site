@@ -32,24 +32,47 @@ export default async function CheckoutSuccessPage({
   const isEnglish = params.locale === "en" || order?.metadata.checkout_locale === "en";
   const product = order ? getProductById(order.product_id) : null;
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
+  const trialDays = Number(order?.metadata.trial_days || 0);
   const isLoadProTrial =
     order?.gateway === "stripe" &&
     order?.product_id === "loadpro_founders" &&
-    Number(order.metadata.trial_days || 0) > 0;
+    trialDays > 0;
+  const subscriptionStatus =
+    typeof order?.metadata.subscription_status === "string"
+      ? order.metadata.subscription_status
+      : null;
+  const trialIsReady =
+    isLoadProTrial &&
+    (subscriptionStatus === "trialing" || order?.status === "paid");
+  const statusLabel = isLoadProTrial
+    ? trialIsReady
+      ? isEnglish ? "Trial active" : "Teste ativo"
+      : isEnglish ? "Activating trial" : "Ativando teste"
+    : order?.status === "paid"
+      ? isEnglish ? "Paid" : "Pago"
+      : order?.status === "failed"
+        ? isEnglish ? "Failed" : "Falhou"
+        : isEnglish ? "Processing" : "Em processamento";
   const accessHref = isLoadProTrial
     ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
     : order?.status === "paid" && product
       ? `/my-programs/${product.slug}`
       : "/my-programs";
   const title = isLoadProTrial
-    ? isEnglish ? "Free trial started" : "Teste gratuito iniciado"
+    ? trialIsReady
+      ? isEnglish ? "Free trial activated" : "Teste gratuito ativado"
+      : isEnglish ? "Activating your free trial" : "Ativando seu teste gratuito"
     : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
   const description = isLoadProTrial
-    ? isEnglish
-      ? "Your card was registered and no charge was made today. We are activating your 7-day LoadPro access and will send the login instructions by email."
-      : "Seu cartão foi cadastrado e nenhuma cobrança foi feita hoje. Estamos ativando seus 7 dias de acesso ao LoadPro e enviaremos as instruções de login por e-mail."
+    ? trialIsReady
+      ? isEnglish
+        ? `We sent ${order?.customer_email || "your email"} a RumoAoPro message. Open it and click Create my password to access LoadPro.`
+        : `Enviamos uma mensagem da RumoAoPro para ${order?.customer_email || "seu e-mail"}. Abra o e-mail e clique em Criar minha senha para acessar o LoadPro.`
+      : isEnglish
+        ? "Your card was registered and no charge was made today. We are finishing the activation and will email your secure password-creation link."
+        : "Seu cartão foi cadastrado e nenhuma cobrança foi feita hoje. Estamos concluindo a ativação e enviaremos por e-mail o link seguro para criar sua senha."
     : order?.status === "paid"
     ? isEnglish
       ? "Payment approved. Your program access is ready and a confirmation email will be sent automatically."
@@ -93,16 +116,40 @@ export default async function CheckoutSuccessPage({
                 <div>
                   <p className="text-xs font-bold uppercase text-white/45">Status</p>
                   <p className="mt-1 text-sm font-semibold text-white">
-                    {order.status}
+                    {statusLabel}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase text-white/45">{isEnglish ? "Amount" : "Valor"}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
-                    {formatMoney(order.amount, order.currency)}
+                    {isLoadProTrial
+                      ? formatMoney(0, order.currency)
+                      : formatMoney(order.amount, order.currency)}
                   </p>
                 </div>
               </div>
+              {isLoadProTrial ? (
+                <p className="mt-4 border-t border-white/10 pt-4 text-sm leading-6 text-white/70">
+                  {isEnglish
+                    ? `No charge today. After ${trialDays} days: ${formatMoney(order.amount, order.currency)} per month.`
+                    : `Nenhuma cobrança hoje. Depois de ${trialDays} dias: ${formatMoney(order.amount, order.currency)} por mês.`}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {isLoadProTrial ? (
+            <div className="mt-6 rounded-lg border border-white/15 bg-white/[0.06] p-5 text-left">
+              <p className="text-xs font-bold uppercase tracking-wide text-signal">
+                {isEnglish ? "Next step" : "Próximo passo"}
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-white">
+                {isEnglish ? "Create your LoadPro password" : "Crie sua senha do LoadPro"}
+              </h2>
+              <ol className="mt-3 space-y-2 text-sm leading-6 text-white/70">
+                <li>1. {isEnglish ? "Open the RumoAoPro email we sent you." : "Abra o e-mail enviado pela RumoAoPro."}</li>
+                <li>2. {isEnglish ? "Click Create my password and choose a secure password." : "Clique em Criar minha senha e defina uma senha segura."}</li>
+                <li>3. {isEnglish ? "Sign in and set up your first club." : "Entre no app e configure seu primeiro clube."}</li>
+              </ol>
             </div>
           ) : null}
           {showMockActions ? <MockPaymentActions orderId={order.id} /> : null}
@@ -111,10 +158,10 @@ export default async function CheckoutSuccessPage({
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
               href={accessHref}
             >
-              {order?.status === "paid"
-                ? isEnglish ? "Access program" : "Acessar programa"
-                : isLoadProTrial
-                  ? isEnglish ? "Open LoadPro" : "Abrir LoadPro"
+              {isLoadProTrial
+                ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
+                : order?.status === "paid"
+                  ? isEnglish ? "Access program" : "Acessar programa"
                 : isEnglish ? "Go to my account" : "Ir para minha conta"}
             </Link>
             <Link
