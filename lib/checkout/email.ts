@@ -181,6 +181,42 @@ export async function sendLoadProExistingAccountEmail(input: {
   });
 }
 
+export async function sendLoadProPasswordRecoveryEmail(input: {
+  to: string;
+  recoveryUrl: string;
+  locale?: "pt" | "en";
+}) {
+  const isEnglish = input.locale === "en";
+  const recoveryUrl = escapeHtml(input.recoveryUrl);
+
+  return sendEmail({
+    to: input.to,
+    subject: isEnglish
+      ? "Reset your LoadPro password"
+      : "Redefina sua senha do LoadPro",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
+          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
+          <h1 style="margin:0;font-size:26px">${isEnglish ? "Reset your password" : "Redefina sua senha"}</h1>
+        </div>
+        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+          <p>${isEnglish
+            ? "We received a request to reset the password for your LoadPro account."
+            : "Recebemos uma solicitação para redefinir a senha da sua conta LoadPro."}</p>
+          <p style="margin:24px 0"><a href="${recoveryUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Create a new password" : "Criar nova senha"}</a></p>
+          <p style="color:#68707d;font-size:13px">${isEnglish
+            ? "This secure link expires. If you did not request a new password, you can ignore this email."
+            : "Este link seguro expira. Se você não solicitou uma nova senha, pode ignorar este e-mail."}</p>
+          <p style="color:#68707d;font-size:13px">${isEnglish
+            ? "RumoAoPro support will never ask for your password."
+            : "O suporte RumoAoPro nunca solicitará sua senha."}</p>
+        </div>
+      </div>
+    `
+  });
+}
+
 export async function sendPdfDeliveryEmail(input: {
   orderId: string;
   to: string;
