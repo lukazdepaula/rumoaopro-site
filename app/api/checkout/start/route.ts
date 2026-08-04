@@ -27,7 +27,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function checkoutMode() {
-  return process.env.CHECKOUT_GATEWAY_MODE === "live" ? "live" : "mock";
+  const mode = process.env.CHECKOUT_GATEWAY_MODE;
+  if (mode === "live" || mode === "sandbox") return mode;
+  return "mock";
 }
 
 export async function POST(request: Request) {
@@ -42,9 +44,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const mode = checkoutMode();
     const brazil = isBrazil(input.country);
     const stripeOnly = product.id === "loadpro_founders";
-    const paymentMethod = stripeOnly
+    const paymentMethod = mode === "sandbox"
+      ? "stripe"
+      : stripeOnly
       ? "stripe"
       : brazil
         ? input.paymentMethod
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (checkoutMode() === "live" && product.id === "loadpro_founders") {
+    if (mode === "live" && product.id === "loadpro_founders") {
       try {
         await assertLoadProProvisioningReady();
       } catch (error) {
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
       customer_address: input.address,
       customer_whatsapp: input.whatsapp,
       gateway:
-        checkoutMode() === "live"
+        mode !== "mock"
           ? paymentMethod === "stripe"
             ? "stripe"
             : "mercado_pago"
@@ -112,7 +117,7 @@ export async function POST(request: Request) {
       metadata: {
         product_slug: product.slug,
         checkout_country: input.country,
-        checkout_gateway_mode: checkoutMode(),
+        checkout_gateway_mode: mode,
         checkout_payment_method: paymentMethod,
         checkout_locale: input.locale,
         trial_days: product.trial_days || null,
@@ -128,7 +133,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (checkoutMode() === "mock") {
+    if (mode === "mock") {
       return NextResponse.json({
         gateway: "mock",
         orderId: order.id,

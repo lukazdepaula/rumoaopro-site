@@ -27,6 +27,17 @@ async function syncLoadProSafely(
   invite = false
 ) {
   if (!isLoadProOrder(order)) return;
+  if (order.metadata.checkout_gateway_mode === "sandbox") {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { loadpro_provisioning_status: "sandbox_skipped" }
+    });
+    await appendOrderLog(
+      order.id,
+      "loadpro.provisioning.sandbox_skipped",
+      "Evento Stripe sandbox processado sem alterar o acesso real do LoadPro."
+    );
+    return;
+  }
   try {
     const result = await syncLoadProAccess(order, {
       status,
@@ -140,11 +151,12 @@ export async function markOrderAsPaid(
   }
 
   const paidOrder = await getOrderById(orderId);
+  const sandboxOrder = paidOrder?.metadata.checkout_gateway_mode === "sandbox";
   if (paidOrder) {
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
     if (!isLoadProOrder(paidOrder)) await grantProductAccess(paidOrder);
 
-    if (firstConfirmation) {
+    if (firstConfirmation && !sandboxOrder) {
       await sendInternalSaleNotice({
         orderId: paidOrder.id,
         customerName: paidOrder.customer_name,
@@ -163,9 +175,16 @@ export async function markOrderAsPaid(
             : null
       });
     }
+    if (sandboxOrder) {
+      await appendOrderLog(
+        paidOrder.id,
+        "order.sandbox.delivery_skipped",
+        "Pedido sandbox confirmado sem e-mail, convite ou entrega real."
+      );
+    }
   }
 
-  await triggerDelivery(orderId);
+  if (!sandboxOrder) await triggerDelivery(orderId);
   return getOrderById(orderId);
 }
 

@@ -66,3 +66,25 @@ approved renewals, payment failures, pauses and cancellations.
 5. Confirm a legacy coach still has unrestricted lifetime access.
 6. Simulate a failed renewal and cancellation in the provider test environment.
 7. Confirm no credentials or service-role keys appear in browser source or logs.
+
+## Safe Stripe sandbox renewal test
+
+Use a Vercel Preview deployment and never replace the live Stripe keys or the
+production webhook secret.
+
+1. Set Preview-only `CHECKOUT_GATEWAY_MODE=sandbox`.
+2. Set Preview-only `STRIPE_SECRET_KEY` to a Stripe sandbox/test secret key.
+3. Register the Preview `/api/webhooks/stripe` URL as a Stripe sandbox event
+   destination and set its signing secret as the Preview-only
+   `STRIPE_WEBHOOK_SECRET`.
+4. Do not add production LoadPro credentials to perform the test. Even if they
+   are inherited by Preview, sandbox orders are explicitly blocked from
+   provisioning, invitations, delivery emails and internal sale notices.
+5. Complete checkout with a disposable test email and a Stripe test card. Use a
+   simulation/test clock plus Stripe's failing renewal card to generate
+   `invoice.payment_failed`.
+6. Confirm the sandbox order moves to `past_due` in the order metadata and that
+   no `billing_access` row, coach invitation or production delivery is created.
+
+The webhook rejects mismatches between the Stripe key environment, the event
+`livemode` flag and the order's checkout environment.
