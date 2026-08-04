@@ -615,12 +615,14 @@ export async function fetchStripeSubscription(subscriptionId: string) {
 
 export async function createStripeBillingPortalSession(
   customerId: string,
-  returnUrl: string
+  returnUrl: string,
+  locale: "pt-BR" | "en" | "es" = "pt-BR"
 ) {
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const params = new URLSearchParams({
     customer: customerId,
-    return_url: returnUrl
+    return_url: returnUrl,
+    locale
   });
   const response = await fetch(
     "https://api.stripe.com/v1/billing_portal/sessions",

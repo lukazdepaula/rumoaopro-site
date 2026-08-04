@@ -37,6 +37,8 @@ export async function OPTIONS(request: Request) {
 export async function POST(request: Request) {
   if (!allowedOrigin(request)) return json(request, { error: "Origin not allowed" }, 403);
 
+  const body = (await request.json().catch(() => ({}))) as { locale?: unknown };
+  const portalLocale = body.locale === "en" ? "en" : body.locale === "es" ? "es" : "pt-BR";
   const authorization = request.headers.get("authorization") || "";
   const accessToken = authorization.startsWith("Bearer ")
     ? authorization.slice(7).trim()
@@ -57,7 +59,8 @@ export async function POST(request: Request) {
 
     const url = await createStripeBillingPortalSession(
       access.provider_customer_id,
-      `${appUrl}/?view=setup&settings=security`
+      `${appUrl}/?view=setup&settings=security`,
+      portalLocale
     );
     return json(request, { url });
   } catch (error) {
