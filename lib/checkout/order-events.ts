@@ -163,29 +163,32 @@ export async function markOrderAsPaid(
             ? paidOrder.metadata.discount_code
             : null
       });
-
-      try {
-        const push = await sendAdminSalePush(paidOrder);
-        await appendOrderLog(
-          paidOrder.id,
-          push.sent > 0 ? "admin_push.sent" : "admin_push.skipped",
-          push.sent > 0
-            ? `Notificacao de venda enviada para ${push.sent} aparelho(s).`
-            : "Nenhum aparelho recebeu a notificacao administrativa.",
-          push
-        ).catch(() => undefined);
-      } catch (error) {
-        await appendOrderLog(
-          paidOrder.id,
-          "admin_push.error",
-          "A venda foi confirmada, mas a notificacao administrativa falhou.",
-          { error: error instanceof Error ? error.message : String(error) }
-        ).catch(() => undefined);
-      }
     }
   }
 
   await triggerDelivery(orderId);
+
+  if (firstConfirmation && paidOrder) {
+    try {
+      const push = await sendAdminSalePush(paidOrder);
+      await appendOrderLog(
+        paidOrder.id,
+        push.sent > 0 ? "admin_push.sent" : "admin_push.skipped",
+        push.sent > 0
+          ? `Notificacao de venda enviada para ${push.sent} aparelho(s).`
+          : "Nenhum aparelho recebeu a notificacao administrativa.",
+        push
+      ).catch(() => undefined);
+    } catch (error) {
+      await appendOrderLog(
+        paidOrder.id,
+        "admin_push.error",
+        "A venda foi confirmada, mas a notificacao administrativa falhou.",
+        { error: error instanceof Error ? error.message : String(error) }
+      ).catch(() => undefined);
+    }
+  }
+
   return getOrderById(orderId);
 }
 
