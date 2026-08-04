@@ -12,7 +12,6 @@ import {
   Instagram,
   Mail,
   MessageCircle,
-  Mic2,
   Play,
   Star,
   Trophy,
@@ -83,6 +82,7 @@ const copy = {
     email: "E-mail",
     whatsapp: "WhatsApp",
     reviews: "avaliações",
+    englishProgram: "Programa em inglês",
     seeProgram: "Ver programa",
     verified: "Avaliações verificadas",
     allVideos: "Ver canal no YouTube",
@@ -129,6 +129,7 @@ const copy = {
     email: "Email",
     whatsapp: "WhatsApp",
     reviews: "reviews",
+    englishProgram: "Program in English",
     seeProgram: "View program",
     verified: "Verified reviews",
     allVideos: "Visit the YouTube channel",
@@ -141,7 +142,10 @@ const productIds = {
     "project_36",
     "projeto_pre_temporada_pt",
     "projeto_adama_2022_pt",
-    "de_volta_aos_gramados_pt"
+    "de_volta_aos_gramados_pt",
+    "offseason_30_days",
+    "adama_strength_power",
+    "elanga_in_season"
   ],
   en: [
     "offseason_30_days",
@@ -160,15 +164,17 @@ const englishSalesPages: Record<string, string> = {
 
 const programPresentation: Record<
   string,
-  { image: string; ptName?: string; enName?: string; pt: string; en: string }
+  { image: string; imagePosition: string; ptName?: string; enName?: string; pt: string; en: string }
 > = {
   offseason_30_days: {
     image: assets.programsFieldControl,
+    imagePosition: "object-[50%_26%]",
     pt: "Campo, academia, velocidade e condicionamento organizados em 30 dias.",
     en: "Field work, gym, speed and conditioning organized across 30 days."
   },
   project_36: {
     image: assets.programsSprintChase,
+    imagePosition: "object-center",
     ptName: "Projeto 36: Velocidade e Aceleração",
     enName: "Project 36: Speed & Acceleration",
     pt: "Doze semanas para desenvolver aceleração, velocidade máxima e re-aceleração.",
@@ -176,28 +182,33 @@ const programPresentation: Record<
   },
   adama_strength_power: {
     image: assets.programsGymBriefing,
+    imagePosition: "object-[50%_24%]",
     enName: "Adama Strength & Power",
     pt: "Força e potência construídas para transferir melhor ao jogo.",
     en: "Build strength and power designed to transfer to football."
   },
   projeto_adama_2022_pt: {
     image: assets.programsGymBriefing,
+    imagePosition: "object-[50%_24%]",
     ptName: "Projeto Adama: Força e Potência",
     pt: "Força, hipertrofia e presença física aplicadas às demandas do futebol.",
     en: "Strength, hypertrophy and physical presence for football."
   },
   projeto_pre_temporada_pt: {
     image: assets.programsFieldControl,
+    imagePosition: "object-[50%_26%]",
     pt: "Doze semanas para organizar campo, academia e condicionamento antes da temporada.",
     en: "A twelve-week structure for field, gym and conditioning work."
   },
   de_volta_aos_gramados_pt: {
     image: assets.programsPlayerReady,
+    imagePosition: "object-[50%_18%]",
     pt: "Uma progressão clara para recuperar confiança e retornar gradualmente ao campo.",
     en: "A clear progression to rebuild confidence and gradually return to the pitch."
   },
   elanga_in_season: {
     image: assets.programsProMatch,
+    imagePosition: "object-[50%_18%]",
     pt: "Força e velocidade durante a temporada sem perder disponibilidade para jogar.",
     en: "Maintain strength and speed in season without losing match availability."
   }
@@ -312,8 +323,22 @@ const videos = {
       pt: "Terminei meu contrato na Arábia Saudita",
       en: "My contract in Saudi Arabia came to an end"
     }
+  ],
+  podcasts: [
+    {
+      id: "sYcn0KX_nlI",
+      href: "https://www.youtube.com/watch?v=sYcn0KX_nlI",
+      pt: "Lucas de Paula no Estagiários Podcast #029",
+      en: "Lucas de Paula on Estagiários Podcast #029"
+    },
+    {
+      id: "Nd8wQW85gfY",
+      href: "https://www.youtube.com/watch?v=Nd8wQW85gfY",
+      pt: "Lucas de Paula no Chega Mais Podcast #137",
+      en: "Lucas de Paula on Chega Mais Podcast #137"
+    }
   ]
-} satisfies Record<"training" | "vlogs", Array<{ id: string; href: string; pt: string; en: string }>>;
+} satisfies Record<"training" | "vlogs" | "podcasts", Array<{ id: string; href: string; pt: string; en: string }>>;
 
 const workLogos = [
   { name: "Lindsey Wilson", image: assets.logoLindseyWilson },
@@ -347,10 +372,12 @@ function getProgram(id: string, locale: LinksLocale) {
       : presentation.enName ?? product.name,
     description: presentation[locale],
     image: presentation.image,
+    imagePosition: presentation.imagePosition,
     href: salesPage,
     amount: locale === "pt" ? product.price_brl : product.price_usd,
     currency: locale === "pt" ? "BRL" : "USD",
-    review: reviewKey ? reviewGroups[reviewKey] : null
+    review: reviewKey ? reviewGroups[reviewKey] : null,
+    isEnglishOnly: id === "offseason_30_days" || id === "adama_strength_power" || id === "elanga_in_season"
   };
 }
 
@@ -385,8 +412,13 @@ export function PremiumLinksHub({ locale, preview = false }: { locale: LinksLoca
                 {products.map((product) => (
                   <Link className="group overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.045] transition duration-300 hover:-translate-y-1 hover:border-red-500/45 hover:bg-white/[0.065]" href={product.href} key={product.id}>
                     <div className="relative aspect-[16/10] overflow-hidden bg-[#171010]">
-                      <Image alt={product.name} className="object-cover transition duration-700 group-hover:scale-[1.04]" fill sizes="(max-width: 640px) 100vw, 430px" src={product.image} />
+                      <Image alt={product.name} className={`object-cover transition duration-700 group-hover:scale-[1.04] ${product.imagePosition}`} fill sizes="(max-width: 640px) 100vw, 430px" src={product.image} />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_28%,rgba(5,5,5,.9)_100%)]" />
+                      {locale === "pt" && product.isEnglishOnly ? (
+                        <span className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/65 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.13em] text-red-300 backdrop-blur-md">
+                          {page.englishProgram}
+                        </span>
+                      ) : null}
                       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
                         <p className="text-xl font-extrabold leading-tight [font-family:var(--font-links-display)]">{product.name}</p>
                         <ArrowUpRight className="h-5 w-5 shrink-0 text-red-400 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -442,10 +474,7 @@ export function PremiumLinksHub({ locale, preview = false }: { locale: LinksLoca
               </div>
               <VideoCollection label={page.trainingVideos} locale={locale} videos={videos.training} />
               <VideoCollection label={page.vlogs} locale={locale} videos={videos.vlogs} />
-              <div className="mt-8 flex items-center gap-4 rounded-[20px] border border-dashed border-white/12 bg-white/[0.025] p-5 text-white/45">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-500/10 text-red-400"><Mic2 className="h-5 w-5" /></div>
-                <div><p className="text-sm font-extrabold text-white">{page.podcasts}</p><p className="mt-1 text-xs">{page.comingSoon}</p></div>
-              </div>
+              <VideoCollection label={page.podcasts} locale={locale} videos={videos.podcasts} />
             </section>
 
             <section className="scroll-mt-8" id="journey">
@@ -586,7 +615,7 @@ function LogoCollection({ icon, label, logos }: { icon: React.ReactNode; label: 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {logos.map((logo) => (
           <article className="flex min-h-[140px] flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/[0.04] p-4 text-center" key={`${label}-${logo.name}`}>
-            <div className="flex h-16 w-24 items-center justify-center rounded-xl bg-white p-2"><Image alt={logo.name} className="max-h-12 w-auto object-contain" height={48} src={logo.image} width={84} /></div>
+            <div className="flex h-20 w-28 items-center justify-center"><Image alt={logo.name} className="max-h-16 w-auto object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,.45)]" height={64} src={logo.image} width={104} /></div>
             <p className="mt-3 text-[11px] font-bold leading-4 text-white/60">{logo.name}</p>
           </article>
         ))}
