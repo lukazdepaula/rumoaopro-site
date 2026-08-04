@@ -196,6 +196,27 @@ function migrate(db: SqliteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_admin_password_reset_tokens_email
       ON admin_password_reset_tokens(email);
 
+    CREATE TABLE IF NOT EXISTS admin_push_subscriptions (
+      id TEXT PRIMARY KEY,
+      admin_email TEXT NOT NULL,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      platform TEXT NOT NULL DEFAULT 'unknown',
+      user_agent TEXT,
+      active INTEGER NOT NULL DEFAULT 1,
+      last_success_at TEXT,
+      last_error_at TEXT,
+      last_error TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_push_subscriptions_email
+      ON admin_push_subscriptions(admin_email);
+    CREATE INDEX IF NOT EXISTS idx_admin_push_subscriptions_active
+      ON admin_push_subscriptions(active);
+
     CREATE TABLE IF NOT EXISTS entitlements (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -423,6 +444,22 @@ export type AdminAccountRecord = {
   updated_at: string;
 };
 
+export type AdminPushSubscriptionRecord = {
+  id: string;
+  admin_email: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  platform: string;
+  user_agent: string | null;
+  active: boolean;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 function normalizeAdminAccount(row: Record<string, unknown>): AdminAccountRecord {
   return {
     id: String(row.id),
@@ -431,6 +468,28 @@ function normalizeAdminAccount(row: Record<string, unknown>): AdminAccountRecord
     active:
       typeof row.active === "boolean" ? row.active : Number(row.active) === 1,
     password_updated_at: String(row.password_updated_at),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at)
+  };
+}
+
+function normalizeAdminPushSubscription(
+  row: Record<string, unknown>
+): AdminPushSubscriptionRecord {
+  return {
+    id: String(row.id),
+    admin_email: String(row.admin_email),
+    endpoint: String(row.endpoint),
+    p256dh: String(row.p256dh),
+    auth: String(row.auth),
+    platform: String(row.platform || "unknown"),
+    user_agent: row.user_agent === null ? null : String(row.user_agent),
+    active:
+      typeof row.active === "boolean" ? row.active : Number(row.active) === 1,
+    last_success_at:
+      row.last_success_at === null ? null : String(row.last_success_at),
+    last_error_at: row.last_error_at === null ? null : String(row.last_error_at),
+    last_error: row.last_error === null ? null : String(row.last_error),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
   };
@@ -1588,6 +1647,217 @@ export async function saveAdminAccountPassword(
     );
 
   return getAdminAccountByEmail(normalizedEmail);
+}
+
+async function getAdminPushSubscriptionByEndpoint(endpoint: string) {
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_push_subscriptions",
+      { query: selectQuery([eq("endpoint", endpoint), "limit=1"]) }
+    );
+    return rows[0] ? normalizeAdminPushSubscription(rows[0]) : null;
+  }
+
+  const row = getDatabase()
+    .prepare("SELECT * FROM admin_push_subscriptions WHERE endpoint = ? LIMIT 1")
+    .get(endpoint);
+  return row ? normalizeAdminPushSubscription(row) : null;
+}
+
+export async function saveAdminPushSubscription(input: {
+  adminEmail: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  platform?: string | null;
+  userAgent?: string | null;
+}) {
+  const timestamp = nowIso();
+  const existing = await getAdminPushSubscriptionByEndpoint(input.endpoint);
+  const subscription: AdminPushSubscriptionRecord = {
+    id: existing?.id || randomUUID(),
+    admin_email: normalizeEmail(input.adminEmail),
+    endpoint: input.endpoint,
+    p256dh: input.p256dh,
+    auth: input.auth,
+    platform: input.platform?.trim().slice(0, 40) || "unknown",
+    user_agent: input.userAgent?.trim().slice(0, 500) || null,
+    active: true,
+    last_success_at: existing?.last_success_at || null,
+    last_error_at: null,
+    last_error: null,
+    created_at: existing?.created_at || timestamp,
+    updated_at: timestamp
+  };
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_push_subscriptions", {
+      method: "POST",
+      query: "on_conflict=endpoint",
+      body: subscription,
+      prefer: "resolution=merge-duplicates,return=minimal"
+    });
+    return getAdminPushSubscriptionByEndpoint(input.endpoint);
+  }
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO admin_push_subscriptions (
+        id, admin_email, endpoint, p256dh, auth, platform, user_agent, active,
+        last_success_at, last_error_at, last_error, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(endpoint) DO UPDATE SET
+        admin_email = excluded.admin_email,
+        p256dh = excluded.p256dh,
+        auth = excluded.auth,
+        platform = excluded.platform,
+        user_agent = excluded.user_agent,
+        active = 1,
+        last_error_at = NULL,
+        last_error = NULL,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      subscription.id,
+      subscription.admin_email,
+      subscription.endpoint,
+      subscription.p256dh,
+      subscription.auth,
+      subscription.platform,
+      subscription.user_agent,
+      1,
+      subscription.last_success_at,
+      subscription.last_error_at,
+      subscription.last_error,
+      subscription.created_at,
+      subscription.updated_at
+    );
+
+  return getAdminPushSubscriptionByEndpoint(input.endpoint);
+}
+
+export async function listActiveAdminPushSubscriptions(adminEmail?: string) {
+  const normalizedEmail = adminEmail ? normalizeEmail(adminEmail) : null;
+
+  if (useSupabaseDriver()) {
+    const filters = [eq("active", "true"), "order=created_at.asc", "limit=100"];
+    if (normalizedEmail) filters.unshift(eq("admin_email", normalizedEmail));
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_push_subscriptions",
+      { query: selectQuery(filters) }
+    );
+    return rows.map(normalizeAdminPushSubscription);
+  }
+
+  const rows = normalizedEmail
+    ? getDatabase()
+        .prepare(
+          "SELECT * FROM admin_push_subscriptions WHERE active = 1 AND admin_email = ? ORDER BY created_at ASC LIMIT 100"
+        )
+        .all(normalizedEmail)
+    : getDatabase()
+        .prepare(
+          "SELECT * FROM admin_push_subscriptions WHERE active = 1 ORDER BY created_at ASC LIMIT 100"
+        )
+        .all();
+  return rows.map(normalizeAdminPushSubscription);
+}
+
+export async function deactivateAdminPushSubscription(
+  endpoint: string,
+  adminEmail?: string
+) {
+  const timestamp = nowIso();
+  const normalizedEmail = adminEmail ? normalizeEmail(adminEmail) : null;
+
+  if (useSupabaseDriver()) {
+    const filters = [eq("endpoint", endpoint)];
+    if (normalizedEmail) filters.push(eq("admin_email", normalizedEmail));
+    await supabaseRequest("admin_push_subscriptions", {
+      method: "PATCH",
+      query: filters.join("&"),
+      body: { active: false, updated_at: timestamp },
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  if (normalizedEmail) {
+    getDatabase()
+      .prepare(
+        "UPDATE admin_push_subscriptions SET active = 0, updated_at = ? WHERE endpoint = ? AND admin_email = ?"
+      )
+      .run(timestamp, endpoint, normalizedEmail);
+    return;
+  }
+
+  getDatabase()
+    .prepare(
+      "UPDATE admin_push_subscriptions SET active = 0, updated_at = ? WHERE endpoint = ?"
+    )
+    .run(timestamp, endpoint);
+}
+
+export async function markAdminPushSubscriptionSuccess(id: string) {
+  const timestamp = nowIso();
+  const update = {
+    active: true,
+    last_success_at: timestamp,
+    last_error_at: null,
+    last_error: null,
+    updated_at: timestamp
+  };
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_push_subscriptions", {
+      method: "PATCH",
+      query: eq("id", id),
+      body: update,
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  getDatabase()
+    .prepare(
+      `UPDATE admin_push_subscriptions
+       SET active = 1, last_success_at = ?, last_error_at = NULL,
+           last_error = NULL, updated_at = ?
+       WHERE id = ?`
+    )
+    .run(timestamp, timestamp, id);
+}
+
+export async function markAdminPushSubscriptionFailure(
+  id: string,
+  error: string,
+  deactivate = false
+) {
+  const timestamp = nowIso();
+  const safeError = error.slice(0, 1000);
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_push_subscriptions", {
+      method: "PATCH",
+      query: eq("id", id),
+      body: {
+        active: !deactivate,
+        last_error_at: timestamp,
+        last_error: safeError,
+        updated_at: timestamp
+      },
+      prefer: "return=minimal"
+    });
+    return;
+  }
+
+  getDatabase()
+    .prepare(
+      `UPDATE admin_push_subscriptions
+       SET active = ?, last_error_at = ?, last_error = ?, updated_at = ?
+       WHERE id = ?`
+    )
+    .run(deactivate ? 0 : 1, timestamp, safeError, timestamp, id);
 }
 
 export async function createAdminPasswordResetToken(input: {

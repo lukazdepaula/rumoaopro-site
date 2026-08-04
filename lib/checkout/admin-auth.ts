@@ -183,13 +183,23 @@ export function adminCookieOptions() {
   };
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(returnTo?: string) {
   const cookieStore = await cookies();
   const session = await readAdminSession(
     cookieStore.get(ADMIN_COOKIE_NAME)?.value
   );
 
-  if (!session) redirect("/admin/login");
+  if (!session) {
+    const safeReturnTo =
+      returnTo?.startsWith("/admin") && !returnTo.startsWith("//")
+        ? returnTo
+        : null;
+    redirect(
+      safeReturnTo
+        ? `/admin/login?returnTo=${encodeURIComponent(safeReturnTo)}`
+        : "/admin/login"
+    );
+  }
   return session;
 }
 

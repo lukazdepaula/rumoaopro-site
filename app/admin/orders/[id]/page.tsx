@@ -22,8 +22,8 @@ export default async function OrderDetailPage({
   params,
   searchParams
 }: OrderDetailPageProps) {
-  await requireAdmin();
   const { id } = await params;
+  await requireAdmin(`/admin/orders/${encodeURIComponent(id)}`);
   const query = await searchParams;
   const order = await getOrderById(id);
 

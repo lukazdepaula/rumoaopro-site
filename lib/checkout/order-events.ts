@@ -7,6 +7,7 @@ import {
 } from "@/lib/checkout/db";
 import { grantProductAccess } from "@/lib/checkout/access";
 import { deliverOrder } from "@/lib/checkout/delivery";
+import { sendAdminSalePush } from "@/lib/checkout/admin-push";
 import { sendInternalSaleNotice } from "@/lib/checkout/email";
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
 import type { Order } from "@/lib/checkout/types";
@@ -184,7 +185,30 @@ export async function markOrderAsPaid(
     }
   }
 
-  if (!sandboxOrder) await triggerDelivery(orderId);
+  if (!sandboxOrder) {
+    await triggerDelivery(orderId);
+
+    if (firstConfirmation && paidOrder) {
+      try {
+        const push = await sendAdminSalePush(paidOrder);
+        await appendOrderLog(
+          paidOrder.id,
+          push.sent > 0 ? "admin_push.sent" : "admin_push.skipped",
+          push.sent > 0
+            ? `Notificacao de venda enviada para ${push.sent} aparelho(s).`
+            : "Nenhum aparelho recebeu a notificacao administrativa.",
+          push
+        ).catch(() => undefined);
+      } catch (error) {
+        await appendOrderLog(
+          paidOrder.id,
+          "admin_push.error",
+          "A venda foi confirmada, mas a notificacao administrativa falhou.",
+          { error: error instanceof Error ? error.message : String(error) }
+        ).catch(() => undefined);
+      }
+    }
+  }
   return getOrderById(orderId);
 }
 
