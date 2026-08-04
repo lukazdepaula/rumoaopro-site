@@ -121,6 +121,8 @@ export const assets = {
   programsJumpTest: "/assets/photos/programs/programs-jump-test.jpg",
   programsProMatch: "/assets/photos/programs/programs-pro-match.jpg",
   programsSprintChase: "/assets/photos/programs/programs-sprint-chase.jpg",
+  programsProject36Sprint: "/assets/photos/programs/programs-project36-sprint.jpg",
+  programsAdamaDeadlift: "/assets/photos/programs/programs-adama-deadlift.jpeg",
   programsMatchCarry: "/assets/photos/programs/programs-match-carry.jpg",
   successTheo: "/assets/success/theo-ferreira-player.jpg",
   successHaroune: "/assets/success/haroune-camara-player.jpg",

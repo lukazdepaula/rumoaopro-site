@@ -173,7 +173,7 @@ const programPresentation: Record<
     en: "Field work, gym, speed and conditioning organized across 30 days."
   },
   project_36: {
-    image: assets.programsSprintChase,
+    image: assets.programsProject36Sprint,
     imagePosition: "object-center",
     ptName: "Projeto 36: Velocidade e Aceleração",
     enName: "Project 36: Speed & Acceleration",
@@ -181,15 +181,15 @@ const programPresentation: Record<
     en: "Twelve weeks to develop acceleration, top speed and re-acceleration."
   },
   adama_strength_power: {
-    image: assets.programsGymBriefing,
-    imagePosition: "object-[50%_24%]",
+    image: assets.programsAdamaDeadlift,
+    imagePosition: "object-[50%_25%]",
     enName: "Adama Strength & Power",
     pt: "Força e potência construídas para transferir melhor ao jogo.",
     en: "Build strength and power designed to transfer to football."
   },
   projeto_adama_2022_pt: {
-    image: assets.programsGymBriefing,
-    imagePosition: "object-[50%_24%]",
+    image: assets.programsAdamaDeadlift,
+    imagePosition: "object-[50%_25%]",
     ptName: "Projeto Adama: Força e Potência",
     pt: "Força, hipertrofia e presença física aplicadas às demandas do futebol.",
     en: "Strength, hypertrophy and physical presence for football."
