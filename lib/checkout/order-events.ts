@@ -28,6 +28,17 @@ async function syncLoadProSafely(
   invite = false
 ) {
   if (!isLoadProOrder(order)) return;
+  if (order.metadata.checkout_gateway_mode === "sandbox") {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { loadpro_provisioning_status: "sandbox_skipped" }
+    });
+    await appendOrderLog(
+      order.id,
+      "loadpro.provisioning.sandbox_skipped",
+      "Evento Stripe sandbox processado sem alterar o acesso real do LoadPro."
+    );
+    return;
+  }
   try {
     const result = await syncLoadProAccess(order, {
       status,
@@ -141,11 +152,12 @@ export async function markOrderAsPaid(
   }
 
   const paidOrder = await getOrderById(orderId);
+  const sandboxOrder = paidOrder?.metadata.checkout_gateway_mode === "sandbox";
   if (paidOrder) {
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
     if (!isLoadProOrder(paidOrder)) await grantProductAccess(paidOrder);
 
-    if (firstConfirmation) {
+    if (firstConfirmation && !sandboxOrder) {
       await sendInternalSaleNotice({
         orderId: paidOrder.id,
         customerName: paidOrder.customer_name,
@@ -164,31 +176,39 @@ export async function markOrderAsPaid(
             : null
       });
     }
-  }
-
-  await triggerDelivery(orderId);
-
-  if (firstConfirmation && paidOrder) {
-    try {
-      const push = await sendAdminSalePush(paidOrder);
+    if (sandboxOrder) {
       await appendOrderLog(
         paidOrder.id,
-        push.sent > 0 ? "admin_push.sent" : "admin_push.skipped",
-        push.sent > 0
-          ? `Notificacao de venda enviada para ${push.sent} aparelho(s).`
-          : "Nenhum aparelho recebeu a notificacao administrativa.",
-        push
-      ).catch(() => undefined);
-    } catch (error) {
-      await appendOrderLog(
-        paidOrder.id,
-        "admin_push.error",
-        "A venda foi confirmada, mas a notificacao administrativa falhou.",
-        { error: error instanceof Error ? error.message : String(error) }
-      ).catch(() => undefined);
+        "order.sandbox.delivery_skipped",
+        "Pedido sandbox confirmado sem e-mail, convite ou entrega real."
+      );
     }
   }
 
+  if (!sandboxOrder) {
+    await triggerDelivery(orderId);
+
+    if (firstConfirmation && paidOrder) {
+      try {
+        const push = await sendAdminSalePush(paidOrder);
+        await appendOrderLog(
+          paidOrder.id,
+          push.sent > 0 ? "admin_push.sent" : "admin_push.skipped",
+          push.sent > 0
+            ? `Notificacao de venda enviada para ${push.sent} aparelho(s).`
+            : "Nenhum aparelho recebeu a notificacao administrativa.",
+          push
+        ).catch(() => undefined);
+      } catch (error) {
+        await appendOrderLog(
+          paidOrder.id,
+          "admin_push.error",
+          "A venda foi confirmada, mas a notificacao administrativa falhou.",
+          { error: error instanceof Error ? error.message : String(error) }
+        ).catch(() => undefined);
+      }
+    }
+  }
   return getOrderById(orderId);
 }
 

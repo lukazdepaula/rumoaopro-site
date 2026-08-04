@@ -23,8 +23,16 @@ export const dynamic = "force-dynamic";
 type StripeEvent = {
   id?: string;
   type?: string;
+  livemode?: boolean;
   data?: { object?: Record<string, unknown> };
 };
+
+function expectedLivemode() {
+  const key = process.env.STRIPE_SECRET_KEY || "";
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return true;
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return false;
+  return null;
+}
 
 const textValue = (value: unknown) =>
   typeof value === "string" && value ? value : undefined;
@@ -117,6 +125,13 @@ export async function POST(request: Request) {
     }
 
     const event = JSON.parse(payload) as StripeEvent;
+    const expected = expectedLivemode();
+    if (expected === null || event.livemode !== expected) {
+      return NextResponse.json(
+        { error: "Stripe environment mismatch" },
+        { status: 409 }
+      );
+    }
     const eventId = event.id || randomUUID();
     const firstDelivery = await recordWebhookEvent("stripe", eventId, event);
     if (!firstDelivery) {
@@ -141,6 +156,19 @@ export async function POST(request: Request) {
     if (!order) {
       return NextResponse.json({ received: true, order: "not_found" });
     }
+
+    const orderMode = order.metadata.checkout_gateway_mode;
+    if (
+      (event.livemode === false && orderMode !== "sandbox") ||
+      (event.livemode === true && orderMode === "sandbox")
+    ) {
+      return NextResponse.json(
+        { error: "Stripe order environment mismatch" },
+        { status: 409 }
+      );
+    }
+
+    const environmentData = { provider_livemode: event.livemode };
 
     if (
       event.type === "checkout.session.completed" ||
@@ -174,6 +202,7 @@ export async function POST(request: Request) {
           order.id,
           "active",
           {
+            ...environmentData,
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
@@ -183,6 +212,7 @@ export async function POST(request: Request) {
         );
       } else if (paid) {
         await markOrderAsPaid(order.id, {
+          ...environmentData,
           event_id: eventId,
           stripe_event_id: eventId,
           stripe_payment_status: paymentStatus,
@@ -206,6 +236,7 @@ export async function POST(request: Request) {
           order.id,
           "active",
           {
+            ...environmentData,
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
@@ -215,6 +246,7 @@ export async function POST(request: Request) {
         );
       } else if (order.status !== "paid") {
         await markOrderAsPaid(order.id, {
+          ...environmentData,
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
@@ -222,6 +254,7 @@ export async function POST(request: Request) {
         });
       } else {
         await syncOrderSubscription(order.id, "active", {
+          ...environmentData,
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
@@ -240,6 +273,7 @@ export async function POST(request: Request) {
           order.id,
           status,
           {
+            ...environmentData,
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
@@ -261,6 +295,7 @@ export async function POST(request: Request) {
       subscriptionId
     ) {
       await syncOrderSubscription(order.id, "past_due", {
+        ...environmentData,
         event_id: eventId,
         provider_customer_id: textValue(object.customer),
         provider_subscription_id: subscriptionId,
@@ -270,7 +305,10 @@ export async function POST(request: Request) {
       event.type === "checkout.session.async_payment_failed" ||
       event.type === "payment_intent.payment_failed"
     ) {
-      await markOrderAsFailed(order.id, { stripe_event_id: eventId });
+      await markOrderAsFailed(order.id, {
+        ...environmentData,
+        stripe_event_id: eventId
+      });
     }
 
     return NextResponse.json({ received: true });
