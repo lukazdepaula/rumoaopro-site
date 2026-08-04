@@ -19,19 +19,31 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
-  const redirectTo = new URL("/admin", request.url);
+  const requestedReturnTo = String(formData.get("returnTo") || "");
+  const safeReturnTo =
+    requestedReturnTo.startsWith("/admin") && !requestedReturnTo.startsWith("//")
+      ? requestedReturnTo
+      : "/admin";
+  const redirectTo = new URL(safeReturnTo, request.url);
+
+  const redirectToLogin = (error: "invalid" | "rate-limit" | "unavailable") => {
+    redirectTo.pathname = "/admin/login";
+    redirectTo.search = "";
+    redirectTo.searchParams.set("error", error);
+    if (safeReturnTo !== "/admin") {
+      redirectTo.searchParams.set("returnTo", safeReturnTo);
+    }
+  };
 
   if (!isAdminAuthConfigured()) {
     console.error("[admin.login] Variáveis de autenticação incompletas.");
-    redirectTo.pathname = "/admin/login";
-    redirectTo.searchParams.set("error", "unavailable");
+    redirectToLogin("unavailable");
     return NextResponse.redirect(redirectTo, 303);
   }
 
   const rateLimit = checkAdminLoginRateLimit(request, email);
   if (!rateLimit.allowed) {
-    redirectTo.pathname = "/admin/login";
-    redirectTo.searchParams.set("error", "rate-limit");
+    redirectToLogin("rate-limit");
     const response = NextResponse.redirect(redirectTo, 303);
     response.headers.set("Retry-After", String(rateLimit.retryAfterSeconds));
     response.headers.set("Cache-Control", "no-store");
@@ -41,8 +53,7 @@ export async function POST(request: Request) {
   const authorizedAdmin = await verifyAdminCredentials(email, password);
   if (!authorizedAdmin) {
     recordAdminLoginFailure(request, email);
-    redirectTo.pathname = "/admin/login";
-    redirectTo.searchParams.set("error", "invalid");
+    redirectToLogin("invalid");
     const response = NextResponse.redirect(redirectTo, 303);
     response.headers.set("Cache-Control", "no-store");
     return response;
@@ -53,8 +64,7 @@ export async function POST(request: Request) {
     authorizedAdmin.authVersion
   );
   if (!sessionValue) {
-    redirectTo.pathname = "/admin/login";
-    redirectTo.searchParams.set("error", "unavailable");
+    redirectToLogin("unavailable");
     return NextResponse.redirect(redirectTo, 303);
   }
 

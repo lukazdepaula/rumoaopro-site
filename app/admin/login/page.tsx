@@ -18,9 +18,14 @@ export default async function AdminLoginPage({
   searchParams: Promise<{
     error?: "invalid" | "rate-limit" | "unavailable";
     reset?: "success";
+    returnTo?: string;
   }>;
 }) {
   const params = await searchParams;
+  const returnTo =
+    params.returnTo?.startsWith("/admin") && !params.returnTo.startsWith("//")
+      ? params.returnTo
+      : "";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-ink px-4 py-10 text-white">
@@ -33,6 +38,7 @@ export default async function AdminLoginPage({
           Área interna para acompanhar pedidos, entregas e dados fiscais.
         </p>
         <form action="/api/admin/login" className="mt-6 grid gap-4" method="post">
+          {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
           <label className="grid gap-2 text-sm font-semibold">
             E-mail
             <input
