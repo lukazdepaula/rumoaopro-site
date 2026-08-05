@@ -17,6 +17,7 @@ import {
   Trophy,
   Youtube
 } from "lucide-react";
+import { ProgramGoalFinder } from "@/components/program-goal-finder";
 import { assets, contact } from "@/lib/content";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import {
@@ -407,41 +408,7 @@ export function PremiumLinksHub({ locale, preview = false }: { locale: LinksLoca
             <QuickLinks locale={locale} />
 
             <section className="scroll-mt-8" id="programs">
-              <SectionHeading eyebrow={page.programsEyebrow} title={page.programsTitle} body={page.programsBody} />
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                {products.map((product) => (
-                  <Link className="group overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.045] transition duration-300 hover:-translate-y-1 hover:border-red-500/45 hover:bg-white/[0.065]" href={product.href} key={product.id}>
-                    <div className="relative aspect-[16/10] overflow-hidden bg-[#171010]">
-                      <Image alt={product.name} className={`object-cover transition duration-700 group-hover:scale-[1.04] ${product.imagePosition}`} fill sizes="(max-width: 640px) 100vw, 430px" src={product.image} />
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_28%,rgba(5,5,5,.9)_100%)]" />
-                      {locale === "pt" && product.isEnglishOnly ? (
-                        <span className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/65 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.13em] text-red-300 backdrop-blur-md">
-                          {page.englishProgram}
-                        </span>
-                      ) : null}
-                      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
-                        <p className="text-xl font-extrabold leading-tight [font-family:var(--font-links-display)]">{product.name}</p>
-                        <ArrowUpRight className="h-5 w-5 shrink-0 text-red-400 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <p className="min-h-12 text-sm leading-6 text-white/58">{product.description}</p>
-                      <div className="mt-5 flex items-end justify-between gap-4 border-t border-white/10 pt-4">
-                        <div>
-                          {product.review ? (
-                            <div className="flex items-center gap-2 text-[11px] font-bold text-white/58">
-                              <RatingStars rating={product.review.average} />
-                              <span>{product.review.average.toFixed(1)} · {product.review.count} {page.reviews}</span>
-                            </div>
-                          ) : null}
-                          <p className="mt-2 text-lg font-extrabold">{formatMoney(product.amount, product.currency)}</p>
-                        </div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-red-400">{page.seeProgram}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              <ProgramGoalFinder locale={locale} tone="dark" />
             </section>
 
             <CoachingCard locale={locale} />
