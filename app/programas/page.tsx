@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
+import { LoadProPromo } from "@/components/loadpro-promo";
 import { ProgramsSection } from "@/components/programs-section";
 import { ReviewBadge } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
@@ -14,7 +15,7 @@ import { getReviewGroupForProgramHref } from "@/lib/reviews";
 export const metadata: Metadata = {
   title: "Programas de treinamento para futebol",
   description:
-    "Programas RumoAoPro para offseason, velocidade, últimos 30 dias de preparação e manutenção durante a temporada."
+    "Programas RumoAoPro para atletas e LoadPro para treinadores planejarem o microciclo e monitorarem a carga no futebol."
 };
 
 const annualPath = [
@@ -203,6 +204,8 @@ export default function ProgramasPage() {
           </div>
         </div>
       </section>
+
+      <LoadProPromo locale="pt" />
 
       <ProgramsSection />
 

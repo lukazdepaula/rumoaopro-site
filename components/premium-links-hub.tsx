@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
+  BarChart3,
   BriefcaseBusiness,
   Dumbbell,
   Globe2,
@@ -17,6 +18,7 @@ import {
   Trophy,
   Youtube
 } from "lucide-react";
+import { LoadProPromo } from "@/components/loadpro-promo";
 import { ProgramGoalFinder } from "@/components/program-goal-finder";
 import { assets, contact } from "@/lib/content";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
@@ -61,6 +63,8 @@ const copy = {
     coachingCta: "Conhecer a assessoria",
     course: "Preparador PRO",
     courseBody: "Formação prática para treinadores de futebol.",
+    loadPro: "LoadPro App",
+    loadProBody: "Planejamento de microciclo e monitoramento de carga para sua equipe.",
     athletesEyebrow: "Trabalho que chega ao campo",
     athletesTitle: "Atletas que fizeram parte da trajetória.",
     athletesBody:
@@ -108,6 +112,8 @@ const copy = {
     coachingCta: "Explore coaching",
     course: "Preparador PRO",
     courseBody: "Practical education for football coaches, in Portuguese.",
+    loadPro: "LoadPro App",
+    loadProBody: "Microcycle planning and training-load monitoring for your team.",
     athletesEyebrow: "Work that reaches the pitch",
     athletesTitle: "Athletes who are part of the journey.",
     athletesBody:
@@ -411,6 +417,8 @@ export function PremiumLinksHub({ locale, preview = false }: { locale: LinksLoca
               <ProgramGoalFinder locale={locale} tone="dark" />
             </section>
 
+            <LoadProPromo embedded locale={locale} />
+
             <CoachingCard locale={locale} />
 
             <section className="scroll-mt-8" id="athletes">
@@ -519,10 +527,11 @@ function QuickLinks({ locale }: { locale: LinksLocale }) {
     { href: locale === "pt" ? "/assessoria" : "/en/coaching", label: page.coaching, description: page.coachingBody, icon: Dumbbell },
     { href: "#programs", label: page.programs, description: page.programsTitle, icon: Play },
     { href: locale === "pt" ? "/cursos" : "/en/courses", label: page.course, description: page.courseBody, icon: GraduationCap },
-    { href: "#videos", label: "YouTube", description: page.videosTitle, icon: Youtube }
+    { href: "#videos", label: "YouTube", description: page.videosTitle, icon: Youtube },
+    { href: "#loadpro", label: page.loadPro, description: page.loadProBody, icon: BarChart3 }
   ];
   return (
-    <section aria-label={page.explore} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section aria-label={page.explore} className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       {links.map((item) => {
         const Icon = item.icon;
         return (

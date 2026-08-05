@@ -14,6 +14,7 @@ import {
   Zap
 } from "lucide-react";
 import { HomeProgramCollections } from "@/components/home-program-collections";
+import { LoadProPromo } from "@/components/loadpro-promo";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -28,7 +29,7 @@ import {
 export const metadata: Metadata = {
   title: "RumoAoPro | Treinamento, programas e assessoria para futebol",
   description:
-    "Página inicial da RumoAoPro com assessoria online, programas individuais, cursos e metodologia de preparação física para futebol."
+    "Assessoria, programas, cursos e LoadPro: planejamento e monitoramento de carga para treinadores e atletas de futebol."
 };
 
 const entryCards = [
@@ -230,6 +231,8 @@ export default function HomePage() {
       </section>
 
       <HomeProgramCollections locale="pt" />
+
+      <LoadProPromo locale="pt" />
 
       <section className="bg-smoke py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
