@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -65,10 +66,10 @@ const copy = {
     structureTitle: "Progressão de 4 semanas",
     structureH2: "Cada semana prepara a próxima.",
     weeks: [
-      ["Semana 1", "Build the Base", "Ritmo, técnica e base aeróbia."],
-      ["Semana 2", "Build Capacity", "Mais volume e densidade útil."],
-      ["Semana 3", "Explode & Power Up", "Potência e repeat sprint."],
-      ["Semana 4", "Club Ready", "Intensidade alta, fadiga controlada."]
+      ["Semana 1", "Construir a Base", "Ritmo, técnica e base aeróbia."],
+      ["Semana 2", "Aumentar a Capacidade", "Mais volume e densidade útil."],
+      ["Semana 3", "Desenvolver Potência", "Potência e repeat sprint."],
+      ["Semana 4", "Consolidar e Preparar", "Intensidade alta, fadiga controlada."]
     ],
     insideTitle: "O que você recebe",
     insideH2: "Tudo necessário para executar sem improvisar.",
@@ -213,16 +214,23 @@ const appScreens = {
   video: "/assets/programs/offseason-30/raptor-athlete-video-mobile.png"
 };
 
+const rumoAoProPowerVideo = {
+  thumbnail: "https://i.ytimg.com/vi/FwnxY1xvskY/hqdefault.jpg",
+  url: "https://www.youtube.com/watch?v=FwnxY1xvskY"
+};
+
 function PhoneMockup({
   src,
   alt,
   className = "",
-  priority = false
+  priority = false,
+  overlay
 }: {
   src: string;
   alt: string;
   className?: string;
   priority?: boolean;
+  overlay?: ReactNode;
 }) {
   return (
     <div
@@ -238,8 +246,96 @@ function PhoneMockup({
           sizes="(min-width: 1024px) 260px, 44vw"
           src={src}
         />
+        {overlay}
       </div>
     </div>
+  );
+}
+
+function RumoAoProVideoPhone({
+  className,
+  locale
+}: {
+  className: string;
+  locale: "pt" | "en";
+}) {
+  const title = locale === "pt" ? "Treino de Potência Completo" : "Complete Power Workout";
+  const watchLabel = locale === "pt" ? "Assistir no YouTube" : "Watch on YouTube";
+
+  return (
+    <PhoneMockup
+      alt={locale === "pt" ? "Vídeo do canal RumoAoPro dentro do app" : "RumoAoPro video inside the app"}
+      className={className}
+      src={appScreens.video}
+      overlay={(
+        <div className="absolute inset-x-[4%] top-[33.25%] z-20 h-[29.5%] overflow-hidden rounded-[1rem] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.32)]">
+          <div className="flex h-[22%] items-center justify-between gap-2 px-[5%] text-[#11131a]">
+            <p className="truncate text-[8px] font-black sm:text-[10px]">{title}</p>
+            <span className="text-[11px] font-bold">×</span>
+          </div>
+          <a
+            aria-label={`${watchLabel}: ${title}`}
+            className="group relative block h-[78%] overflow-hidden bg-[#17191f]"
+            href={rumoAoProPowerVideo.url}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-[1.03]"
+              style={{ backgroundImage: `url(${rumoAoProPowerVideo.thumbnail})` }}
+            />
+            <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.2),rgba(0,0,0,0.12)_46%,rgba(0,0,0,0.78))]" />
+            <span className="absolute left-[5%] top-[7%] rounded-full bg-black/72 px-[5%] py-[2.2%] text-[6px] font-black uppercase tracking-[0.08em] text-white sm:text-[8px]">
+              RumoAoPro
+            </span>
+            <span className="absolute left-1/2 top-1/2 grid aspect-square w-[18%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[27%] bg-[#ff0033] text-[12px] text-white shadow-[0_8px_24px_rgba(255,0,51,0.45)] sm:text-base">
+              ▶
+            </span>
+            <span className="absolute inset-x-[5%] bottom-[7%] line-clamp-2 text-[6px] font-black leading-tight text-white sm:text-[8px]">
+              {title} · {watchLabel}
+            </span>
+          </a>
+        </div>
+      )}
+    />
+  );
+}
+
+function GuidedWorkoutPhone({
+  className,
+  locale
+}: {
+  className: string;
+  locale: "pt" | "en";
+}) {
+  const completedLabel = locale === "pt" ? "Exercício concluído" : "Exercise completed";
+  const sessionLabel = locale === "pt" ? "Sessão pronta para finalizar" : "Session ready to finish";
+
+  return (
+    <PhoneMockup
+      alt={locale === "pt" ? "Treino sendo concluído no RaptorPro" : "Workout being completed in RaptorPro"}
+      className={className}
+      src={appScreens.workout}
+      overlay={(
+        <div aria-hidden="true" className="absolute inset-0 z-20">
+          <span className="raptor-guided-tap-one absolute left-[70.8%] top-[26.3%] aspect-square w-[8%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2px] border-[#ef233c] bg-white/75 shadow-[0_0_0_5px_rgba(239,35,60,0.18)]" />
+          <span className="raptor-guided-check-one absolute left-[64.8%] top-[23.5%] grid aspect-square w-[12%] place-items-center rounded-full bg-[#12b981] text-white shadow-[0_6px_20px_rgba(18,185,129,0.48)]">
+            <CheckCircle2 className="h-[62%] w-[62%]" strokeWidth={3} />
+          </span>
+          <span className="raptor-guided-tap-two absolute left-[70.8%] top-[58.6%] aspect-square w-[8%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2px] border-[#ef233c] bg-white/75 shadow-[0_0_0_5px_rgba(239,35,60,0.18)]" />
+          <span className="raptor-guided-check-two absolute left-[64.8%] top-[55.8%] grid aspect-square w-[12%] place-items-center rounded-full bg-[#12b981] text-white shadow-[0_6px_20px_rgba(18,185,129,0.48)]">
+            <CheckCircle2 className="h-[62%] w-[62%]" strokeWidth={3} />
+          </span>
+          <span className="raptor-guided-status absolute left-[7%] top-[38.8%] rounded-full border border-emerald-200 bg-emerald-500 px-[5%] py-[2.4%] text-[6px] font-black uppercase tracking-[0.04em] text-white shadow-lg sm:text-[8px]">
+            {completedLabel}
+          </span>
+          <span className="raptor-guided-finish absolute inset-x-[5%] bottom-[2.5%] rounded-[0.75rem] bg-[linear-gradient(90deg,#12b981,#07956a)] px-[4%] py-[4%] text-center text-[7px] font-black uppercase tracking-[0.04em] text-white shadow-[0_10px_28px_rgba(18,185,129,0.38)] sm:text-[9px]">
+            {sessionLabel}
+          </span>
+        </div>
+      )}
+    />
   );
 }
 
@@ -397,10 +493,9 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
               priority
               src={appScreens.readiness}
             />
-            <PhoneMockup
-              alt="Vídeo demonstrativo dentro do RaptorPro"
+            <RumoAoProVideoPhone
               className="absolute right-[-1%] top-[17%] z-40 w-[36%] rotate-6 shadow-[0_34px_100px_rgba(239,35,60,0.28)] ring-2 ring-[#ef233c]/45 sm:right-[2%] sm:w-[36%]"
-              src={appScreens.video}
+              locale={locale}
             />
 
             <div className="absolute bottom-[3%] left-[3%] z-40 rounded-xl border border-white/12 bg-[#111319]/90 px-4 py-3 shadow-2xl backdrop-blur sm:left-[7%]">
@@ -441,10 +536,9 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-8">
           <div className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_22%_22%,rgba(239,35,60,0.24),transparent_34%),radial-gradient(circle_at_82%_64%,rgba(18,110,255,0.28),transparent_38%),#0e1015] p-6 shadow-[0_34px_100px_rgba(0,0,0,0.48)] sm:min-h-[600px]">
             <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:40px_40px]" />
-            <PhoneMockup
-              alt="Bloco de exercícios no portal do atleta RaptorPro"
+            <GuidedWorkoutPhone
               className="absolute left-1/2 top-1/2 w-[58%] max-w-[290px] -translate-x-1/2 -translate-y-1/2 -rotate-3"
-              src={appScreens.workout}
+              locale={locale}
             />
             <div className="absolute left-5 top-7 rounded-xl border border-white/12 bg-black/55 px-4 py-3 backdrop-blur-md sm:left-8 sm:top-10">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ff5265]">Treino guiado</p>
@@ -518,6 +612,92 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
       </section>
 
       <SiteFooter />
+      <style>{`
+        .raptor-guided-check-one,
+        .raptor-guided-check-two,
+        .raptor-guided-tap-one,
+        .raptor-guided-tap-two,
+        .raptor-guided-status,
+        .raptor-guided-finish {
+          opacity: 0;
+          will-change: opacity, transform;
+        }
+
+        .raptor-guided-check-one {
+          animation: raptor-guided-check-one 8s ease-in-out infinite;
+        }
+
+        .raptor-guided-check-two {
+          animation: raptor-guided-check-two 8s ease-in-out infinite;
+        }
+
+        .raptor-guided-tap-one {
+          animation: raptor-guided-tap-one 8s ease-out infinite;
+        }
+
+        .raptor-guided-tap-two {
+          animation: raptor-guided-tap-two 8s ease-out infinite;
+        }
+
+        .raptor-guided-status {
+          animation: raptor-guided-status 8s ease-in-out infinite;
+        }
+
+        .raptor-guided-finish {
+          animation: raptor-guided-finish 8s ease-in-out infinite;
+        }
+
+        @keyframes raptor-guided-check-one {
+          0%, 12%, 92%, 100% { opacity: 0; transform: scale(0.55); }
+          18%, 86% { opacity: 1; transform: scale(1); }
+          22% { transform: scale(1.14); }
+        }
+
+        @keyframes raptor-guided-check-two {
+          0%, 38%, 92%, 100% { opacity: 0; transform: scale(0.55); }
+          44%, 86% { opacity: 1; transform: scale(1); }
+          48% { transform: scale(1.14); }
+        }
+
+        @keyframes raptor-guided-tap-one {
+          0%, 9%, 21%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+          13% { opacity: 1; transform: translate(-50%, -50%) scale(0.72); }
+          19% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
+        }
+
+        @keyframes raptor-guided-tap-two {
+          0%, 35%, 47%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+          39% { opacity: 1; transform: translate(-50%, -50%) scale(0.72); }
+          45% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
+        }
+
+        @keyframes raptor-guided-status {
+          0%, 14%, 34%, 40%, 100% { opacity: 0; transform: translateY(6px); }
+          19%, 29% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes raptor-guided-finish {
+          0%, 57%, 92%, 100% { opacity: 0; transform: translateY(12px) scale(0.96); }
+          66%, 86% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .raptor-guided-check-one,
+          .raptor-guided-check-two {
+            animation: none;
+            opacity: 1;
+            transform: none;
+          }
+
+          .raptor-guided-tap-one,
+          .raptor-guided-tap-two,
+          .raptor-guided-status,
+          .raptor-guided-finish {
+            animation: none;
+            opacity: 0;
+          }
+        }
+      `}</style>
     </main>
   );
 }
