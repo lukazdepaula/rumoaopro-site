@@ -5,8 +5,8 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Gauge,
+  PlayCircle,
   Smartphone,
-  Target
 } from "lucide-react";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
 import { ReviewBadge } from "@/components/reviews";
@@ -206,20 +206,42 @@ const copy = {
   }
 };
 
-const journeyImages = [
-  {
-    src: assets.appCalendarScreen,
-    className: "object-cover object-left"
-  },
-  {
-    src: assets.appCalendarScreen,
-    className: "object-cover object-[38%_top] scale-[1.02]"
-  },
-  {
-    src: assets.appInterface,
-    className: "object-cover object-top"
-  }
-];
+const appScreens = {
+  calendar: "/assets/programs/offseason-30/raptor-athlete-calendar-mobile.png",
+  readiness: "/assets/programs/offseason-30/raptor-athlete-readiness-mobile.png",
+  workout: "/assets/programs/offseason-30/raptor-athlete-workout-mobile.png",
+  video: "/assets/programs/offseason-30/raptor-athlete-video-mobile.png"
+};
+
+function PhoneMockup({
+  src,
+  alt,
+  className = "",
+  priority = false
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <div
+      className={`overflow-hidden rounded-[2.35rem] border-[7px] border-[#111216] bg-white shadow-[0_34px_90px_rgba(0,0,0,0.58)] ring-1 ring-white/15 ${className}`}
+    >
+      <span className="absolute left-1/2 top-2 z-20 h-4 w-[31%] -translate-x-1/2 rounded-full bg-[#08090b] shadow-sm" />
+      <div className="relative aspect-[390/844] w-full overflow-hidden bg-white">
+        <Image
+          alt={alt}
+          className="h-full w-full object-cover object-top"
+          fill
+          priority={priority}
+          sizes="(min-width: 1024px) 260px, 44vw"
+          src={src}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
   const page = copy[locale];
@@ -302,26 +324,17 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[610px] lg:-translate-y-8">
+          <div className="relative mx-auto w-full max-w-[610px] lg:-translate-y-12">
+            <div className="absolute left-1/2 top-[42%] -z-10 h-[72%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(18,110,255,0.24),rgba(220,38,38,0.12)_44%,transparent_72%)] blur-3xl" />
             <div className="relative mx-auto aspect-[4/5] w-[82%] max-w-[430px] overflow-hidden rounded-xl border border-white/16 bg-black shadow-[0_34px_110px_rgba(0,0,0,0.72)]">
               <Image
                 alt="Offseason 30 Days"
-                className="h-full w-full object-cover object-[50%_28%]"
+                className="h-full w-full object-cover object-top"
                 fill
                 priority
                 sizes="(min-width: 1024px) 430px, 82vw"
-                src={assets.sprintFront}
+                src={assets.offseason30Cover}
               />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05)_25%,rgba(0,0,0,0.28)_55%,rgba(0,0,0,0.94)_100%)]" />
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#79aaff]">
-                  Football Performance
-                </p>
-                <p className="mt-3 font-display text-4xl uppercase leading-[0.9] text-white sm:text-5xl">
-                  Offseason<br />30 Days
-                </p>
-                <div className="mt-5 h-1 w-20 rounded-full bg-[#126eff]" />
-              </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3">
               {page.stats.map(([value, label]) => (
@@ -335,44 +348,69 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-smoke py-16" id="como-funciona">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-bold uppercase text-signal">
+      <section className="relative overflow-hidden bg-[#07080c] py-20 text-white" id="como-funciona">
+        <div className="pointer-events-none absolute -left-24 top-8 h-96 w-96 rounded-full bg-[#ef233c]/16 blur-[110px]" />
+        <div className="pointer-events-none absolute -right-20 top-16 h-[30rem] w-[30rem] rounded-full bg-[#126eff]/22 blur-[130px]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:54px_54px]" />
+
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-sm font-bold uppercase text-[#ff5265]">
               <Smartphone aria-hidden="true" className="mr-2 inline h-4 w-4" />
               {page.journeyTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">
+            <h2 className="mt-3 max-w-xl font-display text-4xl uppercase leading-[0.95] text-white sm:text-5xl">
               {page.journeyH2}
             </h2>
-            <p className="mt-4 text-base leading-7 text-graphite/72">{page.journeyLead}</p>
-          </div>
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/64">{page.journeyLead}</p>
 
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {page.journeySteps.map((item, index) => {
-              const visual = journeyImages[index];
-              return (
-                <article className="overflow-hidden rounded-xl border border-ink/10 bg-white shadow-[0_20px_60px_rgba(5,6,8,0.12)]" key={item.step}>
-                  <div className="relative aspect-[16/10] overflow-hidden bg-[#15161a]">
-                    <Image
-                      alt={item.label}
-                      className={`h-full w-full ${visual.className}`}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, 100vw"
-                      src={visual.src}
-                    />
-                    <span className="absolute left-4 top-4 rounded-md bg-[#126eff] px-3 py-2 text-xs font-black uppercase text-white shadow-lg">
-                      {item.step}
-                    </span>
-                  </div>
-                  <div className="p-5">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">{item.label}</p>
-                    <h3 className="mt-2 text-xl font-black text-ink">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-graphite/72">{item.body}</p>
+            <div className="mt-8 grid gap-3">
+              {page.journeySteps.map((item) => (
+                <article
+                  className="group flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur transition hover:border-[#ef233c]/45 hover:bg-white/[0.08]"
+                  key={item.step}
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[linear-gradient(135deg,#ef233c,#a80d28)] font-display text-lg text-white shadow-[0_12px_30px_rgba(239,35,60,0.28)]">
+                    {item.step}
+                  </span>
+                  <div>
+                    <h3 className="text-base font-black text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-5 text-white/55">{item.body}</p>
                   </div>
                 </article>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mx-auto h-[510px] w-full max-w-[720px] sm:h-[630px] lg:h-[690px]">
+            <div className="absolute left-1/2 top-1/2 h-[58%] w-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(18,110,255,0.34),rgba(239,35,60,0.16)_42%,transparent_70%)] blur-2xl" />
+
+            <PhoneMockup
+              alt="Calendário do atleta no RaptorPro"
+              className="absolute left-[1%] top-[12%] z-10 w-[42%] -rotate-6 opacity-90 sm:left-[3%] sm:w-[39%]"
+              priority
+              src={appScreens.calendar}
+            />
+            <PhoneMockup
+              alt="Readiness antes do treino no RaptorPro"
+              className="absolute left-[29%] top-[4%] z-30 w-[42%] rotate-[1.5deg] sm:left-[31%] sm:w-[39%]"
+              priority
+              src={appScreens.readiness}
+            />
+            <PhoneMockup
+              alt="Vídeo demonstrativo dentro do RaptorPro"
+              className="absolute right-[-1%] top-[17%] z-40 w-[36%] rotate-6 shadow-[0_34px_100px_rgba(239,35,60,0.28)] ring-2 ring-[#ef233c]/45 sm:right-[2%] sm:w-[36%]"
+              src={appScreens.video}
+            />
+
+            <div className="absolute bottom-[3%] left-[3%] z-40 rounded-xl border border-white/12 bg-[#111319]/90 px-4 py-3 shadow-2xl backdrop-blur sm:left-[7%]">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#ff5265]">Readiness</p>
+              <p className="mt-1 text-sm font-bold text-white">Saiba como você chega</p>
+            </div>
+            <div className="absolute bottom-[8%] right-[1%] z-40 flex items-center gap-2 rounded-xl border border-white/12 bg-[#111319]/90 px-4 py-3 shadow-2xl backdrop-blur sm:right-[5%]">
+              <PlayCircle aria-hidden="true" className="h-5 w-5 text-[#ff5265]" />
+              <p className="text-sm font-bold text-white">Vídeos no treino</p>
+            </div>
           </div>
         </div>
       </section>
@@ -401,14 +439,21 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
 
       <section className="bg-[#07080b] py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-8">
-          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#15161a] shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-            <Image
-              alt="Training results inside the app"
-              className="aspect-[4/3] w-full object-cover object-top"
-              height={960}
-              src={assets.appInterface}
-              width={1280}
+          <div className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_22%_22%,rgba(239,35,60,0.24),transparent_34%),radial-gradient(circle_at_82%_64%,rgba(18,110,255,0.28),transparent_38%),#0e1015] p-6 shadow-[0_34px_100px_rgba(0,0,0,0.48)] sm:min-h-[600px]">
+            <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:40px_40px]" />
+            <PhoneMockup
+              alt="Bloco de exercícios no portal do atleta RaptorPro"
+              className="absolute left-1/2 top-1/2 w-[58%] max-w-[290px] -translate-x-1/2 -translate-y-1/2 -rotate-3"
+              src={appScreens.workout}
             />
+            <div className="absolute left-5 top-7 rounded-xl border border-white/12 bg-black/55 px-4 py-3 backdrop-blur-md sm:left-8 sm:top-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ff5265]">Treino guiado</p>
+              <p className="mt-1 text-sm font-bold text-white">Blocos, vídeos e registro</p>
+            </div>
+            <div className="absolute bottom-7 right-4 rounded-xl border border-white/12 bg-black/62 px-4 py-3 backdrop-blur-md sm:bottom-10 sm:right-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6ea8ff]">Pós-treino</p>
+              <p className="mt-1 text-sm font-bold text-white">RPE + duração + carga</p>
+            </div>
           </div>
           <div>
             <p className="text-sm font-bold uppercase text-[#6ea8ff]">
@@ -424,29 +469,6 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-smoke py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:px-8">
-          <div>
-            <p className="text-sm font-bold uppercase text-signal">
-              <Target aria-hidden="true" className="mr-2 inline h-4 w-4" />
-              {page.fitTitle}
-            </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">{page.fitH2}</h2>
-          </div>
-          <div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {page.fit.map((item) => (
-                <div className="flex gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-ink/8" key={item}>
-                  <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-turf" />
-                  <p className="text-sm font-semibold leading-6 text-graphite">{item}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 text-sm leading-6 text-graphite/62">{page.disclaimer}</p>
           </div>
         </div>
       </section>
