@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CircleAlert, MailCheck } from "lucide-react";
 import { MockPaymentActions } from "@/components/mock-payment-actions";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -28,6 +28,14 @@ type CheckoutSuccessPageProps = {
   }>;
 };
 
+function maskEmail(email?: string | null) {
+  if (!email) return "seu e-mail";
+  const [localPart, domain] = email.split("@");
+  if (!domain) return email;
+  const visible = localPart.slice(0, Math.min(3, localPart.length));
+  return `${visible}${"*".repeat(Math.max(3, localPart.length - visible.length))}@${domain}`;
+}
+
 export default async function CheckoutSuccessPage({
   searchParams
 }: CheckoutSuccessPageProps) {
@@ -42,6 +50,23 @@ export default async function CheckoutSuccessPage({
     order?.product_id === "loadpro_founders" &&
     trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
+  const raptorProvisioningStatus =
+    typeof order?.metadata.raptorpro_provisioning_status === "string"
+      ? order.metadata.raptorpro_provisioning_status
+      : null;
+  const raptorEmailStatus =
+    typeof order?.metadata.raptorpro_welcome_email_status === "string"
+      ? order.metadata.raptorpro_welcome_email_status
+      : order?.gateway !== "mock" && order?.metadata.raptorpro_welcome_email_sent === true
+        ? "sent"
+        : "pending";
+  const raptorAccessReady =
+    isRaptorProProgram &&
+    order?.status === "paid" &&
+    raptorProvisioningStatus === "synced";
+  const raptorEmailSent = raptorEmailStatus === "sent";
+  const raptorAccountCreated = order?.metadata.raptorpro_account_created === true;
+  const customerEmail = maskEmail(order?.customer_email);
   const subscriptionStatus =
     typeof order?.metadata.subscription_status === "string"
       ? order.metadata.subscription_status
@@ -70,9 +95,13 @@ export default async function CheckoutSuccessPage({
       ? isEnglish ? "Free trial activated" : "Teste gratuito ativado"
       : isEnglish ? "Activating your free trial" : "Ativando seu teste gratuito"
     : order?.status === "paid" && isRaptorProProgram
-    ? isEnglish
-      ? "Payment approved. We sent your secure RaptorPro access link by email."
-      : "Pagamento aprovado. Enviamos por e-mail seu link seguro de acesso ao RaptorPro."
+    ? raptorAccessReady && raptorEmailSent
+      ? isEnglish
+        ? "Payment approved. Check your email."
+        : "Pagamento aprovado. Confira seu e-mail."
+      : isEnglish
+        ? "Payment approved. We are finishing your access."
+        : "Pagamento aprovado. Estamos finalizando seu acesso."
     : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
@@ -84,6 +113,14 @@ export default async function CheckoutSuccessPage({
       : isEnglish
         ? "Your card was registered and no charge was made today. We are finishing the activation and will email your secure password-creation link."
         : "Seu cartão foi cadastrado e nenhuma cobrança foi feita hoje. Estamos concluindo a ativação e enviaremos por e-mail o link seguro para criar sua senha."
+    : order?.status === "paid" && isRaptorProProgram
+      ? raptorAccessReady && raptorEmailSent
+        ? isEnglish
+          ? `We sent the secure RaptorPro access link to ${customerEmail}. Use that link before opening the app directly.`
+          : `Enviamos o link seguro do RaptorPro para ${customerEmail}. Use esse link antes de abrir o app diretamente.`
+        : isEnglish
+          ? "Your payment is confirmed. Keep this page saved while we finish creating and emailing your access."
+          : "Seu pagamento está confirmado. Mantenha esta página salva enquanto terminamos de criar e enviar seu acesso."
     : order?.status === "paid"
     ? isEnglish
       ? "Payment approved. Your program access is ready and a confirmation email will be sent automatically."
@@ -163,6 +200,45 @@ export default async function CheckoutSuccessPage({
               </ol>
             </div>
           ) : null}
+          {order?.status === "paid" && isRaptorProProgram ? (
+            <div className="mt-6 rounded-lg border border-white/15 bg-white/[0.06] p-5 text-left">
+              <div className="flex items-start gap-3">
+                {raptorAccessReady && raptorEmailSent ? (
+                  <MailCheck aria-hidden="true" className="mt-0.5 h-6 w-6 shrink-0 text-turf" />
+                ) : (
+                  <CircleAlert aria-hidden="true" className="mt-0.5 h-6 w-6 shrink-0 text-signal" />
+                )}
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-signal">
+                    {isEnglish ? "Your next step" : "Seu próximo passo"}
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold text-white">
+                    {raptorEmailSent
+                      ? isEnglish
+                        ? "Open the RaptorPro email"
+                        : "Abra o e-mail do RaptorPro"
+                      : isEnglish
+                        ? "Your access email is still being prepared"
+                        : "Seu e-mail de acesso ainda está sendo preparado"}
+                  </h2>
+                </div>
+              </div>
+              <ol className="mt-4 space-y-2 text-sm leading-6 text-white/70">
+                <li>1. {isEnglish ? `Check the inbox and spam folder for ${customerEmail}.` : `Confira a caixa de entrada e o spam de ${customerEmail}.`}</li>
+                <li>2. {raptorAccountCreated
+                  ? isEnglish ? "Click Create password and access." : "Clique em Criar senha e acessar."
+                  : isEnglish ? "Open the secure sign-in link." : "Abra o link seguro de entrada."}</li>
+                <li>3. {isEnglish ? "After signing in, Offseason 30 Days opens automatically." : "Depois de entrar, o Offseason 30 Days abrirá automaticamente."}</li>
+              </ol>
+              {!raptorEmailSent ? (
+                <p className="mt-4 rounded-md border border-signal/30 bg-signal/10 p-3 text-sm leading-6 text-white/75">
+                  {isEnglish
+                    ? "Do not create another order. Your payment is saved. If the email does not arrive, contact support with the order number shown above."
+                    : "Não faça outra compra. Seu pagamento está salvo. Se o e-mail não chegar, fale com o suporte informando o número do pedido acima."}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {showMockActions ? <MockPaymentActions orderId={order.id} /> : null}
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
@@ -172,11 +248,19 @@ export default async function CheckoutSuccessPage({
               {isLoadProTrial
                 ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
                 : isRaptorProProgram
-                  ? isEnglish ? "Open RaptorPro" : "Abrir RaptorPro"
+                  ? isEnglish ? "I already signed in — open RaptorPro" : "Já fiz meu acesso — abrir RaptorPro"
                 : order?.status === "paid"
                   ? isEnglish ? "Access program" : "Acessar programa"
                 : isEnglish ? "Go to my account" : "Ir para minha conta"}
             </Link>
+            {order?.status === "paid" && isRaptorProProgram && !raptorEmailSent ? (
+              <Link
+                className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-signal/50 px-5 text-sm font-bold uppercase text-white"
+                href={`https://wa.me/5519992811078?text=${encodeURIComponent(`Olá! Preciso de ajuda com o acesso ao Offseason 30 Days. Pedido: ${order.id}`)}`}
+              >
+                {isEnglish ? "Contact support" : "Falar com o suporte"}
+              </Link>
+            ) : null}
             <Link
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/15 px-5 text-sm font-bold uppercase text-white"
               href={isEnglish ? "/en/programs" : "/programas"}

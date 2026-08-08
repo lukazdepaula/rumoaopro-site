@@ -7,6 +7,13 @@ type EmailInput = {
   orderId?: string;
 };
 
+export function isEmailDeliveryConfigured() {
+  return (
+    process.env.EMAIL_PROVIDER === "resend" &&
+    Boolean(process.env.RESEND_API_KEY)
+  );
+}
+
 const escapeHtml = (value: string) =>
   value.replace(
     /[&<>'"]/g,

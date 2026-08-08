@@ -8,7 +8,11 @@ import {
 import { grantProductAccess } from "@/lib/checkout/access";
 import { deliverOrder } from "@/lib/checkout/delivery";
 import { sendAdminSalePush } from "@/lib/checkout/admin-push";
-import { sendInternalSaleNotice, sendRaptorProProgramAccessEmail } from "@/lib/checkout/email";
+import {
+  isEmailDeliveryConfigured,
+  sendInternalSaleNotice,
+  sendRaptorProProgramAccessEmail
+} from "@/lib/checkout/email";
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
 import { isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
 import type { Order } from "@/lib/checkout/types";
@@ -115,15 +119,32 @@ async function syncRaptorProSafely(
     const result = await syncRaptorProProgramAccess(order, status);
     if (!result.handled) return;
     let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true;
+    let welcomeEmailStatus =
+      typeof order.metadata.raptorpro_welcome_email_status === "string"
+        ? order.metadata.raptorpro_welcome_email_status
+        : welcomeEmailSent
+          ? "sent"
+          : "pending";
 
     if (status === "granted" && result.configured !== false && result.actionUrl && !welcomeEmailSent) {
-      welcomeEmailSent = await sendRaptorProProgramAccessEmail({
-        orderId: order.id,
-        to: order.customer_email,
-        name: order.customer_name,
-        actionUrl: result.actionUrl,
-        accountCreated: result.accountCreated
-      });
+      if (isEmailDeliveryConfigured()) {
+        welcomeEmailSent = await sendRaptorProProgramAccessEmail({
+          orderId: order.id,
+          to: order.customer_email,
+          name: order.customer_name,
+          actionUrl: result.actionUrl,
+          accountCreated: result.accountCreated
+        });
+        welcomeEmailStatus = welcomeEmailSent ? "sent" : "failed";
+      } else {
+        welcomeEmailSent = false;
+        welcomeEmailStatus = "pending_configuration";
+        await appendOrderLog(
+          order.id,
+          "raptorpro.email.pending_configuration",
+          "O acesso foi criado, mas o provedor de e-mail ainda não está configurado para envio real."
+        );
+      }
     }
 
     await updateOrderGatewayIds(order.id, {
@@ -132,6 +153,8 @@ async function syncRaptorProSafely(
           result.configured === false ? "pending_configuration" : "synced",
         raptorpro_access_status: status,
         raptorpro_welcome_email_sent: welcomeEmailSent,
+        raptorpro_welcome_email_status: welcomeEmailStatus,
+        raptorpro_account_created: result.accountCreated,
         raptorpro_program_id: "commercial-program-offseason-30"
       }
     });
