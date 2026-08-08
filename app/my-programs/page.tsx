@@ -6,6 +6,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { requireCustomer } from "@/lib/checkout/customer-auth";
 import { getUserPrograms } from "@/lib/checkout/db";
+import {
+  getRaptorProProgramUrl,
+  RAPTORPRO_OFFSEASON_PRODUCT_ID
+} from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +56,11 @@ export default async function MyProgramsPage() {
               {programs.map(({ entitlement, product }) => (
                 <Link
                   className="focus-ring group block overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card"
-                  href={`/my-programs/${product.slug}`}
+                  href={
+                    product.id === RAPTORPRO_OFFSEASON_PRODUCT_ID
+                      ? getRaptorProProgramUrl()
+                      : `/my-programs/${product.slug}`
+                  }
                   key={entitlement.id}
                 >
                   <Image

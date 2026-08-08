@@ -6,6 +6,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getOrderById } from "@/lib/checkout/db";
 import { formatMoney, getProductById } from "@/lib/checkout/products";
+import {
+  getRaptorProProgramUrl,
+  isRaptorProProgramOrder
+} from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +41,7 @@ export default async function CheckoutSuccessPage({
     order?.gateway === "stripe" &&
     order?.product_id === "loadpro_founders" &&
     trialDays > 0;
+  const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
   const subscriptionStatus =
     typeof order?.metadata.subscription_status === "string"
       ? order.metadata.subscription_status
@@ -55,6 +60,8 @@ export default async function CheckoutSuccessPage({
         : isEnglish ? "Processing" : "Em processamento";
   const accessHref = isLoadProTrial
     ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
+    : isRaptorProProgram
+      ? getRaptorProProgramUrl()
     : order?.status === "paid" && product
       ? `/my-programs/${product.slug}`
       : "/my-programs";
@@ -62,6 +69,10 @@ export default async function CheckoutSuccessPage({
     ? trialIsReady
       ? isEnglish ? "Free trial activated" : "Teste gratuito ativado"
       : isEnglish ? "Activating your free trial" : "Ativando seu teste gratuito"
+    : order?.status === "paid" && isRaptorProProgram
+    ? isEnglish
+      ? "Payment approved. We sent your secure RaptorPro access link by email."
+      : "Pagamento aprovado. Enviamos por e-mail seu link seguro de acesso ao RaptorPro."
     : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
@@ -160,6 +171,8 @@ export default async function CheckoutSuccessPage({
             >
               {isLoadProTrial
                 ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
+                : isRaptorProProgram
+                  ? isEnglish ? "Open RaptorPro" : "Abrir RaptorPro"
                 : order?.status === "paid"
                   ? isEnglish ? "Access program" : "Acessar programa"
                 : isEnglish ? "Go to my account" : "Ir para minha conta"}

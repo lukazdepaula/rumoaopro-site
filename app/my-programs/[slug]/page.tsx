@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, FileText, LockKeyhole } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
@@ -11,6 +11,10 @@ import {
   getAccessibleProgramMaterials
 } from "@/lib/checkout/materials";
 import { getProductBySlug } from "@/lib/checkout/products";
+import {
+  getRaptorProProgramUrl,
+  RAPTORPRO_OFFSEASON_PRODUCT_ID
+} from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +41,10 @@ export default async function ProgramAccessPage({ params }: ProgramAccessPagePro
 
   if (!product) {
     notFound();
+  }
+
+  if (product.id === RAPTORPRO_OFFSEASON_PRODUCT_ID) {
+    redirect(getRaptorProProgramUrl());
   }
 
   const hasAccess = await userHasAccessToProduct(user.id, product.id);
