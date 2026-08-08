@@ -12,7 +12,7 @@ const envPrice = (key: string, fallback: number) => {
 
 const productPrice = () => {
   const basePriceUsd = envPrice("RAP_PROGRAM_PRICE_USD", 38.95);
-  const brlPrice = envPrice("RAP_PROGRAM_PRICE_BRL", 199);
+  const brlPrice = envPrice("RAP_PROGRAM_PRICE_BRL", 199.9);
 
   return {
     base_price_usd: basePriceUsd,
@@ -73,12 +73,12 @@ export const checkoutProducts: CheckoutProduct[] = [
     slug: "offseason-30-days",
     description:
       "Programa de 30 dias para organizar campo, academia, velocidade e condicionamento em uma offseason curta.",
-    language: "English",
+    language: "Portuguese / English",
     type: "training_program",
     ...productPrice(),
     active: true,
     sales_page_path: "/programas/offseason-30-days",
-    cover_image: "/assets/programs/offseason-30/offseason-30-preview-01.jpg",
+    cover_image: "/assets/programs/offseason-30/offseason-30-raptorpro-cover.png",
     delivery_type: "member_area",
     file_id: "offseason-30-days.pdf",
     created_at: now,

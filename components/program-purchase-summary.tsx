@@ -6,7 +6,7 @@ type ProgramPurchaseSummaryProps = {
 
 const copy = {
   pt: {
-    primaryPrice: "R$ 199",
+    primaryPrice: "R$ 199,90",
     primaryLabel: "no Brasil",
     secondaryPrice: "US$ 38,95 no exterior",
     paymentItems: [
@@ -27,7 +27,7 @@ const copy = {
   en: {
     primaryPrice: "$38.95",
     primaryLabel: "international",
-    secondaryPrice: "R$199 in Brazil",
+    secondaryPrice: "R$199.90 in Brazil",
     paymentItems: [
       {
         icon: CreditCard,

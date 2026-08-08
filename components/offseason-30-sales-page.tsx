@@ -36,15 +36,15 @@ const copy = {
     eyebrow: "Offseason Program 30 Days",
     h1: "Organize 30 dias de offseason com treino de verdade.",
     lead:
-      "Um programa direto para jogadores de futebol que precisam voltar mais prontos em pouco tempo, combinando velocidade, força, potência e condicionamento.",
+      "Um programa interativo no RaptorPro para jogadores de futebol que precisam voltar mais prontos em pouco tempo, combinando velocidade, força, potência e condicionamento.",
     primaryCta: "Comprar programa",
     secondaryCta: "Ver estrutura",
-    storeNote: "Compra finalizada pela loja RumoAoPro.",
-    chips: ["30 dias", "4 semanas", "Campo + academia", "Vídeo demos"],
+    storeNote: "Pagamento seguro e acesso digital liberado após a confirmação.",
+    chips: ["30 dias", "4 semanas", "Campo + academia", "App RaptorPro"],
     stats: [
       ["4", "semanas progressivas"],
       ["30", "dias organizados"],
-      ["39", "páginas no guia"]
+      ["1", "calendário interativo"]
     ],
     fitTitle: "Para quem é esse programa",
     fitH2: "Feito para atleta com pouco tempo e objetivo claro.",
@@ -99,13 +99,13 @@ const copy = {
       }
     ],
     includedTitle: "O que vem dentro",
-    includedH2: "Um guia visual para executar sem ficar adivinhando.",
+    includedH2: "Um programa interativo para executar e registrar sem ficar adivinhando.",
     included: [
       {
         icon: CalendarDays,
         title: "Plano dia a dia",
         body:
-          "A semana mostra o foco de cada dia: campo, academia, condicionamento, mudança de direção e recuperação."
+          "O calendário do RaptorPro mostra o foco de cada dia: campo, academia, condicionamento, mudança de direção e recuperação."
       },
       {
         icon: Zap,
@@ -129,13 +129,13 @@ const copy = {
         icon: ClipboardCheck,
         title: "Coach notes",
         body:
-          "Notas objetivas dizendo o que priorizar, quando controlar intensidade e quando parar se a mecânica cair."
+          "Notas objetivas dentro de cada sessão dizendo o que priorizar, quando controlar intensidade e quando parar se a mecânica cair."
       },
       {
         icon: PlayCircle,
         title: "Vídeo demos",
         body:
-          "O material foi desenhado com referências de demo para reduzir dúvida na execução."
+          "Abra as demonstrações dentro do treino para reduzir dúvidas durante a execução."
       }
     ],
     rulesTitle: "Regras da semana",
@@ -147,10 +147,10 @@ const copy = {
       ["Track loads and times", "Anote cargas, tempos e resposta para enxergar progresso."],
       ["Recover hard", "Sono, hidratação e comida fazem parte do plano."]
     ],
-    previewTitle: "Dentro do PDF",
-    previewH2: "O produto já tem cara de material premium.",
+    previewTitle: "Dentro do programa",
+    previewH2: "Planejamento profissional dentro do RaptorPro.",
     previewLead:
-      "A capa e as páginas internas usam uma linguagem visual forte, com tabelas, blocos, coach notes e chamadas de vídeo demo.",
+      "Calendário, blocos, coach notes, vídeos, readiness, RPE e progresso ficam organizados em uma experiência feita para celular e computador.",
     previewImages: [
       {
         src: assets.offseason30Progression,
@@ -199,6 +199,11 @@ const copy = {
         question: "É para iniciante?",
         answer:
           "É melhor para atleta que já treina e entende o básico de academia e campo. Iniciante total pode precisar de acompanhamento."
+      },
+      {
+        question: "Como recebo o programa?",
+        answer:
+          "Assim que o pagamento for confirmado, você recebe por e-mail um acesso pessoal ao RaptorPro para criar sua senha e abrir o calendário."
       }
     ],
     finalTitle: "Tem 30 dias? Então pare de improvisar.",
@@ -215,15 +220,15 @@ const copy = {
     eyebrow: "Offseason Program 30 Days",
     h1: "Turn a short offseason into 30 focused training days.",
     lead:
-      "A direct football program for players who need to return sharper fast, combining speed, strength, power and conditioning.",
+      "An interactive RaptorPro football program for players who need to return sharper fast, combining speed, strength, power and conditioning.",
     primaryCta: "Buy program",
     secondaryCta: "See structure",
-    storeNote: "Checkout runs through the RumoAoPro store.",
-    chips: ["30 days", "4 weeks", "Field + gym", "Video demos"],
+    storeNote: "Secure checkout with digital access after payment confirmation.",
+    chips: ["30 days", "4 weeks", "Field + gym", "RaptorPro app"],
     stats: [
       ["4", "progressive weeks"],
       ["30", "organized days"],
-      ["39", "guide pages"]
+      ["1", "interactive calendar"]
     ],
     fitTitle: "Who this program is for",
     fitH2: "Built for players with limited time and a clear goal.",
@@ -278,13 +283,13 @@ const copy = {
       }
     ],
     includedTitle: "What is inside",
-    includedH2: "A visual guide so the player can execute without guessing.",
+    includedH2: "An interactive program to execute and track without guessing.",
     included: [
       {
         icon: CalendarDays,
         title: "Day-by-day plan",
         body:
-          "The week shows each day's focus: field, gym, conditioning, change of direction and recovery."
+          "The RaptorPro calendar shows each day's focus: field, gym, conditioning, change of direction and recovery."
       },
       {
         icon: Zap,
@@ -308,13 +313,13 @@ const copy = {
         icon: ClipboardCheck,
         title: "Coach notes",
         body:
-          "Direct notes showing what to prioritize, when to control intensity and when to stop if mechanics drop."
+          "Direct notes inside every session showing what to prioritize, when to control intensity and when to stop if mechanics drop."
       },
       {
         icon: PlayCircle,
         title: "Video demos",
         body:
-          "The guide is built with demo references to reduce confusion during execution."
+          "Open demonstrations inside the workout to reduce confusion during execution."
       }
     ],
     rulesTitle: "Weekly rules",
@@ -326,10 +331,10 @@ const copy = {
       ["Track loads and times", "Record loads, times and response so progress is visible."],
       ["Recover hard", "Sleep, hydration and food are part of the plan."]
     ],
-    previewTitle: "Inside the PDF",
-    previewH2: "The product already looks like a premium guide.",
+    previewTitle: "Inside the program",
+    previewH2: "Professional planning inside RaptorPro.",
     previewLead:
-      "The cover and internal pages use a strong visual language with tables, blocks, coach notes and video demo calls.",
+      "Calendar, blocks, coach notes, videos, readiness, RPE and progress are organized in an experience built for mobile and desktop.",
     previewImages: [
       {
         src: assets.offseason30Progression,
@@ -378,6 +383,11 @@ const copy = {
         question: "Is it beginner-friendly?",
         answer:
           "It is better for players who already train and understand the basics of field and gym work. Complete beginners may need supervision."
+      },
+      {
+        question: "How do I receive the program?",
+        answer:
+          "After payment confirmation, you receive a personal RaptorPro access link by email to create your password and open the calendar."
       }
     ],
     finalTitle: "Have 30 days? Stop improvising.",

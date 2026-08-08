@@ -8,8 +8,9 @@ import {
 import { grantProductAccess } from "@/lib/checkout/access";
 import { deliverOrder } from "@/lib/checkout/delivery";
 import { sendAdminSalePush } from "@/lib/checkout/admin-push";
-import { sendInternalSaleNotice } from "@/lib/checkout/email";
+import { sendInternalSaleNotice, sendRaptorProProgramAccessEmail } from "@/lib/checkout/email";
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
+import { isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
 import type { Order } from "@/lib/checkout/types";
 
 async function assertOrder(orderId: string): Promise<Order> {
@@ -94,6 +95,59 @@ async function syncLoadProSafely(
   }
 }
 
+async function syncRaptorProSafely(
+  order: Order,
+  status: "granted" | "revoked"
+) {
+  if (!isRaptorProProgramOrder(order)) return;
+  if (order.metadata.checkout_gateway_mode === "sandbox") {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { raptorpro_provisioning_status: "sandbox_skipped" }
+    });
+    await appendOrderLog(
+      order.id,
+      "raptorpro.provisioning.sandbox_skipped",
+      "Pedido sandbox processado sem alterar o acesso real do RaptorPro."
+    );
+    return;
+  }
+  try {
+    const result = await syncRaptorProProgramAccess(order, status);
+    if (!result.handled) return;
+    let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true;
+
+    if (status === "granted" && result.configured !== false && result.actionUrl && !welcomeEmailSent) {
+      welcomeEmailSent = await sendRaptorProProgramAccessEmail({
+        orderId: order.id,
+        to: order.customer_email,
+        name: order.customer_name,
+        actionUrl: result.actionUrl,
+        accountCreated: result.accountCreated
+      });
+    }
+
+    await updateOrderGatewayIds(order.id, {
+      metadata: {
+        raptorpro_provisioning_status:
+          result.configured === false ? "pending_configuration" : "synced",
+        raptorpro_access_status: status,
+        raptorpro_welcome_email_sent: welcomeEmailSent,
+        raptorpro_program_id: "commercial-program-offseason-30"
+      }
+    });
+  } catch (error) {
+    await updateOrderGatewayIds(order.id, {
+      metadata: { raptorpro_provisioning_status: "error" }
+    });
+    await appendOrderLog(
+      order.id,
+      "raptorpro.provisioning.error",
+      "O pagamento foi preservado, mas o acesso automático ao RaptorPro precisa ser reprocessado.",
+      { error: error instanceof Error ? error.message : String(error), status }
+    );
+  }
+}
+
 export async function syncOrderSubscription(
   orderId: string,
   status: "active" | "past_due" | "canceled" | "unpaid" | "paused",
@@ -155,6 +209,7 @@ export async function markOrderAsPaid(
   const sandboxOrder = paidOrder?.metadata.checkout_gateway_mode === "sandbox";
   if (paidOrder) {
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
+    await syncRaptorProSafely(paidOrder, "granted");
     if (!isLoadProOrder(paidOrder)) await grantProductAccess(paidOrder);
 
     if (firstConfirmation && !sandboxOrder) {
@@ -233,7 +288,10 @@ export async function markOrderAsRefunded(
   });
   await revokeProductAccessByOrder(orderId);
   const order = await getOrderById(orderId);
-  if (order) await syncLoadProSafely(order, "canceled", gatewayData);
+  if (order) {
+    await syncLoadProSafely(order, "canceled", gatewayData);
+    await syncRaptorProSafely(order, "revoked");
+  }
   return getOrderById(orderId);
 }
 
@@ -246,6 +304,9 @@ export async function markOrderAsCancelled(
     gateway_data: gatewayData
   });
   const order = await getOrderById(orderId);
-  if (order) await syncLoadProSafely(order, "canceled", gatewayData);
+  if (order) {
+    await syncLoadProSafely(order, "canceled", gatewayData);
+    await syncRaptorProSafely(order, "revoked");
+  }
   return getOrderById(orderId);
 }

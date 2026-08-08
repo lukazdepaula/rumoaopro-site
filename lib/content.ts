@@ -60,7 +60,7 @@ export const assets = {
   logoVasalunds: "/assets/logos/vasalunds.png",
   logoVasalundsTransparent: "/assets/logos/vasalunds-transparent.png",
   offseason30Cover:
-    "/assets/programs/offseason-30/offseason-30-preview-01.jpg",
+    "/assets/programs/offseason-30/offseason-30-raptorpro-cover.png",
   offseason30Progression:
     "/assets/programs/offseason-30/offseason-30-preview-02.jpg",
   offseason30FieldWarmup:
