@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CheckCircle2 } from "lucide-react";
 import { MockPaymentActions } from "@/components/mock-payment-actions";
+import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getOrderById } from "@/lib/checkout/db";
@@ -87,6 +88,14 @@ export default async function CheckoutSuccessPage({
 
   return (
     <main className="min-h-screen bg-smoke">
+      {order && trialIsReady ? (
+        <CheckoutSuccessTracker
+          currency={order.currency}
+          event="StartTrial"
+          orderId={order.id}
+          value={order.amount}
+        />
+      ) : null}
       <SiteHeader navItems={isEnglish ? nav.en : nav.pt} ctaHref={isEnglish ? "/en/programs" : "/programas"} ctaLabel={isEnglish ? "Programs" : "Programas"} />
       <section className="bg-ink py-20 text-white">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">

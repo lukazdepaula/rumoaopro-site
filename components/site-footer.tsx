@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { assets, contact } from "@/lib/content";
+import { PrivacySettingsButton } from "@/components/privacy-consent";
 
 export function SiteFooter({ locale = "pt" }: { locale?: "pt" | "en" }) {
   const isEnglish = locale === "en";
@@ -71,6 +72,7 @@ export function SiteFooter({ locale = "pt" }: { locale?: "pt" | "en" }) {
                 <Link className="block hover:text-white" href="/en/terms">Terms of use</Link>
                 <Link className="block hover:text-white" href="/en/privacy">Privacy</Link>
                 <Link className="block hover:text-white" href="/en/refunds">Refunds</Link>
+                <PrivacySettingsButton locale="en" />
               </>
             ) : (
               <>
@@ -80,6 +82,7 @@ export function SiteFooter({ locale = "pt" }: { locale?: "pt" | "en" }) {
                 <Link className="block hover:text-white" href="/en/terms">Terms of use</Link>
                 <Link className="block hover:text-white" href="/en/privacy">Privacy</Link>
                 <Link className="block hover:text-white" href="/en/refunds">Refunds</Link>
+                <PrivacySettingsButton locale="pt" />
               </>
             )}
           </div>
