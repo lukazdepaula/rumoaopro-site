@@ -153,7 +153,7 @@ export const legalContent: Record<
       summary:
         "Esta política explica quais dados coletamos, por que os utilizamos e como você pode exercer seus direitos.",
       updatedLabel: "Última atualização",
-      updatedAt: "17 de julho de 2026",
+      updatedAt: "8 de agosto de 2026",
       sections: [
         {
           title: "1. Controlador e contato",
@@ -170,7 +170,7 @@ export const legalContent: Record<
             "Compra e pagamento: produto, valor, moeda, desconto, status, identificador do pedido e referências do gateway. A RumoAoPro não armazena o número completo do cartão.",
             "Conta e acesso: tokens de autenticação, histórico de acesso aos produtos e registros de segurança.",
             "Assessoria e aplicação: objetivo, rotina, calendário, equipamentos, histórico esportivo e informações sobre dores, lesões ou limitações que você decidir fornecer.",
-            "Dados técnicos: endereço IP, navegador, dispositivo, páginas acessadas, data e hora, cookies essenciais e registros de erro ou prevenção a fraude.",
+            "Dados técnicos: endereço IP, navegador, dispositivo, páginas acessadas, data e hora, cookies essenciais, identificadores de campanha e registros de erro ou prevenção a fraude.",
             "Comunicações: mensagens, solicitações de suporte, respostas a formulários e preferências informadas por você."
           ]
         },
@@ -189,7 +189,7 @@ export const legalContent: Record<
             "Avaliar candidaturas e, quando contratado, personalizar a assessoria esportiva.",
             "Emitir documentos fiscais, manter registros contábeis e cumprir obrigações legais.",
             "Prevenir fraude, abuso, chargebacks indevidos e incidentes de segurança.",
-            "Melhorar o funcionamento, a navegação e a confiabilidade da plataforma.",
+            "Medir campanhas e melhorar o funcionamento, a navegação e a confiabilidade da plataforma quando você autorizar tecnologias opcionais.",
             "Enviar comunicações promocionais apenas quando houver uma base legal válida, com opção de cancelamento quando aplicável."
           ]
         },
@@ -211,6 +211,7 @@ export const legalContent: Record<
             "Stripe e Mercado Pago, para pagamentos e prevenção a fraude.",
             "Kiwify, quando a compra de um curso for concluída no checkout externo.",
             "Resend e provedores de e-mail, para mensagens de compra, acesso, suporte e notificações.",
+            "Meta, quando você autorizar medição publicitária, para atribuição e avaliação de campanhas.",
             "Prestadores contábeis, fiscais, jurídicos e autoridades públicas, quando necessário ou exigido por lei."
           ]
         },
@@ -221,10 +222,11 @@ export const legalContent: Record<
           ]
         },
         {
-          title: "8. Cookies e tecnologias essenciais",
+          title: "8. Cookies e tecnologias de medição",
           paragraphs: [
             "O site pode usar cookies ou tecnologias equivalentes necessários para sessão, login, segurança, preferência de idioma e funcionamento do checkout. Você pode bloquear cookies no navegador, mas partes essenciais da conta ou da compra podem deixar de funcionar.",
-            "Caso tecnologias opcionais de publicidade ou análise sejam adotadas no futuro, esta política e os controles de consentimento serão atualizados quando necessário."
+            "Com sua autorização, usamos tecnologias opcionais, como o Meta Pixel e a API de Conversões, para atribuir visitas, contatos, início de checkout, testes e compras às campanhas. O navegador e o servidor podem enviar o mesmo identificador de evento para deduplicação.",
+            "Você pode negar ou alterar essa escolha a qualquer momento em Preferências de cookies no rodapé. A recusa não impede login, checkout, segurança ou acesso aos produtos."
           ]
         },
         {
@@ -442,7 +444,7 @@ export const legalContent: Record<
       summary:
         "This policy explains what personal data we collect, why we use it and how you can exercise your rights.",
       updatedLabel: "Last updated",
-      updatedAt: "July 17, 2026",
+      updatedAt: "August 8, 2026",
       sections: [
         {
           title: "1. Controller and contact",
@@ -459,7 +461,7 @@ export const legalContent: Record<
             "Order and payment data: product, amount, currency, discount, status, order identifier and gateway references. RumoAoPro does not store full card numbers.",
             "Account and access data: authentication tokens, product access history and security records.",
             "Coaching and application data: goals, routine, calendar, equipment, sporting background and information about pain, injuries or limitations that you choose to provide.",
-            "Technical data: IP address, browser, device, pages accessed, date and time, essential cookies and error or fraud-prevention logs.",
+            "Technical data: IP address, browser, device, pages accessed, date and time, essential cookies, campaign identifiers and error or fraud-prevention logs.",
             "Communications: messages, support requests, form responses and preferences you provide."
           ]
         },
@@ -478,7 +480,7 @@ export const legalContent: Record<
             "Review applications and personalize online coaching when contracted.",
             "Issue tax documents, retain accounting records and comply with legal obligations.",
             "Prevent fraud, abuse, illegitimate chargebacks and security incidents.",
-            "Improve website operation, navigation and reliability.",
+            "Measure campaigns and improve website operation, navigation and reliability when you allow optional technologies.",
             "Send marketing messages only when there is a valid legal basis and an opt-out where required."
           ]
         },
@@ -500,6 +502,7 @@ export const legalContent: Record<
             "Stripe and Mercado Pago, for payments and fraud prevention.",
             "Kiwify, when a course purchase is completed through its external checkout.",
             "Resend and email providers, for purchase, access, support and notification messages.",
+            "Meta, when you allow advertising measurement, for campaign attribution and evaluation.",
             "Accounting, tax, legal advisers and public authorities when required or permitted by law."
           ]
         },
@@ -510,10 +513,11 @@ export const legalContent: Record<
           ]
         },
         {
-          title: "8. Cookies and essential technologies",
+          title: "8. Cookies and measurement technologies",
           paragraphs: [
             "The website may use cookies or similar technologies required for sessions, login, security, language preferences and checkout operation. Blocking cookies may prevent important account or purchase features from working.",
-            "If optional advertising or analytics technologies are adopted in the future, this policy and consent controls will be updated where required."
+            "With your permission, we use optional technologies such as the Meta Pixel and Conversions API to attribute visits, contacts, checkout starts, trials and purchases to campaigns. Browser and server may send the same event identifier for deduplication.",
+            "You may deny or change this choice at any time through Cookie settings in the footer. Refusing optional measurement does not prevent login, checkout, security or access to products."
           ]
         },
         {

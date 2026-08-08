@@ -122,6 +122,16 @@ export async function POST(request: Request) {
         checkout_locale: input.locale,
         trial_days: product.trial_days || null,
         base_price_usd: localizedPrice.basePriceUsd,
+        marketing_consent: input.marketing.consent || "denied",
+        marketing_landing_url: input.marketing.landingUrl || null,
+        marketing_utm_source: input.marketing.utmSource || null,
+        marketing_utm_medium: input.marketing.utmMedium || null,
+        marketing_utm_campaign: input.marketing.utmCampaign || null,
+        marketing_utm_content: input.marketing.utmContent || null,
+        marketing_utm_term: input.marketing.utmTerm || null,
+        marketing_fbclid: input.marketing.fbclid || null,
+        marketing_fbp: input.marketing.fbp || null,
+        marketing_fbc: input.marketing.fbc || null,
         ...discountMetadata(discountQuote)
       }
     });
