@@ -8,7 +8,10 @@ import type {
   CheckoutProduct
 } from "@/lib/checkout/types";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
-import { trackCheckoutEvent } from "@/components/conversion-tracker";
+import {
+  getMarketingCheckoutContext,
+  trackCheckoutEvent
+} from "@/components/conversion-tracker";
 
 type CheckoutFormProps = {
   product: CheckoutProduct;
@@ -275,6 +278,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           whatsapp,
           paymentMethod,
           locale,
+          marketing: getMarketingCheckoutContext(),
           discountCode: appliedDiscount?.code || discountCode || undefined
         })
       });

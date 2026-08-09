@@ -1369,11 +1369,13 @@ function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent |
   const type = payload.type;
 
   if (
+    type !== "page_view" &&
     type !== "product_view" &&
     type !== "checkout_click" &&
     type !== "checkout_view" &&
     type !== "checkout_submit" &&
-    type !== "checkout_error"
+    type !== "checkout_error" &&
+    type !== "whatsapp_click"
   ) {
     return null;
   }

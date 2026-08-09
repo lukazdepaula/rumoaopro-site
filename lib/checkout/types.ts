@@ -14,11 +14,26 @@ export type DeliveryType =
 export type Gateway = "mock" | "mercado_pago" | "stripe";
 
 export type AnalyticsEventType =
+  | "page_view"
   | "product_view"
   | "checkout_click"
   | "checkout_view"
   | "checkout_submit"
-  | "checkout_error";
+  | "checkout_error"
+  | "whatsapp_click";
+
+export type MarketingAttributionInput = {
+  consent?: "granted" | "denied";
+  landingUrl?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  fbclid?: string;
+  fbp?: string;
+  fbc?: string;
+};
 
 export type AnalyticsEvent = {
   id: string;
@@ -187,4 +202,5 @@ export type CheckoutCustomerInput = {
   discountCode?: string;
   paymentMethod?: CheckoutPaymentMethod;
   locale?: "pt" | "en";
+  marketing?: MarketingAttributionInput;
 };

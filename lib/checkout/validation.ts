@@ -1,7 +1,8 @@
 import type {
   CheckoutCustomerInput,
   CheckoutPaymentMethod,
-  CustomerDocumentType
+  CustomerDocumentType,
+  MarketingAttributionInput
 } from "@/lib/checkout/types";
 
 export class CheckoutValidationError extends Error {
@@ -27,10 +28,28 @@ export type ValidCheckoutInput = {
   discountCode: string | null;
   paymentMethod: CheckoutPaymentMethod;
   locale: "pt" | "en";
+  marketing: MarketingAttributionInput;
 };
 
 const normalizeText = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeMarketing = (value: unknown): MarketingAttributionInput => {
+  const data = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const clean = (field: string, maxLength: number) => normalizeText(data[field]).slice(0, maxLength) || undefined;
+  return {
+    consent: data.consent === "granted" ? "granted" : "denied",
+    landingUrl: clean("landingUrl", 500),
+    utmSource: clean("utmSource", 180),
+    utmMedium: clean("utmMedium", 180),
+    utmCampaign: clean("utmCampaign", 180),
+    utmContent: clean("utmContent", 180),
+    utmTerm: clean("utmTerm", 180),
+    fbclid: clean("fbclid", 240),
+    fbp: clean("fbp", 240),
+    fbc: clean("fbc", 240)
+  };
+};
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -80,6 +99,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const discountCode = normalizeDiscountCode(data.discountCode);
   const requestedPaymentMethod = normalizeText(data.paymentMethod);
   const locale = data.locale === "en" ? "en" : "pt";
+  const marketing = normalizeMarketing(data.marketing);
 
   if (!productSlug) {
     throw new CheckoutValidationError("Produto inválido.", "productSlug");
@@ -144,7 +164,8 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       whatsapp: `+${whatsappDigits}`,
       discountCode: discountCode || null,
       paymentMethod,
-      locale
+      locale,
+      marketing
     };
   }
 
@@ -160,6 +181,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     whatsapp: whatsappDigits ? `+${whatsappDigits}` : null,
     discountCode: discountCode || null,
     paymentMethod: "stripe",
-    locale
+    locale,
+    marketing
   };
 }
