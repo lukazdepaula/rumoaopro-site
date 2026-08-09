@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { appendOrderLog, getOrderById } from "@/lib/checkout/db";
+import { appendOrderLog, getOrderById, updateOrderGatewayIds } from "@/lib/checkout/db";
+import { isEmailDeliveryConfigured, sendRaptorProProgramAccessEmail } from "@/lib/checkout/email";
 import {
   createRaptorProCheckoutAccessLink,
   isRaptorProProgramOrder
@@ -25,6 +26,22 @@ export async function POST(request: Request, { params }: RouteProps) {
     }
 
     const actionUrl = await createRaptorProCheckoutAccessLink(order);
+    if (order.metadata.raptorpro_direct_access_email_sent !== true && isEmailDeliveryConfigured()) {
+      const emailSent = await sendRaptorProProgramAccessEmail({
+        orderId: order.id,
+        to: order.customer_email,
+        name: order.customer_name,
+        actionUrl,
+        accountCreated: order.metadata.raptorpro_account_created === true
+      });
+      await updateOrderGatewayIds(order.id, {
+        metadata: {
+          raptorpro_direct_access_email_sent: emailSent,
+          raptorpro_welcome_email_sent: emailSent || order.metadata.raptorpro_welcome_email_sent === true,
+          raptorpro_welcome_email_status: emailSent ? "sent" : "failed"
+        }
+      });
+    }
     await appendOrderLog(
       order.id,
       "raptorpro.access.opened_from_checkout",

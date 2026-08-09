@@ -59,7 +59,7 @@ export default async function CheckoutSuccessPage({
   const raptorEmailStatus =
     typeof order?.metadata.raptorpro_welcome_email_status === "string"
       ? order.metadata.raptorpro_welcome_email_status
-      : order?.gateway !== "mock" && order?.metadata.raptorpro_welcome_email_sent === true
+      : order?.metadata.raptorpro_welcome_email_sent === true
         ? "sent"
         : "pending";
   const raptorAccessReady =

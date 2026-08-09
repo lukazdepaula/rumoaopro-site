@@ -67,7 +67,10 @@ function isMissingAuthUser(message: string) {
 async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   const environment = config();
   if (!environment) throw new Error("RaptorPro provisioning environment is not configured.");
-  const redirectTo = `${environment.appUrl}/programs/${RAPTORPRO_OFFSEASON_PROGRAM_SLUG}/access`;
+  const passwordSetupRequired = type === "invite" || order.metadata.raptorpro_account_created === true;
+  const redirectUrl = new URL(`${environment.appUrl}/programs/${RAPTORPRO_OFFSEASON_PROGRAM_SLUG}/access`);
+  if (passwordSetupRequired) redirectUrl.searchParams.set("setup", "1");
+  const redirectTo = redirectUrl.toString();
   const response = await requestRaptorPro("/auth/v1/admin/generate_link", {
     method: "POST",
     body: JSON.stringify({
@@ -81,7 +84,8 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
         program_id: RAPTORPRO_OFFSEASON_PROGRAM_ID,
         product_id: order.product_id,
         order_id: order.id,
-        source: "rumoaopro_checkout"
+        source: "rumoaopro_checkout",
+        password_setup_required: passwordSetupRequired
       }
     })
   });
