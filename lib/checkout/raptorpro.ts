@@ -67,9 +67,11 @@ function isMissingAuthUser(message: string) {
 async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   const environment = config();
   if (!environment) throw new Error("RaptorPro provisioning environment is not configured.");
-  const passwordSetupRequired = type === "invite" || order.metadata.raptorpro_account_created === true;
   const redirectUrl = new URL(`${environment.appUrl}/programs/${RAPTORPRO_OFFSEASON_PROGRAM_SLUG}/access`);
-  if (passwordSetupRequired) redirectUrl.searchParams.set("setup", "1");
+  // Every checkout link may belong to an account created before the permanent
+  // password flow existed. The app uses this hint only while the user's
+  // password_setup_required metadata has not already been cleared to false.
+  redirectUrl.searchParams.set("setup", "1");
   const redirectTo = redirectUrl.toString();
   const response = await requestRaptorPro("/auth/v1/admin/generate_link", {
     method: "POST",
@@ -85,7 +87,7 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
         product_id: order.product_id,
         order_id: order.id,
         source: "rumoaopro_checkout",
-        password_setup_required: passwordSetupRequired
+        ...(type === "invite" ? { password_setup_required: true } : {})
       }
     })
   });
