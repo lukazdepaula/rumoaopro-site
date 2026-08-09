@@ -58,7 +58,10 @@ export async function sendEmail(input: EmailInput) {
       });
 
       if (!response.ok) {
-        throw new Error(`Resend retornou ${response.status}.`);
+        const responseBody = await response.text().catch(() => "");
+        throw new Error(
+          `Resend retornou ${response.status}${responseBody ? `: ${responseBody}` : "."}`
+        );
       }
 
       if (input.orderId) {

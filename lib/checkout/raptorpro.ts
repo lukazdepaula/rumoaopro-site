@@ -33,10 +33,17 @@ async function requestRaptorPro(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("apikey", environment.serviceRoleKey);
   headers.set("Content-Type", "application/json");
-  if (environment.serviceRoleKey.startsWith("sb_secret_")) {
-    headers.delete("Authorization");
-  } else {
+  // GoTrue's admin endpoints still require an Authorization header. The new
+  // sb_secret_* keys are valid here when the same key is also sent as apikey.
+  // PostgREST only needs apikey for the new key format, so avoid adding a
+  // bearer credential to database requests where it could be parsed as a JWT.
+  if (
+    !environment.serviceRoleKey.startsWith("sb_secret_") ||
+    path.startsWith("/auth/v1/admin/")
+  ) {
     headers.set("Authorization", `Bearer ${environment.serviceRoleKey}`);
+  } else {
+    headers.delete("Authorization");
   }
   return fetch(`${environment.url}${path}`, { ...init, headers, cache: "no-store" });
 }
