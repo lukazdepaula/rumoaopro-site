@@ -25,6 +25,7 @@ type CheckoutSuccessPageProps = {
     order_id?: string;
     mock?: string;
     locale?: string;
+    access_error?: string;
   }>;
 };
 
@@ -237,6 +238,36 @@ export default async function CheckoutSuccessPage({
                     : "Não faça outra compra. Seu pagamento está salvo. Se o e-mail não chegar, fale com o suporte informando o número do pedido acima."}
                 </p>
               ) : null}
+              {params.access_error ? (
+                <p className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">
+                  {isEnglish
+                    ? "We could not generate your secure access link. Try once more or contact support."
+                    : "Não foi possível gerar seu acesso seguro. Tente novamente ou fale com o suporte."}
+                </p>
+              ) : null}
+              <form
+                action={`/api/checkout/orders/${order.id}/raptorpro-access`}
+                className="mt-5"
+                method="post"
+              >
+                <button
+                  className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-signal px-5 text-sm font-bold uppercase text-white transition hover:bg-signal/90"
+                  type="submit"
+                >
+                  {raptorAccountCreated
+                    ? isEnglish
+                      ? "Create password and access now"
+                      : "Criar senha e acessar agora"
+                    : isEnglish
+                      ? "Access my program now"
+                      : "Acessar meu programa agora"}
+                </button>
+              </form>
+              <p className="mt-3 text-center text-xs leading-5 text-white/55">
+                {isEnglish
+                  ? "Works even if the email is delayed. The generated link is personal and one-time only."
+                  : "Funciona mesmo se o e-mail atrasar. O link gerado é pessoal e de uso único."}
+              </p>
             </div>
           ) : null}
           {showMockActions ? <MockPaymentActions orderId={order.id} /> : null}

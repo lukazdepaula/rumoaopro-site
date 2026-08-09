@@ -152,3 +152,20 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
     programUrl: getRaptorProProgramUrl()
   };
 }
+
+/** Generate a fresh one-time link so paid buyers are not blocked by email delivery. */
+export async function createRaptorProCheckoutAccessLink(order: Order) {
+  if (!isRaptorProProgramOrder(order)) {
+    throw new Error("Order is not a RaptorPro program purchase.");
+  }
+
+  const result = await syncRaptorProProgramAccess(order, "granted");
+  if (result.configured === false) {
+    throw new Error("RaptorPro provisioning environment is not configured.");
+  }
+
+  if (result.actionUrl) return result.actionUrl;
+
+  const magicLink = await generateActionLink(order, "magiclink");
+  return magicLink.actionUrl;
+}
