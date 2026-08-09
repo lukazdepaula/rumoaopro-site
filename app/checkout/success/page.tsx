@@ -99,8 +99,8 @@ export default async function CheckoutSuccessPage({
     : order?.status === "paid" && isRaptorProProgram
     ? raptorAccessReady && raptorEmailSent
       ? isEnglish
-        ? "Payment approved. Check your email."
-        : "Pagamento aprovado. Confira seu e-mail."
+        ? "Payment approved. Access your program."
+        : "Pagamento aprovado. Acesse seu programa."
       : isEnglish
         ? "Payment approved. We are finishing your access."
         : "Pagamento aprovado. Estamos finalizando seu acesso."
@@ -118,8 +118,8 @@ export default async function CheckoutSuccessPage({
     : order?.status === "paid" && isRaptorProProgram
       ? raptorAccessReady && raptorEmailSent
         ? isEnglish
-          ? `We sent the secure RaptorPro access link to ${customerEmail}. Use that link before opening the app directly.`
-          : `Enviamos o link seguro do RaptorPro para ${customerEmail}. Use esse link antes de abrir o app diretamente.`
+          ? `Your RaptorPro access is ready. Use the button below now; we also sent a backup link to ${customerEmail}.`
+          : `Seu acesso ao RaptorPro está pronto. Use o botão abaixo agora; também enviamos um link alternativo para ${customerEmail}.`
         : isEnglish
           ? "Your payment is confirmed. Keep this page saved while we finish creating and emailing your access."
           : "Seu pagamento está confirmado. Mantenha esta página salva enquanto terminamos de criar e enviar seu acesso."
@@ -225,8 +225,8 @@ export default async function CheckoutSuccessPage({
                   <h2 className="mt-2 text-xl font-bold text-white">
                     {raptorEmailSent
                       ? isEnglish
-                        ? "Open the RaptorPro email"
-                        : "Abra o e-mail do RaptorPro"
+                        ? "Open Offseason 30 Days now"
+                        : "Abra o Offseason 30 Days agora"
                       : isEnglish
                         ? "Your access email is still being prepared"
                         : "Seu e-mail de acesso ainda está sendo preparado"}
@@ -234,12 +234,19 @@ export default async function CheckoutSuccessPage({
                 </div>
               </div>
               <ol className="mt-4 space-y-2 text-sm leading-6 text-white/70">
-                <li>1. {isEnglish ? `Check the inbox and spam folder for ${customerEmail}.` : `Confira a caixa de entrada e o spam de ${customerEmail}.`}</li>
+                <li>1. {isEnglish ? "Use the red access button below." : "Use o botão vermelho de acesso abaixo."}</li>
                 <li>2. {raptorAccountCreated
-                  ? isEnglish ? "Click Create password and access." : "Clique em Criar senha e acessar."
-                  : isEnglish ? "Open the secure sign-in link." : "Abra o link seguro de entrada."}</li>
+                  ? isEnglish ? "Create your password and continue." : "Crie sua senha e continue."
+                  : isEnglish ? "Confirm the secure sign-in." : "Confirme a entrada segura."}</li>
                 <li>3. {isEnglish ? "After signing in, Offseason 30 Days opens automatically." : "Depois de entrar, o Offseason 30 Days abrirá automaticamente."}</li>
               </ol>
+              {raptorEmailSent ? (
+                <p className="mt-4 rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm leading-6 text-white/65">
+                  {isEnglish
+                    ? `We also sent a backup access link to ${customerEmail}. Check spam only if you prefer to use the email.`
+                    : `Também enviamos um link alternativo para ${customerEmail}. Confira o spam apenas se preferir acessar pelo e-mail.`}
+                </p>
+              ) : null}
               {!raptorEmailSent ? (
                 <p className="mt-4 rounded-md border border-signal/30 bg-signal/10 p-3 text-sm leading-6 text-white/75">
                   {isEnglish
