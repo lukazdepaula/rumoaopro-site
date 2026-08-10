@@ -12,7 +12,6 @@ import {
   PlayCircle,
   ShieldCheck,
   Target,
-  Trophy,
   Video,
   Zap
 } from "lucide-react";
@@ -491,20 +490,27 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
         ctaLabel={page.ctaLabel}
       />
 
-      <section className="relative isolate overflow-hidden bg-ink text-white">
+      <section className="relative isolate overflow-hidden bg-[#030806] text-white">
         <Image
           alt="Project 36km/h speed training"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-center opacity-65 lg:hidden"
+          className="absolute inset-0 -z-30 h-full w-full object-cover object-[61%_50%] sm:object-[58%_48%]"
           fill
           priority
           sizes="100vw"
           src="/assets/programs/project-36/project-36-sprint.jpg"
         />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.98)_0%,rgba(8,9,11,0.88)_58%,rgba(8,9,11,0.58)_100%)] lg:bg-[radial-gradient(circle_at_78%_45%,rgba(163,230,53,0.12),transparent_28%),linear-gradient(135deg,#08090b_0%,#11151a_100%)]" />
-        <div className="mx-auto grid min-h-[calc(74svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-8 sm:px-6 md:min-h-[calc(70vh-var(--header-height))] lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)] lg:px-8 lg:py-12">
-          <div className="max-w-3xl">
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#030806_0%,rgba(3,8,6,0.96)_37%,rgba(3,8,6,0.48)_67%,rgba(3,8,6,0.16)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,#030806_0%,transparent_38%),radial-gradient(circle_at_76%_48%,rgba(163,230,53,0.16),transparent_30%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(rgba(163,230,53,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(163,230,53,0.12)_1px,transparent_1px)] [background-size:58px_58px]" />
+
+        <div className="pointer-events-none absolute -right-4 top-4 hidden font-display text-[20rem] leading-none text-white/[0.035] lg:block">
+          36
+        </div>
+
+        <div className="mx-auto grid min-h-[calc(88svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(300px,0.68fr)] lg:px-8 lg:py-16">
+          <div className="max-w-3xl py-4 lg:py-10">
             <div className="flex flex-wrap gap-3">
-              <p className="inline-flex rounded-md border border-lime-400/35 bg-lime-400/10 px-3 py-2 text-sm font-bold uppercase text-lime-300">
+              <p className="inline-flex rounded-md border border-lime-300/40 bg-[#071a10]/75 px-3 py-2 text-sm font-bold uppercase tracking-[0.1em] text-lime-300 backdrop-blur">
                 {page.eyebrow}
               </p>
               <Link
@@ -514,7 +520,10 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 {page.languageLabel}
               </Link>
             </div>
-            <h1 className="mt-5 font-display text-3xl uppercase leading-[1.04] sm:text-4xl lg:text-5xl">
+            <p className="mt-7 text-xs font-black uppercase tracking-[0.32em] text-lime-300/85">
+              {locale === "en" ? "Speed development system" : "Sistema de desenvolvimento de velocidade"}
+            </p>
+            <h1 className="mt-3 max-w-4xl font-display text-4xl uppercase leading-[0.94] sm:text-5xl lg:text-7xl">
               {page.h1}
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/76 sm:text-lg">
@@ -528,33 +537,33 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 tone="dark"
               />
             ) : null}
-            <div className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
-              <div>
+            <div className="mt-7 flex flex-wrap items-end gap-x-5 gap-y-3 border-l-2 border-lime-300 pl-4">
+              <div className="min-w-[190px]">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">
                   {locale === "en" ? "Limited launch offer" : "Oferta de lançamento · tempo limitado"}
                 </p>
                 <div className="mt-1 flex items-baseline gap-3">
                   <span className="text-sm font-bold text-white/45 line-through">R$ 249,90</span>
-                  <strong className="font-display text-4xl text-white">R$ 199,90</strong>
+                  <strong className="font-display text-5xl text-white">R$ 199,90</strong>
                 </div>
               </div>
               <p className="max-w-xs text-xs leading-5 text-white/55">
                 {locale === "en" ? "One-time payment. Full PT/EN access in RaptorPro." : "Pagamento único. Acesso completo PT/EN dentro do RaptorPro."}
               </p>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
+            <div className="mt-6 flex flex-wrap gap-2">
               {page.chips.map((chip) => (
                 <span
-                  className="rounded-md border border-white/12 bg-white/[0.08] px-3 py-2 text-xs font-bold uppercase text-white/80"
+                  className="rounded-md border border-white/12 bg-black/35 px-3 py-2 text-xs font-bold uppercase text-white/80 backdrop-blur"
                   key={chip}
                 >
                   {chip}
                 </span>
               ))}
             </div>
-            <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <a
-                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-lime-400 px-5 text-sm font-bold uppercase text-ink transition hover:bg-lime-300"
+                className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-lime-300 px-6 text-sm font-black uppercase text-[#061008] shadow-[0_18px_60px_rgba(163,230,53,0.28)] transition hover:bg-lime-200"
                 href={checkoutHref}
               >
                 {page.primaryCta}
@@ -571,13 +580,28 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
               {page.storeNote}
             </p>
           </div>
-          <div className="relative hidden h-full min-h-[560px] items-center justify-end lg:flex">
-            <div className="absolute inset-6 overflow-hidden rounded-[2rem] border border-emerald-300/15">
-              <Image alt="Football speed training" className="h-full w-full object-cover object-center opacity-40" fill priority sizes="520px" src="/assets/programs/project-36/project-36-sprint.jpg" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#07100b] via-[#07100b]/55 to-transparent" />
+          <div className="relative hidden h-full min-h-[610px] items-end justify-end lg:flex">
+            <div className="absolute bottom-4 right-0 z-10 w-[56%] rotate-[3deg]">
+              <Project36PhonePreview locale={locale} />
             </div>
-            <div className="relative z-10 translate-x-4 rotate-[2deg]"><Project36PhonePreview locale={locale} /></div>
+            <div className="absolute bottom-10 left-0 z-20 max-w-[230px] rounded-2xl border border-white/15 bg-black/55 p-4 shadow-2xl backdrop-blur-xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">
+                {locale === "en" ? "Built in 3 phases" : "Construído em 3 fases"}
+              </p>
+              <p className="mt-2 text-sm font-bold leading-5 text-white">
+                {locale === "en" ? "Foundation → Acceleration → Game speed" : "Base → Aceleração → Velocidade de jogo"}
+              </p>
+            </div>
           </div>
+        </div>
+
+        <div className="relative mx-auto grid max-w-7xl grid-cols-3 border-t border-white/10 px-4 sm:px-6 lg:px-8">
+          {page.stats.map(([value, label]) => (
+            <div className="border-r border-white/10 px-3 py-5 text-center last:border-r-0 sm:py-6" key={label}>
+              <p className="font-display text-3xl text-lime-300 sm:text-4xl">{value}</p>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/48 sm:text-xs">{label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -593,100 +617,111 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
         />
       ) : null}
 
-      <section className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:items-start lg:px-8">
-          <div>
-            <p className="text-sm font-bold uppercase text-signal">
+      <section className="relative isolate overflow-hidden bg-[#07100b] py-20 text-white">
+        <div className="absolute inset-y-0 right-0 -z-30 w-full md:w-[58%]">
+          <Image
+            alt="RumoAoPro football training"
+            className="object-cover object-[58%_45%] opacity-42"
+            fill
+            sizes="(min-width: 768px) 58vw, 100vw"
+            src="/assets/programs/project-36/project-36-training.jpg"
+          />
+        </div>
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#07100b_0%,#07100b_46%,rgba(7,16,11,0.88)_66%,rgba(7,16,11,0.36)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,#07100b_0%,transparent_45%,#07100b_100%)] md:hidden" />
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:items-center lg:px-8">
+          <div className="max-w-xl">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-lime-300">
               {page.fitTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-4xl uppercase leading-[0.96] text-white sm:text-5xl">
               {page.fitH2}
             </h2>
-            <p className="mt-5 text-base leading-8 text-graphite/74">
+            <p className="mt-5 text-base leading-8 text-white/68">
               {page.fitLead}
             </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-turf/20 bg-turf/5 p-5">
-              <div className="flex items-center gap-2 text-sm font-bold uppercase text-turf">
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-lime-300/20 bg-black/42 p-5 backdrop-blur-md">
+              <div className="flex items-center gap-2 text-sm font-bold uppercase text-lime-300">
                 <BadgeCheck aria-hidden="true" className="h-4 w-4" />
                 {page.goodFitLabel}
               </div>
               <ul className="mt-5 space-y-3">
                 {page.goodFit.map((item) => (
-                  <li className="flex gap-3 text-sm leading-6 text-graphite/75" key={item}>
+                  <li className="flex gap-3 text-sm leading-6 text-white/70" key={item}>
                     <CheckCircle2
                       aria-hidden="true"
-                      className="mt-1 h-4 w-4 shrink-0 text-turf"
+                      className="mt-1 h-4 w-4 shrink-0 text-lime-300"
                     />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-ink/10 bg-smoke p-5">
-              <div className="flex items-center gap-2 text-sm font-bold uppercase text-graphite">
+            <div className="rounded-xl border border-white/10 bg-black/42 p-5 backdrop-blur-md">
+              <div className="flex items-center gap-2 text-sm font-bold uppercase text-white/60">
                 <Target aria-hidden="true" className="h-4 w-4" />
                 {page.notFitLabel}
               </div>
               <ul className="mt-5 space-y-3">
                 {page.notFit.map((item) => (
-                  <li className="flex gap-3 text-sm leading-6 text-graphite/72" key={item}>
+                  <li className="flex gap-3 text-sm leading-6 text-white/58" key={item}>
                     <CheckCircle2
                       aria-hidden="true"
-                      className="mt-1 h-4 w-4 shrink-0 text-graphite/50"
+                      className="mt-1 h-4 w-4 shrink-0 text-white/35"
                     />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
+            </div>
           </div>
+          <div className="hidden min-h-[620px] md:block" />
         </div>
       </section>
 
-      <section className="surface-grid bg-smoke py-16" id="fases">
+      <section className="relative overflow-hidden bg-[#030806] py-20 text-white" id="fases">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-emerald-500/12 blur-[130px]" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase text-signal">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-lime-300">
               {page.phasesTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-4xl uppercase leading-[0.96] text-white sm:text-5xl">
               {page.phasesH2}
             </h2>
-            <p className="mt-4 text-base leading-7 text-graphite/75">
+            <p className="mt-5 text-base leading-7 text-white/62">
               {page.phasesLead}
             </p>
           </div>
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {page.phases.map((phase) => (
+          <div className="relative mt-12 grid gap-4 lg:grid-cols-3">
+            <div className="absolute left-[16%] right-[16%] top-8 hidden h-px bg-gradient-to-r from-lime-300/20 via-lime-300/80 to-lime-300/20 lg:block" />
+            {page.phases.map((phase, index) => (
               <article
-                className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-ink/10"
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_28px_80px_rgba(0,0,0,0.26)]"
                 key={phase.title}
               >
-                <Image
-                  alt={phase.title}
-                  className="aspect-[4/5] w-full object-cover object-top"
-                  height={900}
-                  src={phase.image}
-                  width={720}
-                />
-                <div className="p-5">
-                  <p className="text-xs font-bold uppercase text-signal">
+                <span className="absolute -right-2 -top-5 font-display text-8xl text-white/[0.035]">0{index + 1}</span>
+                <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full border border-lime-300/35 bg-[#07130c] font-display text-xl text-lime-300 shadow-[0_0_0_8px_rgba(163,230,53,0.04)]">
+                  0{index + 1}
+                </div>
+                <div className="relative z-10 mt-8">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-lime-300">
                     {phase.weeks}
                   </p>
-                  <h3 className="mt-2 text-xl font-bold text-ink">
+                  <h3 className="mt-2 text-2xl font-black leading-tight text-white">
                     {phase.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
+                  <p className="mt-4 text-sm leading-6 text-white/60">
                     {phase.body}
                   </p>
                   <ul className="mt-5 space-y-2">
                     {phase.points.map((point) => (
-                      <li className="flex gap-2 text-sm font-semibold text-graphite/75" key={point}>
+                      <li className="flex gap-2 text-sm font-semibold text-white/72" key={point}>
                         <Zap
                           aria-hidden="true"
-                          className="mt-0.5 h-4 w-4 shrink-0 text-lime-600"
+                          className="mt-0.5 h-4 w-4 shrink-0 text-lime-300"
                         />
                         <span>{point}</span>
                       </li>
@@ -779,73 +814,83 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
         </div>
       </section>
 
-      <section className="surface-grid bg-smoke py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase text-signal">
+      <section className="relative isolate overflow-hidden bg-[#030806] py-20 text-white">
+        <div className="absolute inset-y-0 right-0 -z-30 w-full lg:w-[56%]">
+          <Image
+            alt="Project 36 speed session"
+            className="object-cover object-[62%_50%] opacity-30"
+            fill
+            sizes="(min-width: 1024px) 56vw, 100vw"
+            src="/assets/programs/project-36/project-36-sprint.jpg"
+          />
+        </div>
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#030806_0%,#030806_48%,rgba(3,8,6,0.83)_70%,rgba(3,8,6,0.35)_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.1] [background-image:linear-gradient(rgba(163,230,53,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(163,230,53,0.12)_1px,transparent_1px)] [background-size:52px_52px]" />
+
+        <div className="mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-lime-300">
               {page.previewTitle}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-4xl uppercase leading-[0.96] text-white sm:text-5xl">
               {page.previewH2}
             </h2>
-            <p className="mt-4 text-base leading-7 text-graphite/75">
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/64">
               {page.previewLead}
             </p>
+
+            <div className="mt-9 grid gap-3">
+              {[
+                locale === "en" ? ["01", "Open your week", "See every field, gym, conditioning and recovery day in order."] : ["01", "Abra sua semana", "Veja campo, academia, condicionamento e recuperação na ordem certa."],
+                locale === "en" ? ["02", "Follow the session", "Coach notes, exercise demos and clear rest instructions stay inside the workout."] : ["02", "Siga a sessão", "Notas, demonstrações e descansos ficam dentro do próprio treino."],
+                locale === "en" ? ["03", "Track the work", "Log readiness, RPE and duration without leaving RaptorPro."] : ["03", "Registre o trabalho", "Salve readiness, RPE e duração sem sair do RaptorPro."]
+              ].map(([step, title, body]) => (
+                <article className="flex gap-4 rounded-xl border border-white/10 bg-black/38 p-4 backdrop-blur" key={step}>
+                  <span className="font-display text-2xl text-lime-300">{step}</span>
+                  <div>
+                    <h3 className="text-base font-black text-white">{title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-white/55">{body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {page.previewImages.map((image) => (
-              <figure
-                className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-ink/10"
-                key={image.src}
-              >
-                <Image
-                  alt={image.alt}
-                  className="aspect-[4/5] w-full object-cover object-top"
-                  height={900}
-                  src={image.src}
-                  width={720}
-                />
-                <figcaption className="border-t border-ink/10 px-4 py-3 text-xs font-bold uppercase text-graphite/65">
-                  {image.label}
-                </figcaption>
-              </figure>
-            ))}
+
+          <div className="relative mx-auto min-h-[620px] w-full max-w-[700px] sm:min-h-[700px]">
+            <div className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(163,230,53,0.2),rgba(16,185,129,0.08)_46%,transparent_72%)] blur-2xl" />
+            <div className="absolute left-[6%] top-[19%] z-10 w-[45%] -rotate-6 opacity-55 sm:left-[11%] sm:w-[39%]">
+              <Project36PhonePreview locale={locale} />
+            </div>
+            <div className="absolute right-[5%] top-[6%] z-30 w-[52%] rotate-3 sm:right-[10%] sm:w-[45%]">
+              <Project36PhonePreview locale={locale} />
+            </div>
+            <div className="absolute bottom-[7%] left-[3%] z-40 max-w-[260px] rounded-2xl border border-lime-300/20 bg-[#07100b]/92 p-5 shadow-2xl backdrop-blur-xl sm:left-[8%]">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">
+                {locale === "en" ? "Not another PDF" : "Não é mais um PDF"}
+              </p>
+              <p className="mt-2 text-lg font-black leading-6 text-white">
+                {locale === "en" ? "The full 12-week system lives in your pocket." : "O sistema completo de 12 semanas fica no seu bolso."}
+              </p>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div className="relative mx-auto mt-14 max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col justify-between gap-6 border-t border-white/10 pt-10 md:flex-row md:items-end">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase text-signal">
-                {page.sampleTitle}
-              </p>
-              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                {page.sampleH2}
-              </h2>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-lime-300">{page.sampleTitle}</p>
+              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-4xl">{page.sampleH2}</h2>
             </div>
-            <Trophy aria-hidden="true" className="hidden h-12 w-12 text-lime-600 md:block" />
           </div>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {page.sampleCards.map((card) => (
-              <article
-                className="overflow-hidden rounded-lg border border-ink/10 bg-white"
-                key={card.title}
-              >
-                <Image
-                  alt={card.title}
-                  className="aspect-[4/5] w-full object-cover object-top"
-                  height={900}
-                  src={card.image}
-                  width={720}
-                />
-                <div className="p-5">
-                  <h3 className="text-lg font-bold text-ink">{card.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
-                    {card.body}
-                  </p>
-                </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {page.sampleCards.map((card, index) => (
+              <article className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.055] p-6" key={card.title}>
+                <span className="absolute -right-1 -top-5 font-display text-7xl text-white/[0.035]">0{index + 1}</span>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-lime-300">
+                  {locale === "en" ? `Phase ${index + 1}` : `Fase ${index + 1}`}
+                </p>
+                <h3 className="mt-3 text-xl font-black text-white">{card.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/58">{card.body}</p>
               </article>
             ))}
           </div>
