@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Dumbbell,
   GraduationCap,
+  LayoutDashboard,
   MessageCircle,
   ShieldCheck,
   Trophy,
@@ -29,7 +30,7 @@ import {
 export const metadata: Metadata = {
   title: "RumoAoPro | Treinamento, programas e assessoria para futebol",
   description:
-    "Assessoria, programas, cursos e LoadPro: planejamento e monitoramento de carga para treinadores e atletas de futebol."
+    "Assessoria, programas interativos no RaptorPro, cursos e LoadPro para atletas e treinadores de futebol."
 };
 
 const entryCards = [
@@ -46,11 +47,11 @@ const entryCards = [
   {
     title: "Programas Individuais",
     href: "/programas",
-    eyebrow: "Compra direta",
+    eyebrow: "No RaptorPro",
     image: assets.programsGameDuel,
     icon: Dumbbell,
     body:
-      "Para escolher um plano pronto por fase do ano: offseason, pré-temporada, temporada ou retorno.",
+      "Offseason 30 Days e Projeto 36 em português e inglês, além dos programas clássicos em PDF.",
     cta: "Ver programas"
   },
   {
@@ -62,6 +63,16 @@ const entryCards = [
     body:
       "Aprenda a organizar e aplicar a preparação física para jogadores de futebol.",
     cta: "Conhecer o curso"
+  },
+  {
+    title: "LoadPro",
+    href: "https://loadpro.rumoaopro.com.br/",
+    eyebrow: "App para treinadores",
+    image: "/assets/loadpro/product-calendar-microcycle-v2.png",
+    icon: LayoutDashboard,
+    body:
+      "Planeje o microciclo, monitore a carga e acompanhe seus atletas em um só lugar.",
+    cta: "Testar grátis por 7 dias"
   }
 ];
 
@@ -83,15 +94,15 @@ const productBlocks = [
   },
   {
     title: "Programas Individuais",
-    eyebrow: "Treine com estratégia durante o ano",
+    eyebrow: "Treine com estratégia no RaptorPro",
     icon: Zap,
-    image: assets.programsSprintChase,
+    image: assets.sprintSide,
     body:
-      "Escolha o programa de acordo com a fase da temporada. Offseason para construir base, últimos 30 dias para chegar pronto e in-season para manter o nível.",
+      "Offseason 30 Days e Projeto 36 agora unem planejamento, vídeos e registro de treino em uma experiência interativa.",
     points: [
-      "Acesso imediato após o pagamento",
-      "Materiais organizados na área do cliente",
-      "Programas em inglês e opções em português"
+      "Offseason 30 Days e Projeto 36 no RaptorPro",
+      "Calendário, vídeos, cargas, comentários e RPE",
+      "Português e inglês com acesso vitalício"
     ],
     href: "/programas",
     cta: "Comparar programas"
@@ -122,18 +133,21 @@ const trainerStats = [
 const seasonFlow = [
   {
     step: "01",
-    title: "Offseason",
-    body: "Construa força, potência e velocidade com Adama e Project 36."
+    title: "Escolha seu programa",
+    body:
+      "Comece pelo Offseason 30 Days ou pelo Projeto 36 de acordo com seu objetivo e momento da temporada."
   },
   {
     step: "02",
-    title: "Últimos 30 dias",
-    body: "Use o Offseason 30 Days para chegar pronto para a pré-temporada."
+    title: "Siga o calendário",
+    body:
+      "Abra o RaptorPro, selecione o dia e veja o treino completo organizado em uma sequência clara."
   },
   {
     step: "03",
-    title: "Durante a temporada",
-    body: "Mantenha força e velocidade com Elanga sem atrapalhar jogos e treinos."
+    title: "Registre sua evolução",
+    body:
+      "Salve cargas, comentários e RPE para acompanhar o que foi feito e treinar com mais intenção."
   }
 ];
 
@@ -167,9 +181,9 @@ export default function HomePage() {
               O que você precisa agora para evoluir no futebol?
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
-              Escolha o caminho certo: acompanhamento individual, programas
-              prontos por fase da temporada ou conteúdos para entender melhor
-              como treinar como atleta.
+              Escolha entre acompanhamento individual, programas interativos
+              para atletas, formação profissional e tecnologia para organizar
+              o trabalho de treinadores e comissões técnicas.
             </p>
           </div>
 
@@ -179,13 +193,13 @@ export default function HomePage() {
               Escolha uma entrada
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
               {entryCards.map((item) => {
                 const Icon = item.icon;
 
                 return (
                   <Link
-                    className="group relative min-h-[290px] overflow-hidden rounded-lg border border-white/15 bg-white/[0.06] shadow-card transition hover:-translate-y-1 hover:border-white/35"
+                    className="group relative min-h-[220px] overflow-hidden rounded-lg border border-white/15 bg-white/[0.06] shadow-card transition hover:-translate-y-1 hover:border-white/35 sm:min-h-[280px] xl:min-h-[290px]"
                     href={item.href}
                     key={item.title}
                   >
@@ -193,27 +207,27 @@ export default function HomePage() {
                       alt=""
                       className="h-full w-full object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-85"
                       fill
-                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
                       src={item.image}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/45 to-black/20" />
-                    <div className="relative flex h-full min-h-[290px] flex-col justify-between p-5">
+                    <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 sm:min-h-[280px] sm:p-5 xl:min-h-[290px]">
                       <div className="flex items-start justify-between gap-4">
                         <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-ink">
                           <Icon aria-hidden="true" className="h-5 w-5" />
                         </span>
-                        <span className="rounded-md bg-black/45 px-3 py-2 text-xs font-bold uppercase text-white/75">
+                        <span className="max-w-[92px] rounded-md bg-black/45 px-2 py-2 text-[9px] font-bold uppercase leading-4 text-white/75 sm:max-w-none sm:px-3 sm:text-xs">
                           {item.eyebrow}
                         </span>
                       </div>
                       <div>
-                        <h2 className="font-display text-3xl uppercase leading-none text-white sm:text-4xl">
+                        <h2 className="font-display text-2xl uppercase leading-none text-white sm:text-3xl">
                           {item.title}
                         </h2>
-                        <p className="mt-3 max-w-sm text-sm font-semibold leading-6 text-white/75">
+                        <p className="mt-3 hidden max-w-sm text-sm font-semibold leading-6 text-white/75 sm:block">
                           {item.body}
                         </p>
-                        <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase text-white">
+                        <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase leading-4 text-white sm:mt-5 sm:text-sm">
                           {item.cta}
                           <ArrowRight
                             aria-hidden="true"
@@ -242,14 +256,13 @@ export default function HomePage() {
                 Visão geral
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">
-                Três caminhos. Um objetivo: jogar melhor.
+                Soluções para atletas e treinadores.
               </h2>
             </div>
             <p className="text-base leading-8 text-graphite/70">
-              A RumoAoPro foi construída para atletas que querem parar de
-              treinar no escuro. Você pode começar com um produto pronto,
-              entrar em um acompanhamento individual ou estudar os princípios
-              por trás da preparação física no futebol.
+              A RumoAoPro conecta acompanhamento, programas interativos,
+              educação e tecnologia para quem quer treinar, planejar e tomar
+              decisões com mais clareza no futebol.
             </p>
           </div>
 
@@ -323,10 +336,10 @@ export default function HomePage() {
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div className="max-w-3xl">
               <p className="text-sm font-bold uppercase text-signal">
-                Programação anual
+                Programas no RaptorPro
               </p>
               <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">
-                Treine com o plano certo para cada fase da temporada.
+                Uma experiência mais clara do primeiro ao último treino.
               </h2>
             </div>
             <Link
@@ -525,9 +538,9 @@ export default function HomePage() {
               Quer acompanhamento completo ou um programa para executar agora?
             </h2>
             <p className="mt-4 text-base leading-7 text-white/75">
-              Se sua rotina muda toda semana, escolha a assessoria. Se você já
-              sabe a fase da temporada, escolha um programa e acesse o material
-              direto pela área do cliente.
+              Se sua rotina muda toda semana, escolha a assessoria. Para treinar
+              com o Offseason 30 Days ou o Projeto 36, compre uma vez e acompanhe
+              o programa pelo RaptorPro. Os programas clássicos continuam no catálogo.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">

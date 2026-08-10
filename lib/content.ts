@@ -143,6 +143,7 @@ export const nav = {
     { label: "Home", href: "/" },
     { label: "Assessoria", href: "/assessoria" },
     { label: "Programas", href: "/programas" },
+    { label: "Apps", href: "/#loadpro" },
     { label: "Cursos", href: "/cursos" },
     { label: "Links", href: "/links" },
     { label: "🇺🇸 English", href: "/en" }
@@ -151,6 +152,7 @@ export const nav = {
     { label: "Home", href: "/en" },
     { label: "Coaching", href: "/en/coaching" },
     { label: "Programs", href: "/en/programs" },
+    { label: "Apps", href: "/en#loadpro" },
     { label: "Courses", href: "/en/courses" },
     { label: "Links", href: "/en/links" },
     { label: "🇧🇷 Português", href: "/" }

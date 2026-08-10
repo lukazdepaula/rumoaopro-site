@@ -5,10 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarRange,
-  Dumbbell,
   Gauge,
-  RotateCcw,
-  ShieldCheck,
   Star
 } from "lucide-react";
 import { useState } from "react";
@@ -20,13 +17,7 @@ type ProgramGoalFinderProps = {
   tone?: "light" | "dark";
 };
 
-type GoalId =
-  | "speed"
-  | "strength"
-  | "preseason"
-  | "return"
-  | "inseason"
-  | "offseason";
+type GoalId = "speed" | "offseason";
 
 type GoalDefinition = {
   id: GoalId;
@@ -46,19 +37,20 @@ type GoalDefinition = {
 const goals: Record<"pt" | "en", GoalDefinition[]> = {
   pt: [
     {
-      id: "strength",
-      label: "Força e potência",
-      prompt: "Quero ficar mais forte",
-      displayName: "Projeto Adama: Força e Potência",
-      productId: "projeto_adama_2022_pt",
-      href: "/programas/projeto-adama-2022",
-      image: "/assets/photos/programs/programs-adama-deadlift.jpeg",
-      imagePosition: "object-[50%_42%]",
+      id: "offseason",
+      label: "Offseason",
+      prompt: "Tenho 30 dias para me preparar",
+      displayName: "Offseason 30 Days",
+      productId: "offseason_30_days",
+      href: "/programas/offseason-30-days",
+      image: "/assets/photos/programs/programs-field-control.jpg",
+      imagePosition: "object-[50%_40%]",
       outcome:
-        "Construa força, hipertrofia e potência com uma preparação feita para as demandas do futebol.",
-      detail: "Programa em português · acesso vitalício",
-      reviewGroup: "adama",
-      icon: Dumbbell
+        "Organize campo, academia, velocidade e condicionamento em um calendário interativo completo dentro do RaptorPro.",
+      detail:
+        "30 dias · português e inglês · RaptorPro · acesso vitalício",
+      reviewGroup: "preSeason",
+      icon: CalendarRange
     },
     {
       id: "speed",
@@ -67,75 +59,32 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       displayName: "Projeto 36: Velocidade e Aceleração",
       productId: "project_36",
       href: "/programas/projeto-36kmh",
-      image: "/assets/photos/programs/programs-project36-sprint.jpg",
-      imagePosition: "object-[50%_44%]",
+      image: "/assets/photos/lukaz-sprint-side.jpg",
+      imagePosition: "object-[64%_50%]",
       outcome:
         "Desenvolva aceleração, velocidade máxima, re-aceleração e ações rápidas para o jogo.",
-      detail: "12 semanas · português · acesso vitalício",
+      detail:
+        "12 semanas · português e inglês · RaptorPro · acesso vitalício",
       reviewGroup: "project36",
       icon: Gauge
-    },
-    {
-      id: "preseason",
-      label: "Pré-temporada",
-      prompt: "Preciso chegar pronto",
-      displayName: "Projeto Pré Temporada",
-      productId: "projeto_pre_temporada_pt",
-      href: "/programas/projeto-pre-temporada",
-      image: "/assets/photos/programs/programs-field-control.jpg",
-      imagePosition: "object-[50%_40%]",
-      outcome:
-        "Organize campo, academia e condicionamento para começar a temporada preparado para competir.",
-      detail: "12 semanas · português · acesso vitalício",
-      reviewGroup: "preSeason",
-      icon: CalendarRange
-    },
-    {
-      id: "return",
-      label: "Volta ao campo",
-      prompt: "Quero voltar a jogar",
-      displayName: "De Volta aos Gramados",
-      productId: "de_volta_aos_gramados_pt",
-      href: "/programas/de-volta-aos-gramados",
-      image: "/assets/photos/programs/programs-player-ready.jpg",
-      imagePosition: "object-[50%_38%]",
-      outcome:
-        "Retome corrida, força e confiança de forma progressiva após dores em pubalgia, adutores ou quadril.",
-      detail: "Programa em português · acesso vitalício",
-      reviewGroup: "deVolta",
-      icon: RotateCcw
     }
   ],
   en: [
     {
-      id: "inseason",
-      label: "In-season",
-      prompt: "Perform all season",
-      displayName: "Elanga In Season",
-      productId: "elanga_in_season",
-      href: "/en/programs/elanga-in-season",
-      image: "/assets/photos/programs/programs-pro-match.jpg",
+      id: "offseason",
+      label: "Offseason",
+      prompt: "I have 30 days to prepare",
+      displayName: "Offseason 30 Days",
+      productId: "offseason_30_days",
+      href: "/en/programs/offseason-30-days",
+      image: "/assets/photos/programs/programs-field-control.jpg",
       imagePosition: "object-[50%_40%]",
       outcome:
-        "Maintain strength, speed and match availability while managing the demands of your season.",
-      detail: "Program in English · lifetime access",
-      reviewGroup: "inSeason",
-      icon: ShieldCheck
-    },
-    {
-      id: "strength",
-      label: "Strength & power",
-      prompt: "Get stronger",
-      displayName: "Adama Strength & Power",
-      productId: "adama_strength_power",
-      href: "/en/programs/adama-strength-power",
-      image: "/assets/photos/programs/programs-adama-deadlift.jpeg",
-      imagePosition: "object-[50%_42%]",
-      outcome:
-        "Build football-specific strength, power and physical presence throughout your offseason.",
-      detail: "12 weeks · English · lifetime access",
-      reviewGroup: "adama",
-      icon: Dumbbell
+        "Organize field work, gym training, speed and conditioning in a complete interactive calendar inside RaptorPro.",
+      detail:
+        "30 days · English and Portuguese · RaptorPro · lifetime access",
+      reviewGroup: "preSeason",
+      icon: CalendarRange
     },
     {
       id: "speed",
@@ -144,58 +93,44 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       displayName: "Project 36: Speed & Acceleration",
       productId: "project_36",
       href: "/en/programs/project-36kmh",
-      image: "/assets/photos/programs/programs-project36-sprint.jpg",
-      imagePosition: "object-[50%_44%]",
+      image: "/assets/photos/lukaz-sprint-side.jpg",
+      imagePosition: "object-[64%_50%]",
       outcome:
         "Develop acceleration, top speed, re-acceleration and faster actions for the game.",
-      detail: "12 weeks · English · lifetime access",
+      detail:
+        "12 weeks · English and Portuguese · RaptorPro · lifetime access",
       reviewGroup: "project36",
       icon: Gauge
-    },
-    {
-      id: "offseason",
-      label: "Offseason",
-      prompt: "Build my base",
-      displayName: "Offseason 30 Days",
-      productId: "offseason_30_days",
-      href: "/en/programs/offseason-30-days",
-      image: "/assets/photos/programs/programs-field-control.jpg",
-      imagePosition: "object-[50%_40%]",
-      outcome:
-        "Organize field work, gym training, speed and conditioning in one focused offseason block.",
-      detail: "30 days · English · lifetime access",
-      reviewGroup: "preSeason",
-      icon: CalendarRange
     }
   ]
 };
 
 const copy = {
   pt: {
-    eyebrow: "Encontre seu programa",
-    title: "Qual é o seu objetivo agora?",
-    body: "Escolha o resultado que você busca. Nós mostramos o programa mais indicado para essa fase.",
-    recommendation: "Recomendado para seu objetivo",
+    eyebrow: "Programas prontos no RaptorPro",
+    title: "Escolha seu próximo programa.",
+    body: "Os dois programas já disponíveis em português e inglês, com calendário interativo e acompanhamento da sua execução.",
+    recommendation: "Disponível na plataforma",
     reviews: "avaliações",
     price: "Pagamento único",
     cta: "Conhecer o programa",
     all: "Comparar todos os programas",
     allHref: "/programas",
-    alternate: "Também temos programas em inglês",
-    alternateHref: "/programas#programas"
+    alternate: "Ver programas clássicos em PDF",
+    alternateHref: "/programas"
   },
   en: {
-    eyebrow: "Find your program",
-    title: "What is your goal right now?",
-    body: "Choose the result you need. We will show you the program that best fits this phase.",
-    recommendation: "Recommended for your goal",
+    eyebrow: "Programs ready in RaptorPro",
+    title: "Choose your next program.",
+    body: "Both programs are available in English and Portuguese, with an interactive calendar and workout tracking.",
+    recommendation: "Available in the platform",
     reviews: "reviews",
     price: "One-time payment",
     cta: "Explore the program",
     all: "Compare all programs",
     allHref: "/en/programs",
-    alternate: "Programs in Portuguese",
-    alternateHref: "/programas#programas-portugues"
+    alternate: "View classic PDF programs",
+    alternateHref: "/en/programs"
   }
 } as const;
 
@@ -251,7 +186,7 @@ export function ProgramGoalFinder({
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <div className="mt-6 grid max-w-2xl grid-cols-2 gap-2">
         {availableGoals.map((goal) => {
           const Icon = goal.icon;
           const selected = selectedGoal.id === goal.id;
