@@ -6,15 +6,16 @@ import {
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
+  CircleCheck,
   Dumbbell,
   Gauge,
   PlayCircle,
   ShieldCheck,
   Target,
   Trophy,
+  Video,
   Zap
 } from "lucide-react";
-import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -24,6 +25,44 @@ import { getReviewGroupForProgramHref } from "@/lib/reviews";
 type Project36SalesPageProps = {
   locale: "pt" | "en";
 };
+
+function Project36PhonePreview({ locale }: { locale: "pt" | "en" }) {
+  const sessions = [
+    ["A1", "Pogo Jump", "2x15 · 45–60s"],
+    ["B1", "Sled Sprint", "4x15m · 2 min"],
+    ["C1", "Flying Sprint", "3x30m · 3 min"]
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-[310px] rounded-[2.4rem] border-[8px] border-[#20252a] bg-[#090b0d] p-3 shadow-[0_36px_100px_rgba(0,0,0,0.6)]">
+      <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-white/15" />
+      <div className="rounded-3xl border border-emerald-400/20 bg-[#111513] p-4 text-white">
+        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
+          <span>{locale === "en" ? "Week 9 · Day 1" : "Semana 9 · Dia 1"}</span>
+          <span>92%</span>
+        </div>
+        <h3 className="mt-3 text-xl font-black leading-tight">Max Velocity + Game Speed</h3>
+        <p className="mt-2 text-xs leading-5 text-white/55">
+          {locale === "en" ? "High-quality speed. Stop before technique drops." : "Velocidade com qualidade. Pare antes da técnica cair."}
+        </p>
+        <div className="mt-4 space-y-2">
+          {sessions.map(([code, title, details], index) => (
+            <div className="rounded-xl border border-white/8 bg-white/[0.06] p-3" key={title}>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold"><span className="text-emerald-300">{code}</span> {title}</p>
+                {index === 0 ? <CircleCheck className="h-4 w-4 text-emerald-300" /> : <Video className="h-4 w-4 text-emerald-300" />}
+              </div>
+              <p className="mt-1 text-[11px] text-white/50">{details}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-emerald-400 to-lime-300" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const copy = {
   pt: {
@@ -37,7 +76,7 @@ const copy = {
       "Um sistema de offseason para jogadores de futebol que querem melhorar aceleração, top speed, re-aceleração e velocidade aplicada ao jogo.",
     primaryCta: "Comprar Projeto 36",
     secondaryCta: "Ver fases",
-    storeNote: "Compra finalizada pela loja RumoAoPro.",
+    storeNote: "Após a confirmação, o programa aparece automaticamente na sua conta RaptorPro.",
     chips: [
       "12 semanas",
       "3 fases",
@@ -48,7 +87,7 @@ const copy = {
     stats: [
       ["3", "fases progressivas"],
       ["12", "semanas de offseason"],
-      ["37", "paginas nos 3 PDFs"]
+      ["84", "dias organizados no app"]
     ],
     fitTitle: "Para quem é",
     fitH2: "Feito para atleta que precisa correr melhor, não só cansar mais.",
@@ -111,7 +150,7 @@ const copy = {
       }
     ],
     includedTitle: "O que vem dentro",
-    includedH2: "PDF visual, progressão clara e regras para sprintar com intenção.",
+    includedH2: "Calendário completo no RaptorPro, progressão clara e vídeos dentro do treino.",
     included: [
       {
         icon: CalendarDays,
@@ -161,24 +200,24 @@ const copy = {
       ["Ball work", "Pode entrar, mas técnico e com baixa/moderada intensidade"]
     ],
     previewTitle: "Dentro do produto",
-    previewH2: "O Projeto 36 já chega com visual forte e páginas práticas.",
+    previewH2: "Treino de campo, força e velocidade dentro de uma única jornada.",
     previewLead:
-      "A galeria mostra as páginas reais do material: visão das fases, regras de descanso e exemplos de sessão.",
+      "Você abre o dia, acompanha a sessão no celular, assiste às demonstrações e registra o treino no RaptorPro.",
     previewImages: [
       {
-        src: assets.project36HowToUse,
-        alt: "Pagina Start Here do Projeto 36km/h",
-        label: "How to use"
+        src: "/assets/programs/project-36/project-36-training.jpg",
+        alt: "Treino de futebol RumoAoPro",
+        label: "Velocidade aplicada ao futebol"
       },
       {
-        src: assets.project36RestRules,
-        alt: "Regras de descanso de sprint do Projeto 36km/h",
-        label: "Sprint rest rules"
+        src: "/assets/programs/project-36/project-36-sprint.jpg",
+        alt: "Sessão de sprint do Projeto 36km/h",
+        label: "Exposição real à velocidade"
       },
       {
-        src: assets.project36Phase1Day1,
-        alt: "Sessao Day 1 Acceleration + Plyometrics do Projeto 36km/h",
-        label: "Field session"
+        src: "/assets/programs/project-36/project-36-coach.jpg",
+        alt: "Treinador RumoAoPro orientando atletas",
+        label: "Método construído no campo"
       }
     ],
     sampleTitle: "Exemplos de sessões",
@@ -241,7 +280,7 @@ const copy = {
       "An offseason system for footballers who want to improve acceleration, top speed, re-acceleration and speed that shows up in the game.",
     primaryCta: "Buy Project 36",
     secondaryCta: "See phases",
-    storeNote: "Checkout runs through the RumoAoPro store.",
+    storeNote: "After confirmation, the program appears automatically in your RaptorPro account.",
     chips: [
       "12 weeks",
       "3 phases",
@@ -252,7 +291,7 @@ const copy = {
     stats: [
       ["3", "progressive phases"],
       ["12", "offseason weeks"],
-      ["37", "pages across 3 PDFs"]
+      ["84", "days organized in the app"]
     ],
     fitTitle: "Who it is for",
     fitH2: "Built for players who need to run better, not just suffer more.",
@@ -315,7 +354,7 @@ const copy = {
       }
     ],
     includedTitle: "What is inside",
-    includedH2: "A visual PDF system with clear progression and speed rules.",
+    includedH2: "A full RaptorPro calendar with clear progression and in-session videos.",
     included: [
       {
         icon: CalendarDays,
@@ -365,24 +404,24 @@ const copy = {
       ["Ball work", "Keep it technical and low to moderate intensity"]
     ],
     previewTitle: "Inside the product",
-    previewH2: "Project 36 already feels like a premium training guide.",
+    previewH2: "Field, strength and speed training inside one clear journey.",
     previewLead:
-      "The gallery shows real pages from the material: phase overview, sprint rest rules and sample sessions.",
+      "Open the day, follow the session on your phone, watch demonstrations and log the workout in RaptorPro.",
     previewImages: [
       {
-        src: assets.project36HowToUse,
-        alt: "Project 36km/h Start Here page",
-        label: "How to use"
+        src: "/assets/programs/project-36/project-36-training.jpg",
+        alt: "RumoAoPro football training",
+        label: "Speed applied to football"
       },
       {
-        src: assets.project36RestRules,
-        alt: "Project 36km/h sprint rest rules page",
-        label: "Sprint rest rules"
+        src: "/assets/programs/project-36/project-36-sprint.jpg",
+        alt: "Project 36 sprint session",
+        label: "Real speed exposure"
       },
       {
-        src: assets.project36Phase1Day1,
-        alt: "Project 36km/h Day 1 acceleration and plyometrics session",
-        label: "Field session"
+        src: "/assets/programs/project-36/project-36-coach.jpg",
+        alt: "RumoAoPro coach working with athletes",
+        label: "Built on the field"
       }
     ],
     sampleTitle: "Session examples",
@@ -454,12 +493,12 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
-          alt="Project 36km/h Speed and Acceleration Program cover"
+          alt="Project 36km/h speed training"
           className="absolute inset-0 -z-20 h-full w-full object-cover object-center opacity-65 lg:hidden"
           fill
           priority
           sizes="100vw"
-          src={assets.project36Cover}
+          src="/assets/programs/project-36/project-36-sprint.jpg"
         />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,9,11,0.98)_0%,rgba(8,9,11,0.88)_58%,rgba(8,9,11,0.58)_100%)] lg:bg-[radial-gradient(circle_at_78%_45%,rgba(163,230,53,0.12),transparent_28%),linear-gradient(135deg,#08090b_0%,#11151a_100%)]" />
         <div className="mx-auto grid min-h-[calc(74svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-8 sm:px-6 md:min-h-[calc(70vh-var(--header-height))] lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)] lg:px-8 lg:py-12">
@@ -489,7 +528,20 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 tone="dark"
               />
             ) : null}
-            <ProgramPurchaseSummary locale={locale} />
+            <div className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">
+                  {locale === "en" ? "Limited launch offer" : "Oferta de lançamento · tempo limitado"}
+                </p>
+                <div className="mt-1 flex items-baseline gap-3">
+                  <span className="text-sm font-bold text-white/45 line-through">R$ 249,90</span>
+                  <strong className="font-display text-4xl text-white">R$ 199,90</strong>
+                </div>
+              </div>
+              <p className="max-w-xs text-xs leading-5 text-white/55">
+                {locale === "en" ? "One-time payment. Full PT/EN access in RaptorPro." : "Pagamento único. Acesso completo PT/EN dentro do RaptorPro."}
+              </p>
+            </div>
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
               {page.chips.map((chip) => (
                 <span
@@ -520,34 +572,11 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             </p>
           </div>
           <div className="relative hidden h-full min-h-[560px] items-center justify-end lg:flex">
-            <div className="relative w-full max-w-[430px] rounded-[1.4rem] border border-white/15 bg-white/[0.05] p-3 shadow-[0_32px_90px_rgba(0,0,0,0.55)]">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[1rem]">
-                <Image
-                  alt="Project 36km/h training system"
-                  className="h-full w-full object-cover object-top"
-                  fill
-                  priority
-                  sizes="430px"
-                  src={assets.project36Cover}
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/85 to-transparent px-6 pb-6 pt-24">
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-lime-300">
-                    {locale === "en" ? "Inside RumoAoPro" : "Dentro da RumoAoPro"}
-                  </p>
-                  <p className="mt-2 text-xl font-black uppercase text-white">
-                    {locale === "en"
-                      ? "12 weeks. Every session organized."
-                      : "12 semanas. Cada sessão organizada."}
-                  </p>
-                </div>
-              </div>
-              <div className="absolute -left-8 top-12 rounded-lg border border-lime-400/30 bg-ink/95 px-4 py-3 shadow-xl backdrop-blur">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
-                  {locale === "en" ? "Speed system" : "Sistema de velocidade"}
-                </p>
-                <p className="mt-1 font-display text-2xl uppercase text-lime-300">3 phases</p>
-              </div>
+            <div className="absolute inset-6 overflow-hidden rounded-[2rem] border border-emerald-300/15">
+              <Image alt="Football speed training" className="h-full w-full object-cover object-center opacity-40" fill priority sizes="520px" src="/assets/programs/project-36/project-36-sprint.jpg" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#07100b] via-[#07100b]/55 to-transparent" />
             </div>
+            <div className="relative z-10 translate-x-4 rotate-[2deg]"><Project36PhonePreview locale={locale} /></div>
           </div>
         </div>
       </section>
@@ -679,14 +708,20 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
               {page.includedH2}
             </h2>
-            <div className="mt-8 overflow-hidden rounded-lg border border-white/10">
+            <div className="relative mt-8 min-h-[540px] overflow-hidden rounded-[2rem] border border-emerald-300/15 bg-[#07100b]">
               <Image
-                alt="Project 36km/h PDF cover"
-                className="aspect-[4/5] w-full object-cover object-top"
-                height={900}
-                src={assets.project36Cover}
-                width={720}
+                alt="Coach presenting the Project 36 training method"
+                className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
+                fill
+                sizes="(min-width: 768px) 40vw, 100vw"
+                src="/assets/programs/project-36/project-36-coach.jpg"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#07100b] via-[#07100b]/35 to-transparent" />
+              <div className="absolute inset-x-0 bottom-[-84px] flex justify-center">
+                <div className="scale-[0.78] sm:scale-[0.84]">
+                  <Project36PhonePreview locale={locale} />
+                </div>
+              </div>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

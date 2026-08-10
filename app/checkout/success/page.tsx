@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { getOrderById } from "@/lib/checkout/db";
 import { formatMoney, getProductById } from "@/lib/checkout/products";
 import {
+  getRaptorProProgramConfig,
   getRaptorProProgramUrl,
   isRaptorProProgramOrder
 } from "@/lib/checkout/raptorpro";
@@ -52,6 +53,8 @@ export default async function CheckoutSuccessPage({
     order?.product_id === "loadpro_founders" &&
     trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
+  const raptorProgram = order ? getRaptorProProgramConfig(order) : null;
+  const raptorProgramName = raptorProgram?.programTitle || order?.product_name || "programa";
   const raptorProvisioningStatus =
     typeof order?.metadata.raptorpro_provisioning_status === "string"
       ? order.metadata.raptorpro_provisioning_status
@@ -88,7 +91,7 @@ export default async function CheckoutSuccessPage({
   const accessHref = isLoadProTrial
     ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
     : isRaptorProProgram
-      ? getRaptorProProgramUrl()
+      ? getRaptorProProgramUrl(order!)
     : order?.status === "paid" && product
       ? `/my-programs/${product.slug}`
       : "/my-programs";
@@ -225,8 +228,8 @@ export default async function CheckoutSuccessPage({
                   <h2 className="mt-2 text-xl font-bold text-white">
                     {raptorEmailSent
                       ? isEnglish
-                        ? "Open Offseason 30 Days now"
-                        : "Abra o Offseason 30 Days agora"
+                        ? `Open ${raptorProgramName} now`
+                        : `Abra o ${raptorProgramName} agora`
                       : isEnglish
                         ? "Your access email is still being prepared"
                         : "Seu e-mail de acesso ainda está sendo preparado"}
@@ -238,7 +241,7 @@ export default async function CheckoutSuccessPage({
                 <li>2. {raptorAccountCreated
                   ? isEnglish ? "Create your password and continue." : "Crie sua senha e continue."
                   : isEnglish ? "Confirm the secure sign-in." : "Confirme a entrada segura."}</li>
-                <li>3. {isEnglish ? "After signing in, Offseason 30 Days opens automatically." : "Depois de entrar, o Offseason 30 Days abrirá automaticamente."}</li>
+                <li>3. {isEnglish ? `After signing in, ${raptorProgramName} opens automatically.` : `Depois de entrar, o ${raptorProgramName} abrirá automaticamente.`}</li>
               </ol>
               {raptorEmailSent ? (
                 <p className="mt-4 rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm leading-6 text-white/65">
@@ -303,7 +306,7 @@ export default async function CheckoutSuccessPage({
             {order?.status === "paid" && isRaptorProProgram && !raptorEmailSent ? (
               <Link
                 className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-signal/50 px-5 text-sm font-bold uppercase text-white"
-                href={`https://wa.me/5519992811078?text=${encodeURIComponent(`Olá! Preciso de ajuda com o acesso ao Offseason 30 Days. Pedido: ${order.id}`)}`}
+                href={`https://wa.me/5519992811078?text=${encodeURIComponent(`Olá! Preciso de ajuda com o acesso ao ${raptorProgramName}. Pedido: ${order.id}`)}`}
               >
                 {isEnglish ? "Contact support" : "Falar com o suporte"}
               </Link>

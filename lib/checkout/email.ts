@@ -300,24 +300,32 @@ export async function sendRaptorProProgramAccessEmail(input: {
   name: string;
   actionUrl: string;
   accountCreated: boolean;
+  programName: string;
+  locale: "pt" | "en";
 }) {
   const actionUrl = escapeHtml(input.actionUrl);
+  const programName = escapeHtml(input.programName);
+  const isEnglish = input.locale === "en";
   return sendEmail({
     to: input.to,
-    subject: "Seu Offseason 30 Days está liberado no RaptorPro",
+    subject: isEnglish
+      ? `${input.programName} is ready in RaptorPro`
+      : `Seu ${input.programName} está liberado no RaptorPro`,
     orderId: input.orderId,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
         <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
           <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RaptorPro Coach</p>
-          <h1 style="margin:0;font-size:26px">Programa liberado</h1>
+          <h1 style="margin:0;font-size:26px">${isEnglish ? "Program unlocked" : "Programa liberado"}</h1>
         </div>
         <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
-          <p>Fala, ${escapeHtml(input.name)}.</p>
-          <p>Pagamento confirmado. Seu acesso ao <strong>Offseason 30 Days</strong> já está liberado no RaptorPro.</p>
-          <p>${input.accountCreated ? "Use o botão abaixo para criar sua senha e abrir o primeiro treino." : "Use o botão abaixo para entrar com segurança e abrir seu programa."}</p>
-          <p style="margin:24px 0"><a href="${actionUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:14px 20px;text-decoration:none;font-weight:700">${input.accountCreated ? "Criar senha e acessar" : "Abrir meu programa"}</a></p>
-          <p style="color:#68707d;font-size:13px">O link é pessoal e expira por segurança. Depois do primeiro acesso, entre em app.rumoaopro.com.br com o e-mail usado na compra.</p>
+          <p>${isEnglish ? "Hi" : "Fala"}, ${escapeHtml(input.name)}.</p>
+          <p>${isEnglish ? "Payment confirmed. Your access to" : "Pagamento confirmado. Seu acesso ao"} <strong>${programName}</strong> ${isEnglish ? "is now available in RaptorPro." : "já está liberado no RaptorPro."}</p>
+          <p>${input.accountCreated
+            ? isEnglish ? "Use the button below to create your password and open your first session." : "Use o botão abaixo para criar sua senha e abrir o primeiro treino."
+            : isEnglish ? "Use the button below to sign in securely and open your program." : "Use o botão abaixo para entrar com segurança e abrir seu programa."}</p>
+          <p style="margin:24px 0"><a href="${actionUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:14px 20px;text-decoration:none;font-weight:700">${input.accountCreated ? (isEnglish ? "Create password and access" : "Criar senha e acessar") : (isEnglish ? "Open my program" : "Abrir meu programa")}</a></p>
+          <p style="color:#68707d;font-size:13px">${isEnglish ? "This personal link expires for security. After your first access, sign in at app.rumoaopro.com.br with the email used for the purchase." : "O link é pessoal e expira por segurança. Depois do primeiro acesso, entre em app.rumoaopro.com.br com o e-mail usado na compra."}</p>
         </div>
       </div>
     `

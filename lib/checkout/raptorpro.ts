@@ -4,6 +4,32 @@ import type { Order } from "@/lib/checkout/types";
 export const RAPTORPRO_OFFSEASON_PRODUCT_ID = "offseason_30_days";
 export const RAPTORPRO_OFFSEASON_PROGRAM_ID = "commercial-program-offseason-30";
 export const RAPTORPRO_OFFSEASON_PROGRAM_SLUG = "offseason-30-days";
+export const RAPTORPRO_PROJECT_36_PRODUCT_ID = "project_36";
+export const RAPTORPRO_PROJECT_36_LEGACY_PRODUCT_ID = "projeto_36_2022_pt";
+export const RAPTORPRO_PROJECT_36_PROGRAM_ID = "commercial-program-project-36";
+export const RAPTORPRO_PROJECT_36_PROGRAM_SLUG = "project-36-speed-acceleration";
+
+export type RaptorProProgramConfig = {
+  productIds: string[];
+  programId: string;
+  programSlug: string;
+  programTitle: string;
+};
+
+const RAPTORPRO_PROGRAMS: RaptorProProgramConfig[] = [
+  {
+    productIds: [RAPTORPRO_OFFSEASON_PRODUCT_ID],
+    programId: RAPTORPRO_OFFSEASON_PROGRAM_ID,
+    programSlug: RAPTORPRO_OFFSEASON_PROGRAM_SLUG,
+    programTitle: "Offseason 30 Days"
+  },
+  {
+    productIds: [RAPTORPRO_PROJECT_36_PRODUCT_ID, RAPTORPRO_PROJECT_36_LEGACY_PRODUCT_ID],
+    programId: RAPTORPRO_PROJECT_36_PROGRAM_ID,
+    programSlug: RAPTORPRO_PROJECT_36_PROGRAM_SLUG,
+    programTitle: "Project 36"
+  }
+];
 
 type PaidAccessStatus = "granted" | "revoked";
 
@@ -12,8 +38,13 @@ type GeneratedLink = {
   user?: { id?: string; email?: string };
 };
 
+export function getRaptorProProgramConfig(orderOrProductId: Pick<Order, "product_id"> | string) {
+  const productId = typeof orderOrProductId === "string" ? orderOrProductId : orderOrProductId.product_id;
+  return RAPTORPRO_PROGRAMS.find((program) => program.productIds.includes(productId)) || null;
+}
+
 export function isRaptorProProgramOrder(order: Order) {
-  return order.product_id === RAPTORPRO_OFFSEASON_PRODUCT_ID;
+  return Boolean(getRaptorProProgramConfig(order));
 }
 
 function config() {
@@ -49,10 +80,12 @@ async function requestRaptorPro(path: string, init: RequestInit = {}) {
 }
 
 async function setPaidAccess(order: Order, status: PaidAccessStatus) {
+  const program = getRaptorProProgramConfig(order);
+  if (!program) throw new Error("Order is not a RaptorPro program purchase.");
   return requestRaptorPro("/rest/v1/rpc/set_commercial_program_paid_access", {
     method: "POST",
     body: JSON.stringify({
-      p_program_id: RAPTORPRO_OFFSEASON_PROGRAM_ID,
+      p_program_id: program.programId,
       p_email: order.customer_email.trim().toLowerCase(),
       p_status: status,
       p_order_id: order.id
@@ -67,7 +100,9 @@ function isMissingAuthUser(message: string) {
 async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   const environment = config();
   if (!environment) throw new Error("RaptorPro provisioning environment is not configured.");
-  const redirectTo = `${environment.appUrl}/programs/${RAPTORPRO_OFFSEASON_PROGRAM_SLUG}/access`;
+  const program = getRaptorProProgramConfig(order);
+  if (!program) throw new Error("Order is not a RaptorPro program purchase.");
+  const redirectTo = `${environment.appUrl}/programs/${program.programSlug}/access`;
   const response = await requestRaptorPro("/auth/v1/admin/generate_link", {
     method: "POST",
     body: JSON.stringify({
@@ -78,7 +113,7 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
         full_name: order.customer_name,
         invite_kind: "commercial_program",
         invite_language: order.metadata.locale === "en" ? "en" : "pt",
-        program_id: RAPTORPRO_OFFSEASON_PROGRAM_ID,
+        program_id: program.programId,
         product_id: order.product_id,
         order_id: order.id,
         source: "rumoaopro_checkout"
@@ -94,14 +129,17 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   return { actionUrl: result.action_link, userId: result.user?.id || null, type };
 }
 
-export function getRaptorProProgramUrl() {
+export function getRaptorProProgramUrl(orderOrProductId: Pick<Order, "product_id"> | string = RAPTORPRO_OFFSEASON_PRODUCT_ID) {
   const environment = config();
   const appUrl = environment?.appUrl || "https://app.rumoaopro.com.br";
-  return `${appUrl}/programs/${RAPTORPRO_OFFSEASON_PROGRAM_SLUG}/access`;
+  const program = getRaptorProProgramConfig(orderOrProductId);
+  const slug = program?.programSlug || RAPTORPRO_OFFSEASON_PROGRAM_SLUG;
+  return `${appUrl}/programs/${slug}/access`;
 }
 
 export async function syncRaptorProProgramAccess(order: Order, status: PaidAccessStatus) {
-  if (!isRaptorProProgramOrder(order)) return { handled: false as const };
+  const program = getRaptorProProgramConfig(order);
+  if (!program) return { handled: false as const };
   if (!config()) {
     await appendOrderLog(
       order.id,
@@ -140,7 +178,7 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
     order.id,
     "raptorpro.access.synced",
     `Acesso ao programa RaptorPro atualizado para ${status}.`,
-    { accountCreated, programId: RAPTORPRO_OFFSEASON_PROGRAM_ID }
+    { accountCreated, programId: program.programId }
   );
 
   return {
@@ -149,7 +187,10 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
     status,
     accountCreated,
     actionUrl,
-    programUrl: getRaptorProProgramUrl()
+    programId: program.programId,
+    programSlug: program.programSlug,
+    programTitle: program.programTitle,
+    programUrl: getRaptorProProgramUrl(order)
   };
 }
 

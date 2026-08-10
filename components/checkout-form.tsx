@@ -148,6 +148,8 @@ function CardNetworkBadges() {
 export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const isEnglish = locale === "en";
   const isLoadProFounders = product.id === "loadpro_founders";
+  const isProject36 =
+    product.id === "project_36" || product.id === "projeto_36_2022_pt";
   const productCopy = getLocalizedProductCopy(product, locale);
   const [country, setCountry] = useState(isEnglish ? "US" : "BR");
   const [paymentMethod, setPaymentMethod] =
@@ -691,6 +693,19 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         </details>
 
         <div className="rounded-md border border-ink/10 bg-smoke px-3 py-2 text-sm text-graphite/75">
+          {isProject36 ? (
+            <div className="mb-2 rounded-md border border-emerald-700/20 bg-emerald-50 px-3 py-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                {isEnglish
+                  ? "Limited launch offer"
+                  : "Oferta de lancamento por tempo limitado"}
+              </p>
+              <p className="mt-1 text-xs text-graphite/70">
+                <span className="mr-2 line-through">R$ 249,90</span>
+                <strong className="text-emerald-800">R$ 199,90</strong>
+              </p>
+            </div>
+          ) : null}
           {isEnglish ? (
             <p>
               International price: <strong>{usdPrice}</strong>

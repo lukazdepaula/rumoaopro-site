@@ -7,8 +7,8 @@ import { SiteHeader } from "@/components/site-header";
 import { requireCustomer } from "@/lib/checkout/customer-auth";
 import { getUserPrograms } from "@/lib/checkout/db";
 import {
+  getRaptorProProgramConfig,
   getRaptorProProgramUrl,
-  RAPTORPRO_OFFSEASON_PRODUCT_ID
 } from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
 
@@ -57,8 +57,8 @@ export default async function MyProgramsPage() {
                 <Link
                   className="focus-ring group block overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card"
                   href={
-                    product.id === RAPTORPRO_OFFSEASON_PRODUCT_ID
-                      ? getRaptorProProgramUrl()
+                    getRaptorProProgramConfig(product.id)
+                      ? getRaptorProProgramUrl(product.id)
                       : `/my-programs/${product.slug}`
                   }
                   key={entitlement.id}

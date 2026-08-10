@@ -15,7 +15,7 @@ import {
 } from "@/lib/checkout/email";
 import { getSiteUrl } from "@/lib/checkout/payments";
 import { getProductById } from "@/lib/checkout/products";
-import { isRaptorProProgramOrder } from "@/lib/checkout/raptorpro";
+import { getRaptorProProgramConfig, isRaptorProProgramOrder } from "@/lib/checkout/raptorpro";
 import type { CheckoutProduct, Order } from "@/lib/checkout/types";
 
 const dayInSeconds = 60 * 60 * 24;
@@ -114,6 +114,7 @@ export async function deliverOrder(orderId: string) {
   }
 
   if (isRaptorProProgramOrder(order)) {
+    const program = getRaptorProProgramConfig(order);
     if (
       order.metadata.raptorpro_provisioning_status !== "synced" ||
       order.metadata.raptorpro_welcome_email_sent !== true
@@ -125,7 +126,7 @@ export async function deliverOrder(orderId: string) {
     }
     await updateDeliveryStatus(order.id, "delivered", {
       delivery_type: "raptorpro_program_access",
-      program_id: "commercial-program-offseason-30"
+      program_id: program?.programId || null
     });
     return;
   }

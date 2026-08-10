@@ -12,8 +12,8 @@ import {
 } from "@/lib/checkout/materials";
 import { getProductBySlug } from "@/lib/checkout/products";
 import {
+  getRaptorProProgramConfig,
   getRaptorProProgramUrl,
-  RAPTORPRO_OFFSEASON_PRODUCT_ID
 } from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
 
@@ -43,8 +43,8 @@ export default async function ProgramAccessPage({ params }: ProgramAccessPagePro
     notFound();
   }
 
-  if (product.id === RAPTORPRO_OFFSEASON_PRODUCT_ID) {
-    redirect(getRaptorProProgramUrl());
+  if (getRaptorProProgramConfig(product.id)) {
+    redirect(getRaptorProProgramUrl(product.id));
   }
 
   const hasAccess = await userHasAccessToProduct(user.id, product.id);

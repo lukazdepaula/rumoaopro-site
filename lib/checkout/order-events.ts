@@ -14,7 +14,7 @@ import {
   sendRaptorProProgramAccessEmail
 } from "@/lib/checkout/email";
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
-import { isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
+import { getRaptorProProgramConfig, isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
 import type { Order } from "@/lib/checkout/types";
 
 async function assertOrder(orderId: string): Promise<Order> {
@@ -104,6 +104,8 @@ async function syncRaptorProSafely(
   status: "granted" | "revoked"
 ) {
   if (!isRaptorProProgramOrder(order)) return;
+  const program = getRaptorProProgramConfig(order);
+  if (!program) return;
   if (order.metadata.checkout_gateway_mode === "sandbox") {
     await updateOrderGatewayIds(order.id, {
       metadata: { raptorpro_provisioning_status: "sandbox_skipped" }
@@ -133,7 +135,9 @@ async function syncRaptorProSafely(
           to: order.customer_email,
           name: order.customer_name,
           actionUrl: result.actionUrl,
-          accountCreated: result.accountCreated
+          accountCreated: result.accountCreated,
+          programName: program.programTitle,
+          locale: order.metadata.locale === "en" ? "en" : "pt"
         });
         welcomeEmailStatus = welcomeEmailSent ? "sent" : "failed";
       } else {
@@ -155,7 +159,7 @@ async function syncRaptorProSafely(
         raptorpro_welcome_email_sent: welcomeEmailSent,
         raptorpro_welcome_email_status: welcomeEmailStatus,
         raptorpro_account_created: result.accountCreated,
-        raptorpro_program_id: "commercial-program-offseason-30"
+        raptorpro_program_id: program.programId
       }
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Project36SalesPage } from "@/components/project-36-sales-page";
-import { assets } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Projeto 36: Velocidade e Aceleração",
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
     title: "Projeto 36: Velocidade e Aceleração",
     description:
       "Método de offseason em 3 fases, disponível em português e inglês, para correr mais rápido e transferir velocidade para o jogo.",
-    images: [assets.project36Pt],
+    images: ["/assets/programs/project-36/project-36-sprint.jpg"],
     locale: "pt_BR",
     type: "website"
   }

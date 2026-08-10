@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Project36SalesPage } from "@/components/project-36-sales-page";
-import { assets } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Project 36: Speed & Acceleration",
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
     title: "Project 36: Speed & Acceleration",
     description:
       "A 3-phase offseason speed system to build athletic foundation, acceleration power and game speed.",
-    images: [assets.project36Cover],
+    images: ["/assets/programs/project-36/project-36-sprint.jpg"],
     locale: "en_US",
     type: "website"
   }
