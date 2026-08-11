@@ -23,7 +23,7 @@ const annualPath = [
     step: "01",
     title: "Offseason",
     body:
-      "Construa uma base sólida de força, potência e velocidade com Adama e Project 36.",
+      "Construa uma base sólida de força, potência e velocidade com o Projeto 36.",
     image: assets.programsGymBriefing,
     imageClass: "object-[center_18%]",
     href: "#programas",
@@ -54,17 +54,7 @@ const annualPath = [
 const normalizeProgramPath = (href: string) =>
   href.replace(/^\/programas\//, "").replace(/^\/checkout\//, "");
 
-const translatedProject36 = programs.find(
-  (program) => program.href === "/programas/projeto-36kmh"
-);
-
-const portuguesePrograms = translatedProject36
-  ? [
-      ...programsPtLegacy.slice(0, 2),
-      translatedProject36,
-      ...programsPtLegacy.slice(2)
-    ]
-  : programsPtLegacy;
+const portuguesePrograms = programsPtLegacy;
 
 const getProgramPrice = (href: string) => {
   const path = normalizeProgramPath(href);
@@ -129,8 +119,8 @@ export default function ProgramasPage() {
             </div>
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {[
-                ["4", "programas globais"],
-                ["4", "opções em português"],
+                ["3", "programas dentro do app"],
+                ["1", "programa em PDF"],
                 ["Ano todo", "offseason, pré e temporada"]
               ].map(([value, label]) => (
                 <div
@@ -162,8 +152,9 @@ export default function ProgramasPage() {
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              A preparação ideal começa na offseason com Adama e Project 36,
-              desenvolvendo força, potência, velocidade e resistência física.
+              A preparação ideal começa na offseason com o Projeto 36 e o
+              Offseason 30 Days, desenvolvendo força, potência, velocidade e
+              resistência física.
               Nos 30 dias que antecedem a pré-temporada, o Offseason 30 Days
               intensifica o trabalho. Durante a temporada, o Elanga mantém força
               e velocidade sem comprometer a recuperação do jogador.

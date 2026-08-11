@@ -65,19 +65,19 @@ const copy = {
     sessions: [
       {
         icon: Dumbbell,
-        title: "Day 1 - Lower Strength / Power",
+        title: "Dia 1 - Força / Potência de membros inferiores",
         body:
           "Mantém força de membros inferiores, potência e robustez sem esmagar as pernas."
       },
       {
         icon: ShieldCheck,
-        title: "Day 2 - Upper Strength / Core",
+        title: "Dia 2 - Força de membros superiores / Core",
         body:
           "Sustenta tronco, contato, ombro e core com baixo custo de fadiga para a partida."
       },
       {
         icon: Zap,
-        title: "Day 3 - Field Speed / Sprint Exposure",
+        title: "Dia 3 - Velocidade de campo / Exposição a sprint",
         body:
           "Coloca velocidade na semana sem virar conditioning: qualidade, intenção e recuperação."
       }
@@ -88,43 +88,43 @@ const copy = {
       "Cada fase dura 4 semanas e ajusta a prioridade conforme o calendário avança: base explosiva, aceleração, reload, velocidade máxima, domínio de speed, deload neural e manutenção final.",
     phases: [
       {
-        title: "Phase 1 - Explosive Base",
+        title: "Fase 1 - Base Explosiva",
         weeks: "Weeks 1-4",
         image: assets.elangaPhase1Overview,
         body: "Base explosiva com baixa dose, força de suporte e sprint exposure semanal."
       },
       {
-        title: "Phase 2 - Acceleration & Reactivity",
+        title: "Fase 2 - Aceleração e Reatividade",
         weeks: "Weeks 5-8",
         image: assets.elangaPhase2Overview,
         body: "Primeiros metros mais agressivos, reatividade e contatos rápidos sem excesso de volume."
       },
       {
-        title: "Phase 3 - Strength Reload",
+        title: "Fase 3 - Recarga de Força",
         weeks: "Weeks 9-12",
         image: assets.elangaPhase3Overview,
         body: "Reload controlado de força para recuperar suporte sem perder exposição de velocidade."
       },
       {
-        title: "Phase 4 - Elastic Speed & Max Velocity",
+        title: "Fase 4 - Velocidade Elástica e Velocidade Máxima",
         weeks: "Weeks 13-16",
         image: assets.elangaPhase4Overview,
         body: "Ênfase em elasticidade, postura e velocidade máxima com qualidade alta."
       },
       {
-        title: "Phase 5 - Speed Dominance",
+        title: "Fase 5 - Domínio da Velocidade",
         weeks: "Weeks 17-20",
         image: assets.elangaPhase5Overview,
         body: "Mantém o atleta rápido, responsivo e pronto para ações explosivas do jogo."
       },
       {
-        title: "Phase 6 - Neural Refresh / Deload",
+        title: "Fase 6 - Refresh Neural / Deload",
         weeks: "Weeks 21-24",
         image: assets.elangaPhase6Overview,
         body: "Reduz carga para refrescar o sistema nervoso e manter o atleta disponível."
       },
       {
-        title: "Phase 7 - End-Season Maintenance",
+        title: "Fase 7 - Manutenção de Fim de Temporada",
         weeks: "Weeks 25-28",
         image: assets.elangaPhase7Overview,
         body: "Manutenção final para chegar ao fim da temporada ainda forte, rápido e fresco."
@@ -361,6 +361,8 @@ const copy = {
     coachingCta: "I need individual coaching"
   }
 };
+
+export { copy as elangaSalesCopy };
 
 export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
   const page = copy[locale];

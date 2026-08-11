@@ -634,7 +634,7 @@ export const legacyPortugueseProducts = {
 export const programs = [
   {
     title: "Offseason 30 Days",
-    tag: "Conteúdo em inglês",
+    tag: "Português e inglês",
     duration: "30 dias",
     level: "Últimos 30 dias da offseason",
     body:
@@ -685,22 +685,22 @@ export const programs = [
   },
   {
     title: "Elanga In-Season",
-    tag: "Conteúdo em inglês",
+    tag: "Português e inglês",
     duration: "28 semanas",
     level: "Temporada",
     body:
       "Para manter força, velocidade e potência durante a temporada sem competir com jogos e treinos do time.",
     outcomes: [
       "3 sessões de suporte por semana",
-      "Baixo volume",
-      "Conteúdo do programa em inglês"
+      "7 fases de 4 semanas",
+      "Disponível em português e inglês"
     ],
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/programas/elanga-in-season",
     cta: "Ver detalhes"
   }
-];
+].filter((program) => program.href !== "/programas/adama-strength-power");
 
 export const programsPtLegacy = [
   {
@@ -754,7 +754,13 @@ export const programsPtLegacy = [
     href: "/programas/de-volta-aos-gramados",
     cta: "Ver detalhes"
   }
-];
+].filter(
+  (program) =>
+    ![
+      "/programas/projeto-pre-temporada",
+      "/programas/projeto-adama-2022"
+    ].includes(program.href)
+);
 
 export const portugueseProgramSalesPages = {
   preTemporada: {
@@ -913,7 +919,7 @@ export const portugueseProgramSalesPages = {
 export const programsEn = [
   {
     title: "Offseason 30 Days",
-    tag: "English",
+    tag: "Portuguese & English",
     duration: "30 days",
     level: "Final 30 days",
     body:
@@ -964,7 +970,7 @@ export const programsEn = [
   },
   {
     title: "Elanga In-Season",
-    tag: "English",
+    tag: "Portuguese & English",
     duration: "28 weeks",
     level: "In-season",
     body:
@@ -979,7 +985,7 @@ export const programsEn = [
     href: "/en/programs/elanga-in-season",
     cta: "View page"
   }
-];
+].filter((program) => program.href !== "/en/programs/adama-strength-power");
 
 export const productLadder = [
   {

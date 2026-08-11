@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { ElangaSalesPage } from "@/components/elanga-sales-page";
-import { assets } from "@/lib/content";
+import { ElangaRaptorSalesPage } from "@/components/elanga-raptor-sales-page";
 
 export const metadata: Metadata = {
   title: "Projeto Elanga In-Season",
@@ -17,12 +16,12 @@ export const metadata: Metadata = {
     title: "Projeto Elanga In-Season",
     description:
       "Sistema de temporada em 7 fases para manter força, sprint exposure, potência e disponibilidade entre treinos e jogos.",
-    images: [assets.elangaCover],
+    images: ["/assets/photos/lukaz-sprint-side.jpg"],
     locale: "pt_BR",
     type: "website"
   }
 };
 
 export default function ElangaInSeasonPage() {
-  return <ElangaSalesPage locale="pt" />;
+  return <ElangaRaptorSalesPage locale="pt" />;
 }
