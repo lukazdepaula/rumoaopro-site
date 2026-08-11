@@ -8,6 +8,9 @@ export const RAPTORPRO_PROJECT_36_PRODUCT_ID = "project_36";
 export const RAPTORPRO_PROJECT_36_LEGACY_PRODUCT_ID = "projeto_36_2022_pt";
 export const RAPTORPRO_PROJECT_36_PROGRAM_ID = "commercial-program-project-36";
 export const RAPTORPRO_PROJECT_36_PROGRAM_SLUG = "project-36-speed-acceleration";
+export const RAPTORPRO_ELANGA_PRODUCT_ID = "elanga_in_season";
+export const RAPTORPRO_ELANGA_PROGRAM_ID = "commercial-program-elanga-in-season";
+export const RAPTORPRO_ELANGA_PROGRAM_SLUG = "project-elanga-in-season";
 
 export type RaptorProProgramConfig = {
   productIds: string[];
@@ -28,6 +31,12 @@ const RAPTORPRO_PROGRAMS: RaptorProProgramConfig[] = [
     programId: RAPTORPRO_PROJECT_36_PROGRAM_ID,
     programSlug: RAPTORPRO_PROJECT_36_PROGRAM_SLUG,
     programTitle: "Project 36"
+  },
+  {
+    productIds: [RAPTORPRO_ELANGA_PRODUCT_ID],
+    programId: RAPTORPRO_ELANGA_PROGRAM_ID,
+    programSlug: RAPTORPRO_ELANGA_PROGRAM_SLUG,
+    programTitle: "Project Elanga"
   }
 ];
 
