@@ -7,13 +7,12 @@ import {
   CalendarDays,
   CheckCircle2,
   Gauge,
-  PlayCircle,
   ShieldCheck,
-  Smartphone,
   Target
 } from "lucide-react";
 import { elangaSalesCopy } from "@/components/elanga-sales-page";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
+import { RaptorProgramExperience } from "@/components/raptor-program-experience";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, shopifyProducts } from "@/lib/content";
@@ -26,11 +25,6 @@ const athletePhotos = {
   hero: "/assets/photos/lukaz-sprint-side.jpg",
   match: "/assets/photos/lukaz-field-playing.jpg",
   coach: "/assets/photos/lukaz-gym-instruction.jpg"
-};
-
-const appScreens = {
-  calendar: assets.appCalendarScreen,
-  workout: assets.appInterface
 };
 
 const extraCopy = {
@@ -390,67 +384,9 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
         </div>
       </section>
 
-      <section className="relative overflow-hidden py-24" id="raptorpro">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(249,115,22,0.18),transparent_30%),radial-gradient(circle_at_80%_30%,rgba(245,158,11,0.10),transparent_34%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
-          <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.15em] text-orange-400">
-              {extra.appEyebrow}
-            </p>
-            <h2 className="mt-4 font-display text-3xl uppercase leading-tight sm:text-5xl">
-              {extra.appTitle}
-            </h2>
-            <p className="mt-6 text-base leading-8 text-white/64">{extra.appBody}</p>
-            <ul className="mt-8 space-y-4">
-              {extra.appFeatures.map((feature) => (
-                <li className="flex items-start gap-3" key={feature}>
-                  <CheckCircle2
-                    aria-hidden="true"
-                    className="mt-0.5 h-5 w-5 shrink-0 text-orange-400"
-                  />
-                  <span className="text-sm leading-6 text-white/72">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="relative min-h-[610px] sm:min-h-[680px]">
-            <div className="absolute left-0 top-10 w-[74%] overflow-hidden rounded-[1.8rem] border border-white/12 bg-[#080907] p-2 shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:w-[70%]">
-              <div className="relative overflow-hidden rounded-[1.35rem] bg-black">
-                <Image
-                  alt={extra.phoneCalendar}
-                  className="h-auto w-full object-cover object-top"
-                  height={1000}
-                  src={appScreens.calendar}
-                  width={1500}
-                />
-              </div>
-              <p className="px-4 py-3 text-xs font-extrabold uppercase tracking-[0.12em] text-orange-300">
-                {extra.phoneCalendar}
-              </p>
-            </div>
-            <div className="absolute bottom-0 right-0 w-[46%] min-w-[205px] overflow-hidden rounded-[2.7rem] border-[7px] border-[#24251f] bg-[#080907] shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:w-[42%]">
-              <div className="mx-auto mt-2 h-1.5 w-16 rounded-full bg-white/20" />
-              <Image
-                alt={extra.phoneWorkout}
-                className="mt-3 aspect-[9/17] w-full object-cover object-top"
-                height={1200}
-                src={appScreens.workout}
-                width={680}
-              />
-              <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-orange-300/20 bg-black/80 px-3 py-3 backdrop-blur">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-orange-300">
-                  <PlayCircle aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" />
-                  {extra.phoneWorkout}
-                </p>
-              </div>
-            </div>
-            <div className="absolute right-[30%] top-0 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-black shadow-[0_18px_50px_rgba(249,115,22,0.30)]">
-              <Smartphone aria-hidden="true" className="h-7 w-7" />
-            </div>
-          </div>
-        </div>
-      </section>
+      <div id="raptorpro">
+        <RaptorProgramExperience locale={locale} variant="elanga" />
+      </div>
 
       <section className="border-y border-white/8 bg-[#11120f] py-20">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">

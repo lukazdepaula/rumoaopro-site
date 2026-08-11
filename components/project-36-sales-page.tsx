@@ -6,15 +6,17 @@ import {
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
-  CircleCheck,
   Dumbbell,
   Gauge,
   PlayCircle,
   ShieldCheck,
   Target,
-  Video,
   Zap
 } from "lucide-react";
+import {
+  RaptorPhoneMockup,
+  raptorAppScreens
+} from "@/components/raptor-program-experience";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -24,44 +26,6 @@ import { getReviewGroupForProgramHref } from "@/lib/reviews";
 type Project36SalesPageProps = {
   locale: "pt" | "en";
 };
-
-function Project36PhonePreview({ locale }: { locale: "pt" | "en" }) {
-  const sessions = [
-    ["A1", "Pogo Jump", "2x15 · 45–60s"],
-    ["B1", "Sled Sprint", "4x15m · 2 min"],
-    ["C1", "Flying Sprint", "3x30m · 3 min"]
-  ];
-
-  return (
-    <div className="mx-auto w-full max-w-[310px] rounded-[2.4rem] border-[8px] border-[#20252a] bg-[#090b0d] p-3 shadow-[0_36px_100px_rgba(0,0,0,0.6)]">
-      <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-white/15" />
-      <div className="rounded-3xl border border-emerald-400/20 bg-[#111513] p-4 text-white">
-        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
-          <span>{locale === "en" ? "Week 9 · Day 1" : "Semana 9 · Dia 1"}</span>
-          <span>92%</span>
-        </div>
-        <h3 className="mt-3 text-xl font-black leading-tight">Max Velocity + Game Speed</h3>
-        <p className="mt-2 text-xs leading-5 text-white/55">
-          {locale === "en" ? "High-quality speed. Stop before technique drops." : "Velocidade com qualidade. Pare antes da técnica cair."}
-        </p>
-        <div className="mt-4 space-y-2">
-          {sessions.map(([code, title, details], index) => (
-            <div className="rounded-xl border border-white/8 bg-white/[0.06] p-3" key={title}>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-bold"><span className="text-emerald-300">{code}</span> {title}</p>
-                {index === 0 ? <CircleCheck className="h-4 w-4 text-emerald-300" /> : <Video className="h-4 w-4 text-emerald-300" />}
-              </div>
-              <p className="mt-1 text-[11px] text-white/50">{details}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-emerald-400 to-lime-300" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const copy = {
   pt: {
@@ -582,7 +546,11 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
           </div>
           <div className="relative hidden h-full min-h-[610px] items-end justify-end lg:flex">
             <div className="absolute bottom-4 right-0 z-10 w-[56%] rotate-[3deg]">
-              <Project36PhonePreview locale={locale} />
+              <RaptorPhoneMockup
+                alt={locale === "en" ? "Real Project 36 calendar in RaptorPro" : "Calendário real do Projeto 36 no RaptorPro"}
+                className="w-full"
+                src={raptorAppScreens.calendar}
+              />
             </div>
             <div className="absolute bottom-10 left-0 z-20 max-w-[230px] rounded-2xl border border-white/15 bg-black/55 p-4 shadow-2xl backdrop-blur-xl">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">
@@ -753,8 +721,12 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#07100b] via-[#07100b]/35 to-transparent" />
               <div className="absolute inset-x-0 bottom-[-84px] flex justify-center">
-                <div className="scale-[0.78] sm:scale-[0.84]">
-                  <Project36PhonePreview locale={locale} />
+                <div className="w-[66%] max-w-[290px] scale-[0.78] sm:scale-[0.84]">
+                  <RaptorPhoneMockup
+                    alt={locale === "en" ? "Real workout inside RaptorPro" : "Treino real dentro do RaptorPro"}
+                    className="w-full"
+                    src={raptorAppScreens.workout}
+                  />
                 </div>
               </div>
             </div>
@@ -858,11 +830,26 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
 
           <div className="relative mx-auto min-h-[620px] w-full max-w-[700px] sm:min-h-[700px]">
             <div className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(163,230,53,0.2),rgba(16,185,129,0.08)_46%,transparent_72%)] blur-2xl" />
-            <div className="absolute left-[6%] top-[19%] z-10 w-[45%] -rotate-6 opacity-55 sm:left-[11%] sm:w-[39%]">
-              <Project36PhonePreview locale={locale} />
+            <div className="absolute left-[1%] top-[20%] z-10 w-[38%] -rotate-6 opacity-70 sm:left-[5%]">
+              <RaptorPhoneMockup
+                alt={locale === "en" ? "Real athlete calendar in RaptorPro" : "Calendário real do atleta no RaptorPro"}
+                className="w-full"
+                src={raptorAppScreens.calendar}
+              />
             </div>
-            <div className="absolute right-[5%] top-[6%] z-30 w-[52%] rotate-3 sm:right-[10%] sm:w-[45%]">
-              <Project36PhonePreview locale={locale} />
+            <div className="absolute left-1/2 top-[3%] z-30 w-[44%] -translate-x-1/2">
+              <RaptorPhoneMockup
+                alt={locale === "en" ? "Real readiness screen in RaptorPro" : "Tela real de prontidão no RaptorPro"}
+                className="w-full"
+                src={raptorAppScreens.readiness}
+              />
+            </div>
+            <div className="absolute right-[1%] top-[20%] z-20 w-[38%] rotate-6 opacity-85 sm:right-[5%]">
+              <RaptorPhoneMockup
+                alt={locale === "en" ? "Real Project 36 workout in RaptorPro" : "Treino real do Projeto 36 no RaptorPro"}
+                className="w-full"
+                src={raptorAppScreens.workout}
+              />
             </div>
             <div className="absolute bottom-[7%] left-[3%] z-40 max-w-[260px] rounded-2xl border border-lime-300/20 bg-[#07100b]/92 p-5 shadow-2xl backdrop-blur-xl sm:left-[8%]">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">

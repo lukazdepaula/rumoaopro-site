@@ -31,6 +31,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75
     },
     {
+      url: `${baseUrl}/apps`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8
+    },
+    {
       url: `${baseUrl}/cursos`,
       lastModified,
       changeFrequency: "monthly",
@@ -71,6 +77,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.72
+    },
+    {
+      url: `${baseUrl}/en/apps`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.76
     },
     {
       url: `${baseUrl}/en/programs/offseason-30-days`,

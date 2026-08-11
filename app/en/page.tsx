@@ -51,7 +51,7 @@ const entryCards = [
     image: assets.programsGameDuel,
     icon: Dumbbell,
     body:
-      "Offseason 30 Days and Project 36 in English and Portuguese, plus classic PDF programs.",
+      "Offseason 30 Days, Project 36 and Elanga for every phase of the season.",
     cta: "View programs"
   },
   {
@@ -66,13 +66,13 @@ const entryCards = [
   },
   {
     title: "LoadPro",
-    href: "https://loadpro.rumoaopro.com.br/",
+    href: "/en/apps",
     eyebrow: "App for coaches",
-    image: "/assets/loadpro/product-calendar-microcycle-v2.png",
+    image: assets.coachCollage,
     icon: LayoutDashboard,
     body:
       "Plan the microcycle, monitor training load and manage your players in one place.",
-    cta: "Start your 7-day free trial"
+    cta: "Explore LoadPro"
   }
 ];
 
@@ -98,9 +98,9 @@ const productBlocks = [
     icon: Zap,
     image: assets.sprintSide,
     body:
-      "Offseason 30 Days and Project 36 now combine planning, videos and workout tracking in an interactive experience.",
+      "Offseason 30 Days, Project 36 and Elanga combine planning, videos and workout tracking in an interactive experience.",
     points: [
-      "Offseason 30 Days and Project 36 in RaptorPro",
+      "Offseason 30 Days, Project 36 and Elanga",
       "Calendar, videos, loads, comments and RPE",
       "English and Portuguese with lifetime access"
     ],
@@ -135,7 +135,7 @@ const seasonFlow = [
     step: "01",
     title: "Choose your program",
     body:
-      "Start with Offseason 30 Days or Project 36 according to your goal and current season phase."
+      "Choose Offseason 30 Days, Project 36 or Elanga according to your goal and current season phase."
   },
   {
     step: "02",
@@ -199,24 +199,24 @@ export default function EnglishHomePage() {
 
                 return (
                   <Link
-                    className="group relative min-h-[220px] overflow-hidden rounded-lg border border-white/15 bg-white/[0.06] shadow-card transition hover:-translate-y-1 hover:border-white/35 sm:min-h-[280px] xl:min-h-[290px]"
+                    className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/15 bg-black shadow-[0_20px_55px_rgba(0,0,0,0.32)] transition hover:-translate-y-1 hover:border-white/35 sm:min-h-[280px] xl:min-h-[310px]"
                     href={item.href}
                     key={item.title}
                   >
                     <Image
                       alt=""
-                      className="h-full w-full object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-85"
+                      className={`h-full w-full object-cover opacity-60 transition duration-500 group-hover:scale-105 group-hover:opacity-75 ${item.title === "LoadPro" ? "object-[50%_38%]" : "object-center"}`}
                       fill
                       sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
                       src={item.image}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/45 to-black/20" />
-                    <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 sm:min-h-[280px] sm:p-5 xl:min-h-[290px]">
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.34)_0%,rgba(0,0,0,0.58)_48%,rgba(0,0,0,0.96)_100%)]" />
+                    <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 sm:min-h-[280px] sm:p-5 xl:min-h-[310px]">
                       <div className="flex items-start justify-between gap-4">
                         <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-ink">
                           <Icon aria-hidden="true" className="h-5 w-5" />
                         </span>
-                        <span className="max-w-[92px] rounded-md bg-black/45 px-2 py-2 text-[9px] font-bold uppercase leading-4 text-white/75 sm:max-w-none sm:px-3 sm:text-xs">
+                        <span className="max-w-[102px] rounded-md border border-white/10 bg-black/75 px-2 py-2 text-[9px] font-bold uppercase leading-4 text-white/82 backdrop-blur-md sm:max-w-none sm:px-3 sm:text-xs">
                           {item.eyebrow}
                         </span>
                       </div>
@@ -224,10 +224,10 @@ export default function EnglishHomePage() {
                         <h2 className="font-display text-2xl uppercase leading-none text-white sm:text-3xl">
                           {item.title}
                         </h2>
-                        <p className="mt-3 hidden max-w-sm text-sm font-semibold leading-6 text-white/75 sm:block">
+                        <p className="mt-3 hidden max-w-sm text-sm font-semibold leading-6 text-white/82 sm:block">
                           {item.body}
                         </p>
-                        <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase leading-4 text-white sm:mt-5 sm:text-sm">
+                        <div className="mt-4 inline-flex items-center gap-2 border-t border-white/15 pt-4 text-[11px] font-bold uppercase leading-4 text-white sm:mt-5 sm:text-sm">
                           {item.cta}
                           <ArrowRight
                             aria-hidden="true"

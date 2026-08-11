@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CalendarRange,
   Gauge,
+  ShieldCheck,
   Star
 } from "lucide-react";
 import { useState } from "react";
@@ -17,7 +18,7 @@ type ProgramGoalFinderProps = {
   tone?: "light" | "dark";
 };
 
-type GoalId = "speed" | "offseason";
+type GoalId = "speed" | "offseason" | "inseason";
 
 type GoalDefinition = {
   id: GoalId;
@@ -67,6 +68,22 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
         "12 semanas · português e inglês · RaptorPro · acesso vitalício",
       reviewGroup: "project36",
       icon: Gauge
+    },
+    {
+      id: "inseason",
+      label: "Durante a temporada",
+      prompt: "Preciso treinar entre jogos",
+      displayName: "Elanga In-Season",
+      productId: "elanga_in_season",
+      href: "/programas/elanga-in-season",
+      image: "/assets/photos/programs/programs-pro-match.jpg",
+      imagePosition: "object-[50%_34%]",
+      outcome:
+        "Mantenha força, potência e exposição à velocidade com uma dose pensada para não competir com treinos e partidas.",
+      detail:
+        "28 semanas · programa em inglês · RaptorPro · acesso vitalício",
+      reviewGroup: "inSeason",
+      icon: ShieldCheck
     }
   ],
   en: [
@@ -101,6 +118,22 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
         "12 weeks · English and Portuguese · RaptorPro · lifetime access",
       reviewGroup: "project36",
       icon: Gauge
+    },
+    {
+      id: "inseason",
+      label: "In season",
+      prompt: "I need training between matches",
+      displayName: "Elanga In-Season",
+      productId: "elanga_in_season",
+      href: "/en/programs/elanga-in-season",
+      image: "/assets/photos/programs/programs-pro-match.jpg",
+      imagePosition: "object-[50%_34%]",
+      outcome:
+        "Maintain strength, power and speed exposure with a dose designed around team training and matches.",
+      detail:
+        "28 weeks · English · RaptorPro · lifetime access",
+      reviewGroup: "inSeason",
+      icon: ShieldCheck
     }
   ]
 };
@@ -109,7 +142,7 @@ const copy = {
   pt: {
     eyebrow: "Programas prontos no RaptorPro",
     title: "Escolha seu próximo programa.",
-    body: "Os dois programas já disponíveis em português e inglês, com calendário interativo e acompanhamento da sua execução.",
+    body: "Escolha pela fase da temporada: Offseason 30 Days e Projeto 36 em português e inglês, ou Elanga In-Season em inglês.",
     recommendation: "Disponível na plataforma",
     reviews: "avaliações",
     price: "Pagamento único",
@@ -122,7 +155,7 @@ const copy = {
   en: {
     eyebrow: "Programs ready in RaptorPro",
     title: "Choose your next program.",
-    body: "Both programs are available in English and Portuguese, with an interactive calendar and workout tracking.",
+    body: "Choose by season phase: Offseason 30 Days and Project 36 in English and Portuguese, or Elanga In-Season in English.",
     recommendation: "Available in the platform",
     reviews: "reviews",
     price: "One-time payment",
@@ -186,7 +219,7 @@ export function ProgramGoalFinder({
         </p>
       </div>
 
-      <div className="mt-6 grid max-w-2xl grid-cols-2 gap-2">
+      <div className="mt-6 grid max-w-4xl grid-cols-1 gap-2 sm:grid-cols-3">
         {availableGoals.map((goal) => {
           const Icon = goal.icon;
           const selected = selectedGoal.id === goal.id;

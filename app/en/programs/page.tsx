@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
-import { LoadProPromo } from "@/components/loadpro-promo";
 import { ProgramsSection } from "@/components/programs-section";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -12,7 +11,7 @@ import { assets, nav } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Football training programs",
   description:
-    "RumoAoPro football programs for players and LoadPro microcycle planning and training-load monitoring for coaches."
+    "RumoAoPro football programs for players to train strength, speed, conditioning and performance in every season phase."
 };
 
 const annualPath = [
@@ -172,8 +171,6 @@ export default function EnglishProgramsPage() {
           </div>
         </div>
       </section>
-
-      <LoadProPromo locale="en" />
 
       <ProgramsSection locale="en" />
 
