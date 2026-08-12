@@ -14,10 +14,19 @@ type LegalPageProps = {
   locale: LegalLocale;
 };
 
+const configuredLegalName = process.env.NEXT_PUBLIC_LEGAL_NAME?.trim();
+
 const legalIdentity = {
-  name: process.env.NEXT_PUBLIC_LEGAL_NAME?.trim() || "RumoAoPro",
-  document: process.env.NEXT_PUBLIC_LEGAL_DOCUMENT?.trim() || "",
-  address: process.env.NEXT_PUBLIC_LEGAL_ADDRESS?.trim() || ""
+  name:
+    configuredLegalName && configuredLegalName !== "RumoAoPro"
+      ? configuredLegalName
+      : "RP Comércio e Serviços LTDA",
+  document:
+    process.env.NEXT_PUBLIC_LEGAL_DOCUMENT?.trim() ||
+    "CNPJ 07.013.889/0001-90",
+  address:
+    process.env.NEXT_PUBLIC_LEGAL_ADDRESS?.trim() ||
+    "Rua José Paulino, 1780, apto 102, Campinas - SP, CEP 13023-102, Brasil"
 };
 
 function formatLegalText(value: string) {

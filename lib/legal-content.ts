@@ -43,7 +43,7 @@ export const legalContent: Record<
       summary:
         "Estas regras explicam como funcionam a compra, o acesso e o uso dos programas digitais, cursos e serviços da RumoAoPro.",
       updatedLabel: "Última atualização",
-      updatedAt: "17 de julho de 2026",
+      updatedAt: "11 de agosto de 2026",
       sections: [
         {
           title: "1. Aceitação dos termos",
@@ -142,7 +142,7 @@ export const legalContent: Record<
           title: "13. Lei aplicável e contato",
           paragraphs: [
             "Aplicam-se as leis da República Federativa do Brasil, respeitadas as normas obrigatórias de proteção do consumidor do local em que forem aplicáveis. Eventuais controvérsias serão submetidas ao foro competente definido pela legislação de consumo.",
-            "Dúvidas sobre estes termos podem ser enviadas para {{email}} ou pelo WhatsApp {{whatsapp}}."
+            "Dúvidas sobre estes termos podem ser enviadas para {{email}} ou pelo WhatsApp {{whatsapp}}. A resposta inicial será enviada em até 3 dias úteis."
           ]
         }
       ]
@@ -153,13 +153,13 @@ export const legalContent: Record<
       summary:
         "Esta política explica quais dados coletamos, por que os utilizamos e como você pode exercer seus direitos.",
       updatedLabel: "Última atualização",
-      updatedAt: "8 de agosto de 2026",
+      updatedAt: "11 de agosto de 2026",
       sections: [
         {
           title: "1. Controlador e contato",
           paragraphs: [
-            "A RumoAoPro é responsável pelas decisões sobre o tratamento dos dados pessoais coletados diretamente neste site e em seus canais de atendimento.",
-            "Para dúvidas, solicitações ou exercício de direitos relacionados à privacidade, escreva para {{email}} ou fale pelo WhatsApp {{whatsapp}}."
+            "A RP Comércio e Serviços LTDA, nome fantasia RumoAoPro, é a controladora responsável pelas decisões sobre o tratamento dos dados pessoais coletados diretamente neste site e em seus canais de atendimento.",
+            "Para dúvidas, solicitações ou exercício de direitos relacionados à privacidade, escreva para {{email}} ou fale pelo WhatsApp {{whatsapp}}. A resposta inicial será enviada em até 3 dias úteis."
           ]
         },
         {
@@ -269,7 +269,7 @@ export const legalContent: Record<
       summary:
         "Veja os prazos, as condições e o caminho para solicitar cancelamento ou reembolso de uma compra.",
       updatedLabel: "Última atualização",
-      updatedAt: "17 de julho de 2026",
+      updatedAt: "11 de agosto de 2026",
       sections: [
         {
           title: "1. Direito de arrependimento",
@@ -296,7 +296,7 @@ export const legalContent: Record<
           title: "4. Como solicitar",
           paragraphs: [
             "Envie o pedido para {{email}} ou pelo WhatsApp {{whatsapp}}. Para localizar a compra, informe nome completo, e-mail usado no checkout, número do pedido, produto adquirido e o motivo do contato, se desejar.",
-            "A RumoAoPro enviará uma resposta inicial em até 5 dias. Solicitações urgentes de cobrança duplicada ou acesso indevido devem ser identificadas na mensagem."
+            "A RumoAoPro enviará uma resposta inicial em até 3 dias úteis. Solicitações urgentes de cobrança duplicada ou acesso indevido devem ser identificadas na mensagem."
           ]
         },
         {
@@ -334,7 +334,7 @@ export const legalContent: Record<
       summary:
         "These rules explain how purchases, access and use of RumoAoPro digital programs, courses and services work.",
       updatedLabel: "Last updated",
-      updatedAt: "July 17, 2026",
+      updatedAt: "August 11, 2026",
       sections: [
         {
           title: "1. Acceptance",
@@ -433,7 +433,7 @@ export const legalContent: Record<
           title: "13. Governing law and contact",
           paragraphs: [
             "Brazilian law governs these terms, while any mandatory consumer protection rules applicable in the customer's location remain respected. Disputes will be submitted to the court or forum determined by applicable consumer law.",
-            "Questions may be sent to {{email}} or WhatsApp {{whatsapp}}."
+            "Questions may be sent to {{email}} or WhatsApp {{whatsapp}}. An initial response will be provided within 3 business days."
           ]
         }
       ]
@@ -444,13 +444,13 @@ export const legalContent: Record<
       summary:
         "This policy explains what personal data we collect, why we use it and how you can exercise your rights.",
       updatedLabel: "Last updated",
-      updatedAt: "August 8, 2026",
+      updatedAt: "August 11, 2026",
       sections: [
         {
           title: "1. Controller and contact",
           paragraphs: [
-            "RumoAoPro determines how personal data collected directly through this website and its support channels is processed.",
-            "For privacy questions, requests or rights, email {{email}} or contact us on WhatsApp at {{whatsapp}}."
+            "RP Comércio e Serviços LTDA, operating under the RumoAoPro brand, is the controller responsible for decisions about personal data collected directly through this website and its support channels.",
+            "For privacy questions, requests or rights, email {{email}} or contact us on WhatsApp at {{whatsapp}}. An initial response will be provided within 3 business days."
           ]
         },
         {
@@ -560,7 +560,7 @@ export const legalContent: Record<
       summary:
         "Review the timeframes, conditions and steps to request a cancellation or refund.",
       updatedLabel: "Last updated",
-      updatedAt: "July 17, 2026",
+      updatedAt: "August 11, 2026",
       sections: [
         {
           title: "1. Cooling-off rights",
@@ -587,7 +587,7 @@ export const legalContent: Record<
           title: "4. How to request",
           paragraphs: [
             "Email {{email}} or contact WhatsApp {{whatsapp}}. To locate the order, include the full name, checkout email, order number, purchased product and, if you wish, the reason for the request.",
-            "RumoAoPro will provide an initial response within 5 days. Urgent duplicate-charge or unauthorized-access requests should be identified in the message."
+            "RumoAoPro will provide an initial response within 3 business days. Urgent duplicate-charge or unauthorized-access requests should be identified in the message."
           ]
         },
         {

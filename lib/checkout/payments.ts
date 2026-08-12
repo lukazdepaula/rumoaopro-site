@@ -186,6 +186,7 @@ export async function createMercadoPagoCheckoutPreference(
           pending: `${siteUrl}/checkout/success?order_id=${order.id}`,
           failure: `${siteUrl}/checkout/${product.slug}?payment=failed`
         },
+        statement_descriptor: "RUMOAOPRO",
         auto_return: "approved",
         payment_methods: {
           installments: 12
