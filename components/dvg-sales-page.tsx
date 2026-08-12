@@ -213,7 +213,7 @@ export function DvgSalesPage({ locale }: DvgSalesPageProps) {
           fill
           priority
           sizes="100vw"
-          src="/assets/programs/dvg/dvg-return-to-play-cover-v2.png"
+                src="/assets/programs/dvg/dvg-return-to-play-cover-v3.png"
         />
         <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(3,10,8,.97)_0%,rgba(3,10,8,.88)_42%,rgba(3,10,8,.35)_70%,rgba(3,10,8,.12)_100%)]" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_36%,rgba(22,163,74,.25),transparent_30%),linear-gradient(0deg,rgba(3,10,8,.9),transparent_44%)]" />

@@ -93,7 +93,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       displayName: "De Volta aos Gramados",
       productId: "de_volta_aos_gramados_pt",
       href: "/programas/de-volta-aos-gramados",
-      image: "/assets/programs/dvg/dvg-return-to-play-cover-v2.png",
+      image: "/assets/programs/dvg/dvg-return-to-play-cover-v3.png",
       imagePosition: "object-[50%_42%]",
       outcome:
         "Uma progressão em sete fases para reconstruir capacidade física e confiança após a reabilitação da pubalgia e avançar com critérios até o retorno ao campo.",
@@ -159,7 +159,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       displayName: "Back to the Pitch",
       productId: "de_volta_aos_gramados_pt",
       href: "/en/programs/de-volta-aos-gramados",
-      image: "/assets/programs/dvg/dvg-return-to-play-cover-v2.png",
+      image: "/assets/programs/dvg/dvg-return-to-play-cover-v3.png",
       imagePosition: "object-[50%_42%]",
       outcome:
         "A seven-phase pathway to rebuild physical capacity and confidence after pubalgia rehabilitation, progressing through clear criteria toward a return to football.",
