@@ -16,8 +16,10 @@ import {
   fetchStripeSubscription,
   verifyStripeWebhookSignature
 } from "@/lib/checkout/payments";
-import { marketingConsentGranted, sendMetaEvent } from "@/lib/marketing/meta";
-import type { Order } from "@/lib/checkout/types";
+import {
+  trackMetaPurchase,
+  trackMetaStartTrial
+} from "@/lib/marketing/order-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -117,63 +119,6 @@ function accessStatus(status: unknown) {
   return null;
 }
 
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://rumoaopro.com").replace(/\/$/, "");
-}
-
-function orderMetaText(order: Order, field: string) {
-  const value = order.metadata[field];
-  return typeof value === "string" && value ? value : undefined;
-}
-
-async function trackLoadProStartTrial(order: Order) {
-  if (order.product_id !== "loadpro_founders") return;
-  if (!marketingConsentGranted(order.metadata.marketing_consent)) return;
-  await sendMetaEvent({
-    eventName: "StartTrial",
-    eventId: `start_trial:${order.id}`,
-    eventSourceUrl: `${siteUrl()}/checkout/success?order_id=${encodeURIComponent(order.id)}`,
-    userData: {
-      email: order.customer_email,
-      phone: order.customer_whatsapp,
-      externalId: order.id,
-      fbp: orderMetaText(order, "marketing_fbp"),
-      fbc: orderMetaText(order, "marketing_fbc")
-    },
-    customData: {
-      content_name: order.product_name,
-      content_ids: ["loadpro-founders"],
-      content_type: "product",
-      currency: order.currency,
-      value: order.amount
-    }
-  });
-}
-
-async function trackLoadProPurchase(order: Order, eventId: string, amount: number, currency: string) {
-  if (order.product_id !== "loadpro_founders" || amount <= 0) return;
-  if (!marketingConsentGranted(order.metadata.marketing_consent)) return;
-  await sendMetaEvent({
-    eventName: "Purchase",
-    eventId: `purchase:${eventId}`,
-    eventSourceUrl: `${siteUrl()}/checkout/success?order_id=${encodeURIComponent(order.id)}`,
-    userData: {
-      email: order.customer_email,
-      phone: order.customer_whatsapp,
-      externalId: order.id,
-      fbp: orderMetaText(order, "marketing_fbp"),
-      fbc: orderMetaText(order, "marketing_fbc")
-    },
-    customData: {
-      content_name: order.product_name,
-      content_ids: ["loadpro-founders"],
-      content_type: "product",
-      currency,
-      value: amount
-    }
-  });
-}
-
 export async function POST(request: Request) {
   const payload = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -269,7 +214,7 @@ export async function POST(request: Request) {
           },
           { invite: true }
         );
-        await trackLoadProStartTrial(order);
+        await trackMetaStartTrial(order);
       } else if (paid) {
         await markOrderAsPaid(order.id, {
           ...environmentData,
@@ -280,6 +225,16 @@ export async function POST(request: Request) {
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(subscription || {}, subscriptionStatus)
         });
+        if (order.product_id !== "loadpro_founders") {
+          await trackMetaPurchase(order, {
+            eventId: `purchase:${order.id}`,
+            amount:
+              typeof object.amount_total === "number"
+                ? object.amount_total / 100
+                : order.amount,
+            currency: textValue(object.currency)?.toUpperCase() || order.currency
+          });
+        }
       }
     }
 
@@ -304,7 +259,7 @@ export async function POST(request: Request) {
           },
           { invite: true }
         );
-        await trackLoadProStartTrial(order);
+        await trackMetaStartTrial(order);
       } else if (order.status !== "paid") {
         await markOrderAsPaid(order.id, {
           ...environmentData,
@@ -324,12 +279,11 @@ export async function POST(request: Request) {
       }
 
       if (amountPaid && amountPaid > 0) {
-        await trackLoadProPurchase(
-          order,
-          eventId,
-          amountPaid / 100,
-          textValue(object.currency)?.toUpperCase() || order.currency
-        );
+        await trackMetaPurchase(order, {
+          eventId: `purchase:${eventId}`,
+          amount: amountPaid / 100,
+          currency: textValue(object.currency)?.toUpperCase() || order.currency
+        });
       }
     }
 

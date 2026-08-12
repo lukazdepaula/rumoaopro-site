@@ -114,6 +114,7 @@ export async function POST(request: Request) {
     if (recorded && metaEvent && attribution.consent === "granted") {
       const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
       await sendMetaEvent({
+        dataset: product?.id === "loadpro_founders" ? "loadpro" : "rumoaopro",
         eventName: metaEvent,
         eventId,
         eventSourceUrl: new URL(path, request.url).toString(),

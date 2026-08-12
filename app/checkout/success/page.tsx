@@ -49,7 +49,6 @@ export default async function CheckoutSuccessPage({
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
   const trialDays = Number(order?.metadata.trial_days || 0);
   const isLoadProTrial =
-    order?.gateway === "stripe" &&
     order?.product_id === "loadpro_founders" &&
     trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
@@ -145,6 +144,17 @@ export default async function CheckoutSuccessPage({
           currency={order.currency}
           event="StartTrial"
           orderId={order.id}
+          productName={order.product_name}
+          productSlug="loadpro-founders"
+          value={order.amount}
+        />
+      ) : order?.status === "paid" && product && !isLoadProTrial ? (
+        <CheckoutSuccessTracker
+          currency={order.currency}
+          event="Purchase"
+          orderId={order.id}
+          productName={order.product_name}
+          productSlug={product.slug}
           value={order.amount}
         />
       ) : null}
