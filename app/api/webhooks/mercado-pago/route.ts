@@ -20,6 +20,10 @@ import {
   mapMercadoPagoStatus,
   verifyMercadoPagoWebhookSignature
 } from "@/lib/checkout/payments";
+import {
+  trackMetaPurchase,
+  trackMetaStartTrial
+} from "@/lib/marketing/order-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -125,6 +129,17 @@ export async function POST(request: Request) {
           mercado_pago_authorized_payment_id: dataId,
           mercado_pago_payment_id: paymentId
         });
+        await trackMetaPurchase(order, {
+          eventId: `purchase:mercado_pago:${paymentId || dataId}`,
+          amount:
+            typeof invoicePayment.transaction_amount === "number"
+              ? invoicePayment.transaction_amount
+              : order.amount,
+          currency:
+            typeof invoicePayment.currency_id === "string"
+              ? invoicePayment.currency_id
+              : order.currency
+        });
       } else if (paymentStatus === "failed") {
         if (order.status === "paid" && subscriptionId) {
           await syncOrderSubscription(order.id, "past_due", {
@@ -190,6 +205,7 @@ export async function POST(request: Request) {
       });
 
       if (subscription.status === "authorized") {
+        const trialAlreadyActive = order.status === "paid";
         await markOrderAsPaid(order.id, {
           event_id: eventId,
           provider_subscription_id: dataId,
@@ -197,6 +213,7 @@ export async function POST(request: Request) {
             subscription.payer_id === undefined ? null : String(subscription.payer_id),
           next_payment_date: subscription.next_payment_date
         });
+        if (!trialAlreadyActive) await trackMetaStartTrial(order);
       } else if (subscription.status === "paused") {
         await syncOrderSubscription(order.id, "paused", {
           event_id: eventId,
@@ -247,12 +264,28 @@ export async function POST(request: Request) {
         : null;
 
     if (status === "paid") {
+      const firstOneTimePayment =
+        order.metadata.billing_type !== "subscription" &&
+        order.status !== "paid";
       await markOrderAsPaid(order.id, {
         event_id: eventId,
         mercado_pago_status: payment.status,
         provider_subscription_id: subscriptionId,
         current_period_end: null
       });
+      if (firstOneTimePayment) {
+        await trackMetaPurchase(order, {
+          eventId: `purchase:${order.id}`,
+          amount:
+            typeof payment.transaction_amount === "number"
+              ? payment.transaction_amount
+              : order.amount,
+          currency:
+            typeof payment.currency_id === "string"
+              ? payment.currency_id
+              : order.currency
+        });
+      }
     } else if (status === "failed") {
       if (order.status === "paid" && subscriptionId) {
         await syncOrderSubscription(order.id, "past_due", {

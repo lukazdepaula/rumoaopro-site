@@ -8,6 +8,8 @@ export type MetaEventName =
   | "Purchase"
   | "Contact";
 
+export type MetaDataset = "rumoaopro" | "loadpro";
+
 type MetaUserData = {
   email?: string | null;
   phone?: string | null;
@@ -19,6 +21,7 @@ type MetaUserData = {
 };
 
 export type MetaEventInput = {
+  dataset: MetaDataset;
   eventName: MetaEventName;
   eventId: string;
   eventSourceUrl: string;
@@ -41,16 +44,31 @@ function hashed(value: string | null | undefined, normalize: (value: string) => 
   return normalized ? [hash(normalized)] : undefined;
 }
 
-function configuredMeta() {
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
-  const accessToken = process.env.META_CONVERSIONS_API_TOKEN?.trim();
+function configuredMeta(dataset: MetaDataset) {
+  const pixelId = dataset === "loadpro"
+    ? (
+        process.env.NEXT_PUBLIC_LOADPRO_META_PIXEL_ID ||
+        process.env.NEXT_PUBLIC_META_PIXEL_ID
+      )?.trim()
+    : process.env.NEXT_PUBLIC_RUMOAOPRO_META_PIXEL_ID?.trim();
+  const accessToken = dataset === "loadpro"
+    ? (
+        process.env.LOADPRO_META_CONVERSIONS_API_TOKEN ||
+        process.env.META_CONVERSIONS_API_TOKEN
+      )?.trim()
+    : process.env.RUMOAOPRO_META_CONVERSIONS_API_TOKEN?.trim();
   if (!pixelId || !accessToken) return null;
 
   return {
     pixelId,
     accessToken,
     graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "v23.0",
-    testEventCode: process.env.META_CONVERSIONS_API_TEST_EVENT_CODE?.trim()
+    testEventCode: dataset === "loadpro"
+      ? (
+          process.env.LOADPRO_META_CONVERSIONS_API_TEST_EVENT_CODE ||
+          process.env.META_CONVERSIONS_API_TEST_EVENT_CODE
+        )?.trim()
+      : process.env.RUMOAOPRO_META_CONVERSIONS_API_TEST_EVENT_CODE?.trim()
   };
 }
 
@@ -59,7 +77,7 @@ export function marketingConsentGranted(value: unknown) {
 }
 
 export async function sendMetaEvent(input: MetaEventInput) {
-  const config = configuredMeta();
+  const config = configuredMeta(input.dataset);
   if (!config) return { sent: false, reason: "not_configured" as const };
 
   const userData = input.userData || {};

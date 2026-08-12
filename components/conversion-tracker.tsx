@@ -155,9 +155,20 @@ function metaEventFor(type: EventType): MetaEventName | null {
   return null;
 }
 
-function initMetaPixel() {
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
-  if (!pixelId || readMarketingConsent() !== "granted") return false;
+function pixelIdForProduct(productSlug: string) {
+  if (productSlug === "loadpro-founders") {
+    return (
+      process.env.NEXT_PUBLIC_LOADPRO_META_PIXEL_ID ||
+      process.env.NEXT_PUBLIC_META_PIXEL_ID
+    )?.trim();
+  }
+
+  return process.env.NEXT_PUBLIC_RUMOAOPRO_META_PIXEL_ID?.trim();
+}
+
+function initMetaPixel(productSlug: string) {
+  const pixelId = pixelIdForProduct(productSlug);
+  if (!pixelId || readMarketingConsent() !== "granted") return null;
 
   const metaWindow = window as MetaWindow;
   if (!metaWindow.fbq) {
@@ -179,34 +190,45 @@ function initMetaPixel() {
     document.head.appendChild(script);
   }
 
-  if (!document.documentElement.dataset.rapMetaPixelInitialized) {
+  const initializedPixels = new Set(
+    (document.documentElement.dataset.rapMetaPixels || "")
+      .split(",")
+      .filter(Boolean)
+  );
+  if (!initializedPixels.has(pixelId)) {
     metaWindow.fbq?.("init", pixelId);
-    document.documentElement.dataset.rapMetaPixelInitialized = "true";
+    initializedPixels.add(pixelId);
+    document.documentElement.dataset.rapMetaPixels = [...initializedPixels].join(",");
   }
   captureAttribution();
-  return true;
+  return pixelId;
 }
 
 function trackMetaBrowser(eventName: MetaEventName, eventId: string, productSlug: string) {
-  if (!initMetaPixel()) return;
+  const pixelId = initMetaPixel(productSlug);
+  if (!pixelId) return;
   const customData = productSlug === "loadpro-founders"
     ? { content_name: "LoadPro App - Plano Treinadores Fundadores", content_ids: [productSlug], content_type: "product", currency: "BRL", value: 49.9 }
     : { content_ids: productSlug === "site" ? undefined : [productSlug], content_type: productSlug === "site" ? undefined : "product" };
-  (window as MetaWindow).fbq?.("track", eventName, customData, { eventID: eventId });
+  (window as MetaWindow).fbq?.("trackSingle", pixelId, eventName, customData, { eventID: eventId });
 }
 
 export function trackMetaOutcome(
   eventName: "StartTrial" | "Purchase",
   eventId: string,
-  value = 49.9,
-  currency = "BRL"
+  productSlug: string,
+  contentName: string,
+  value: number,
+  currency: string
 ) {
   if (typeof window === "undefined") return;
-  if (!initMetaPixel()) return;
+  const pixelId = initMetaPixel(productSlug);
+  if (!pixelId) return;
   (window as MetaWindow).fbq?.(
-    "track",
+    "trackSingle",
+    pixelId,
     eventName,
-    { content_name: "LoadPro App - Plano Treinadores Fundadores", content_ids: ["loadpro-founders"], content_type: "product", value, currency },
+    { content_name: contentName, content_ids: [productSlug], content_type: "product", value, currency },
     { eventID: eventId }
   );
 }
@@ -292,7 +314,7 @@ export function ConversionTracker() {
   useEffect(() => {
     const consentChanged = () => {
       if (readMarketingConsent() !== "granted") return;
-      initMetaPixel();
+      captureAttribution();
       void sendEvent("page_view", "site", window.location.pathname);
 
       const salesProduct = productPaths[window.location.pathname];
