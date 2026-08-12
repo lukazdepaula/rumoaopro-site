@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { PortugueseProgramSalesPage } from "@/components/portuguese-program-sales-page";
-import { portugueseProgramSalesPages } from "@/lib/content";
+import { DvgSalesPage } from "@/components/dvg-sales-page";
 
 export const metadata: Metadata = {
   title: "De Volta aos Gramados",
@@ -9,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DeVoltaAosGramadosPage() {
-  return (
-    <PortugueseProgramSalesPage
-      program={portugueseProgramSalesPages.deVoltaAosGramados}
-    />
-  );
+  return <DvgSalesPage locale="pt" />;
 }

@@ -984,6 +984,23 @@ export const programsEn = [
     imageClass: "object-center",
     href: "/en/programs/elanga-in-season",
     cta: "View page"
+  },
+  {
+    title: "Back to the Pitch",
+    tag: "Portuguese & English",
+    duration: "7 progressive phases",
+    level: "Return to training",
+    body:
+      "A criteria-led gym and pitch progression for medically cleared players rebuilding capacity after groin, adductor or hip pain.",
+    outcomes: [
+      "7 progressive phases",
+      "Gym and pitch sessions",
+      "Full access in RaptorPro"
+    ],
+    image: assets.dvg,
+    imageClass: "object-center",
+    href: "/en/programs/de-volta-aos-gramados",
+    cta: "View page"
   }
 ].filter((program) => program.href !== "/en/programs/adama-strength-power");
 

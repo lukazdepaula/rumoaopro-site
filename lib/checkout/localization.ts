@@ -29,6 +29,12 @@ const englishProductCopy: Record<
     description:
       "In-season program to maintain strength, speed and availability throughout the competitive season.",
     salesPagePath: "/en/programs/elanga-in-season"
+  },
+  "de-volta-aos-gramados": {
+    name: "Back to the Pitch",
+    description:
+      "A seven-phase gym and pitch progression for medically cleared football players returning after groin, adductor or hip pain.",
+    salesPagePath: "/en/programs/de-volta-aos-gramados"
   }
 };
 

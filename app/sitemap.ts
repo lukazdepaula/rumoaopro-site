@@ -103,6 +103,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8
     },
     {
+      url: `${baseUrl}/en/programs/de-volta-aos-gramados`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78
+    },
+    {
       url: `${baseUrl}/links`,
       lastModified,
       changeFrequency: "monthly",

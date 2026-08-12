@@ -97,7 +97,7 @@ export default function EnglishProgramsPage() {
             </div>
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {[
-                ["4", "English options"],
+                ["5", "program options"],
                 ["Full year", "offseason to season"],
                 ["1:1", "when you need adjustments"]
               ].map(([value, label]) => (

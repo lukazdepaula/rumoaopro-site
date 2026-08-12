@@ -61,7 +61,8 @@ const productPaths: Record<string, string> = {
   "/en/programs/elanga-in-season": "elanga-in-season",
   "/programas/projeto-pre-temporada": "projeto-pre-temporada",
   "/programas/projeto-adama-2022": "projeto-adama-2022",
-  "/programas/de-volta-aos-gramados": "de-volta-aos-gramados"
+  "/programas/de-volta-aos-gramados": "de-volta-aos-gramados",
+  "/en/programs/de-volta-aos-gramados": "de-volta-aos-gramados"
 };
 
 function getSessionId() {
