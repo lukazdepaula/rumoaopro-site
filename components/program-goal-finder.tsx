@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CalendarRange,
   Gauge,
+  HeartPulse,
   ShieldCheck,
   Star
 } from "lucide-react";
@@ -18,7 +19,7 @@ type ProgramGoalFinderProps = {
   tone?: "light" | "dark";
 };
 
-type GoalId = "speed" | "offseason" | "inseason";
+type GoalId = "speed" | "offseason" | "inseason" | "return-to-play";
 
 type GoalDefinition = {
   id: GoalId;
@@ -84,6 +85,22 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
         "28 semanas · programa em inglês · RaptorPro · acesso vitalício",
       reviewGroup: "inSeason",
       icon: ShieldCheck
+    },
+    {
+      id: "return-to-play",
+      label: "Return to play",
+      prompt: "Você tem pubalgia?",
+      displayName: "De Volta aos Gramados",
+      productId: "de_volta_aos_gramados_pt",
+      href: "/programas/de-volta-aos-gramados",
+      image: "/assets/programs/dvg/dvg-return-to-play-cover-v2.png",
+      imagePosition: "object-[50%_42%]",
+      outcome:
+        "Uma progressão em sete fases para reconstruir capacidade física e confiança após a reabilitação da pubalgia e avançar com critérios até o retorno ao campo.",
+      detail:
+        "7 fases · português · RaptorPro · acesso vitalício · após liberação profissional",
+      reviewGroup: "deVolta",
+      icon: HeartPulse
     }
   ],
   en: [
@@ -134,6 +151,22 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
         "28 weeks · English · RaptorPro · lifetime access",
       reviewGroup: "inSeason",
       icon: ShieldCheck
+    },
+    {
+      id: "return-to-play",
+      label: "Return to play",
+      prompt: "Recovering from pubalgia?",
+      displayName: "Back to the Pitch",
+      productId: "de_volta_aos_gramados_pt",
+      href: "/en/programs/de-volta-aos-gramados",
+      image: "/assets/programs/dvg/dvg-return-to-play-cover-v2.png",
+      imagePosition: "object-[50%_42%]",
+      outcome:
+        "A seven-phase pathway to rebuild physical capacity and confidence after pubalgia rehabilitation, progressing through clear criteria toward a return to football.",
+      detail:
+        "7 phases · Portuguese · RaptorPro · lifetime access · professional clearance required",
+      reviewGroup: "deVolta",
+      icon: HeartPulse
     }
   ]
 };
@@ -142,7 +175,7 @@ const copy = {
   pt: {
     eyebrow: "Programas prontos no RaptorPro",
     title: "Escolha seu próximo programa.",
-    body: "Escolha pela fase da temporada: Offseason 30 Days e Projeto 36 em português e inglês, ou Elanga In-Season em inglês.",
+    body: "Escolha pelo seu momento: preparação de offseason, velocidade, manutenção durante a temporada ou retorno ao campo após a pubalgia.",
     recommendation: "Disponível na plataforma",
     reviews: "avaliações",
     price: "Pagamento único",
@@ -155,7 +188,7 @@ const copy = {
   en: {
     eyebrow: "Programs ready in RaptorPro",
     title: "Choose your next program.",
-    body: "Choose by season phase: Offseason 30 Days and Project 36 in English and Portuguese, or Elanga In-Season in English.",
+    body: "Choose by your current goal: offseason preparation, speed, in-season maintenance or a structured return to football after pubalgia.",
     recommendation: "Available in the platform",
     reviews: "reviews",
     price: "One-time payment",
@@ -219,7 +252,7 @@ export function ProgramGoalFinder({
         </p>
       </div>
 
-      <div className="mt-6 grid max-w-4xl grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="mt-6 grid max-w-5xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {availableGoals.map((goal) => {
           const Icon = goal.icon;
           const selected = selectedGoal.id === goal.id;
