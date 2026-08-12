@@ -19,7 +19,7 @@ const annualPath = [
     step: "01",
     title: "Offseason",
     body:
-      "Build a solid base of strength, power and speed with Adama and Project 36.",
+      "Build a solid base of strength, power and speed with Adama and Speed Pro.",
     image: assets.programsGymBriefing,
     imageClass: "object-[center_18%]",
     href: "#programas",
@@ -131,7 +131,7 @@ export default function EnglishProgramsPage() {
             </div>
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
               The ideal preparation starts in the offseason with Adama and
-              Project 36. The final 30 days before preseason are sharpened with
+              Speed Pro. The final 30 days before preseason are sharpened with
               Offseason 30 Days. During the season, Elanga helps maintain
               strength and speed without compromising recovery.
             </p>

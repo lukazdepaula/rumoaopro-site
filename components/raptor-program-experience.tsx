@@ -18,7 +18,7 @@ export const raptorAppScreens = {
 const copy = {
   project36: {
     pt: {
-      eyebrow: "Projeto 36 no RaptorPro",
+      eyebrow: "Speed Pro no RaptorPro",
       title: "Abra o app. Veja o treino. Execute.",
       lead:
         "O programa inteiro fica organizado no celular com calendário, instruções, vídeos e registro de cada sessão.",
@@ -30,7 +30,7 @@ const copy = {
       ]
     },
     en: {
-      eyebrow: "Project 36 in RaptorPro",
+      eyebrow: "Speed Pro in RaptorPro",
       title: "Open the app. See the session. Execute.",
       lead:
         "The full program stays organized on your phone with a calendar, instructions, videos and session tracking.",

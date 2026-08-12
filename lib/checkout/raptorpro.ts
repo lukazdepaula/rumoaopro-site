@@ -33,7 +33,7 @@ const RAPTORPRO_PROGRAMS: RaptorProProgramConfig[] = [
     productIds: [RAPTORPRO_PROJECT_36_PRODUCT_ID, RAPTORPRO_PROJECT_36_LEGACY_PRODUCT_ID],
     programId: RAPTORPRO_PROJECT_36_PROGRAM_ID,
     programSlug: RAPTORPRO_PROJECT_36_PROGRAM_SLUG,
-    programTitle: "Project 36"
+    programTitle: "Speed Pro"
   },
   {
     productIds: [RAPTORPRO_ELANGA_PRODUCT_ID],

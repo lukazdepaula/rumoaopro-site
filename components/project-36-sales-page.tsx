@@ -33,11 +33,11 @@ const copy = {
     ctaLabel: "Comprar",
     languageHref: "/en/programs/project-36kmh",
     languageLabel: "🇧🇷 PT → EN",
-    eyebrow: "Project 36km/h",
-    h1: "Construa aceleração, velocidade máxima e ação de jogo em 12 semanas.",
+    eyebrow: "SPEED PRO · RUMOAOPRO",
+    h1: "Programa de Velocidade e Aceleração para Futebol",
     lead:
-      "Um sistema de offseason para jogadores de futebol que querem melhorar aceleração, top speed, re-aceleração e velocidade aplicada ao jogo.",
-    primaryCta: "Comprar Projeto 36",
+      "12 semanas para desenvolver aceleração, velocidade máxima, potência e mecânica de sprint aplicada ao futebol.",
+    primaryCta: "Comprar Speed Pro",
     secondaryCta: "Ver fases",
     storeNote: "Após a confirmação, o programa aparece automaticamente na sua conta RaptorPro.",
     chips: [
@@ -55,7 +55,7 @@ const copy = {
     fitTitle: "Para quem é",
     fitH2: "Feito para atleta que precisa correr melhor, não só cansar mais.",
     fitLead:
-      "O Projeto 36 organiza velocidade como qualidade neural: descanso suficiente, intenção máxima, mecânica limpa e progressão entre campo, academia e condicionamento.",
+      "O Speed Pro organiza velocidade como qualidade neural: descanso suficiente, intenção máxima, mecânica limpa e progressão entre campo, academia e condicionamento.",
     goodFitLabel: "Boa escolha",
     notFitLabel: "Melhor ajustar individual",
     goodFit: [
@@ -174,7 +174,7 @@ const copy = {
       },
       {
         src: "/assets/programs/project-36/project-36-sprint.jpg",
-        alt: "Sessão de sprint do Projeto 36km/h",
+        alt: "Sessão de sprint do Speed Pro",
         label: "Exposição real à velocidade"
       },
       {
@@ -228,8 +228,8 @@ const copy = {
     ],
     finalTitle: "Quer correr melhor? Pare de tratar sprint como cardio.",
     finalBody:
-      "Entre no Projeto 36 com uma progressão clara para acelerar, atingir top speed e transferir velocidade para ações de jogo.",
-    finalCta: "Comprar Projeto 36",
+      "Entre no Speed Pro com uma progressão clara para acelerar, atingir top speed e transferir velocidade para ações de jogo.",
+    finalCta: "Comprar Speed Pro",
     coachingCta: "Quero algo individual"
   },
   en: {
@@ -237,11 +237,11 @@ const copy = {
     ctaLabel: "Buy",
     languageHref: "/programas/projeto-36kmh",
     languageLabel: "🇺🇸 EN → PT",
-    eyebrow: "Project 36km/h",
-    h1: "Build acceleration, max velocity and game-speed actions in 12 weeks.",
+    eyebrow: "SPEED PRO · RUMOAOPRO",
+    h1: "Football Speed & Acceleration Program",
     lead:
-      "An offseason system for footballers who want to improve acceleration, top speed, re-acceleration and speed that shows up in the game.",
-    primaryCta: "Buy Project 36",
+      "12 weeks to develop acceleration, maximum velocity, power and football-specific sprint mechanics.",
+    primaryCta: "Buy Speed Pro",
     secondaryCta: "See phases",
     storeNote: "After confirmation, the program appears automatically in your RaptorPro account.",
     chips: [
@@ -259,7 +259,7 @@ const copy = {
     fitTitle: "Who it is for",
     fitH2: "Built for players who need to run better, not just suffer more.",
     fitLead:
-      "Project 36 organizes speed as a nervous system quality: enough rest, maximal intent, clean mechanics and progression between field, gym and conditioning.",
+      "Speed Pro organizes speed as a nervous system quality: enough rest, maximal intent, clean mechanics and progression between field, gym and conditioning.",
     goodFitLabel: "Good fit",
     notFitLabel: "Better choose coaching",
     goodFit: [
@@ -378,7 +378,7 @@ const copy = {
       },
       {
         src: "/assets/programs/project-36/project-36-sprint.jpg",
-        alt: "Project 36 sprint session",
+        alt: "Speed Pro sprint session",
         label: "Real speed exposure"
       },
       {
@@ -432,8 +432,8 @@ const copy = {
     ],
     finalTitle: "Want to run faster? Stop treating sprint like cardio.",
     finalBody:
-      "Enter Project 36 with a clear progression to accelerate, hit top speed and transfer speed into game actions.",
-    finalCta: "Buy Project 36",
+      "Enter Speed Pro with a clear progression to accelerate, hit top speed and transfer speed into game actions.",
+    finalCta: "Buy Speed Pro",
     coachingCta: "I need coaching"
   }
 };
@@ -456,7 +456,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
 
       <section className="relative isolate overflow-hidden bg-[#030806] text-white">
         <Image
-          alt="Project 36km/h speed training"
+          alt="Speed Pro football speed and acceleration training"
           className="absolute inset-0 -z-30 h-full w-full object-cover object-[61%_50%] sm:object-[58%_48%]"
           fill
           priority
@@ -547,7 +547,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
           <div className="relative hidden h-full min-h-[610px] items-end justify-end lg:flex">
             <div className="absolute bottom-4 right-0 z-10 w-[56%] rotate-[3deg]">
               <RaptorPhoneMockup
-                alt={locale === "en" ? "Real Project 36 calendar in RaptorPro" : "Calendário real do Projeto 36 no RaptorPro"}
+                alt={locale === "en" ? "Real Speed Pro calendar in RaptorPro" : "Calendário real do Speed Pro no RaptorPro"}
                 className="w-full"
                 src={raptorAppScreens.calendar}
               />
@@ -713,7 +713,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             </h2>
             <div className="relative mt-8 min-h-[540px] overflow-hidden rounded-[2rem] border border-emerald-300/15 bg-[#07100b]">
               <Image
-                alt="Coach presenting the Project 36 training method"
+                alt="Coach presenting the Speed Pro training method"
                 className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
                 fill
                 sizes="(min-width: 768px) 40vw, 100vw"
@@ -789,7 +789,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
       <section className="relative isolate overflow-hidden bg-[#030806] py-20 text-white">
         <div className="absolute inset-y-0 right-0 -z-30 w-full lg:w-[56%]">
           <Image
-            alt="Project 36 speed session"
+            alt="Speed Pro speed session"
             className="object-cover object-[62%_50%] opacity-30"
             fill
             sizes="(min-width: 1024px) 56vw, 100vw"
@@ -846,7 +846,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
             </div>
             <div className="absolute right-[1%] top-[20%] z-20 w-[38%] rotate-6 opacity-85 sm:right-[5%]">
               <RaptorPhoneMockup
-                alt={locale === "en" ? "Real Project 36 workout in RaptorPro" : "Treino real do Projeto 36 no RaptorPro"}
+                alt={locale === "en" ? "Real Speed Pro workout in RaptorPro" : "Treino real do Speed Pro no RaptorPro"}
                 className="w-full"
                 src={raptorAppScreens.workout}
               />
@@ -914,7 +914,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-lime-300">
-              Project 36km/h
+              Speed Pro
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
               {page.finalTitle}

@@ -249,7 +249,7 @@ function ProgramRail({
         const usePtPresentation =
           language === "Portuguese" && product.id === "project_36";
         const displayName = usePtPresentation
-          ? "Projeto 36: Velocidade e Aceleração"
+          ? "Velocidade & Aceleração — Speed Pro"
           : product.name;
         const coverImage = usePtPresentation
           ? assets.project36Pt

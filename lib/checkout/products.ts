@@ -104,10 +104,10 @@ export const checkoutProducts: CheckoutProduct[] = [
   },
   {
     id: "project_36",
-    name: "Project 36",
+    name: "Speed Pro",
     slug: "project-36",
     description:
-      "Sistema de 12 semanas para aceleração, top speed, re-aceleração e velocidade de jogo.",
+      "Programa de 12 semanas para desenvolver aceleração, velocidade máxima, potência e mecânica de sprint aplicada ao futebol.",
     language: "Portuguese / English",
     type: "training_program",
     ...fixedBrlProductPrice(49.9, 199.9),

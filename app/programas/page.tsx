@@ -22,7 +22,7 @@ const annualPath = [
     step: "01",
     title: "Offseason",
     body:
-      "Construa uma base sólida de força, potência e velocidade com o Projeto 36.",
+      "Construa uma base sólida de força, potência e velocidade com o Speed Pro.",
     image: assets.programsGymBriefing,
     imageClass: "object-[center_18%]",
     href: "#programas",
@@ -151,7 +151,7 @@ export default function ProgramasPage() {
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              A preparação ideal começa na offseason com o Projeto 36 e o
+              A preparação ideal começa na offseason com o Speed Pro e o
               Offseason 30 Days, desenvolvendo força, potência, velocidade e
               resistência física.
               Nos 30 dias que antecedem a pré-temporada, o Offseason 30 Days

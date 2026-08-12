@@ -176,9 +176,9 @@ export const reviewGroups: Record<ReviewGroupKey, ReviewGroup> = {
     count: 12,
     sourceNote: {
       pt:
-        "Avaliações importadas do Loox da loja anterior, referentes ao Projeto 36 em português.",
+        "Avaliações importadas do Loox da loja anterior, referentes ao Speed Pro (antiga edição Projeto 36).",
       en:
-        "Reviews imported from the previous Loox store, from the Portuguese Project 36 edition."
+        "Reviews imported from the previous Loox store, from Speed Pro's former Project 36 edition."
     },
     reviews: [
       {

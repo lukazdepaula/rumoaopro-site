@@ -667,12 +667,12 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Projeto 36: Velocidade e Aceleração",
+    title: "Velocidade & Aceleração — Speed Pro",
     tag: "Português e inglês",
     duration: "12 semanas",
     level: "Offseason - velocidade",
     body:
-      "Desenvolva aceleração, velocidade máxima e re-aceleração com uma progressão criada para aparecer dentro do jogo.",
+      "Desenvolva aceleração, velocidade máxima, potência e mecânica de sprint aplicada ao futebol.",
     outcomes: [
       "Aceleração e top speed",
       "Velocidade aplicada ao futebol",
@@ -952,12 +952,12 @@ export const programsEn = [
     cta: "View page"
   },
   {
-    title: "Project 36: Speed & Acceleration",
+    title: "Speed & Acceleration — Speed Pro",
     tag: "Portuguese & English",
     duration: "12 weeks",
     level: "Offseason speed",
     body:
-      "A speed system for acceleration, top speed, re-acceleration and football actions that actually show up in matches.",
+      "Develop acceleration, maximum velocity, power and football-specific sprint mechanics.",
     outcomes: [
       "Athletic Foundation",
       "Acceleration Power",
@@ -1128,7 +1128,7 @@ export const programDecisionRows = [
   },
   {
     situation: "Quero ficar mais rápido e explosivo.",
-    path: "Projeto 36km/h",
+    path: "Speed Pro",
     reason: "Foco em aceleração, sprint, potência e mudança de direção."
   },
   {

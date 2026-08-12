@@ -21,8 +21,9 @@ const englishProductCopy: Record<
     salesPagePath: "/en/programs/adama-strength-power"
   },
   "project-36": {
+    name: "Speed Pro",
     description:
-      "12-week system for acceleration, max velocity, re-acceleration and game speed.",
+      "12 weeks to develop acceleration, maximum velocity, power and football-specific sprint mechanics.",
     salesPagePath: "/en/programs/project-36kmh"
   },
   "elanga-in-season": {

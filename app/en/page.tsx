@@ -51,7 +51,7 @@ const entryCards = [
     image: assets.programsGameDuel,
     icon: Dumbbell,
     body:
-      "Offseason 30 Days, Project 36 and Elanga for every phase of the season.",
+      "Offseason 30 Days, Speed Pro and Elanga for every phase of the season.",
     cta: "View programs"
   },
   {
@@ -98,9 +98,9 @@ const productBlocks = [
     icon: Zap,
     image: assets.sprintSide,
     body:
-      "Offseason 30 Days, Project 36 and Elanga combine planning, videos and workout tracking in an interactive experience.",
+      "Offseason 30 Days, Speed Pro and Elanga combine planning, videos and workout tracking in an interactive experience.",
     points: [
-      "Offseason 30 Days, Project 36 and Elanga",
+      "Offseason 30 Days, Speed Pro and Elanga",
       "Calendar, videos, loads, comments and RPE",
       "English and Portuguese with lifetime access"
     ],
@@ -135,7 +135,7 @@ const seasonFlow = [
     step: "01",
     title: "Choose your program",
     body:
-      "Choose Offseason 30 Days, Project 36 or Elanga according to your goal and current season phase."
+      "Choose Offseason 30 Days, Speed Pro or Elanga according to your goal and current season phase."
   },
   {
     step: "02",
@@ -541,7 +541,7 @@ export default function EnglishHomePage() {
             </h2>
             <p className="mt-4 text-base leading-7 text-white/75">
               If your routine changes every week, choose coaching. To train with
-              Offseason 30 Days or Project 36, buy once and follow the program
+              Offseason 30 Days or Speed Pro, buy once and follow the program
               inside RaptorPro. Classic programs remain available in the catalog.
             </p>
           </div>

@@ -182,10 +182,10 @@ const programPresentation: Record<
   project_36: {
     image: assets.programsProject36Sprint,
     imagePosition: "object-center",
-    ptName: "Projeto 36: Velocidade e Aceleração",
-    enName: "Project 36: Speed & Acceleration",
-    pt: "Doze semanas para desenvolver aceleração, velocidade máxima e re-aceleração.",
-    en: "Twelve weeks to develop acceleration, top speed and re-acceleration."
+    ptName: "Velocidade & Aceleração — Speed Pro",
+    enName: "Speed & Acceleration — Speed Pro",
+    pt: "Doze semanas para desenvolver aceleração, velocidade máxima, potência e mecânica de sprint.",
+    en: "Twelve weeks to develop acceleration, maximum velocity, power and sprint mechanics."
   },
   adama_strength_power: {
     image: assets.programsAdamaDeadlift,

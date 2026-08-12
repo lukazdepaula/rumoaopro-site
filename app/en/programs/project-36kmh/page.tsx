@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Project36SalesPage } from "@/components/project-36-sales-page";
 
 export const metadata: Metadata = {
-  title: "Project 36: Speed & Acceleration",
+  title: "Football Speed & Acceleration Program | Speed Pro",
   description:
-    "A 12-week football speed program for acceleration, max velocity, re-acceleration and game-speed actions.",
+    "12 weeks to develop acceleration, maximum velocity, power and football-specific sprint mechanics.",
   alternates: {
     canonical: "/en/programs/project-36kmh",
     languages: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     }
   },
   openGraph: {
-    title: "Project 36: Speed & Acceleration",
+    title: "Football Speed & Acceleration Program | Speed Pro",
     description:
       "A 3-phase offseason speed system to build athletic foundation, acceleration power and game speed.",
     images: ["/assets/programs/project-36/project-36-sprint.jpg"],
