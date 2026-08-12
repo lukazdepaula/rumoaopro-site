@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { DvgSalesPage } from "@/components/dvg-sales-page";
 
 export const metadata: Metadata = {
-  title: "Back to the Pitch",
+  title: "Back to the Pitch | Pubalgia Return to Play",
   description:
-    "A seven-phase gym and pitch progression for medically cleared football players returning from groin, adductor or hip pain."
+    "A seven-phase return-to-play program for assessed and medically cleared footballers recovering from pubalgia. It does not replace physiotherapy."
 };
 
 export default function BackToThePitchPage() {

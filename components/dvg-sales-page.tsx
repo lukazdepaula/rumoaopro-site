@@ -25,15 +25,16 @@ const copy = {
     nav: nav.pt,
     cta: "Comprar programa",
     languageHref: "/en/programs/de-volta-aos-gramados",
-    eyebrow: "De Volta aos Gramados · 7 fases",
-    title: "Uma ponte progressiva entre a reabilitação e o futebol.",
+    eyebrow: "Pubalgia · Return to play · 7 fases",
+    title: "Return to play especializado para atletas em recuperação da pubalgia.",
     lead:
-      "Um programa guiado no RaptorPro para atletas liberados que precisam reconstruir tolerância, força, corrida e confiança antes de voltar às demandas completas do campo.",
+      "Uma progressão de preparação física, organizada por Lukaz de Paula e Thiago Vegette, para atletas já avaliados e liberados que precisam reconstruir tolerância, força, corrida e confiança antes de voltar às demandas completas do futebol.",
     primary: "Comprar e acessar no app",
     secondary: "Entender as fases",
     chips: ["7 fases progressivas", "Academia + campo", "Vídeos no app", "Sem prazo fixo"],
+    warningTitle: "Este programa é return to play. Não é fisioterapia.",
     warning:
-      "O programa não substitui diagnóstico, fisioterapia ou liberação médica. Inicie somente após liberação do profissional que acompanha seu caso.",
+      "O DVG não diagnostica nem trata a pubalgia e não substitui fisioterapia, atendimento médico ou acompanhamento individual. Ele organiza a preparação física pós-reabilitação e deve ser iniciado somente após avaliação e liberação do profissional que acompanha o seu caso.",
     pathEyebrow: "Progressão por critérios",
     pathTitle: "Você não avança pelo calendário. Avança quando o corpo está pronto.",
     pathBody:
@@ -47,15 +48,15 @@ const copy = {
       ["06", "Mudança de direção", "Preparar o corpo para ações multidirecionais do futebol."],
       ["07", "Retorno ao campo", "Integrar movimentos e demandas específicas antes da volta completa."]
     ],
-    appEyebrow: "Dentro do RaptorPro",
-    appTitle: "O plano sai do PDF e acompanha você em cada sessão.",
+    appEyebrow: "Do controle de carga ao retorno ao campo",
+    appTitle: "Sete fases para reconstruir as demandas do futebol sem pular etapas.",
     appBody:
-      "Abra a fase atual, veja a sessão, assista às demonstrações e registre sua resposta. O programa fica disponível no celular e no computador com a mesma conta.",
+      "A progressão conecta academia e campo com critérios claros. Os exercícios, vídeos e registros de cada sessão ficam organizados dentro do RaptorPro, sem depender de PDFs durante o treino.",
     appPoints: [
-      "Calendário e fases organizados no app",
-      "Vídeos abertos dentro da sessão",
-      "Readiness antes do treino",
-      "RPE, duração e carga após a sessão"
+      "Fases e sessões organizadas por objetivo",
+      "Força, corrida e retorno progressivo ao campo",
+      "Vídeos demonstrativos dentro da sessão",
+      "Registro de readiness, RPE, duração e carga"
     ],
     videoEyebrow: "Antes de começar",
     videoTitle: "Entenda a lógica do programa com Lukaz de Paula.",
@@ -107,15 +108,16 @@ const copy = {
     nav: nav.en,
     cta: "Buy program",
     languageHref: "/programas/de-volta-aos-gramados",
-    eyebrow: "Back to the Pitch · 7 phases",
-    title: "A progressive bridge from rehabilitation back to football.",
+    eyebrow: "Pubalgia · Return to play · 7 phases",
+    title: "A specialized return-to-play pathway for footballers recovering from pubalgia.",
     lead:
-      "A guided RaptorPro program for medically cleared athletes who need to rebuild tolerance, strength, running and confidence before returning to full football demands.",
+      "A physical preparation progression organized by Lukaz de Paula and Thiago Vegette for assessed and medically cleared athletes who need to rebuild tolerance, strength, running and confidence before returning to full football demands.",
     primary: "Buy and access in the app",
     secondary: "Explore the phases",
     chips: ["7 progressive phases", "Gym + pitch", "In-app videos", "No fixed deadline"],
+    warningTitle: "This is a return-to-play program. It is not physiotherapy.",
     warning:
-      "This program does not replace diagnosis, physiotherapy or medical clearance. Start only after being cleared by the professional managing your case.",
+      "DVG does not diagnose or treat pubalgia and does not replace physiotherapy, medical care or individual clinical support. It structures post-rehabilitation physical preparation and must only begin after assessment and clearance by the professional managing your case.",
     pathEyebrow: "Criteria-based progression",
     pathTitle: "You do not progress because the calendar says so. You progress when your body is ready.",
     pathBody:
@@ -129,15 +131,15 @@ const copy = {
       ["06", "Change of direction", "Prepare for the multidirectional demands of football."],
       ["07", "Return to the pitch", "Integrate football-specific movement before a full return."]
     ],
-    appEyebrow: "Inside RaptorPro",
-    appTitle: "The plan leaves the PDF and guides every session.",
+    appEyebrow: "From load control back to the pitch",
+    appTitle: "Seven phases that rebuild football demands without skipping steps.",
     appBody:
-      "Open your current phase, follow the session, watch demonstrations and record your response. Use the same account on mobile and desktop.",
+      "The progression connects gym and pitch through clear criteria. Exercises, videos and session tracking stay organized inside RaptorPro, without relying on PDFs during training.",
     appPoints: [
-      "Phases and sessions organized in the app",
-      "Videos open inside each session",
-      "Pre-training readiness",
-      "Post-session RPE, duration and load"
+      "Phases and sessions organized by objective",
+      "Strength, running and progressive return to the pitch",
+      "Exercise demonstrations inside each session",
+      "Readiness, RPE, duration and load tracking"
     ],
     videoEyebrow: "Before you begin",
     videoTitle: "Understand the program with Lukaz de Paula.",
@@ -206,33 +208,33 @@ export function DvgSalesPage({ locale }: DvgSalesPageProps) {
 
       <section className="relative isolate overflow-hidden text-white">
         <Image
-          alt="Football athlete returning to field training"
-          className="absolute inset-0 -z-30 h-full w-full object-cover object-[center_32%]"
+          alt="Lukaz de Paula and Thiago Vegette leading a football return-to-play program"
+          className="absolute inset-0 -z-30 h-full w-full object-cover object-[54%_center]"
           fill
           priority
           sizes="100vw"
-          src={assets.coachFieldPlaying}
+          src="/assets/programs/dvg/dvg-return-to-play-cover-v2.png"
         />
-        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(3,10,8,.98)_0%,rgba(3,10,8,.88)_48%,rgba(3,10,8,.28)_100%)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_35%,rgba(22,163,74,.34),transparent_32%),linear-gradient(0deg,rgba(3,10,8,.86),transparent_45%)]" />
-        <div className="mx-auto grid min-h-[calc(86svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8">
-          <div className="max-w-3xl">
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(3,10,8,.97)_0%,rgba(3,10,8,.88)_42%,rgba(3,10,8,.35)_70%,rgba(3,10,8,.12)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_36%,rgba(22,163,74,.25),transparent_30%),linear-gradient(0deg,rgba(3,10,8,.9),transparent_44%)]" />
+        <div className="mx-auto grid min-h-[calc(86svh-var(--header-height))] max-w-7xl items-center px-4 py-14 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
             <p className="inline-flex rounded-full border border-emerald-300/25 bg-emerald-400/10 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-emerald-300">
               {page.eyebrow}
             </p>
             <h1 className="mt-5 font-display text-4xl uppercase leading-[.98] sm:text-6xl lg:text-7xl">
               {page.title}
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg">
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg">
               {page.lead}
             </p>
-            <div className="mt-7 flex flex-wrap gap-2">
+            <div className="mt-7 flex flex-wrap justify-center gap-2">
               {page.chips.map((chip) => (
                 <span className="rounded-md border border-white/12 bg-black/30 px-3 py-2 text-xs font-bold text-white/78" key={chip}>{chip}</span>
               ))}
             </div>
             <ProgramPurchaseSummary locale={locale} />
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               <a className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-emerald-500 px-6 text-sm font-black text-[#04100c] transition hover:bg-emerald-400" href={checkoutHref(locale)}>
                 {page.primary}<ArrowRight className="h-4 w-4" />
               </a>
@@ -242,19 +244,13 @@ export function DvgSalesPage({ locale }: DvgSalesPageProps) {
             </div>
           </div>
 
-          <div className="relative mx-auto hidden w-full max-w-[430px] lg:block">
-            <div className="absolute -inset-8 rounded-full bg-emerald-400/20 blur-3xl" />
-            <div className="relative rotate-2 overflow-hidden rounded-[2rem] border border-white/15 bg-black/70 p-3 shadow-2xl">
-              <Image alt="RaptorPro program calendar" className="aspect-[9/16] w-full rounded-[1.45rem] object-cover object-top" height={1180} src={assets.appCalendarScreen} width={664} />
-            </div>
-          </div>
         </div>
       </section>
 
       <section className="border-y border-amber-300/15 bg-amber-300/[.07] py-5 text-white">
         <div className="mx-auto flex max-w-7xl gap-3 px-4 sm:px-6 lg:px-8">
           <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-amber-300" />
-          <p className="max-w-4xl text-sm leading-6 text-white/72">{page.warning}</p>
+          <div><p className="text-sm font-black text-amber-200">{page.warningTitle}</p><p className="mt-1 max-w-5xl text-sm leading-6 text-white/72">{page.warning}</p></div>
         </div>
       </section>
 
@@ -288,12 +284,14 @@ export function DvgSalesPage({ locale }: DvgSalesPageProps) {
               {page.appPoints.map((point) => <li className="flex gap-3 text-sm font-semibold text-white/76" key={point}><CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />{point}</li>)}
             </ul>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[assets.appInterface, assets.appCalendarScreen].map((src, index) => (
-              <div className={`${index ? "mt-10" : "mb-10"} overflow-hidden rounded-[1.8rem] border border-white/15 bg-black p-2 shadow-2xl`} key={src}>
-                <Image alt="RaptorPro athlete program experience" className="aspect-[9/16] w-full rounded-[1.35rem] object-cover object-top" height={1120} src={src} width={630} />
+          <div className="overflow-hidden rounded-[2rem] border border-white/12 bg-black/35 shadow-2xl">
+            <div className="relative aspect-[16/10]">
+              <Image alt="Lukaz de Paula coaching a football athlete through physical preparation" className="object-cover object-[center_34%]" fill sizes="(min-width: 1024px) 58vw, 100vw" src={assets.coachGymInstruction} />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#06100d] via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
+                {page.appPoints.map((point, index) => <div className="rounded-xl border border-white/12 bg-black/72 p-3 backdrop-blur" key={point}><p className="font-display text-2xl text-emerald-400">0{index + 1}</p><p className="mt-2 text-xs font-bold leading-5 text-white/82">{point}</p></div>)}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
