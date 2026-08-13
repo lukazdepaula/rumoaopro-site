@@ -12,20 +12,27 @@ import {
 } from "lucide-react";
 import { elangaSalesCopy } from "@/components/elanga-sales-page";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
-import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
-import { RaptorProgramExperience } from "@/components/raptor-program-experience";
+import {
+  RaptorPhoneMockup,
+  RaptorProgramExperience,
+  raptorAppScreens
+} from "@/components/raptor-program-experience";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, shopifyProducts } from "@/lib/content";
+import { shopifyProducts } from "@/lib/content";
 
 type ElangaRaptorSalesPageProps = {
   locale: "pt" | "en";
 };
 
 const athletePhotos = {
-  hero: "/assets/photos/lukaz-sprint-side.jpg",
   match: "/assets/photos/lukaz-field-playing.jpg",
   coach: "/assets/photos/lukaz-gym-instruction.jpg"
+};
+
+const inSeasonAssets = {
+  heroBackground: "/assets/programs/in-season/in-season-hero-bg-v2.png",
+  productCover: "/assets/programs/in-season/in-season-pro-cover-v2.png"
 };
 
 const extraCopy = {
@@ -72,7 +79,15 @@ const extraCopy = {
     phaseLabel: "Fase",
     weeksLabel: "Semanas",
     finalBadge: "28 semanas dentro do app",
-    viewProgram: "Ver como funciona no RaptorPro"
+    viewProgram: "Ver como funciona no RaptorPro",
+    coverLabel: "Capa do programa",
+    appLabel: "Calendário real no RaptorPro",
+    proof: [
+      ["28 semanas", "Planejamento completo"],
+      ["1 ou 2 jogos", "Microciclo ajustável"],
+      ["PT + EN", "Experiência bilíngue"],
+      ["Compra única", "Acesso no RaptorPro"]
+    ]
   },
   en: {
     positioning:
@@ -117,9 +132,62 @@ const extraCopy = {
     phaseLabel: "Phase",
     weeksLabel: "Weeks",
     finalBadge: "28 weeks inside the app",
-    viewProgram: "See the RaptorPro experience"
+    viewProgram: "See the RaptorPro experience",
+    coverLabel: "Program cover",
+    appLabel: "Real calendar in RaptorPro",
+    proof: [
+      ["28 weeks", "Complete progression"],
+      ["1 or 2 matches", "Adaptable microcycle"],
+      ["PT + EN", "Bilingual experience"],
+      ["One payment", "Access in RaptorPro"]
+    ]
   }
 };
+
+function InSeasonHeroVisual({ locale }: { locale: "pt" | "en" }) {
+  const extra = extraCopy[locale];
+
+  return (
+    <div className="relative mx-auto min-h-[470px] w-full max-w-[650px] sm:min-h-[610px] lg:min-h-[650px]">
+      <div className="absolute left-1/2 top-1/2 h-[78%] w-[86%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.3),rgba(249,115,22,0.08)_48%,transparent_72%)] blur-3xl" />
+
+      <div className="absolute left-[1%] top-[8%] z-10 w-[48%] -rotate-[4deg] sm:left-[4%] sm:w-[45%]">
+        <div className="relative aspect-[2/3] overflow-hidden rounded-[2rem] border border-orange-300/20 bg-black shadow-[0_38px_110px_rgba(0,0,0,0.72)] ring-1 ring-white/10">
+          <Image
+            alt={
+              locale === "pt"
+                ? "Capa premium do programa In-Season Pro"
+                : "Premium In-Season Pro program cover"
+            }
+            className="h-full w-full object-cover object-center"
+            fill
+            priority
+            sizes="(min-width: 1024px) 300px, 46vw"
+            src={inSeasonAssets.productCover}
+          />
+        </div>
+        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-orange-300/25 bg-black/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-orange-200 shadow-xl backdrop-blur sm:text-[10px]">
+          {extra.coverLabel}
+        </span>
+      </div>
+
+      <div className="absolute right-[1%] top-[3%] z-30 w-[52%] rotate-[3deg] sm:right-[2%] sm:w-[50%]">
+        <RaptorPhoneMockup
+          alt={
+            locale === "pt"
+              ? "Calendário real do In-Season Pro no RaptorPro"
+              : "Real In-Season Pro calendar in RaptorPro"
+          }
+          className="w-full"
+          src={raptorAppScreens.inSeasonWeek}
+        />
+        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-white shadow-xl backdrop-blur sm:text-[10px]">
+          {extra.appLabel}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
   const page = elangaSalesCopy[locale];
@@ -139,21 +207,18 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
 
       <section className="relative isolate overflow-hidden border-b border-orange-400/20 bg-[#080907]">
         <Image
-          alt={
-            locale === "pt"
-              ? "Atleta realizando sprint em campo"
-              : "Football player sprinting on the field"
-          }
-          className="absolute inset-0 -z-30 h-full w-full object-cover object-[62%_center]"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-30 h-full w-full object-cover object-center opacity-95"
           fill
           priority
           sizes="100vw"
-          src={athletePhotos.hero}
+          src={inSeasonAssets.heroBackground}
         />
-        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(5,6,4,0.99)_0%,rgba(5,6,4,0.94)_42%,rgba(5,6,4,0.50)_72%,rgba(5,6,4,0.36)_100%)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_12%,rgba(249,115,22,0.26),transparent_32%),linear-gradient(180deg,transparent_55%,rgba(8,9,7,0.96)_100%)]" />
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(5,6,4,0.98)_0%,rgba(5,6,4,0.9)_40%,rgba(5,6,4,0.18)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_16%,rgba(249,115,22,0.17),transparent_30%),linear-gradient(180deg,rgba(0,0,0,0.08)_35%,rgba(8,9,7,0.94)_100%)]" />
 
-        <div className="mx-auto grid min-h-[calc(88svh-var(--header-height))] max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+        <div className="mx-auto grid min-h-[calc(92svh-var(--header-height))] max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-14">
           <div className="max-w-3xl">
             <div className="flex flex-wrap gap-3">
               <span className="rounded-full border border-orange-300/35 bg-orange-500/12 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-orange-200 backdrop-blur">
@@ -174,10 +239,10 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
               {page.lead}
             </p>
 
-            <div className="mt-7 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-7 grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
               {page.chips.map((chip) => (
                 <div
-                  className="rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-center text-xs font-extrabold uppercase leading-5 text-white/85 backdrop-blur"
+                  className="rounded-xl border border-white/10 bg-black/45 px-3 py-3 text-center text-[11px] font-extrabold uppercase leading-5 text-white/80 backdrop-blur"
                   key={chip}
                 >
                   {chip}
@@ -207,41 +272,23 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
             </p>
           </div>
 
-          <ProgramDeviceShowcase
-            accent="orange"
-            className="max-w-[620px]"
-            coverAlt={
-              locale === "pt"
-                ? "Atleta treinando durante a temporada"
-                : "Football player training during the season"
-            }
-            coverEyebrow={
-              locale === "pt"
-                ? "Performance na temporada"
-                : "In-season performance"
-            }
-            coverImage={athletePhotos.hero}
-            coverMeta={
-              locale === "pt"
-                ? "28 semanas · Entre jogos"
-                : "28 weeks · Between matches"
-            }
-            coverPosition="object-[62%_50%]"
-            coverTitle="In-Season Pro"
-            screenImage="/assets/programs/raptorpro/in-season-week-mobile.jpg"
-            screenAlt={
-              locale === "pt"
-                ? "Semana real do In-Season Pro no RaptorPro"
-                : "Real In-Season Pro week in RaptorPro"
-            }
-          />
+          <InSeasonHeroVisual locale={locale} />
         </div>
       </section>
 
-      <section className="border-b border-orange-400/20 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-400 py-5 text-black">
-        <p className="mx-auto max-w-5xl px-4 text-center text-sm font-extrabold uppercase leading-6 tracking-[0.08em] sm:px-6 sm:text-base">
-          {extra.positioning}
-        </p>
+      <section className="border-b border-white/10 bg-[#0d0e0c]">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-white/10 px-4 sm:px-6 md:grid-cols-4 md:divide-y-0 lg:px-8">
+          {extra.proof.map(([value, label]) => (
+            <div className="px-4 py-5 text-center sm:py-6" key={label}>
+              <p className="font-display text-xl uppercase text-orange-400 sm:text-2xl">
+                {value}
+              </p>
+              <p className="mt-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white/42 sm:text-[11px]">
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="relative overflow-hidden py-20">
@@ -256,6 +303,9 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/65">
               {extra.problemBody}
+            </p>
+            <p className="mt-6 border-l-2 border-orange-500 bg-gradient-to-r from-orange-500/12 to-transparent px-5 py-4 text-sm font-semibold leading-7 text-orange-100/80">
+              {extra.positioning}
             </p>
             <div className="mt-8 grid grid-cols-3 gap-3">
               {page.stats.map(([value, label]) => (
