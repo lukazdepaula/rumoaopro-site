@@ -7,7 +7,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Dumbbell,
-  Gauge,
   PlayCircle,
   ShieldCheck,
   Target,
@@ -559,13 +558,13 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                   ? "Speed & acceleration"
                   : "Velocidade & aceleração"
               }
-              coverImage={assets.sprintSide}
+              coverImage={assets.programsProject36Sprint}
               coverMeta={
                 locale === "en"
                   ? "12 weeks · Field + Gym"
                   : "12 semanas · Campo + Academia"
               }
-              coverPosition="object-[62%_50%]"
+              coverPosition="object-[50%_42%]"
               coverTitle="Speed Pro"
               screenImage="/assets/programs/raptorpro/speed-pro-workout-mobile.jpg"
               screenAlt={
@@ -594,18 +593,6 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
           ))}
         </div>
       </section>
-
-      {reviewGroupKey ? (
-        <ReviewsSection
-          groupKey={reviewGroupKey}
-          locale={locale}
-          title={
-            locale === "pt"
-              ? "Avaliações de atletas RumoAoPro"
-              : "Reviews from equivalent RumoAoPro programs"
-          }
-        />
-      ) : null}
 
       <section className="relative isolate overflow-hidden bg-[#07100b] py-20 text-white">
         <div className="absolute inset-y-0 right-0 -z-30 w-full md:w-[58%]">
@@ -747,7 +734,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                   <RaptorPhoneMockup
                     alt={locale === "en" ? "Real workout inside RaptorPro" : "Treino real dentro do RaptorPro"}
                     className="w-full"
-                    src={raptorAppScreens.workout}
+                    src={raptorAppScreens.calendar}
                   />
                 </div>
               </div>
@@ -774,36 +761,6 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                 </article>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:items-start lg:px-8">
-          <div>
-            <p className="text-sm font-bold uppercase text-signal">
-              {page.methodTitle}
-            </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-              {page.methodH2}
-            </h2>
-            <p className="mt-5 text-base leading-8 text-graphite/74">
-              {page.methodLead}
-            </p>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-ink/10 bg-smoke">
-            {page.methodRows.map(([label, body]) => (
-              <div
-                className="grid gap-3 border-b border-ink/10 p-5 last:border-b-0 sm:grid-cols-[0.34fr_1fr]"
-                key={label}
-              >
-                <p className="flex items-center gap-2 text-sm font-bold uppercase text-ink">
-                  <Gauge aria-hidden="true" className="h-4 w-4 text-signal" />
-                  {label}
-                </p>
-                <p className="text-sm leading-6 text-graphite/72">{body}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -863,7 +820,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
               <RaptorPhoneMockup
                 alt={locale === "en" ? "Real readiness screen in RaptorPro" : "Tela real de prontidão no RaptorPro"}
                 className="w-full"
-                src={raptorAppScreens.readiness}
+                src={raptorAppScreens.speedWorkout}
               />
             </div>
             <div className="absolute right-[1%] top-[20%] z-20 w-[38%] rotate-6 opacity-85 sm:right-[5%]">
@@ -931,6 +888,18 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
           </div>
         </div>
       </section>
+
+      {reviewGroupKey ? (
+        <ReviewsSection
+          groupKey={reviewGroupKey}
+          locale={locale}
+          title={
+            locale === "pt"
+              ? "Avaliações de atletas RumoAoPro"
+              : "Reviews from equivalent RumoAoPro programs"
+          }
+        />
+      ) : null}
 
       <section className="bg-ink py-14 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">

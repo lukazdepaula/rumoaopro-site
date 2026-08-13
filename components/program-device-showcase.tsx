@@ -52,8 +52,8 @@ export function ProgramDeviceShowcase({
       <div
         className={`absolute overflow-hidden rounded-[2rem] border-[6px] border-[#15171c] bg-black shadow-[0_32px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 ${
           compact
-            ? "left-[6%] top-[7%] w-[41%] -rotate-3"
-            : "left-[3%] top-[4%] w-[41%] -rotate-3 sm:left-[6%] sm:w-[39%]"
+            ? "left-[3%] top-[5%] w-[45%] -rotate-2"
+            : "left-[1%] top-[2%] w-[46%] -rotate-2 sm:left-[3%] sm:w-[43%]"
         }`}
       >
         <span className="absolute left-1/2 top-1.5 z-20 h-3.5 w-[30%] -translate-x-1/2 rounded-full bg-[#08090b]" />
@@ -72,8 +72,8 @@ export function ProgramDeviceShowcase({
       <div
         className={`absolute z-20 rotate-[4deg] ${
           compact
-            ? "right-[4%] top-[12%] w-[47%]"
-            : "right-[1%] top-[11%] w-[47%] sm:right-[4%] sm:w-[45%]"
+            ? "right-[1%] top-[10%] w-[52%]"
+            : "right-0 top-[8%] w-[52%] sm:right-[1%] sm:w-[50%]"
         }`}
       >
         <RaptorPhoneMockup

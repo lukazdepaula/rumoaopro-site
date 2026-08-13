@@ -12,7 +12,11 @@ export const raptorAppScreens = {
   readiness:
     "/assets/programs/offseason-30/raptor-athlete-readiness-mobile.png",
   workout:
-    "/assets/programs/offseason-30/raptor-athlete-workout-mobile.png"
+    "/assets/programs/offseason-30/raptor-athlete-workout-mobile.png",
+  speedWorkout:
+    "/assets/programs/raptorpro/speed-pro-workout-mobile.jpg",
+  inSeasonWeek:
+    "/assets/programs/raptorpro/in-season-week-mobile.jpg"
 };
 
 const copy = {
@@ -108,6 +112,9 @@ export function RaptorProgramExperience({
   const accentSurface = isProject36
     ? "bg-lime-300 text-[#07100b]"
     : "bg-orange-500 text-white";
+  const primaryScreen = isProject36
+    ? raptorAppScreens.speedWorkout
+    : raptorAppScreens.workout;
 
   return (
     <section className="relative isolate overflow-hidden bg-[#07080c] py-16 text-white sm:py-20">
@@ -153,27 +160,28 @@ export function RaptorProgramExperience({
           </div>
         </div>
 
-        <div className="relative mx-auto min-h-[470px] w-full max-w-[720px] sm:min-h-[640px]">
+        <div className="relative mx-auto min-h-[500px] w-full max-w-[720px] sm:min-h-[670px]">
           <div className="absolute left-1/2 top-1/2 h-[68%] w-[76%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(239,35,60,0.24),rgba(18,110,255,0.08)_48%,transparent_72%)] blur-3xl" />
-          <div className="absolute left-[1%] top-[17%] z-10 w-[38%] -rotate-6 opacity-75 sm:left-[5%]">
+          <div className="absolute left-[2%] top-[13%] z-10 w-[46%] -rotate-3 opacity-90 sm:left-[4%] sm:w-[44%]">
             <RaptorPhoneMockup
               alt={locale === "pt" ? "Calendário real do atleta no RaptorPro" : "Real athlete calendar in RaptorPro"}
               className="w-full"
-              src={raptorAppScreens.calendar}
+              src={isProject36 ? raptorAppScreens.calendar : raptorAppScreens.inSeasonWeek}
             />
           </div>
-          <div className="absolute left-1/2 top-[1%] z-30 w-[42%] -translate-x-1/2">
+          <div className="absolute right-[1%] top-[3%] z-30 w-[52%] rotate-2 sm:right-[4%] sm:w-[50%]">
             <RaptorPhoneMockup
-              alt={locale === "pt" ? "Tela real de prontidão no RaptorPro" : "Real readiness screen in RaptorPro"}
+              alt={
+                locale === "pt"
+                  ? isProject36
+                    ? "Treino real do Speed Pro no RaptorPro"
+                    : "Calendário real do In-Season Pro no RaptorPro"
+                  : isProject36
+                    ? "Real Speed Pro workout in RaptorPro"
+                    : "Real In-Season Pro calendar in RaptorPro"
+              }
               className="w-full"
-              src={raptorAppScreens.readiness}
-            />
-          </div>
-          <div className="absolute right-[1%] top-[17%] z-20 w-[38%] rotate-6 opacity-85 sm:right-[5%]">
-            <RaptorPhoneMockup
-              alt={locale === "pt" ? "Treino real dentro do RaptorPro" : "Real workout inside RaptorPro"}
-              className="w-full"
-              src={raptorAppScreens.workout}
+              src={primaryScreen}
             />
           </div>
           <div className="absolute bottom-[2%] left-1/2 z-40 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/75 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-2xl backdrop-blur sm:text-xs">

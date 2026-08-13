@@ -56,6 +56,8 @@ export function ProgramCoverArt({
 }: ProgramCoverArtProps) {
   const palette = accents[accent];
   const isPortrait = format === "portrait";
+  const isSpeed = accent === "lime";
+  const isInSeason = accent === "orange";
 
   return (
     <div
@@ -100,6 +102,27 @@ export function ProgramCoverArt({
         className={`absolute -right-[18%] top-[9%] h-[44%] w-[68%] rounded-full ${palette.glow} opacity-40 blur-[70px]`}
       />
       <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.14)_1px,transparent_1px)] [background-size:38px_38px]" />
+      <div
+        className={`absolute -right-[26%] top-[20%] h-[2px] w-[88%] -rotate-[24deg] ${palette.line} opacity-70 shadow-[0_0_18px_currentColor]`}
+      />
+      <div
+        className={`absolute -right-[18%] top-[25%] h-px w-[72%] -rotate-[24deg] ${palette.line} opacity-35`}
+      />
+      <div className="absolute inset-y-0 right-[9%] w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+      {isPortrait ? (
+        <p
+          aria-hidden="true"
+          className={`absolute right-[3%] top-[30%] font-display text-[39cqw] leading-none tracking-[-0.08em] ${
+            isSpeed
+              ? "text-lime-300/[0.10]"
+              : isInSeason
+                ? "text-orange-400/[0.10]"
+                : "text-white/[0.07]"
+          }`}
+        >
+          {isSpeed ? "36" : isInSeason ? "28" : "30"}
+        </p>
+      ) : null}
 
       <div
         className={`absolute inset-x-0 top-0 flex items-center justify-between ${
@@ -151,6 +174,18 @@ export function ProgramCoverArt({
         >
           {meta}
         </p>
+        {isPortrait ? (
+          <div className="mt-[7%] flex items-center gap-[4%] border-t border-white/16 pt-[5%]">
+            <span className={`h-[1.2cqw] w-[12%] ${palette.line}`} />
+            <span className="text-[2.4cqw] font-black uppercase tracking-[0.2em] text-white/48">
+              {isSpeed
+                ? "Acceleration · Max velocity"
+                : isInSeason
+                  ? "Strength · Speed · Power"
+                  : "Field · Gym"}
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

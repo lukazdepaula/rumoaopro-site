@@ -220,13 +220,13 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
                 ? "Performance na temporada"
                 : "In-season performance"
             }
-            coverImage={assets.programsProMatch}
+            coverImage={athletePhotos.hero}
             coverMeta={
               locale === "pt"
                 ? "28 semanas · Entre jogos"
                 : "28 weeks · Between matches"
             }
-            coverPosition="object-[50%_34%]"
+            coverPosition="object-[62%_50%]"
             coverTitle="In-Season Pro"
             screenImage="/assets/programs/raptorpro/in-season-week-mobile.jpg"
             screenAlt={
