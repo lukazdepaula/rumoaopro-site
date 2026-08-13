@@ -284,7 +284,7 @@ export async function sendLoadProAccessEmail(input: {
         </div>
         <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
           <p>Fala, ${escapeHtml(input.name)}.</p>
-          <p>Seu Plano Treinadores Fundadores foi confirmado. Ele inclui até <strong>2 equipes</strong>, com até <strong>25 atletas por equipe</strong>, pelo preço fundador de <strong>R$ 49,90/mês</strong> enquanto a assinatura permanecer ativa.</p>
+          <p>Seu Plano Treinadores Fundadores foi confirmado. Ele inclui até <strong>2 equipes</strong>, com até <strong>30 atletas por equipe</strong>, pelo preço fundador de <strong>R$ 49,90/mês</strong> enquanto a assinatura permanecer ativa.</p>
           <p>Se este for seu primeiro acesso, você também receberá um convite para definir sua senha com segurança.</p>
           <p style="margin:24px 0"><a href="${appUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Abrir o LoadPro</a></p>
           <p style="color:#68707d;font-size:13px">Nunca envie sua senha por e-mail, WhatsApp ou suporte.</p>

@@ -62,7 +62,7 @@ export const checkoutProducts: CheckoutProduct[] = [
     billing_interval: "month",
     trial_days: 7,
     team_limit: 2,
-    players_per_team_limit: 25,
+    players_per_team_limit: 30,
     founding_price_lock: true,
     created_at: now,
     updated_at: now

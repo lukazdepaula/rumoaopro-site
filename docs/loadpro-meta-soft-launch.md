@@ -16,11 +16,13 @@
 | `PageView` | Página carregada após consentimento | Não |
 | `ViewContent` | Página/seção comercial do LoadPro visualizada | Não |
 | `Contact` | Clique em WhatsApp | Não |
-| `InitiateCheckout` | Checkout do LoadPro aberto | Não |
+| `InitiateCheckout` | Formulário enviado para criar a sessão segura do checkout | Não |
 | `StartTrial` | Stripe confirma assinatura em período de teste | Não |
 | `Purchase` | Stripe confirma fatura paga com valor maior que zero | Sim |
 
 O navegador e o servidor reutilizam o mesmo `event_id` sempre que possível para deduplicação. Uma fatura de R$ 0,00 criada no começo do teste nunca dispara `Purchase`.
+
+No checkout central, o Pixel geral RumoAoPro mede o `PageView` do site e o Pixel LoadPro recebe os eventos comerciais do produto via `trackSingle`. Essa separação é intencional e evita enviar o mesmo evento aos dois conjuntos. A página pública `loadpro.rumoaopro.com.br` pertence a outro repositório e precisa instalar o Pixel LoadPro respeitando o consentimento nesse projeto.
 
 ## Estrutura da primeira campanha
 
@@ -87,11 +89,11 @@ O navegador e o servidor reutilizam o mesmo `event_id` sempre que possível para
 ## Checklist técnico antes de ativar
 
 1. Criar/selecionar Pixel no Gerenciador de Eventos.
-2. Configurar `NEXT_PUBLIC_META_PIXEL_ID` na Vercel.
-3. Gerar token da API de Conversões e salvar como `META_CONVERSIONS_API_TOKEN` somente na Vercel.
-4. Usar `META_CONVERSIONS_API_TEST_EVENT_CODE` durante o teste e removê-lo antes da campanha.
+2. Configurar `NEXT_PUBLIC_LOADPRO_META_PIXEL_ID` na Vercel.
+3. Gerar token da API de Conversões e salvar como `LOADPRO_META_CONVERSIONS_API_TOKEN` somente na Vercel.
+4. Usar `LOADPRO_META_CONVERSIONS_API_TEST_EVENT_CODE` durante o teste e removê-lo antes da campanha.
 5. Fazer redeploy.
-6. Aceitar medição no banner e validar `PageView`, `ViewContent`, `Contact` e `InitiateCheckout` em Eventos de Teste.
+6. Aceitar medição no banner e validar `PageView`, `ViewContent` e `Contact` em Eventos de Teste; `InitiateCheckout` deve aparecer somente ao enviar o formulário do checkout.
 7. Fazer um checkout controlado e confirmar `StartTrial` uma única vez.
 8. Confirmar que nenhuma fatura de R$ 0,00 aparece como `Purchase`.
 9. Testar uma cobrança real/controlada antes de otimizar mídia para `Purchase`.
