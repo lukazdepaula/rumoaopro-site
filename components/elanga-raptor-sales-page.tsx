@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { elangaSalesCopy } from "@/components/elanga-sales-page";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
+import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
 import { RaptorProgramExperience } from "@/components/raptor-program-experience";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -205,6 +206,23 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
               {extra.accessNote}
             </p>
           </div>
+
+          <ProgramDeviceShowcase
+            accent="orange"
+            className="max-w-[620px]"
+            coverAlt={
+              locale === "pt"
+                ? "Atleta treinando durante a temporada"
+                : "Football player training during the season"
+            }
+            coverImage={assets.programsProMatch}
+            coverPosition="object-[50%_34%]"
+            screenAlt={
+              locale === "pt"
+                ? "Calendário real do In-Season Pro no RaptorPro"
+                : "Real In-Season Pro calendar in RaptorPro"
+            }
+          />
         </div>
       </section>
 

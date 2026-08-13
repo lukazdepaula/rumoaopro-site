@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
 import { ProgramsSection } from "@/components/programs-section";
 import { ReviewBadge } from "@/components/reviews";
+import { SeasonProgramMap } from "@/components/season-program-map";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
@@ -16,39 +17,6 @@ export const metadata: Metadata = {
   description:
     "Programas RumoAoPro para atletas treinarem força, velocidade, condicionamento e performance em cada fase da temporada."
 };
-
-const annualPath = [
-  {
-    step: "01",
-    title: "Offseason",
-    body:
-      "Construa uma base sólida de força, potência e velocidade com o Speed Pro.",
-    image: assets.programsGymBriefing,
-    imageClass: "object-[center_18%]",
-    href: "#programas",
-    cta: "Ver offseason"
-  },
-  {
-    step: "02",
-    title: "Últimos 30 dias antes da pré-temporada",
-    body:
-      "Use o Offseason 30 Days para potencializar o condicionamento físico e chegar preparado para o retorno aos treinos.",
-    image: assets.programsPlayerReady,
-    imageClass: "object-[center_18%]",
-    href: "/programas/offseason-30-days",
-    cta: "Ver 30 dias"
-  },
-  {
-    step: "03",
-    title: "Durante a temporada",
-    body:
-      "Mantenha o desempenho com o In-Season Pro, preservando força, velocidade e potência sem interferir nos treinos e jogos da equipe.",
-    image: assets.programsProMatch,
-    imageClass: "object-center",
-    href: "/programas/elanga-in-season",
-    cta: "Ver In-Season Pro"
-  }
-];
 
 const normalizeProgramPath = (href: string) =>
   href.replace(/^\/programas\//, "").replace(/^\/checkout\//, "");
@@ -139,61 +107,7 @@ export default function ProgramasPage() {
         </div>
       </section>
 
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr] md:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase text-signal">
-                Rota do atleta
-              </p>
-              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Evolua o ano inteiro com o treinamento ideal para cada fase.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              A preparação ideal começa na offseason com o Speed Pro e o
-              Offseason 30 Days, desenvolvendo força, potência, velocidade e
-              resistência física.
-              Nos 30 dias que antecedem a pré-temporada, o Offseason 30 Days
-              intensifica o trabalho. Durante a temporada, o In-Season Pro mantém força
-              e velocidade sem comprometer a recuperação do jogador.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {annualPath.map((item) => (
-              <Link
-                className="focus-ring group block overflow-hidden rounded-lg bg-smoke shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
-                href={item.href}
-                key={item.step}
-              >
-                <div className="relative overflow-hidden bg-ink">
-                  <Image
-                    alt={item.title}
-                    className={`aspect-[16/10] w-full object-cover transition duration-500 group-hover:scale-105 ${item.imageClass}`}
-                    height={620}
-                    src={item.image}
-                    width={960}
-                  />
-                  <div className="absolute left-4 top-4 rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-ink">
-                    {item.step}
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-ink">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
-                    {item.body}
-                  </p>
-                  <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-signal">
-                    {item.cta}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SeasonProgramMap locale="pt" />
 
       <ProgramsSection />
 

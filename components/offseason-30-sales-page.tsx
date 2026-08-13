@@ -10,6 +10,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
+import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
 import { ReviewBadge } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -420,18 +421,18 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[610px] lg:-translate-y-12">
-            <div className="absolute left-1/2 top-[42%] -z-10 h-[72%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(18,110,255,0.24),rgba(220,38,38,0.12)_44%,transparent_72%)] blur-3xl" />
-            <div className="relative mx-auto aspect-[4/5] w-[82%] max-w-[430px] overflow-hidden rounded-xl border border-white/16 bg-black shadow-[0_34px_110px_rgba(0,0,0,0.72)]">
-              <Image
-                alt="Offseason 30 Days"
-                className="h-full w-full object-cover object-top"
-                fill
-                priority
-                sizes="(min-width: 1024px) 430px, 82vw"
-                src={assets.offseason30Cover}
-              />
-            </div>
+          <div className="relative mx-auto w-full max-w-[650px] lg:-translate-y-6">
+            <ProgramDeviceShowcase
+              accent="blue"
+              coverAlt="Offseason 30 Days"
+              coverImage={assets.offseason30Cover}
+              coverPosition="object-top"
+              screenAlt={
+                locale === "pt"
+                  ? "Calendário real do Offseason 30 Days no RaptorPro"
+                  : "Real Offseason 30 Days calendar in RaptorPro"
+              }
+            />
             <div className="mt-4 grid grid-cols-3 gap-3">
               {page.stats.map(([value, label]) => (
                 <div className="rounded-lg border border-white/10 bg-black/48 p-4 text-center" key={label}>

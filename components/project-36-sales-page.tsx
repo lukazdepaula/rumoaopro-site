@@ -17,6 +17,7 @@ import {
   RaptorPhoneMockup,
   raptorAppScreens
 } from "@/components/raptor-program-experience";
+import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -544,14 +545,23 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
               {page.storeNote}
             </p>
           </div>
-          <div className="relative hidden h-full min-h-[610px] items-end justify-end lg:flex">
-            <div className="absolute bottom-4 right-0 z-10 w-[56%] rotate-[3deg]">
-              <RaptorPhoneMockup
-                alt={locale === "en" ? "Real Speed Pro calendar in RaptorPro" : "Calendário real do Speed Pro no RaptorPro"}
-                className="w-full"
-                src={raptorAppScreens.calendar}
-              />
-            </div>
+          <div className="relative flex h-full min-h-[480px] items-center justify-end sm:min-h-[560px] lg:min-h-[610px]">
+            <ProgramDeviceShowcase
+              accent="lime"
+              className="max-w-[600px]"
+              coverAlt={
+                locale === "en"
+                  ? "Speed Pro football speed training"
+                  : "Treinamento de velocidade do Speed Pro"
+              }
+              coverImage="/assets/programs/project-36/project-36-sprint.jpg"
+              coverPosition="object-[62%_50%]"
+              screenAlt={
+                locale === "en"
+                  ? "Real Speed Pro calendar in RaptorPro"
+                  : "Calendário real do Speed Pro no RaptorPro"
+              }
+            />
             <div className="absolute bottom-10 left-0 z-20 max-w-[230px] rounded-2xl border border-white/15 bg-black/55 p-4 shadow-2xl backdrop-blur-xl">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">
                 {locale === "en" ? "Built in 3 phases" : "Construído em 3 fases"}

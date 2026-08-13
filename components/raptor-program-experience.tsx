@@ -81,7 +81,7 @@ export function RaptorPhoneMockup({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-[2rem] border-[6px] border-[#15171c] bg-white shadow-[0_34px_90px_rgba(0,0,0,0.62)] ring-1 ring-white/15 ${className}`}
+      className={`relative overflow-hidden rounded-[2rem] border-[6px] border-[#15171c] bg-white shadow-[0_34px_90px_rgba(0,0,0,0.62)] ring-1 ring-white/15 ${className}`}
     >
       <span className="absolute left-1/2 top-1.5 z-20 h-3.5 w-[30%] -translate-x-1/2 rounded-full bg-[#08090b]" />
       <div className="relative aspect-[390/844] w-full overflow-hidden bg-white">

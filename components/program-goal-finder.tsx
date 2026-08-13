@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,6 +10,7 @@ import {
   Star
 } from "lucide-react";
 import { useState } from "react";
+import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import { reviewGroups, type ReviewGroupKey } from "@/lib/reviews";
 
@@ -304,16 +304,29 @@ export function ProgramGoalFinder({
         }`}
       >
         <div className="grid md:grid-cols-[1.04fr_0.96fr]">
-          <div className="relative min-h-[260px] overflow-hidden sm:min-h-[330px]">
-            <Image
-              alt={selectedGoal.displayName}
-              className={`object-cover ${selectedGoal.imagePosition}`}
-              fill
+          <div className="relative min-h-[300px] overflow-hidden bg-[#080a0d] sm:min-h-[360px]">
+            <ProgramDeviceShowcase
+              accent={
+                selectedGoal.id === "speed"
+                  ? "lime"
+                  : selectedGoal.id === "inseason"
+                    ? "orange"
+                    : selectedGoal.id === "return-to-play"
+                      ? "emerald"
+                      : "blue"
+              }
+              className="h-full"
+              compact
+              coverAlt={selectedGoal.displayName}
+              coverImage={selectedGoal.image}
+              coverPosition={selectedGoal.imagePosition}
               key={selectedGoal.image}
-              sizes="(max-width: 767px) 100vw, 620px"
-              src={selectedGoal.image}
+              screenAlt={
+                locale === "pt"
+                  ? `Calendário real do ${selectedGoal.displayName} no RaptorPro`
+                  : `Real ${selectedGoal.displayName} calendar in RaptorPro`
+              }
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(0,0,0,0.68)_100%)]" />
             <span className="absolute bottom-4 left-4 rounded-full border border-white/15 bg-black/55 px-3 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-white backdrop-blur-md sm:bottom-5 sm:left-5">
               {selectedGoal.label}
             </span>

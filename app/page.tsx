@@ -82,6 +82,7 @@ const productBlocks = [
     eyebrow: "A melhor escolha para personalização",
     icon: Users,
     image: assets.coachGymInstruction,
+    imagePosition: "object-[center_30%]",
     body:
       "Sua rotina muda. Seu treinamento também deve mudar. A assessoria organiza campo, academia, jogos, viagens, recuperação e histórico físico em um plano individual.",
     points: [
@@ -97,6 +98,7 @@ const productBlocks = [
     eyebrow: "Treine com estratégia no RaptorPro",
     icon: Zap,
     image: assets.sprintSide,
+    imagePosition: "object-[64%_50%]",
     body:
       "Offseason 30 Days, Speed Pro e In-Season Pro unem planejamento, vídeos e registro de treino em uma experiência interativa.",
     points: [
@@ -112,6 +114,7 @@ const productBlocks = [
     eyebrow: "Formação prática para treinadores",
     icon: BookOpen,
     image: assets.coachGym,
+    imagePosition: "object-[center_30%]",
     body:
       "Uma plataforma direta ao ponto para aprender a planejar potência, periodização, avaliações, velocidade e resistência para jogadores de futebol.",
     points: [
@@ -281,7 +284,7 @@ export default function HomePage() {
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <Image
                       alt={item.title}
-                      className="h-full w-full object-cover object-center"
+                      className={`h-full w-full object-cover ${item.imagePosition}`}
                       fill
                       sizes="(max-width: 1024px) 100vw, 33vw"
                       src={item.image}

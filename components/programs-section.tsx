@@ -64,10 +64,10 @@ export function ProgramsSection({
     : selectedPrograms;
   const copy = {
     pt: {
-      eyebrow: "Nossa linha de programas de performance",
-      title: "Treine com estratégia durante todo o ano",
+      eyebrow: "Programas disponíveis",
+      title: "Escolha o programa certo para o seu objetivo",
       body:
-        "Os programas estão disponíveis em inglês. Antes de finalizar sua compra, consulte esta página para entender qual treinamento é mais indicado para cada fase da sua temporada e escolher a opção ideal para alcançar seus objetivos.",
+        "Offseason 30 Days e Speed Pro estão disponíveis em português e inglês. In-Season Pro está em inglês, e De Volta aos Gramados está em português. Confira o idioma indicado em cada produto antes da compra.",
       seeAll: "Ver todos",
       priceLabel: "Preço",
       currencyLabel: "Moeda de referência",
@@ -79,10 +79,10 @@ export function ProgramsSection({
       applyHref: "/assessoria#aplicacao"
     },
     en: {
-      eyebrow: "Performance program line",
-      title: "Train strategically through the whole year",
+      eyebrow: "Available programs",
+      title: "Choose the right program for your goal",
       body:
-        "Use the offseason to build strength and speed, sharpen the final 30 days before return, then maintain performance during the season.",
+        "Offseason 30 Days and Speed Pro are available in English and Portuguese. In-Season Pro is in English, while Back to the Pitch is currently delivered in Portuguese.",
       seeAll: "See all",
       priceLabel: "Price",
       currencyLabel: "Reference currency",

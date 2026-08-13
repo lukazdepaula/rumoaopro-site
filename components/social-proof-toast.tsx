@@ -54,7 +54,7 @@ const groupLabels: Record<keyof typeof reviewGroups, Record<ReviewLocale, string
   adama: { pt: "Adama Strength & Power", en: "Adama Strength & Power" },
   project36: { pt: "Speed Pro", en: "Speed Pro" },
   deVolta: { pt: "De Volta aos Gramados", en: "Back to the Pitch" },
-  inSeason: { pt: "Elanga In Season", en: "Elanga In Season" },
+  inSeason: { pt: "In-Season Pro", en: "In-Season Pro" },
   coaching: { pt: "Assessoria Online", en: "Online Coaching" },
   preparadorPro: { pt: "Preparador PRO", en: "Preparador PRO" }
 };

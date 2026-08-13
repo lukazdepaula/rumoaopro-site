@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
 import { ProgramsSection } from "@/components/programs-section";
+import { SeasonProgramMap } from "@/components/season-program-map";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
@@ -13,39 +14,6 @@ export const metadata: Metadata = {
   description:
     "RumoAoPro football programs for players to train strength, speed, conditioning and performance in every season phase."
 };
-
-const annualPath = [
-  {
-    step: "01",
-    title: "Offseason",
-    body:
-      "Build a solid base of strength, power and speed with Adama and Speed Pro.",
-    image: assets.programsGymBriefing,
-    imageClass: "object-[center_18%]",
-    href: "#programas",
-    cta: "See offseason"
-  },
-  {
-    step: "02",
-    title: "Final 30 days before preseason",
-    body:
-      "Use Offseason 30 Days to sharpen conditioning and arrive prepared for the return to training.",
-    image: assets.programsPlayerReady,
-    imageClass: "object-[center_18%]",
-    href: "/en/programs/offseason-30-days",
-    cta: "See 30 days"
-  },
-  {
-    step: "03",
-    title: "During the season",
-    body:
-      "Maintain performance with In-Season Pro, preserving strength, speed and power without disrupting team training and matches.",
-    image: assets.programsProMatch,
-    imageClass: "object-center",
-    href: "/en/programs/elanga-in-season",
-    cta: "See In-Season Pro"
-  }
-];
 
 export default function EnglishProgramsPage() {
   return (
@@ -118,59 +86,7 @@ export default function EnglishProgramsPage() {
         </div>
       </section>
 
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr] md:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase text-signal">
-                Player path
-              </p>
-              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                A complete method to evolve through the whole year.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-base leading-8 text-graphite/75">
-              The ideal preparation starts in the offseason with Adama and
-              Speed Pro. The final 30 days before preseason are sharpened with
-              Offseason 30 Days. During the season, In-Season Pro helps maintain
-              strength and speed without compromising recovery.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {annualPath.map((item) => (
-              <Link
-                className="focus-ring group block overflow-hidden rounded-lg bg-smoke shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
-                href={item.href}
-                key={item.step}
-              >
-                <div className="relative overflow-hidden bg-ink">
-                  <Image
-                    alt={item.title}
-                    className={`aspect-[16/10] w-full object-cover transition duration-500 group-hover:scale-105 ${item.imageClass}`}
-                    height={620}
-                    src={item.image}
-                    width={960}
-                  />
-                  <div className="absolute left-4 top-4 rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-ink">
-                    {item.step}
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-ink">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/72">
-                    {item.body}
-                  </p>
-                  <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-signal">
-                    {item.cta}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SeasonProgramMap locale="en" />
 
       <ProgramsSection locale="en" />
 
