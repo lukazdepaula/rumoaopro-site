@@ -554,12 +554,24 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
                   ? "Speed Pro football speed training"
                   : "Treinamento de velocidade do Speed Pro"
               }
-              coverImage="/assets/programs/project-36/project-36-sprint.jpg"
+              coverEyebrow={
+                locale === "en"
+                  ? "Speed & acceleration"
+                  : "Velocidade & aceleração"
+              }
+              coverImage={assets.sprintSide}
+              coverMeta={
+                locale === "en"
+                  ? "12 weeks · Field + Gym"
+                  : "12 semanas · Campo + Academia"
+              }
               coverPosition="object-[62%_50%]"
+              coverTitle="Speed Pro"
+              screenImage="/assets/programs/raptorpro/speed-pro-workout-mobile.jpg"
               screenAlt={
                 locale === "en"
-                  ? "Real Speed Pro calendar in RaptorPro"
-                  : "Calendário real do Speed Pro no RaptorPro"
+                  ? "Real Speed Pro workout in RaptorPro"
+                  : "Treino real do Speed Pro no RaptorPro"
               }
             />
             <div className="absolute bottom-10 left-0 z-20 max-w-[230px] rounded-2xl border border-white/15 bg-black/55 p-4 shadow-2xl backdrop-blur-xl">

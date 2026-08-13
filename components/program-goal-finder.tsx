@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,7 +11,7 @@ import {
   Star
 } from "lucide-react";
 import { useState } from "react";
-import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
+import { ProgramCoverArt } from "@/components/program-cover-art";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import { reviewGroups, type ReviewGroupKey } from "@/lib/reviews";
 
@@ -26,6 +27,7 @@ type GoalDefinition = {
   label: string;
   prompt: string;
   displayName: string;
+  coverTitle: string;
   productId: string;
   href: string;
   image: string;
@@ -43,6 +45,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Offseason",
       prompt: "Tenho 30 dias para me preparar",
       displayName: "Offseason 30 Days",
+      coverTitle: "Offseason 30 Days",
       productId: "offseason_30_days",
       href: "/programas/offseason-30-days",
       image: "/assets/photos/programs/programs-field-control.jpg",
@@ -59,6 +62,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Velocidade",
       prompt: "Quero ficar mais rápido",
       displayName: "Velocidade & Aceleração — Speed Pro",
+      coverTitle: "Speed Pro",
       productId: "project_36",
       href: "/programas/projeto-36kmh",
       image: "/assets/photos/lukaz-sprint-side.jpg",
@@ -75,6 +79,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Durante a temporada",
       prompt: "Preciso treinar entre jogos",
       displayName: "In-Season Pro",
+      coverTitle: "In-Season Pro",
       productId: "elanga_in_season",
       href: "/programas/elanga-in-season",
       image: "/assets/photos/programs/programs-pro-match.jpg",
@@ -91,6 +96,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Return to play",
       prompt: "Você tem pubalgia?",
       displayName: "De Volta aos Gramados",
+      coverTitle: "De Volta aos Gramados",
       productId: "de_volta_aos_gramados_pt",
       href: "/programas/de-volta-aos-gramados",
       image: "/assets/programs/dvg/dvg-return-to-play-cover-v3.png",
@@ -109,6 +115,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Offseason",
       prompt: "I have 30 days to prepare",
       displayName: "Offseason 30 Days",
+      coverTitle: "Offseason 30 Days",
       productId: "offseason_30_days",
       href: "/en/programs/offseason-30-days",
       image: "/assets/photos/programs/programs-field-control.jpg",
@@ -125,6 +132,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Speed",
       prompt: "Become faster",
       displayName: "Speed & Acceleration — Speed Pro",
+      coverTitle: "Speed Pro",
       productId: "project_36",
       href: "/en/programs/project-36kmh",
       image: "/assets/photos/lukaz-sprint-side.jpg",
@@ -141,6 +149,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "In season",
       prompt: "I need training between matches",
       displayName: "In-Season Pro",
+      coverTitle: "In-Season Pro",
       productId: "elanga_in_season",
       href: "/en/programs/elanga-in-season",
       image: "/assets/photos/programs/programs-pro-match.jpg",
@@ -157,6 +166,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       label: "Return to play",
       prompt: "Recovering from pubalgia?",
       displayName: "Back to the Pitch",
+      coverTitle: "Back to the Pitch",
       productId: "de_volta_aos_gramados_pt",
       href: "/en/programs/de-volta-aos-gramados",
       image: "/assets/programs/dvg/dvg-return-to-play-cover-v3.png",
@@ -305,31 +315,37 @@ export function ProgramGoalFinder({
       >
         <div className="grid md:grid-cols-[1.04fr_0.96fr]">
           <div className="relative min-h-[300px] overflow-hidden bg-[#080a0d] sm:min-h-[360px]">
-            <ProgramDeviceShowcase
-              accent={
-                selectedGoal.id === "speed"
-                  ? "lime"
-                  : selectedGoal.id === "inseason"
-                    ? "orange"
-                    : selectedGoal.id === "return-to-play"
-                      ? "emerald"
+            {selectedGoal.id === "return-to-play" ? (
+              <>
+                <Image
+                  alt={selectedGoal.displayName}
+                  className={`h-full w-full object-cover ${selectedGoal.imagePosition}`}
+                  fill
+                  key={selectedGoal.image}
+                  sizes="(max-width: 767px) 100vw, 54vw"
+                  src={selectedGoal.image}
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_60%,rgba(0,0,0,0.45))]" />
+              </>
+            ) : (
+              <ProgramCoverArt
+                accent={
+                  selectedGoal.id === "speed"
+                    ? "lime"
+                    : selectedGoal.id === "inseason"
+                      ? "orange"
                       : "blue"
-              }
-              className="h-full"
-              compact
-              coverAlt={selectedGoal.displayName}
-              coverImage={selectedGoal.image}
-              coverPosition={selectedGoal.imagePosition}
-              key={selectedGoal.image}
-              screenAlt={
-                locale === "pt"
-                  ? `Calendário real do ${selectedGoal.displayName} no RaptorPro`
-                  : `Real ${selectedGoal.displayName} calendar in RaptorPro`
-              }
-            />
-            <span className="absolute bottom-4 left-4 rounded-full border border-white/15 bg-black/55 px-3 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-white backdrop-blur-md sm:bottom-5 sm:left-5">
-              {selectedGoal.label}
-            </span>
+                }
+                className="absolute inset-0"
+                eyebrow={selectedGoal.label}
+                image={selectedGoal.image}
+                imageAlt={selectedGoal.displayName}
+                imagePosition={selectedGoal.imagePosition}
+                key={selectedGoal.image}
+                meta={selectedGoal.detail.split("·").slice(0, 3).join(" ·")}
+                title={selectedGoal.coverTitle}
+              />
+            )}
           </div>
 
           <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-9">

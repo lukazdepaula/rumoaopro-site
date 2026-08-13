@@ -86,9 +86,9 @@ export default function EnglishProgramsPage() {
         </div>
       </section>
 
-      <SeasonProgramMap locale="en" />
-
       <ProgramsSection locale="en" />
+
+      <SeasonProgramMap locale="en" />
 
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[0.85fr_1.15fr] md:items-center lg:px-8">

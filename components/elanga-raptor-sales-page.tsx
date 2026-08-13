@@ -215,12 +215,24 @@ export function ElangaRaptorSalesPage({ locale }: ElangaRaptorSalesPageProps) {
                 ? "Atleta treinando durante a temporada"
                 : "Football player training during the season"
             }
+            coverEyebrow={
+              locale === "pt"
+                ? "Performance na temporada"
+                : "In-season performance"
+            }
             coverImage={assets.programsProMatch}
+            coverMeta={
+              locale === "pt"
+                ? "28 semanas · Entre jogos"
+                : "28 weeks · Between matches"
+            }
             coverPosition="object-[50%_34%]"
+            coverTitle="In-Season Pro"
+            screenImage="/assets/programs/raptorpro/in-season-week-mobile.jpg"
             screenAlt={
               locale === "pt"
-                ? "Calendário real do In-Season Pro no RaptorPro"
-                : "Real In-Season Pro calendar in RaptorPro"
+                ? "Semana real do In-Season Pro no RaptorPro"
+                : "Real In-Season Pro week in RaptorPro"
             }
           />
         </div>

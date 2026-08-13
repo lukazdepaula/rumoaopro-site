@@ -425,12 +425,22 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
             <ProgramDeviceShowcase
               accent="blue"
               coverAlt="Offseason 30 Days"
+              coverEyebrow={
+                locale === "pt" ? "Preparação completa" : "Complete preparation"
+              }
               coverImage={assets.offseason30Cover}
+              coverMeta={
+                locale === "pt"
+                  ? "30 dias · Campo + Academia"
+                  : "30 days · Field + Gym"
+              }
               coverPosition="object-top"
+              coverTitle="Offseason 30 Days"
+              screenImage="/assets/programs/offseason-30/raptor-athlete-workout-mobile.png"
               screenAlt={
                 locale === "pt"
-                  ? "Calendário real do Offseason 30 Days no RaptorPro"
-                  : "Real Offseason 30 Days calendar in RaptorPro"
+                  ? "Treino real do Offseason 30 Days no RaptorPro"
+                  : "Real Offseason 30 Days workout in RaptorPro"
               }
             />
             <div className="mt-4 grid grid-cols-3 gap-3">

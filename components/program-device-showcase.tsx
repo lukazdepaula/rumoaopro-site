@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProgramCoverArt } from "@/components/program-cover-art";
 import {
   RaptorPhoneMockup,
   raptorAppScreens
@@ -7,6 +7,9 @@ import {
 type ProgramDeviceShowcaseProps = {
   coverImage: string;
   coverAlt: string;
+  coverTitle: string;
+  coverEyebrow: string;
+  coverMeta: string;
   coverPosition?: string;
   screenImage?: string;
   screenAlt: string;
@@ -26,6 +29,9 @@ const accentGlow = {
 export function ProgramDeviceShowcase({
   coverImage,
   coverAlt,
+  coverTitle,
+  coverEyebrow,
+  coverMeta,
   coverPosition = "object-center",
   screenImage = raptorAppScreens.calendar,
   screenAlt,
@@ -44,27 +50,30 @@ export function ProgramDeviceShowcase({
       />
 
       <div
-        className={`absolute overflow-hidden rounded-[1.6rem] border border-white/20 bg-black shadow-[0_32px_90px_rgba(0,0,0,0.55)] ${
+        className={`absolute overflow-hidden rounded-[2rem] border-[6px] border-[#15171c] bg-black shadow-[0_32px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 ${
           compact
-            ? "left-[6%] top-[9%] h-[82%] w-[54%] -rotate-3"
-            : "left-[3%] top-[8%] h-[82%] w-[57%] -rotate-3 sm:left-[7%] sm:w-[52%]"
+            ? "left-[8%] top-[7%] w-[43%] -rotate-6"
+            : "left-[5%] top-[4%] w-[43%] -rotate-6 sm:left-[8%] sm:w-[40%]"
         }`}
       >
-        <Image
-          alt={coverAlt}
-          className={`h-full w-full object-cover ${coverPosition}`}
-          fill
-          sizes={compact ? "(max-width: 767px) 58vw, 330px" : "(max-width: 1023px) 58vw, 360px"}
-          src={coverImage}
+        <span className="absolute left-1/2 top-1.5 z-20 h-3.5 w-[30%] -translate-x-1/2 rounded-full bg-[#08090b]" />
+        <ProgramCoverArt
+          accent={accent === "red" ? "blue" : accent}
+          eyebrow={coverEyebrow}
+          format="portrait"
+          image={coverImage}
+          imageAlt={coverAlt}
+          imagePosition={coverPosition}
+          meta={coverMeta}
+          title={coverTitle}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),transparent_58%,rgba(0,0,0,0.38))]" />
       </div>
 
       <div
         className={`absolute z-20 rotate-[4deg] ${
           compact
-            ? "right-[5%] top-[17%] w-[43%]"
-            : "right-[2%] top-[16%] w-[43%] sm:right-[6%] sm:w-[40%]"
+            ? "right-[7%] top-[15%] w-[43%]"
+            : "right-[4%] top-[15%] w-[43%] sm:right-[7%] sm:w-[40%]"
         }`}
       >
         <RaptorPhoneMockup

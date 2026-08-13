@@ -678,8 +678,8 @@ export const programs = [
       "Velocidade aplicada ao futebol",
       "Disponível em português e inglês"
     ],
-    image: assets.project36Pt,
-    imageClass: "object-contain bg-ink",
+    image: assets.sprintSide,
+    imageClass: "object-[64%_50%]",
     href: "/programas/projeto-36kmh",
     cta: "Ver detalhes"
   },
@@ -698,6 +698,23 @@ export const programs = [
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/programas/elanga-in-season",
+    cta: "Ver detalhes"
+  },
+  {
+    title: "De Volta aos Gramados",
+    tag: "Português",
+    duration: "7 fases",
+    level: "Pubalgia / retorno ao campo",
+    body:
+      "Uma progressão com critérios para reconstruir força, capacidade de corrida e confiança antes do retorno ao futebol.",
+    outcomes: [
+      "7 fases progressivas",
+      "Academia e campo",
+      "Acesso completo no RaptorPro"
+    ],
+    image: assets.dvg,
+    imageClass: "object-center",
+    href: "/programas/de-volta-aos-gramados",
     cta: "Ver detalhes"
   }
 ].filter((program) => program.href !== "/programas/adama-strength-power");
@@ -963,8 +980,8 @@ export const programsEn = [
       "Acceleration Power",
       "Available in Portuguese and English"
     ],
-    image: assets.project36Cover,
-    imageClass: "object-contain bg-ink",
+    image: assets.sprintSide,
+    imageClass: "object-[64%_50%]",
     href: "/en/programs/project-36kmh",
     cta: "View page"
   },
@@ -987,7 +1004,7 @@ export const programsEn = [
   },
   {
     title: "Back to the Pitch",
-    tag: "Portuguese & English",
+    tag: "Portuguese",
     duration: "7 progressive phases",
     level: "Return to training",
     body:

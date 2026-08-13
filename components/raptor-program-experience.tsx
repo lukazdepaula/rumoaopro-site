@@ -91,6 +91,7 @@ export function RaptorPhoneMockup({
           fill
           sizes="(min-width: 1024px) 290px, 40vw"
           src={src}
+          unoptimized
         />
       </div>
     </div>

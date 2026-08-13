@@ -4,36 +4,15 @@ import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { CtaButton } from "@/components/cta-button";
 import { ProgramsSection } from "@/components/programs-section";
-import { ReviewBadge } from "@/components/reviews";
 import { SeasonProgramMap } from "@/components/season-program-map";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
-import { assets, nav, programs, programsPtLegacy } from "@/lib/content";
-import { getReviewGroupForProgramHref } from "@/lib/reviews";
+import { assets, nav } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Programas de treinamento para futebol",
   description:
     "Programas RumoAoPro para atletas treinarem força, velocidade, condicionamento e performance em cada fase da temporada."
-};
-
-const normalizeProgramPath = (href: string) =>
-  href.replace(/^\/programas\//, "").replace(/^\/checkout\//, "");
-
-const portuguesePrograms = programsPtLegacy;
-
-const getProgramPrice = (href: string) => {
-  const path = normalizeProgramPath(href);
-  const product = checkoutProducts.find((item) =>
-    [
-      item.slug,
-      normalizeProgramPath(item.sales_page_path),
-      ...(item.aliases || [])
-    ].includes(path)
-  );
-
-  return product ? formatMoney(product.price_brl_estimated, "BRL") : null;
 };
 
 export default function ProgramasPage() {
@@ -78,10 +57,10 @@ export default function ProgramasPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaButton href="#programas" icon={ArrowRight}>
-                Ver programas em inglês
+                Escolher meu programa
               </CtaButton>
-              <CtaButton href="#programas-portugues" variant="secondary">
-                Ver programas em português
+              <CtaButton href="#mapa-da-temporada" variant="secondary">
+                Ver mapa da temporada
               </CtaButton>
             </div>
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
@@ -107,96 +86,9 @@ export default function ProgramasPage() {
         </div>
       </section>
 
-      <SeasonProgramMap locale="pt" />
-
       <ProgramsSection />
 
-      <section className="bg-white py-16" id="programas-portugues">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-            <div className="max-w-2xl">
-              <p className="text-sm font-bold uppercase text-signal">
-                Programas em português
-              </p>
-              <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
-                Programas em Português - confira nossas opções.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-graphite/75">
-                Os melhores programas em português para você treinar com
-                clareza, escolher a fase certa da temporada e acessar tudo pela
-                área do cliente RumoAoPro.
-              </p>
-            </div>
-            <Link
-              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-ink px-5 text-sm font-bold text-white transition hover:bg-graphite"
-              href="#programas"
-            >
-              Comparar com os novos
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {portuguesePrograms.map((program) => {
-              const reviewGroupKey = getReviewGroupForProgramHref(program.href);
-              const price = getProgramPrice(program.href);
-
-              return (
-                <Link
-                  className="focus-ring group block overflow-hidden rounded-lg bg-smoke shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
-                  href={program.href}
-                  key={program.title}
-                >
-                  <div className="relative overflow-hidden bg-ink">
-                    <Image
-                      alt={program.title}
-                      className={`aspect-[16/12] w-full object-cover transition duration-500 group-hover:scale-105 ${program.imageClass}`}
-                      height={520}
-                      src={program.image}
-                      width={720}
-                    />
-                    <div className="absolute left-4 top-4 rounded-md bg-white/95 px-3 py-2 text-[11px] font-bold uppercase text-ink shadow-sm">
-                      {program.tag}
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex min-h-[54px] flex-wrap items-start justify-between gap-3">
-                      <p className="max-w-[180px] text-xs font-bold uppercase leading-5 text-signal">
-                        {program.level}
-                      </p>
-                      {price ? (
-                        <div className="text-right">
-                          <p className="text-[11px] font-bold uppercase text-graphite/45">
-                            Preço
-                          </p>
-                          <p className="text-lg font-bold text-ink">{price}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                    {reviewGroupKey ? (
-                      <ReviewBadge
-                        className="mt-3"
-                        groupKey={reviewGroupKey}
-                        locale="pt"
-                      />
-                    ) : null}
-                    <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
-                      {program.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-6 text-graphite/72">
-                      {program.body}
-                    </p>
-                    <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink">
-                      {program.cta}
-                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <SeasonProgramMap locale="pt" />
 
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[0.85fr_1.15fr] md:items-center lg:px-8">

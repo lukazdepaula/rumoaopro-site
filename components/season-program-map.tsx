@@ -116,7 +116,7 @@ export function SeasonProgramMap({ locale }: SeasonProgramMapProps) {
   const page = content[locale];
 
   return (
-    <section className="bg-white py-16">
+    <section className="bg-white py-16" id="mapa-da-temporada">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-[0.78fr_1.22fr] md:items-end">
           <div>

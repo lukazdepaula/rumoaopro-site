@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  CalendarDays,
+  Dumbbell,
+  ExternalLink,
+  Gauge,
+  PlayCircle,
+  ShieldCheck
+} from "lucide-react";
 import { useState } from "react";
 import { CtaButton } from "@/components/cta-button";
 import { ReviewBadge } from "@/components/reviews";
@@ -51,6 +60,65 @@ const getDisplayPrice = (
   return formatMoney(value, currency);
 };
 
+const getProgramFeatures = (href: string, locale: "pt" | "en") => {
+  const labels = {
+    pt: {
+      field: "Campo",
+      gym: "Academia",
+      speed: "Velocidade",
+      videos: "Vídeos",
+      calendar: "Calendário",
+      matches: "Entre jogos",
+      recovery: "Progressão",
+      app: "No app"
+    },
+    en: {
+      field: "Field",
+      gym: "Gym",
+      speed: "Speed",
+      videos: "Videos",
+      calendar: "Calendar",
+      matches: "Between games",
+      recovery: "Progression",
+      app: "In the app"
+    }
+  }[locale];
+
+  if (href.includes("projeto-36") || href.includes("project-36")) {
+    return [
+      [Gauge, labels.speed],
+      [Activity, labels.field],
+      [Dumbbell, labels.gym],
+      [PlayCircle, labels.videos]
+    ] as const;
+  }
+
+  if (href.includes("elanga-in-season")) {
+    return [
+      [CalendarDays, labels.calendar],
+      [ShieldCheck, labels.matches],
+      [Dumbbell, labels.gym],
+      [Activity, labels.speed]
+    ] as const;
+  }
+
+  if (href.includes("de-volta-aos-gramados")) {
+    return [
+      [ShieldCheck, labels.recovery],
+      [Dumbbell, labels.gym],
+      [Activity, labels.field],
+      [PlayCircle, labels.app]
+    ] as const;
+  }
+
+  return [
+    [CalendarDays, labels.calendar],
+    [Activity, labels.field],
+    [Dumbbell, labels.gym],
+    [PlayCircle, labels.videos]
+  ] as const;
+};
+
 export function ProgramsSection({
   compact = false,
   locale = "pt"
@@ -67,7 +135,7 @@ export function ProgramsSection({
       eyebrow: "Programas disponíveis",
       title: "Escolha o programa certo para o seu objetivo",
       body:
-        "Offseason 30 Days e Speed Pro estão disponíveis em português e inglês. In-Season Pro está em inglês, e De Volta aos Gramados está em português. Confira o idioma indicado em cada produto antes da compra.",
+        "Offseason 30 Days, Speed Pro e In-Season Pro estão disponíveis em português e inglês. De Volta aos Gramados está em português. Confira o idioma indicado em cada produto antes da compra.",
       seeAll: "Ver todos",
       priceLabel: "Preço",
       currencyLabel: "Moeda de referência",
@@ -82,7 +150,7 @@ export function ProgramsSection({
       eyebrow: "Available programs",
       title: "Choose the right program for your goal",
       body:
-        "Offseason 30 Days and Speed Pro are available in English and Portuguese. In-Season Pro is in English, while Back to the Pitch is currently delivered in Portuguese.",
+        "Offseason 30 Days, Speed Pro and In-Season Pro are available in English and Portuguese. Back to the Pitch is currently delivered in Portuguese.",
       seeAll: "See all",
       priceLabel: "Price",
       currencyLabel: "Reference currency",
@@ -148,7 +216,7 @@ export function ProgramsSection({
           className={
             compact
               ? "mt-8 grid gap-5 md:grid-cols-3"
-              : "mt-8 flex snap-x gap-5 overflow-x-auto pb-4 [scrollbar-width:thin]"
+              : "mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4"
           }
         >
           {visiblePrograms.map((program) => {
@@ -157,6 +225,7 @@ export function ProgramsSection({
             const reviewGroupKey = getReviewGroupForProgramHref(program.href);
             const product = findCheckoutProduct(program.href);
             const displayPrice = getDisplayPrice(product, currency);
+            const features = getProgramFeatures(program.href, locale);
 
             const content = (
               <article
@@ -208,14 +277,15 @@ export function ProgramsSection({
                     <p className="mt-3 text-sm leading-6 text-graphite/70">
                       {program.body}
                     </p>
-                    <div className="mt-5 grid gap-2 border-t border-ink/10 pt-4">
-                      {program.outcomes.slice(0, 2).map((outcome) => (
-                        <p
-                          className="text-xs font-bold uppercase leading-5 text-graphite/55"
-                          key={outcome}
+                    <div className="mt-5 grid grid-cols-2 gap-2 border-t border-ink/10 pt-4">
+                      {features.map(([Icon, label]) => (
+                        <span
+                          className="inline-flex min-h-9 items-center gap-2 rounded-md bg-smoke px-2.5 text-[10px] font-bold uppercase leading-4 text-graphite/70"
+                          key={label}
                         >
-                          {outcome}
-                        </p>
+                          <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-signal" />
+                          {label}
+                        </span>
                       ))}
                     </div>
                     <p className="mt-auto inline-flex pt-5 text-sm font-bold text-ink">
@@ -239,11 +309,7 @@ export function ProgramsSection({
 
             return isExternal ? (
               <a
-                className={
-                  compact
-                    ? "focus-ring block"
-                    : "focus-ring block min-w-[min(82vw,340px)] snap-start md:min-w-[340px] xl:min-w-[300px]"
-                }
+                className="focus-ring block"
                 href={program.href}
                 key={program.title}
                 rel="noreferrer"
@@ -253,11 +319,7 @@ export function ProgramsSection({
               </a>
             ) : (
               <Link
-                className={
-                  compact
-                    ? "focus-ring block"
-                    : "focus-ring block min-w-[min(82vw,340px)] snap-start md:min-w-[340px] xl:min-w-[300px]"
-                }
+                className="focus-ring block"
                 href={program.href}
                 key={program.title}
               >
