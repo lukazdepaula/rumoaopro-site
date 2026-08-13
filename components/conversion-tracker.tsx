@@ -150,7 +150,7 @@ export function getMarketingCheckoutContext(): MarketingAttribution {
 function metaEventFor(type: EventType): MetaEventName | null {
   if (type === "page_view") return "PageView";
   if (type === "product_view") return "ViewContent";
-  if (type === "checkout_view") return "InitiateCheckout";
+  if (type === "checkout_submit") return "InitiateCheckout";
   if (type === "whatsapp_click") return "Contact";
   return null;
 }

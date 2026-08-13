@@ -114,14 +114,14 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                 ? isEnglish
                   ? [
                       "Founding plan billed monthly",
-                      "Up to 2 teams and 25 athletes per team",
+                      "Up to 2 teams and 30 athletes per team",
                       "Founding price locked while your subscription remains active",
                       "Secure invitation sent after confirmation",
                       "Cancel whenever you need"
                     ]
                   : [
                     "Plano fundador de R$ 49,90 por mês",
-                    "Até 2 equipes e 25 atletas por equipe",
+                    "Até 2 equipes e 30 atletas por equipe",
                     "Preço protegido enquanto a assinatura permanecer ativa",
                     "Convite seguro enviado após a confirmação",
                     "Pedido e assinatura acompanhados no admin RumoAoPro"
