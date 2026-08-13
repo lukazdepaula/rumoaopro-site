@@ -17,24 +17,28 @@ const accents = {
     glow: "bg-[#126eff]/55",
     line: "bg-[#4f8dff]",
     text: "text-[#7eb0ff]",
+    texture: "/assets/programs/covers/offseason-tech-texture.png",
     wash: "from-[#126eff]/68 via-[#07152d]/24"
   },
   lime: {
     glow: "bg-lime-300/45",
     line: "bg-lime-300",
     text: "text-lime-300",
+    texture: "/assets/programs/covers/speed-tech-texture.png",
     wash: "from-lime-300/38 via-[#0c1c11]/28"
   },
   orange: {
     glow: "bg-orange-500/50",
     line: "bg-orange-400",
     text: "text-orange-300",
+    texture: "/assets/programs/covers/in-season-tech-texture.png",
     wash: "from-orange-500/55 via-[#251006]/28"
   },
   emerald: {
     glow: "bg-emerald-400/45",
     line: "bg-emerald-400",
     text: "text-emerald-300",
+    texture: "/assets/programs/covers/offseason-tech-texture.png",
     wash: "from-emerald-500/48 via-[#061b16]/28"
   }
 } as const;
@@ -55,13 +59,25 @@ export function ProgramCoverArt({
 
   return (
     <div
-      className={`relative isolate overflow-hidden bg-[#07090d] text-white ${
+      className={`relative isolate overflow-hidden bg-[#07090d] text-white [container-type:inline-size] ${
         isPortrait ? "aspect-[390/844]" : "h-full min-h-[300px]"
       } ${className}`}
     >
       <Image
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 -z-30 h-full w-full object-cover"
+        fill
+        sizes={
+          isPortrait
+            ? "(max-width: 767px) 48vw, 300px"
+            : "(max-width: 767px) 100vw, 680px"
+        }
+        src={palette.texture}
+      />
+      <Image
         alt={imageAlt}
-        className={`absolute inset-0 -z-30 h-full w-full object-cover ${imagePosition}`}
+        className={`absolute inset-0 -z-20 h-full w-full object-cover ${imagePosition}`}
         fill
         sizes={
           isPortrait
@@ -69,15 +85,21 @@ export function ProgramCoverArt({
             : "(max-width: 767px) 100vw, 680px"
         }
         src={image}
+        style={{
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.98) 58%, rgba(0,0,0,0.72) 72%, transparent 92%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.98) 58%, rgba(0,0,0,0.72) 72%, transparent 92%)"
+        }}
       />
-      <div className="absolute inset-0 -z-20 bg-[linear-gradient(180deg,rgba(4,6,10,0.16)_0%,rgba(4,6,10,0.05)_34%,rgba(4,6,10,0.92)_100%)]" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(4,6,10,0.08)_0%,rgba(4,6,10,0.02)_34%,rgba(4,6,10,0.92)_100%)]" />
       <div
-        className={`absolute inset-0 -z-20 bg-gradient-to-br ${palette.wash} to-transparent mix-blend-screen`}
+        className={`absolute inset-0 -z-10 bg-gradient-to-br ${palette.wash} to-transparent mix-blend-screen`}
       />
       <div
-        className={`absolute -right-[18%] top-[9%] -z-10 h-[44%] w-[68%] rounded-full ${palette.glow} blur-[70px]`}
+        className={`absolute -right-[18%] top-[9%] h-[44%] w-[68%] rounded-full ${palette.glow} opacity-40 blur-[70px]`}
       />
-      <div className="absolute inset-0 -z-10 opacity-[0.11] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.14)_1px,transparent_1px)] [background-size:38px_38px]" />
+      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.14)_1px,transparent_1px)] [background-size:38px_38px]" />
 
       <div
         className={`absolute inset-x-0 top-0 flex items-center justify-between ${
@@ -86,14 +108,14 @@ export function ProgramCoverArt({
       >
         <p
           className={`font-black uppercase tracking-[0.18em] ${
-            isPortrait ? "text-[7px] sm:text-[9px]" : "text-[9px] sm:text-[10px]"
+            isPortrait ? "text-[3cqw]" : "text-[9px] sm:text-[10px]"
           }`}
         >
           RumoAoPro
         </p>
         <p
           className={`${palette.text} font-black uppercase tracking-[0.16em] ${
-            isPortrait ? "text-[6px] sm:text-[8px]" : "text-[8px] sm:text-[9px]"
+            isPortrait ? "text-[2.6cqw]" : "text-[8px] sm:text-[9px]"
           }`}
         >
           No RaptorPro
@@ -108,7 +130,7 @@ export function ProgramCoverArt({
         <div className={`mb-3 h-1 w-12 ${palette.line}`} />
         <p
           className={`${palette.text} font-black uppercase tracking-[0.18em] ${
-            isPortrait ? "text-[7px] sm:text-[9px]" : "text-[9px] sm:text-[10px]"
+            isPortrait ? "text-[3cqw]" : "text-[9px] sm:text-[10px]"
           }`}
         >
           {eyebrow}
@@ -116,7 +138,7 @@ export function ProgramCoverArt({
         <h3
           className={`mt-2 max-w-[95%] font-display uppercase leading-[0.88] tracking-[-0.02em] text-white [text-wrap:balance] ${
             isPortrait
-              ? "text-[clamp(1.4rem,5vw,3rem)]"
+              ? "text-[11cqw]"
               : "text-[clamp(2.1rem,6vw,4.8rem)]"
           }`}
         >
@@ -124,7 +146,7 @@ export function ProgramCoverArt({
         </h3>
         <p
           className={`mt-3 font-bold uppercase tracking-[0.12em] text-white/62 ${
-            isPortrait ? "text-[6px] sm:text-[8px]" : "text-[8px] sm:text-[10px]"
+            isPortrait ? "text-[2.6cqw]" : "text-[8px] sm:text-[10px]"
           }`}
         >
           {meta}

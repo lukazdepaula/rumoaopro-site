@@ -1,7 +1,14 @@
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, ChevronDown, Star } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  Medal,
+  Star
+} from "lucide-react";
 import { ApplicationForm } from "@/components/application-form";
 import { CtaButton } from "@/components/cta-button";
+import { RaptorPhoneMockup } from "@/components/raptor-program-experience";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -71,24 +78,24 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
       ? "Feedback e comentários para ajustar o microciclo"
       : "Feedback and comments to adjust the microcycle"
   ];
-  const appScreens = [
-    {
-      alt:
-        copy.locale === "pt"
-          ? "Calendário semanal do atleta dentro do app"
-          : "Athlete weekly calendar inside the app",
-      label: copy.locale === "pt" ? "Calendário semanal" : "Weekly calendar",
-      src: assets.appCalendarScreen
-    },
-    {
-      alt:
-        copy.locale === "pt"
-          ? "Sessão individual com esforço, duração, carga e exercícios"
-          : "Individual session with effort, duration, load and exercises",
-      label: copy.locale === "pt" ? "Sessão do dia" : "Daily session",
-      src: assets.appInterface
+  const credentialLogos = (credential: string) => {
+    const normalized = credential.toLowerCase();
+
+    if (normalized.includes("cbf")) {
+      return [assets.logoCbf];
     }
-  ];
+    if (normalized.includes("málaga") || normalized.includes("malaga")) {
+      return [assets.logoMalagaCity, assets.logoAlmunecar];
+    }
+    if (normalized.includes("lindsey")) {
+      return [assets.logoLindseyWilson];
+    }
+    if (normalized.includes("extratime")) {
+      return [assets.logoExtratime];
+    }
+
+    return [];
+  };
 
   return (
     <main className="min-h-screen bg-smoke" lang={copy.locale === "pt" ? "pt-BR" : "en"}>
@@ -132,32 +139,24 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
         </div>
       </section>
 
-      <section className="bg-white">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 md:grid-cols-3 lg:px-8">
-          {copy.stats.map((stat) => (
-            <div className="border-l-4 border-signal bg-smoke p-5" key={stat.label}>
-              <p className="font-display text-3xl text-ink">{stat.value}</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-graphite/70">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="surface-grid bg-smoke py-16" id={methodId}>
+      <section
+        className="relative isolate overflow-hidden bg-[#08090b] py-16 text-white"
+        id={methodId}
+      >
+        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_8%_18%,rgba(213,22,42,0.34),transparent_34%),radial-gradient(circle_at_92%_78%,rgba(213,22,42,0.18),transparent_34%),linear-gradient(135deg,#08090b_0%,#151012_52%,#08090b_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.07] [background-image:linear-gradient(115deg,transparent_0%,transparent_47%,rgba(255,255,255,0.28)_47.2%,transparent_47.6%)] [background-size:140px_140px]" />
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-signal">
               {copy.locale === "pt" ? "Método" : "Method"}
             </p>
-            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl uppercase leading-tight text-white sm:text-4xl">
               {copy.methodTitle}
             </h2>
-            <p className="mt-5 text-base leading-7 text-graphite/75">
+            <p className="mt-5 text-base leading-7 text-white/68">
               {copy.methodLead}
             </p>
-            <div className="mt-8 overflow-hidden rounded-lg border border-ink/10 bg-white">
+            <div className="mt-8 overflow-hidden rounded-lg border border-white/12 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
               <Image
                 alt={
                   copy.locale === "pt"
@@ -176,14 +175,14 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
               const Icon = benefit.icon;
               return (
                 <article
-                  className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+                  className="rounded-lg border border-white/10 bg-white/[0.07] p-5 shadow-sm backdrop-blur"
                   key={benefit.title}
                 >
                   <div className="grid h-10 w-10 place-items-center rounded-md bg-signal text-white">
                     <Icon aria-hidden="true" className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 text-lg font-bold text-ink">{benefit.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-graphite/70">
+                  <h3 className="mt-4 text-lg font-bold text-white">{benefit.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
                     {benefit.body}
                   </p>
                 </article>
@@ -254,29 +253,85 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
               ))}
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-            {appScreens.map((screen) => (
-              <figure
-                className="overflow-hidden rounded-lg border border-white/10 bg-graphite p-3 shadow-sm"
-                key={screen.src}
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <figcaption className="text-sm font-black uppercase text-white">
-                    {screen.label}
-                  </figcaption>
-                  <span className="rounded-md bg-signal px-2 py-1 text-xs font-black uppercase text-white">
-                    Live view
+          <div className="relative mx-auto min-h-[610px] w-full max-w-[700px] sm:min-h-[680px]">
+            <div className="absolute inset-x-[5%] top-[8%] overflow-hidden rounded-[2rem] border border-white/12 bg-[#111318] shadow-[0_30px_100px_rgba(0,0,0,0.48)] sm:left-0 sm:right-auto sm:w-[68%]">
+              <div className="relative h-44 overflow-hidden sm:h-52">
+                <Image
+                  alt={
+                    copy.locale === "pt"
+                      ? "Gabriel, atleta do Mirassol acompanhado pela assessoria"
+                      : "Gabriel, Mirassol player supported by coaching"
+                  }
+                  className="h-full w-full object-cover object-[center_26%]"
+                  fill
+                  sizes="(max-width: 639px) 90vw, 470px"
+                  src={assets.successGabriel}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent" />
+                <div className="absolute inset-x-5 bottom-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-300">
+                    {copy.locale === "pt" ? "Visão do coach" : "Coach view"}
+                  </p>
+                  <p className="mt-1 text-xl font-black text-white">Gabriel · Mirassol</p>
+                </div>
+              </div>
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-black uppercase text-white/50">
+                    {copy.locale === "pt" ? "Microciclo individual" : "Individual microcycle"}
+                  </p>
+                  <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-black uppercase text-emerald-300">
+                    {copy.locale === "pt" ? "Ajuste semanal" : "Weekly update"}
                   </span>
                 </div>
-                <Image
-                  alt={screen.alt}
-                  className="h-full max-h-[560px] w-full rounded-md object-contain"
-                  height={1024}
-                  src={screen.src}
-                  width={1536}
-                />
-              </figure>
-            ))}
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {[
+                    [copy.locale === "pt" ? "SEG" : "MON", copy.locale === "pt" ? "Força" : "Strength"],
+                    [copy.locale === "pt" ? "QUA" : "WED", copy.locale === "pt" ? "Velocidade" : "Speed"],
+                    [copy.locale === "pt" ? "SEX" : "FRI", copy.locale === "pt" ? "Recuperação" : "Recovery"]
+                  ].map(([day, session], index) => (
+                    <div
+                      className={`rounded-xl border p-3 ${
+                        index === 1
+                          ? "border-signal/50 bg-signal/12"
+                          : "border-white/10 bg-white/[0.05]"
+                      }`}
+                      key={day}
+                    >
+                      <p className="text-[10px] font-black uppercase text-white/45">{day}</p>
+                      <p className="mt-2 text-xs font-bold text-white">{session}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 text-center">
+                  {[
+                    ["4/5", copy.locale === "pt" ? "sessões" : "sessions"],
+                    ["7.2", "RPE"],
+                    ["92%", copy.locale === "pt" ? "conclusão" : "completion"]
+                  ].map(([value, label]) => (
+                    <div key={label}>
+                      <p className="text-base font-black text-white">{value}</p>
+                      <p className="mt-1 text-[9px] font-bold uppercase text-white/38">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute bottom-0 right-[3%] z-20 w-[46%] sm:right-0 sm:w-[43%]">
+              <RaptorPhoneMockup
+                alt={
+                  copy.locale === "pt"
+                    ? "Calendário atual do atleta dentro do RaptorPro"
+                    : "Current athlete calendar inside RaptorPro"
+                }
+                className="w-full"
+                src="/assets/programs/offseason-30/raptor-athlete-calendar-mobile.png"
+              />
+              <span className="absolute -left-5 bottom-10 rounded-full border border-white/15 bg-black/80 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-white shadow-xl backdrop-blur sm:text-[10px]">
+                {copy.locale === "pt" ? "Visão do atleta" : "Athlete view"}
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -293,25 +348,32 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
             <p className="mt-5 text-base leading-8 text-white/70">{copy.coachBody}</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {copy.credentials.map((credential) => {
-                const isCbf = credential.toLowerCase().includes("cbf");
+                const logos = credentialLogos(credential);
 
                 return (
                   <div
                     className="flex items-center gap-3 rounded-md border border-white/10 bg-white/10 px-4 py-3"
                     key={credential}
                   >
-                    {isCbf ? (
-                      <span className="grid h-12 w-12 place-items-center rounded-md border border-gold/50 bg-white/5 p-1">
-                        <Image
-                          alt="CBF logo"
-                          className="h-full w-full object-contain"
-                          height={64}
-                          src={assets.logoCbf}
-                          width={64}
-                        />
+                    {logos.length > 0 ? (
+                      <span className="flex h-12 min-w-12 items-center justify-center -space-x-2 rounded-md border border-white/15 bg-white/95 px-1">
+                        {logos.map((logo, index) => (
+                          <Image
+                            alt=""
+                            aria-hidden="true"
+                            className="h-9 w-9 rounded-full object-contain"
+                            height={48}
+                            key={logo}
+                            src={logo}
+                            style={{ zIndex: logos.length - index }}
+                            width={48}
+                          />
+                        ))}
                       </span>
                     ) : (
-                      <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-gold" />
+                      <span className="grid h-12 w-12 place-items-center rounded-md border border-gold/40 bg-gold/10 text-gold">
+                        <Medal aria-hidden="true" className="h-6 w-6" />
+                      </span>
                     )}
                     <span className="text-sm font-semibold text-white/80">
                       {credential}
@@ -355,17 +417,15 @@ export function CoachingPage({ copy }: { copy: CoachingCopy }) {
                     key={item.name}
                   >
                     {item.image ? (
-                      <Image
-                        alt={`${item.name} logo`}
-                        className={`h-12 w-12 rounded-md object-contain p-1 ${
-                          item.name.includes("Extratime")
-                            ? "brightness-0 invert"
-                            : ""
-                        }`}
-                        height={64}
-                        src={item.image}
-                        width={64}
-                      />
+                      <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/95 p-1.5">
+                        <Image
+                          alt={`${item.name} logo`}
+                          className="h-full w-full object-contain"
+                          height={64}
+                          src={item.image}
+                          width={64}
+                        />
+                      </span>
                     ) : (
                       <span className="grid h-11 w-11 place-items-center rounded-md border border-gold/40 bg-gold/10 text-xs font-black uppercase text-gold">
                         {item.name

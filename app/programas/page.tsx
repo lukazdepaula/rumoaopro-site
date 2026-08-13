@@ -63,25 +63,6 @@ export default function ProgramasPage() {
                 Ver mapa da temporada
               </CtaButton>
             </div>
-            <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-              {[
-                ["3", "programas dentro do app"],
-                ["1", "programa em PDF"],
-                ["Ano todo", "offseason, pré e temporada"]
-              ].map(([value, label]) => (
-                <div
-                  className="rounded-lg border border-white/10 bg-white/[0.06] p-4"
-                  key={label}
-                >
-                  <p className="font-display text-2xl uppercase text-white">
-                    {value}
-                  </p>
-                  <p className="mt-2 text-xs font-bold uppercase leading-5 text-white/55">
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

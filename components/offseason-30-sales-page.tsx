@@ -428,13 +428,13 @@ export function Offseason30SalesPage({ locale }: Offseason30SalesPageProps) {
               coverEyebrow={
                 locale === "pt" ? "Preparação completa" : "Complete preparation"
               }
-              coverImage={assets.offseason30Cover}
+              coverImage={assets.programsFieldControl}
               coverMeta={
                 locale === "pt"
                   ? "30 dias · Campo + Academia"
                   : "30 days · Field + Gym"
               }
-              coverPosition="object-top"
+              coverPosition="object-[50%_42%]"
               coverTitle="Offseason 30 Days"
               screenImage="/assets/programs/offseason-30/raptor-athlete-workout-mobile.png"
               screenAlt={
