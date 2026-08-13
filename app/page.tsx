@@ -14,8 +14,8 @@ import {
   Users,
   Zap
 } from "lucide-react";
+import { HomeAppsShowcase } from "@/components/home-apps-showcase";
 import { HomeProgramCollections } from "@/components/home-program-collections";
-import { LoadProPromo } from "@/components/loadpro-promo";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -207,13 +207,13 @@ export default function HomePage() {
                       alt=""
                       className={`h-full w-full object-cover opacity-60 transition duration-500 group-hover:scale-105 group-hover:opacity-75 ${item.title === "LoadPro" ? "object-[50%_38%]" : "object-center"}`}
                       fill
-                      sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+                      sizes="(max-width: 1279px) 50vw, 25vw"
                       src={item.image}
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.34)_0%,rgba(0,0,0,0.58)_48%,rgba(0,0,0,0.96)_100%)]" />
-                    <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 sm:min-h-[280px] sm:p-5 xl:min-h-[310px]">
+                    <div className="relative flex h-full min-h-[220px] flex-col justify-between p-3 sm:min-h-[280px] sm:p-5 xl:min-h-[310px]">
                       <div className="flex items-start justify-between gap-4">
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-ink">
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-ink sm:h-11 sm:w-11">
                           <Icon aria-hidden="true" className="h-5 w-5" />
                         </span>
                         <span className="max-w-[102px] rounded-md border border-white/10 bg-black/75 px-2 py-2 text-[9px] font-bold uppercase leading-4 text-white/82 backdrop-blur-md sm:max-w-none sm:px-3 sm:text-xs">
@@ -221,7 +221,7 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div>
-                        <h2 className="font-display text-2xl uppercase leading-none text-white sm:text-3xl">
+                        <h2 className="home-entry-title font-display uppercase text-white sm:text-3xl">
                           {item.title}
                         </h2>
                         <p className="mt-3 hidden max-w-sm text-sm font-semibold leading-6 text-white/82 sm:block">
@@ -246,7 +246,7 @@ export default function HomePage() {
 
       <HomeProgramCollections locale="pt" />
 
-      <LoadProPromo locale="pt" />
+      <HomeAppsShowcase locale="pt" />
 
       <section className="bg-smoke py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
