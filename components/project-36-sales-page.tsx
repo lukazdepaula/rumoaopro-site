@@ -16,7 +16,6 @@ import {
   RaptorPhoneMockup,
   raptorAppScreens
 } from "@/components/raptor-program-experience";
-import { ProgramDeviceShowcase } from "@/components/program-device-showcase";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -438,6 +437,41 @@ const copy = {
   }
 };
 
+function SpeedProHeroVisual({ locale }: { locale: "pt" | "en" }) {
+  return (
+    <div className="relative mx-auto min-h-[480px] w-full max-w-[650px] sm:min-h-[610px] lg:min-h-[650px]">
+      <div className="absolute left-1/2 top-1/2 h-[78%] w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(190,242,100,0.3),rgba(34,197,94,0.09)_48%,transparent_72%)] blur-3xl" />
+
+      <div className="absolute left-[2%] top-[14%] z-10 w-[42%] -rotate-[4deg] opacity-90 sm:left-[4%] sm:w-[40%]">
+        <RaptorPhoneMockup
+          alt={
+            locale === "en"
+              ? "Real Speed Pro workout in RaptorPro"
+              : "Treino real do Speed Pro no RaptorPro"
+          }
+          className="w-full drop-shadow-[0_30px_36px_rgba(0,0,0,0.6)]"
+          src={raptorAppScreens.speedWorkout}
+        />
+      </div>
+
+      <div className="absolute right-[-4%] top-0 z-30 aspect-[2/3] w-[70%] rotate-[1deg] sm:right-[-1%] sm:w-[68%]">
+        <Image
+          alt={
+            locale === "en"
+              ? "Phone displaying the Speed Pro cover"
+              : "Celular com a capa do programa Speed Pro"
+          }
+          className="h-full w-full scale-[1.08] object-contain drop-shadow-[0_40px_46px_rgba(0,0,0,0.72)]"
+          fill
+          priority
+          sizes="(min-width: 1024px) 440px, 70vw"
+          src="/assets/programs/project-36/speed-pro-phone-cutout.png"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function Project36SalesPage({ locale }: Project36SalesPageProps) {
   const page = copy[locale];
   const checkoutHref =
@@ -456,15 +490,16 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
 
       <section className="relative isolate overflow-hidden bg-[#030806] text-white">
         <Image
-          alt="Speed Pro football speed and acceleration training"
-          className="absolute inset-0 -z-30 h-full w-full object-cover object-[61%_50%] sm:object-[58%_48%]"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-30 h-full w-full object-cover object-center opacity-72"
           fill
           priority
           sizes="100vw"
-          src="/assets/programs/project-36/project-36-sprint.jpg"
+          src="/assets/programs/covers/speed-tech-texture.png"
         />
-        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#030806_0%,rgba(3,8,6,0.96)_37%,rgba(3,8,6,0.48)_67%,rgba(3,8,6,0.16)_100%)]" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,#030806_0%,transparent_38%),radial-gradient(circle_at_76%_48%,rgba(163,230,53,0.16),transparent_30%)]" />
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#030806_0%,rgba(3,8,6,0.95)_43%,rgba(3,8,6,0.5)_72%,rgba(3,8,6,0.28)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,#030806_0%,transparent_42%),radial-gradient(circle_at_78%_48%,rgba(190,242,100,0.2),transparent_32%)]" />
         <div className="absolute inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(rgba(163,230,53,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(163,230,53,0.12)_1px,transparent_1px)] [background-size:58px_58px]" />
 
         <div className="pointer-events-none absolute -right-4 top-4 hidden font-display text-[20rem] leading-none text-white/[0.035] lg:block">
@@ -544,44 +579,7 @@ export function Project36SalesPage({ locale }: Project36SalesPageProps) {
               {page.storeNote}
             </p>
           </div>
-          <div className="relative flex h-full min-h-[480px] items-center justify-end sm:min-h-[560px] lg:min-h-[610px]">
-            <ProgramDeviceShowcase
-              accent="lime"
-              className="max-w-[600px]"
-              coverAlt={
-                locale === "en"
-                  ? "Speed Pro football speed training"
-                  : "Treinamento de velocidade do Speed Pro"
-              }
-              coverEyebrow={
-                locale === "en"
-                  ? "Speed & acceleration"
-                  : "Velocidade & aceleração"
-              }
-              coverImage={assets.programsProject36Sprint}
-              coverMeta={
-                locale === "en"
-                  ? "12 weeks · Field + Gym"
-                  : "12 semanas · Campo + Academia"
-              }
-              coverPosition="object-[50%_42%]"
-              coverTitle="Speed Pro"
-              screenImage="/assets/programs/raptorpro/speed-pro-workout-mobile.jpg"
-              screenAlt={
-                locale === "en"
-                  ? "Real Speed Pro workout in RaptorPro"
-                  : "Treino real do Speed Pro no RaptorPro"
-              }
-            />
-            <div className="absolute bottom-10 left-0 z-20 max-w-[230px] rounded-2xl border border-white/15 bg-black/55 p-4 shadow-2xl backdrop-blur-xl">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-300">
-                {locale === "en" ? "Built in 3 phases" : "Construído em 3 fases"}
-              </p>
-              <p className="mt-2 text-sm font-bold leading-5 text-white">
-                {locale === "en" ? "Foundation → Acceleration → Game speed" : "Base → Aceleração → Velocidade de jogo"}
-              </p>
-            </div>
-          </div>
+          <SpeedProHeroVisual locale={locale} />
         </div>
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-3 border-t border-white/10 px-4 sm:px-6 lg:px-8">
