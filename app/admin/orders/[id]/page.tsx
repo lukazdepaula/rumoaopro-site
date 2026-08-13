@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ access?: string }>;
+  searchParams: Promise<{ access?: string; raptorMigration?: string }>;
 };
 
 export const metadata: Metadata = {
@@ -78,6 +78,16 @@ export default async function OrderDetailPage({
           Não foi possível gerar o link de acesso. Tente novamente.
         </p>
       ) : null}
+      {query.raptorMigration === "sent" ? (
+        <p className="mt-5 rounded-lg border border-turf/20 bg-turf/10 px-4 py-3 text-sm font-bold text-turf">
+          In-Season Pro liberado no RaptorPro e convite em inglês enviado ao cliente.
+        </p>
+      ) : null}
+      {query.raptorMigration && query.raptorMigration !== "sent" ? (
+        <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+          A migração para o RaptorPro não foi concluída ({query.raptorMigration}). Nenhuma nova cobrança foi criada.
+        </p>
+      ) : null}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.45fr]">
         <section className="rounded-lg border border-ink/10 bg-white">
@@ -109,6 +119,13 @@ export default async function OrderDetailPage({
               Reenviar link de acesso
             </button>
           </form>
+          {order.status === "paid" && order.product_id === "elanga_in_season" ? (
+            <form action={`/api/admin/orders/${order.id}/raptorpro-migrate`} method="post">
+              <button className="min-h-11 w-full rounded-md bg-signal px-4 text-sm font-bold text-white" type="submit">
+                Migrar para In-Season Pro no RaptorPro
+              </button>
+            </form>
+          ) : null}
           <form action={`/api/admin/orders/${order.id}/delete`} method="post">
             <button className="min-h-11 w-full rounded-md border border-red-200 px-4 text-sm font-bold text-red-700" type="submit">
               Excluir pedido
