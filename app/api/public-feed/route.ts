@@ -64,7 +64,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error("[social-proof]", error);
+    console.error("[public-feed]", error);
     return NextResponse.json(
       { purchases: [] },
       {

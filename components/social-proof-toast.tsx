@@ -141,7 +141,7 @@ export function SocialProofToast() {
   useEffect(() => {
     if (!eligiblePath(pathname)) return;
     let active = true;
-    fetch("/api/social-proof")
+    fetch("/api/public-feed")
       .then((response) => (response.ok ? response.json() : { purchases: [] }))
       .then((data: { purchases?: Purchase[] }) => {
         if (active && Array.isArray(data.purchases)) {
