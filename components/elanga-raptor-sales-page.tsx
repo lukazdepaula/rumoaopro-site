@@ -80,7 +80,6 @@ const extraCopy = {
     weeksLabel: "Semanas",
     finalBadge: "28 semanas dentro do app",
     viewProgram: "Ver como funciona no RaptorPro",
-    coverLabel: "Capa do programa",
     appLabel: "Calendário real no RaptorPro",
     proof: [
       ["28 semanas", "Planejamento completo"],
@@ -133,7 +132,6 @@ const extraCopy = {
     weeksLabel: "Weeks",
     finalBadge: "28 weeks inside the app",
     viewProgram: "See the RaptorPro experience",
-    coverLabel: "Program cover",
     appLabel: "Real calendar in RaptorPro",
     proof: [
       ["28 weeks", "Complete progression"],
@@ -151,7 +149,7 @@ function InSeasonHeroVisual({ locale }: { locale: "pt" | "en" }) {
     <div className="relative mx-auto min-h-[470px] w-full max-w-[650px] sm:min-h-[610px] lg:min-h-[650px]">
       <div className="absolute left-1/2 top-1/2 h-[78%] w-[86%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.3),rgba(249,115,22,0.08)_48%,transparent_72%)] blur-3xl" />
 
-      <div className="absolute left-[1%] top-[8%] z-10 w-[48%] -rotate-[4deg] sm:left-[4%] sm:w-[45%]">
+      <div className="absolute left-[2%] top-[3%] z-30 w-[62%] -rotate-[4deg] sm:left-[4%] sm:w-[60%]">
         <div className="relative aspect-[2/3] overflow-hidden rounded-[2rem] border border-orange-300/20 bg-black shadow-[0_38px_110px_rgba(0,0,0,0.72)] ring-1 ring-white/10">
           <Image
             alt={
@@ -159,19 +157,16 @@ function InSeasonHeroVisual({ locale }: { locale: "pt" | "en" }) {
                 ? "Capa premium do programa In-Season Pro"
                 : "Premium In-Season Pro program cover"
             }
-            className="h-full w-full object-cover object-center"
+            className="h-full w-full scale-[1.2] object-cover object-center"
             fill
             priority
             sizes="(min-width: 1024px) 300px, 46vw"
             src={inSeasonAssets.productCover}
           />
         </div>
-        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-orange-300/25 bg-black/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-orange-200 shadow-xl backdrop-blur sm:text-[10px]">
-          {extra.coverLabel}
-        </span>
       </div>
 
-      <div className="absolute right-[1%] top-[3%] z-30 w-[52%] rotate-[3deg] sm:right-[2%] sm:w-[50%]">
+      <div className="absolute right-0 top-[11%] z-10 w-[42%] rotate-[3deg] sm:right-[2%] sm:w-[40%]">
         <RaptorPhoneMockup
           alt={
             locale === "pt"
@@ -181,7 +176,7 @@ function InSeasonHeroVisual({ locale }: { locale: "pt" | "en" }) {
           className="w-full"
           src={raptorAppScreens.inSeasonWeek}
         />
-        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-white shadow-xl backdrop-blur sm:text-[10px]">
+        <span className="absolute -bottom-4 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/85 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-xl backdrop-blur sm:block">
           {extra.appLabel}
         </span>
       </div>
