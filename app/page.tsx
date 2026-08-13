@@ -162,28 +162,28 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10">
           <Image
             alt="Atletas disputando a bola em campo"
-            className="h-full w-full object-cover object-center opacity-45"
+            className="h-full w-full object-cover object-center opacity-75 saturate-[1.08]"
             fill
             priority
             sizes="100vw"
             src={assets.programsGameDuel}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/65 to-ink" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-smoke to-transparent" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,8,0.92)_0%,rgba(5,6,8,0.72)_43%,rgba(5,6,8,0.25)_76%,rgba(5,6,8,0.46)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_38%,rgba(216,20,43,0.24),transparent_42%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-smoke via-ink/55 to-transparent" />
         </div>
 
         <div className="mx-auto flex min-h-[calc(100vh-var(--header-height))] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
           <div className="max-w-4xl">
-            <p className="inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold uppercase text-white/75">
-              RumoAoPro Performance
+            <p className="inline-flex rounded-md border border-signal/55 bg-black/35 px-3 py-2 text-sm font-bold uppercase tracking-[0.14em] text-white/85 backdrop-blur-sm">
+              A casa de quem trabalha
             </p>
-            <h1 className="mt-6 font-display text-4xl uppercase leading-[1.02] sm:text-6xl lg:text-7xl">
-              O que você precisa agora para evoluir no futebol?
+            <h1 className="mt-6 max-w-3xl font-display text-4xl uppercase leading-[1.02] sm:text-6xl lg:text-7xl">
+              Treine como jogador de verdade.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
-              Escolha entre acompanhamento individual, programas interativos
-              para atletas, formação profissional e tecnologia para organizar
-              o trabalho de treinadores e comissões técnicas.
+            <p className="mt-6 max-w-2xl text-base font-medium leading-8 text-white/82 sm:text-lg">
+              Assessoria, programas e tecnologia para atletas e treinadores que
+              levam o futebol a sério.
             </p>
           </div>
 
@@ -199,18 +199,19 @@ export default function HomePage() {
 
                 return (
                   <Link
-                    className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/15 bg-black shadow-[0_20px_55px_rgba(0,0,0,0.32)] transition hover:-translate-y-1 hover:border-white/35 sm:min-h-[280px] xl:min-h-[310px]"
+                    className="group relative min-h-[220px] overflow-hidden rounded-xl border border-white/25 bg-black shadow-[0_20px_55px_rgba(0,0,0,0.3)] transition hover:-translate-y-1 hover:border-signal/80 sm:min-h-[280px] xl:min-h-[310px]"
                     href={item.href}
                     key={item.title}
                   >
                     <Image
                       alt=""
-                      className={`h-full w-full object-cover opacity-60 transition duration-500 group-hover:scale-105 group-hover:opacity-75 ${item.title === "LoadPro" ? "object-[50%_38%]" : "object-center"}`}
+                      className={`h-full w-full object-cover opacity-85 saturate-[1.06] transition duration-500 group-hover:scale-105 group-hover:opacity-100 ${item.title === "LoadPro" ? "object-[50%_38%]" : "object-center"}`}
                       fill
                       sizes="(max-width: 1279px) 50vw, 25vw"
                       src={item.image}
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.34)_0%,rgba(0,0,0,0.58)_48%,rgba(0,0,0,0.96)_100%)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.28)_42%,rgba(0,0,0,0.94)_100%)]" />
+                    <div className="absolute inset-x-0 top-0 h-1 bg-signal/85" />
                     <div className="relative flex h-full min-h-[220px] flex-col justify-between p-3 sm:min-h-[280px] sm:p-5 xl:min-h-[310px]">
                       <div className="flex items-start justify-between gap-4">
                         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-ink sm:h-11 sm:w-11">
@@ -221,6 +222,7 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div>
+                        <span className="mb-3 block h-1 w-10 rounded-full bg-signal" />
                         <h2 className="home-entry-title font-display uppercase text-white sm:text-3xl">
                           {item.title}
                         </h2>
