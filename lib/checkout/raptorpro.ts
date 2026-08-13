@@ -39,7 +39,7 @@ const RAPTORPRO_PROGRAMS: RaptorProProgramConfig[] = [
     productIds: [RAPTORPRO_ELANGA_PRODUCT_ID],
     programId: RAPTORPRO_ELANGA_PROGRAM_ID,
     programSlug: RAPTORPRO_ELANGA_PROGRAM_SLUG,
-    programTitle: "Project Elanga"
+    programTitle: "In-Season Pro"
   },
   {
     productIds: [RAPTORPRO_DVG_PRODUCT_ID],

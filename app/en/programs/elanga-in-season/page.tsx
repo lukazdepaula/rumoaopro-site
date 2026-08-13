@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ElangaRaptorSalesPage } from "@/components/elanga-raptor-sales-page";
 
 export const metadata: Metadata = {
-  title: "Elanga Project In-Season",
+  title: "In-Season Football Performance Program | In-Season Pro",
   description:
     "A 28-week in-season program for football players to maintain strength, speed and power during the season.",
   alternates: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     }
   },
   openGraph: {
-    title: "Elanga Project In-Season",
+    title: "In-Season Football Performance Program | In-Season Pro",
     description:
       "A 7-phase in-season system to maintain strength, sprint exposure, power and availability between team training and matches.",
     images: ["/assets/photos/lukaz-sprint-side.jpg"],

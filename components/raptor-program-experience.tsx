@@ -44,7 +44,7 @@ const copy = {
   },
   elanga: {
     pt: {
-      eyebrow: "Elanga durante a temporada",
+      eyebrow: "In-Season Pro durante a temporada",
       title: "Organize seus treinos entre jogos.",
       lead:
         "Use o RaptorPro para enxergar a semana, chegar melhor para cada sessão e controlar o trabalho feito sem competir com a agenda do clube.",
@@ -56,7 +56,7 @@ const copy = {
       ]
     },
     en: {
-      eyebrow: "Elanga during the season",
+      eyebrow: "In-Season Pro during the season",
       title: "Organize training between matches.",
       lead:
         "Use RaptorPro to see the week, arrive better for each session and control the work without fighting the club schedule.",

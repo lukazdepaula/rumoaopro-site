@@ -39,11 +39,11 @@ const annualPath = [
     step: "03",
     title: "During the season",
     body:
-      "Maintain performance with Elanga, preserving strength, speed and power without disrupting team training and matches.",
+      "Maintain performance with In-Season Pro, preserving strength, speed and power without disrupting team training and matches.",
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/en/programs/elanga-in-season",
-    cta: "See Elanga"
+    cta: "See In-Season Pro"
   }
 ];
 
@@ -132,7 +132,7 @@ export default function EnglishProgramsPage() {
             <p className="max-w-2xl text-base leading-8 text-graphite/75">
               The ideal preparation starts in the offseason with Adama and
               Speed Pro. The final 30 days before preseason are sharpened with
-              Offseason 30 Days. During the season, Elanga helps maintain
+              Offseason 30 Days. During the season, In-Season Pro helps maintain
               strength and speed without compromising recovery.
             </p>
           </div>

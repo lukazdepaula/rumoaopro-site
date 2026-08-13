@@ -34,7 +34,7 @@ const extraCopy = {
     problemEyebrow: "O desafio da temporada",
     problemTitle: "Treinar mais nem sempre significa performar melhor.",
     problemBody:
-      "Entre treinos do time, viagens e partidas, o jogador precisa proteger velocidade, força e potência. O Elanga organiza a dose mínima efetiva para que o trabalho individual complemente o futebol.",
+      "Entre treinos do time, viagens e partidas, o jogador precisa proteger velocidade, força e potência. O In-Season Pro organiza a dose mínima efetiva para que o trabalho individual complemente o futebol.",
     matchEyebrow: "Organização por match day",
     matchTitle: "Uma estrutura que se adapta a semanas com um ou dois jogos.",
     oneGame: "Semana com 1 jogo",
@@ -65,7 +65,7 @@ const extraCopy = {
     authorityEyebrow: "Metodologia RumoAoPro",
     authorityTitle: "Construído para a rotina real do futebol.",
     authorityBody:
-      "O programa nasce da experiência de Lukaz de Paula como preparador físico e jogador, trabalhando com atletas em contextos de clube, college e futebol profissional. O nome do projeto descreve a proposta física e não representa vínculo ou endosso de Anthony Elanga.",
+      "O programa nasce da experiência de Lukaz de Paula como preparador físico e jogador, trabalhando com atletas em contextos de clube, college e futebol profissional. O In-Season Pro traduz essa metodologia em uma progressão prática para a temporada competitiva.",
     accessNote:
       "Compra única. Acesso liberado na sua conta RaptorPro após a confirmação do pagamento.",
     phaseLabel: "Fase",
@@ -79,7 +79,7 @@ const extraCopy = {
     problemEyebrow: "The in-season challenge",
     problemTitle: "Training more does not always mean performing better.",
     problemBody:
-      "Between team sessions, travel and matches, players need to protect speed, strength and power. Elanga organizes the minimum effective dose so individual work supports football instead of competing with it.",
+      "Between team sessions, travel and matches, players need to protect speed, strength and power. In-Season Pro organizes the minimum effective dose so individual work supports football instead of competing with it.",
     matchEyebrow: "Match-day organization",
     matchTitle: "A structure that fits one-game and two-game weeks.",
     oneGame: "One-game week",
@@ -110,7 +110,7 @@ const extraCopy = {
     authorityEyebrow: "RumoAoPro methodology",
     authorityTitle: "Built for the real football schedule.",
     authorityBody:
-      "The program is informed by Lukaz de Paula's work as a performance coach and player across club, college and professional football environments. The project name describes the physical profile and does not imply affiliation with or endorsement by Anthony Elanga.",
+      "The program is informed by Lukaz de Paula's work as a performance coach and player across club, college and professional football environments. In-Season Pro turns that methodology into a practical progression for the competitive season.",
     accessNote:
       "One-time purchase. Access is released to your RaptorPro account after payment confirmation.",
     phaseLabel: "Phase",

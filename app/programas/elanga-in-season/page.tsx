@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ElangaRaptorSalesPage } from "@/components/elanga-raptor-sales-page";
 
 export const metadata: Metadata = {
-  title: "Projeto Elanga In-Season",
+  title: "Programa de Performance Durante a Temporada | In-Season Pro",
   description:
-    "Programa in-season de 28 semanas para jogadores manterem força, velocidade e potência durante a temporada.",
+    "28 semanas de força, potência, velocidade e recuperação para manter jogadores performando durante a temporada competitiva.",
   alternates: {
     canonical: "/programas/elanga-in-season",
     languages: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     }
   },
   openGraph: {
-    title: "Projeto Elanga In-Season",
+    title: "Programa de Performance Durante a Temporada | In-Season Pro",
     description:
       "Sistema de temporada em 7 fases para manter força, sprint exposure, potência e disponibilidade entre treinos e jogos.",
     images: ["/assets/photos/lukaz-sprint-side.jpg"],

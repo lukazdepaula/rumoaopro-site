@@ -684,7 +684,7 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Elanga In-Season",
+    title: "Performance na Temporada — In-Season Pro",
     tag: "Português e inglês",
     duration: "28 semanas",
     level: "Temporada",
@@ -969,7 +969,7 @@ export const programsEn = [
     cta: "View page"
   },
   {
-    title: "Elanga In-Season",
+    title: "In-Season Performance — In-Season Pro",
     tag: "Portuguese & English",
     duration: "28 weeks",
     level: "In-season",
@@ -1028,7 +1028,7 @@ export const productLadder = [
     promise:
       "Treinar com progressão clara sem depender de agenda individual ou acompanhamento semanal.",
     delivery:
-      "Offseason 30 Days, Adama Strength & Power, Pré Temporada, De Volta aos Gramados, 36km/h e Elanga In-Season.",
+      "Offseason 30 Days, Adama Strength & Power, Pré Temporada, De Volta aos Gramados, Speed Pro e In-Season Pro.",
     href: "#programas",
     cta: "Ver programas"
   },
@@ -1133,7 +1133,7 @@ export const programDecisionRows = [
   },
   {
     situation: "Estou em temporada e quero manter o físico sem atrapalhar jogos.",
-    path: "Projeto Elanga In-Season",
+    path: "In-Season Pro",
     reason: "Microdoses de força, velocidade e recuperação durante o calendário."
   },
   {

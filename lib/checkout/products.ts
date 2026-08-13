@@ -122,10 +122,10 @@ export const checkoutProducts: CheckoutProduct[] = [
   },
   {
     id: "elanga_in_season",
-    name: "Elanga In Season",
+    name: "Performance na Temporada — In-Season Pro",
     slug: "elanga-in-season",
     description:
-      "Programa in-season para manter força, velocidade e disponibilidade durante a temporada.",
+      "28 semanas de força, potência, velocidade e recuperação para manter o jogador performando durante a temporada competitiva.",
     language: "Portuguese & English",
     type: "training_program",
     ...productPrice(),

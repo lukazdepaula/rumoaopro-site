@@ -260,9 +260,9 @@ insert into public.products (
   ),
   (
     'elanga_in_season',
-    'Elanga In Season',
+    'Performance na Temporada — In-Season Pro',
     'elanga-in-season',
-    'Programa in-season para manter força, velocidade e disponibilidade durante a temporada.',
+    '28 semanas de força, potência, velocidade e recuperação para manter o jogador performando durante a temporada competitiva.',
     'English',
     'training_program',
     40,

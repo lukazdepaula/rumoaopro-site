@@ -51,7 +51,7 @@ const entryCards = [
     image: assets.programsGameDuel,
     icon: Dumbbell,
     body:
-      "Offseason 30 Days, Speed Pro e Elanga para cada fase da temporada.",
+      "Offseason 30 Days, Speed Pro e In-Season Pro para cada fase da temporada.",
     cta: "Ver programas"
   },
   {
@@ -98,9 +98,9 @@ const productBlocks = [
     icon: Zap,
     image: assets.sprintSide,
     body:
-      "Offseason 30 Days, Speed Pro e Elanga unem planejamento, vídeos e registro de treino em uma experiência interativa.",
+      "Offseason 30 Days, Speed Pro e In-Season Pro unem planejamento, vídeos e registro de treino em uma experiência interativa.",
     points: [
-      "Offseason 30 Days, Speed Pro e Elanga",
+      "Offseason 30 Days, Speed Pro e In-Season Pro",
       "Calendário, vídeos, cargas, comentários e RPE",
       "Português e inglês com acesso vitalício"
     ],
@@ -135,7 +135,7 @@ const seasonFlow = [
     step: "01",
     title: "Escolha seu programa",
     body:
-      "Escolha Offseason 30 Days, Speed Pro ou Elanga de acordo com seu objetivo e momento da temporada."
+      "Escolha Offseason 30 Days, Speed Pro ou In-Season Pro de acordo com seu objetivo e momento da temporada."
   },
   {
     step: "02",

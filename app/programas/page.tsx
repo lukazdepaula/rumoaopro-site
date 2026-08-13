@@ -42,11 +42,11 @@ const annualPath = [
     step: "03",
     title: "Durante a temporada",
     body:
-      "Mantenha o desempenho com Elanga, preservando força, velocidade e potência sem interferir nos treinos e jogos da equipe.",
+      "Mantenha o desempenho com o In-Season Pro, preservando força, velocidade e potência sem interferir nos treinos e jogos da equipe.",
     image: assets.programsProMatch,
     imageClass: "object-center",
     href: "/programas/elanga-in-season",
-    cta: "Ver Elanga"
+    cta: "Ver In-Season Pro"
   }
 ];
 
@@ -155,7 +155,7 @@ export default function ProgramasPage() {
               Offseason 30 Days, desenvolvendo força, potência, velocidade e
               resistência física.
               Nos 30 dias que antecedem a pré-temporada, o Offseason 30 Days
-              intensifica o trabalho. Durante a temporada, o Elanga mantém força
+              intensifica o trabalho. Durante a temporada, o In-Season Pro mantém força
               e velocidade sem comprometer a recuperação do jogador.
             </p>
           </div>

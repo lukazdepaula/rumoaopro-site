@@ -27,11 +27,11 @@ const copy = {
     ctaLabel: "Comprar",
     languageHref: "/en/programs/elanga-in-season",
     languageLabel: "🇧🇷 PT → EN",
-    eyebrow: "Projeto Elanga In-Season",
+    eyebrow: "IN-SEASON PRO",
     h1: "Mantenha força, velocidade e potência durante a temporada.",
     lead:
       "Um sistema de 28 semanas para jogadores que já estão treinando e competindo, com sessões curtas de suporte para manter performance sem carregar fadiga para os jogos.",
-    primaryCta: "Comprar Elanga Project",
+    primaryCta: "Comprar In-Season Pro",
     secondaryCta: "Ver estrutura",
     storeNote: "Compra finalizada pelo checkout RumoAoPro.",
     chips: ["28 semanas", "7 fases", "3 sessões/semana", "In-season"],
@@ -43,7 +43,7 @@ const copy = {
     fitTitle: "Para quem é",
     fitH2: "Feito para jogador que precisa performar enquanto a temporada anda.",
     fitLead:
-      "O Elanga não tenta construir uma offseason dentro da temporada. Ele usa dose mínima efetiva para manter força, sprint exposure, potência e prontidão sem competir com treino do time.",
+      "O In-Season Pro não tenta construir uma offseason dentro da temporada. Ele usa dose mínima efetiva para manter força, sprint exposure, potência e prontidão sem competir com treino do time.",
     goodFitLabel: "Boa escolha",
     notFitLabel: "Melhor escolher outro caminho",
     goodFit: [
@@ -147,17 +147,17 @@ const copy = {
     previewImages: [
       {
         src: assets.elangaHowToFollow,
-        alt: "Como seguir o Elanga Project",
+        alt: "Como seguir o In-Season Pro",
         label: "How to follow"
       },
       {
         src: assets.elangaExtraAerobicBase,
-        alt: "Sessão extra aerobic base conditioning do Elanga Project",
+        alt: "Sessão extra aerobic base conditioning do In-Season Pro",
         label: "Extra aerobic base"
       },
       {
         src: assets.elangaExtraAerobicTempo,
-        alt: "Sessão extra aerobic tempo intervals do Elanga Project",
+        alt: "Sessão extra aerobic tempo intervals do In-Season Pro",
         label: "Tempo intervals"
       }
     ],
@@ -167,7 +167,7 @@ const copy = {
       {
         question: "É offseason?",
         answer:
-          "Não. O Elanga é para temporada. A meta é manter força, velocidade e prontidão sem acumular fadiga para partidas."
+          "Não. O In-Season Pro é para temporada. A meta é manter força, velocidade e prontidão sem acumular fadiga para partidas."
       },
       {
         question: "Serve para semana com dois jogos?",
@@ -187,8 +187,8 @@ const copy = {
     ],
     finalTitle: "A temporada não é hora de improvisar.",
     finalBody:
-      "Use o Elanga para manter o corpo forte, rápido e pronto para competir semana após semana.",
-    finalCta: "Comprar Elanga Project",
+      "Use o In-Season Pro para manter o corpo forte, rápido e pronto para competir semana após semana.",
+    finalCta: "Comprar In-Season Pro",
     coachingCta: "Quero ajuste individual"
   },
   en: {
@@ -196,11 +196,11 @@ const copy = {
     ctaLabel: "Buy",
     languageHref: "/programas/elanga-in-season",
     languageLabel: "🇺🇸 EN → PT",
-    eyebrow: "Elanga Project In-Season",
+    eyebrow: "IN-SEASON PRO",
     h1: "Maintain strength, speed and power during the season.",
     lead:
       "A 28-week system for players who are already training and competing, using short support sessions to maintain performance without carrying fatigue into matches.",
-    primaryCta: "Buy Elanga Project",
+    primaryCta: "Buy In-Season Pro",
     secondaryCta: "See structure",
     storeNote: "Checkout runs through RumoAoPro.",
     chips: ["28 weeks", "7 phases", "3 sessions/week", "In-season"],
@@ -212,7 +212,7 @@ const copy = {
     fitTitle: "Who it is for",
     fitH2: "Built for players who need to perform while the season keeps moving.",
     fitLead:
-      "Elanga does not try to force an offseason into the season. It uses the minimum effective dose to maintain strength, sprint exposure, power and readiness without fighting team training.",
+      "In-Season Pro does not try to force an offseason into the season. It uses the minimum effective dose to maintain strength, sprint exposure, power and readiness without fighting team training.",
     goodFitLabel: "Good fit",
     notFitLabel: "Better choose another path",
     goodFit: [
@@ -316,17 +316,17 @@ const copy = {
     previewImages: [
       {
         src: assets.elangaHowToFollow,
-        alt: "How to follow the Elanga Project",
+        alt: "How to follow In-Season Pro",
         label: "How to follow"
       },
       {
         src: assets.elangaExtraAerobicBase,
-        alt: "Elanga Project extra aerobic base conditioning session",
+        alt: "In-Season Pro extra aerobic base conditioning session",
         label: "Extra aerobic base"
       },
       {
         src: assets.elangaExtraAerobicTempo,
-        alt: "Elanga Project extra aerobic tempo intervals session",
+        alt: "In-Season Pro extra aerobic tempo intervals session",
         label: "Tempo intervals"
       }
     ],
@@ -336,7 +336,7 @@ const copy = {
       {
         question: "Is this an offseason program?",
         answer:
-          "No. Elanga is for the season. The goal is to maintain strength, speed and readiness without adding match-day fatigue."
+          "No. In-Season Pro is for the season. The goal is to maintain strength, speed and readiness without adding match-day fatigue."
       },
       {
         question: "Does it work for two-game weeks?",
@@ -356,8 +356,8 @@ const copy = {
     ],
     finalTitle: "The season is not the time to improvise.",
     finalBody:
-      "Use Elanga to keep the body strong, fast and ready to compete week after week.",
-    finalCta: "Buy Elanga Project",
+      "Use In-Season Pro to keep the body strong, fast and ready to compete week after week.",
+    finalCta: "Buy In-Season Pro",
     coachingCta: "I need individual coaching"
   }
 };
@@ -384,7 +384,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
-          alt="Elanga Project in-season program cover"
+          alt="In-Season Pro football performance program cover"
           className="absolute inset-0 -z-20 h-full w-full object-contain object-right opacity-82"
           fill
           priority
@@ -709,7 +709,7 @@ export function ElangaSalesPage({ locale }: ElangaSalesPageProps) {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
           <div>
             <p className="text-sm font-bold uppercase text-orange-300">
-              Elanga Project
+              In-Season Pro
             </p>
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">
               {page.finalTitle}

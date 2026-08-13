@@ -295,8 +295,8 @@ const videos = {
     {
       id: "emXDbXdknRk",
       href: "https://www.youtube.com/watch?v=emXDbXdknRk",
-      pt: "Fiz o treino do Elanga",
-      en: "I tried Elanga's training session"
+      pt: "Fiz o treino do In-Season Pro",
+      en: "I tried an In-Season Pro training session"
     },
     {
       id: "EXUGsjGqGMs",

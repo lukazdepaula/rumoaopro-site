@@ -20,7 +20,7 @@ Os produtos principais cadastrados são:
 - Project 36
 - Offseason 30 Days
 - Adama Offseason Strength and Power
-- Elanga In Season
+- Performance na Temporada — In-Season Pro
 
 Todos têm `base_price_usd = 40`, idioma `English` e `delivery_type = member_area`.
 
