@@ -41,7 +41,7 @@ export function AdminWhatsAppLink({
     <a
       aria-label={`Chamar ${order.customer_name} no WhatsApp`}
       className={`inline-flex items-center justify-center gap-2 rounded-md bg-[#1fa855] font-bold text-white transition hover:bg-[#168a45] ${
-        compact ? "min-h-9 px-2.5 text-xs" : "min-h-11 w-full px-4 text-sm"
+        compact ? "min-h-9 w-full px-2.5 text-xs" : "min-h-11 w-full px-4 text-sm"
       }`}
       href={href}
       rel="noreferrer"

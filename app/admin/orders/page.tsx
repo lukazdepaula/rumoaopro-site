@@ -86,7 +86,9 @@ export default async function AdminOrdersPage({
               <th className="px-4 py-3">Fiscal</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Câmbio</th>
-              <th className="px-4 py-3">Ação</th>
+              <th className="sticky right-0 z-20 min-w-[118px] border-l border-ink/10 bg-smoke px-3 py-3 text-center">
+                Ação
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -131,10 +133,10 @@ export default async function AdminOrdersPage({
                 <td className="px-4 py-3 text-graphite/80">
                   {order.exchange_rate_used ? order.exchange_rate_used.toFixed(4) : "-"}
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex min-w-max flex-col gap-2">
+                <td className="sticky right-0 z-10 min-w-[118px] border-l border-ink/10 bg-white px-3 py-3 shadow-[-10px_0_18px_-18px_rgba(0,0,0,0.45)]">
+                  <div className="flex w-[94px] flex-col gap-2">
                     <Link
-                      className="inline-flex min-h-9 items-center justify-center rounded-md border border-ink/15 px-3 text-xs font-bold text-ink"
+                      className="inline-flex min-h-9 w-full items-center justify-center rounded-md border border-ink/15 px-3 text-xs font-bold text-ink"
                       href={`/admin/orders/${order.id}`}
                     >
                       Abrir
