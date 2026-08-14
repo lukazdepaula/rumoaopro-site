@@ -14,6 +14,26 @@ export const metadata: Metadata = {
   },
   description:
     "Assessoria online, programas de treinamento e performance para atletas de futebol.",
+  icons: {
+    icon: [
+      {
+        url: "/assets/app/admin-icon-192.png",
+        sizes: "192x192",
+        type: "image/png"
+      },
+      {
+        url: "/assets/app/admin-icon-512.png",
+        sizes: "512x512",
+        type: "image/png"
+      }
+    ],
+    shortcut: "/assets/app/admin-icon-192.png",
+    apple: {
+      url: "/assets/app/admin-icon-180.png",
+      sizes: "180x180",
+      type: "image/png"
+    }
+  },
   openGraph: {
     title: "RumoAoPro",
     description:
