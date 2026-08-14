@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AdminPaymentLinkButton } from "@/components/admin-payment-link-button";
 import { AdminShell } from "@/components/admin-shell";
+import { AdminWhatsAppLink } from "@/components/admin-whatsapp-link";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { getOrderById, listOrderLogs } from "@/lib/checkout/db";
 import { formatMoney } from "@/lib/checkout/products";
@@ -101,6 +102,7 @@ export default async function OrderDetailPage({
 
         <aside className="grid gap-3 self-start rounded-lg border border-ink/10 bg-white p-4">
           <h2 className="text-lg font-bold text-ink">Ações</h2>
+          <AdminWhatsAppLink order={order} />
           {order.status === "pending" && order.currency === "BRL" ? (
             <AdminPaymentLinkButton orderId={order.id} />
           ) : null}

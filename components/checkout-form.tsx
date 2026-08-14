@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowRight, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
+import { ArrowRight, Check, Copy, CreditCard, Globe2, Loader2, QrCode } from "lucide-react";
 import type {
   CheckoutPaymentMethod,
   CheckoutProduct
@@ -54,6 +54,82 @@ const formatPostalCode = (value: string) => {
     ? `${digits.slice(0, 5)}-${digits.slice(5)}`
     : digits;
 };
+
+const countryDialCodes: Record<string, string> = {
+  BR: "+55",
+  US: "+1",
+  PT: "+351",
+  GB: "+44",
+  ES: "+34"
+};
+
+const dialCodeOptions = [
+  { code: "+55", country: "BR" },
+  { code: "+1", country: "US" },
+  { code: "+351", country: "PT" },
+  { code: "+44", country: "GB" },
+  { code: "+34", country: "ES" },
+  { code: "+33", country: "FR" },
+  { code: "+49", country: "DE" },
+  { code: "+39", country: "IT" },
+  { code: "+966", country: "SA" },
+  { code: "+971", country: "AE" }
+];
+
+function flagEmoji(code: string) {
+  return String.fromCodePoint(
+    ...Array.from(code).map((letter) => letter.charCodeAt(0) + 127397)
+  );
+}
+
+type MarketOptionProps = {
+  active: boolean;
+  description: string;
+  flag: string;
+  label: string;
+  onSelect: () => void;
+};
+
+function MarketOption({
+  active,
+  description,
+  flag,
+  label,
+  onSelect
+}: MarketOptionProps) {
+  return (
+    <button
+      aria-checked={active}
+      className={`grid min-h-[108px] gap-2 rounded-lg border p-4 text-left transition ${
+        active
+          ? "border-signal bg-signal/[0.045] shadow-sm"
+          : "border-ink/10 bg-white hover:border-ink/25"
+      }`}
+      onClick={onSelect}
+      role="radio"
+      type="button"
+    >
+      <span className="flex items-start justify-between gap-3">
+        <span aria-hidden="true" className="text-3xl">{flag}</span>
+        <span
+          className={`inline-flex h-6 w-6 items-center justify-center rounded-full border ${
+            active
+              ? "border-signal bg-signal text-white"
+              : "border-ink/15 text-transparent"
+          }`}
+        >
+          <Check aria-hidden="true" className="h-3.5 w-3.5" />
+        </span>
+      </span>
+      <span>
+        <span className="block text-sm font-black text-ink">{label}</span>
+        <span className="mt-1 block text-xs leading-5 text-graphite/65">
+          {description}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 type PaymentOptionProps = {
   active: boolean;
@@ -161,7 +237,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const [document, setDocument] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [dialCode, setDialCode] = useState(isEnglish ? "+1" : "+55");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
@@ -205,6 +282,28 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
     setAppliedDiscount(null);
     setDiscountError("");
   }, [country, product.slug]);
+
+  function selectMarket(nextMarket: "BR" | "INTL") {
+    const nextCountry =
+      nextMarket === "BR" ? "BR" : country === "BR" ? "US" : country;
+    setCountry(nextCountry);
+    setDialCode(
+      countryDialCodes[nextCountry] || (nextMarket === "BR" ? "+55" : "+1")
+    );
+    setPaymentMethod(
+      isLoadProFounders || nextMarket === "INTL" ? "stripe" : "mercado_pago"
+    );
+  }
+
+  function selectCountry(nextCountry: string) {
+    setCountry(nextCountry);
+    if (countryDialCodes[nextCountry]) {
+      setDialCode(countryDialCodes[nextCountry]);
+    }
+    setPaymentMethod(
+      isLoadProFounders || nextCountry !== "BR" ? "stripe" : "mercado_pago"
+    );
+  }
 
   async function applyDiscount() {
     setDiscountError("");
@@ -277,7 +376,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           document: isBrazil ? document : undefined,
           postalCode,
           address,
-          whatsapp,
+          whatsapp: `${dialCode}${whatsappNumber.replace(/\D/g, "")}`,
           paymentMethod,
           locale,
           marketing: getMarketingCheckoutContext(),
@@ -414,35 +513,62 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       </div>
 
       <form className="mt-5 grid gap-4" onSubmit={submit}>
-        <label className="grid gap-2 text-sm font-semibold text-ink">
-          {isEnglish ? "Country" : "País"}
-          <select
-            autoComplete="country"
-            className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
-            onChange={(event) => {
-              const nextCountry = event.target.value;
-              setCountry(nextCountry);
-              setPaymentMethod(
-                isLoadProFounders || nextCountry !== "BR"
-                  ? "stripe"
-                  : "mercado_pago"
-              );
-            }}
-            value={country}
-          >
-            {!isEnglish ? <option value="BR">Brasil</option> : null}
-            <option value="US">United States</option>
-            <option value="PT">Portugal</option>
-            <option value="GB">United Kingdom</option>
-            <option value="ES">Spain</option>
-            <option value="OTHER">Other country</option>
-          </select>
-          <span className="text-xs font-normal leading-5 text-graphite/60">
+        <fieldset className="grid gap-3">
+          <legend className="text-sm font-black text-ink">
+            {isEnglish ? "Where will you pay?" : "Onde você vai pagar?"}
+          </legend>
+          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
+            <MarketOption
+              active={isBrazil}
+              description={
+                isLoadProFounders
+                  ? isEnglish
+                    ? "BRL · card with a 7-day free trial"
+                    : "R$ · cartão com 7 dias grátis"
+                  : isEnglish
+                    ? "BRL · Pix or card · Mercado Pago"
+                    : "R$ · Pix ou cartão · Mercado Pago"
+              }
+              flag={flagEmoji("BR")}
+              label={isEnglish ? "Paying in Brazil" : "Estou no Brasil"}
+              onSelect={() => selectMarket("BR")}
+            />
+            <MarketOption
+              active={!isBrazil}
+              description={
+                isEnglish
+                  ? "USD · international card · Stripe"
+                  : "US$ · cartão internacional · Stripe"
+              }
+              flag={String.fromCodePoint(0x1f30d)}
+              label={isEnglish ? "Paying from abroad" : "Estou fora do Brasil"}
+              onSelect={() => selectMarket("INTL")}
+            />
+          </div>
+          <p className="text-xs font-normal leading-5 text-graphite/60">
             {isEnglish
-              ? "Your country defines the currency and available payment method."
-              : "O país define a moeda e as formas de pagamento disponíveis."}
-          </span>
-        </label>
+              ? "This choice defines the currency and payment options. It does not change the site language."
+              : "Essa escolha define a moeda e as formas de pagamento, sem alterar o idioma do site."}
+          </p>
+        </fieldset>
+
+        {!isBrazil ? (
+          <label className="grid gap-2 text-sm font-semibold text-ink">
+            {isEnglish ? "Billing country" : "País de cobrança"}
+            <select
+              autoComplete="country"
+              className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
+              onChange={(event) => selectCountry(event.target.value)}
+              value={country}
+            >
+              <option value="US">{isEnglish ? "United States" : "Estados Unidos"}</option>
+              <option value="PT">Portugal</option>
+              <option value="GB">{isEnglish ? "United Kingdom" : "Reino Unido"}</option>
+              <option value="ES">{isEnglish ? "Spain" : "Espanha"}</option>
+              <option value="OTHER">{isEnglish ? "Other country" : "Outro país"}</option>
+            </select>
+          </label>
+        ) : null}
 
         <fieldset className="grid gap-3 rounded-md border border-ink/10 bg-white p-3">
           <legend className="px-1 text-xs font-bold uppercase text-graphite/55">
@@ -458,7 +584,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 ? "Monthly card subscription. Cancel anytime."
                 : "Assinatura mensal no cartão. Cancele quando quiser."
               : isBrazil
-              ? "Cartão parcelado, Pix ou cartão internacional."
+              ? isEnglish
+                ? "Pay with Pix or card through Mercado Pago."
+                : "Pague com Pix ou cartão pelo Mercado Pago."
               : isEnglish
                 ? "International card payment securely processed by Stripe."
                 : "Pagamento internacional seguro via Stripe."}
@@ -487,11 +615,23 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 active={paymentMethod === "mercado_pago"}
                 description={
                   isSubscription
-                    ? "Cobrança automática mensal de R$ 49,90 enquanto a assinatura permanecer ativa."
-                    : "Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
+                    ? isEnglish
+                      ? "Automatic monthly billing while your subscription remains active."
+                      : "Cobrança automática mensal enquanto a assinatura permanecer ativa."
+                    : isEnglish
+                      ? "Complete your payment through Mercado Pago. Installments and conditions appear before confirmation."
+                      : "Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
                 }
                 icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
-                label={isSubscription ? "Cartão · assinatura mensal" : "Cartão e parcelamento"}
+                label={
+                  isSubscription
+                    ? isEnglish
+                      ? "Card · monthly subscription"
+                      : "Cartão · assinatura mensal"
+                    : isEnglish
+                      ? "Card and installments"
+                      : "Cartão e parcelamento"
+                }
                 name="payment-method"
                 onSelect={() => setPaymentMethod("mercado_pago")}
                 value="mercado_pago"
@@ -502,7 +642,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               {!isSubscription ? (
                 <PaymentOption
                   active={paymentMethod === "pix"}
-                  description="QR Code e Pix Copia e Cola, com aprovação rápida."
+                  description={
+                    isEnglish
+                      ? "QR Code and Pix Copy and Paste with fast confirmation."
+                      : "QR Code e Pix Copia e Cola, com aprovação rápida."
+                  }
                   icon={<QrCode aria-hidden="true" className="h-5 w-5" />}
                   label="Pix"
                   name="payment-method"
@@ -512,21 +656,6 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                   <PixBadge />
                 </PaymentOption>
               ) : null}
-              <PaymentOption
-                active={paymentMethod === "stripe"}
-                description={
-                  isSubscription
-                    ? "Alternativa de assinatura mensal processada com segurança pela Stripe."
-                    : "Cartão de crédito em checkout internacional seguro."
-                }
-                icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
-                label="Cartão via Stripe"
-                name="payment-method"
-                onSelect={() => setPaymentMethod("stripe")}
-                value="stripe"
-              >
-                <StripeBadge />
-              </PaymentOption>
             </div>
           ) : (
             <PaymentOption
@@ -572,21 +701,54 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           />
         </label>
 
-        {isBrazil ? <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold text-ink">
-            WhatsApp com código do país (DDI)
+        <label className="grid gap-2 text-sm font-semibold text-ink">
+          WhatsApp
+          <span className="grid grid-cols-[112px_1fr] gap-2">
+            <span className="relative">
+              <Globe2
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-graphite/45"
+              />
+              <select
+                aria-label={isEnglish ? "WhatsApp country code" : "DDI do WhatsApp"}
+                autoComplete="tel-country-code"
+                className="min-h-12 w-full appearance-none rounded-md border border-ink/15 bg-white pl-9 pr-2 text-sm font-bold text-ink"
+                onChange={(event) => setDialCode(event.target.value)}
+                value={dialCode}
+              >
+                {dialCodeOptions.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.code}
+                  </option>
+                ))}
+              </select>
+            </span>
             <input
-              autoComplete="tel"
-              className="min-h-12 rounded-md border border-ink/15 px-3 text-sm text-ink"
+              autoComplete="tel-national"
+              className="min-h-12 min-w-0 rounded-md border border-ink/15 px-3 text-sm text-ink"
               inputMode="tel"
-              maxLength={24}
-              onChange={(event) => setWhatsapp(event.target.value)}
-              placeholder={isBrazil ? "+55 11 99999-9999" : "+1 555 123 4567"}
+              maxLength={22}
+              onChange={(event) => setWhatsappNumber(event.target.value)}
+              placeholder={
+                isBrazil
+                  ? "11 99999-9999"
+                  : isEnglish
+                    ? "555 123 4567"
+                    : "número com DDD"
+              }
               required
               type="tel"
-              value={whatsapp}
+              value={whatsappNumber}
             />
-          </label>
+          </span>
+          <span className="text-xs font-normal leading-5 text-graphite/60">
+            {isEnglish
+              ? "Include your country code so our team can help with your order if needed."
+              : "Inclua o DDI para que nossa equipe possa ajudar com seu pedido, se necessário."}
+          </span>
+        </label>
+
+        {isBrazil ? <div className="grid gap-4">
           <label className="grid gap-2 text-sm font-semibold text-ink">
             {isBrazil ? "CEP" : "Código postal / ZIP code"}
             <input

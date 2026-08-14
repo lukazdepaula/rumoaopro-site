@@ -120,18 +120,20 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     throw new CheckoutValidationError("Informe seu país.", "country");
   }
 
+  if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
+    throw new CheckoutValidationError(
+      locale === "en"
+        ? "Enter a valid WhatsApp number including the country code."
+        : "Informe um WhatsApp válido com o código do país (DDI).",
+      "whatsapp"
+    );
+  }
+
   if (isBrazil(country)) {
     if (address.length < 8 || address.length > 240) {
       throw new CheckoutValidationError(
         "Informe seu endereço completo, incluindo cidade e região/estado.",
         "address"
-      );
-    }
-
-    if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
-      throw new CheckoutValidationError(
-        "Informe um WhatsApp válido com o código do país (DDI).",
-        "whatsapp"
       );
     }
 
@@ -178,7 +180,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     document: null,
     postalCode: rawPostalCode.replace(/\s+/g, " ") || null,
     address: address || null,
-    whatsapp: whatsappDigits ? `+${whatsappDigits}` : null,
+    whatsapp: `+${whatsappDigits}`,
     discountCode: discountCode || null,
     paymentMethod: "stripe",
     locale,

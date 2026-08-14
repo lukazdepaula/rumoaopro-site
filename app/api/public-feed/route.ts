@@ -14,7 +14,25 @@ function firstName(value: string) {
 
 function countryCode(value: string) {
   const normalized = value.trim().toUpperCase();
-  return /^[A-Z]{2}$/.test(normalized) ? normalized : "";
+  const aliases: Record<string, string> = {
+    BRASIL: "BR",
+    BRAZIL: "BR",
+    USA: "US",
+    "UNITED STATES": "US",
+    PORTUGAL: "PT",
+    SPAIN: "ES",
+    ESPANHA: "ES",
+    "UNITED KINGDOM": "GB",
+    "REINO UNIDO": "GB"
+  };
+  if (aliases[normalized]) return aliases[normalized];
+  return /^[A-Z]{2}$/.test(normalized) ? normalized : "OTHER";
+}
+
+function roundedPurchaseTime(value: string) {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+  return new Date(Math.floor(timestamp / 3_600_000) * 3_600_000).toISOString();
 }
 
 function publicId(orderId: string) {
@@ -42,15 +60,17 @@ export async function GET() {
         const product = getProductById(order.product_id);
         const name = firstName(order.customer_name);
         const country = countryCode(order.customer_country);
-        if (!product || !name || !country) return [];
+        if (!product || !name) return [];
 
         return [
           {
             id: publicId(order.id),
             firstName: name,
             country,
+            productImage: product.cover_image,
             productName: product.name,
-            productType: product.type
+            productType: product.type,
+            purchasedAt: roundedPurchaseTime(order.paid_at || order.created_at)
           }
         ];
       });

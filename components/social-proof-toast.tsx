@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CheckCircle2, MapPin, ShoppingBag, Star, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,8 +19,10 @@ type Purchase = {
   id: string;
   firstName: string;
   country: string;
+  productImage: string;
   productName: string;
   productType: "training_program" | "subscription";
+  purchasedAt: string;
 };
 
 type ProofItem =
@@ -37,7 +40,8 @@ const copy = {
     purchase: "garantiu",
     subscription: "começou a usar",
     purchaseVerified: "Compra verificada",
-    reviewVerified: "Avaliação verificada"
+    reviewVerified: "Avaliação verificada",
+    recently: "recentemente"
   },
   en: {
     close: "Close social proof",
@@ -45,7 +49,8 @@ const copy = {
     purchase: "got access to",
     subscription: "started using",
     purchaseVerified: "Verified purchase",
-    reviewVerified: "Verified review"
+    reviewVerified: "Verified review",
+    recently: "recently"
   }
 } satisfies Record<ReviewLocale, Record<string, string>>;
 
@@ -60,13 +65,16 @@ const groupLabels: Record<keyof typeof reviewGroups, Record<ReviewLocale, string
 };
 
 function flagEmoji(code: string) {
-  if (!/^[A-Z]{2}$/.test(code)) return "🌍";
+  if (!/^[A-Z]{2}$/.test(code)) return String.fromCodePoint(0x1f30d);
   return String.fromCodePoint(
     ...Array.from(code).map((letter) => letter.charCodeAt(0) + 127397)
   );
 }
 
 function countryName(code: string, locale: ReviewLocale) {
+  if (!/^[A-Z]{2}$/.test(code)) {
+    return locale === "en" ? "International" : "Internacional";
+  }
   try {
     return new Intl.DisplayNames([locale === "en" ? "en" : "pt-BR"], {
       type: "region"
@@ -74,6 +82,33 @@ function countryName(code: string, locale: ReviewLocale) {
   } catch {
     return code;
   }
+}
+
+function relativeTime(value: string, locale: ReviewLocale) {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return copy[locale].recently;
+
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (minutes < 2) return locale === "en" ? "just now" : "agora";
+  if (minutes < 60) {
+    return locale === "en" ? `${minutes} min ago` : `há ${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return locale === "en"
+      ? `${hours} ${hours === 1 ? "hour" : "hours"} ago`
+      : `há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days <= 30) {
+    return locale === "en"
+      ? `${days} ${days === 1 ? "day" : "days"} ago`
+      : `há ${days} ${days === 1 ? "dia" : "dias"}`;
+  }
+
+  return copy[locale].recently;
 }
 
 function eligiblePath(pathname: string) {
@@ -215,7 +250,7 @@ export function SocialProofToast() {
     <aside
       aria-atomic="true"
       aria-live="polite"
-      className="social-proof-toast fixed bottom-[5.25rem] left-3 right-3 z-40 overflow-hidden rounded-xl border border-ink/10 bg-white text-ink shadow-[0_22px_70px_rgba(0,0,0,0.26)] sm:bottom-6 sm:left-6 sm:right-auto sm:w-[390px]"
+      className="social-proof-toast fixed bottom-[5.25rem] left-3 right-3 z-40 overflow-hidden rounded-xl border border-ink/10 bg-white text-ink shadow-[0_22px_70px_rgba(0,0,0,0.26)] sm:bottom-6 sm:left-6 sm:right-auto sm:w-[350px]"
       role="status"
     >
       <div className="h-1 bg-gradient-to-r from-signal via-[#ff4357] to-gold" />
@@ -229,27 +264,50 @@ export function SocialProofToast() {
       </button>
 
       {current.kind === "purchase" ? (
-        <div className="flex gap-3 p-4 pr-12">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-signal/10 text-signal">
-            <ShoppingBag aria-hidden="true" className="h-5 w-5" />
+        <div className="flex gap-3 p-3 pr-11">
+          <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-ink/10 bg-smoke">
+            {current.purchase.productImage ? (
+              <Image
+                alt=""
+                className="object-cover"
+                fill
+                sizes="56px"
+                src={current.purchase.productImage}
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-signal">
+                <ShoppingBag aria-hidden="true" className="h-5 w-5" />
+              </span>
+            )}
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-bold leading-5 text-ink">
-              {current.purchase.firstName} {copy[locale].from}{" "}
-              {countryName(current.purchase.country, locale)}{" "}
-              <span aria-label={current.purchase.country} role="img">
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold leading-5 text-ink">
+              <span
+                aria-label={countryName(current.purchase.country, locale)}
+                className="inline-flex h-6 min-w-7 items-center justify-center rounded-full bg-smoke px-1.5 text-base shadow-sm"
+                role="img"
+              >
                 {flagEmoji(current.purchase.country)}
               </span>
+              <span>{current.purchase.firstName}</span>
+              <span className="font-normal text-graphite/50">·</span>
+              <span className="text-xs font-semibold text-graphite/65">
+                {countryName(current.purchase.country, locale)}
+              </span>
             </p>
-            <p className="mt-1 text-sm leading-5 text-graphite/75">
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-graphite/75">
               {current.purchase.productType === "subscription"
                 ? copy[locale].subscription
                 : copy[locale].purchase}{" "}
               <strong className="text-ink">{current.purchase.productName}</strong>
             </p>
-            <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] text-turf">
+            <p className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-turf">
               <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
               {copy[locale].purchaseVerified}
+              <span aria-hidden="true" className="text-graphite/25">·</span>
+              <span className="normal-case tracking-normal text-graphite/55">
+                {relativeTime(current.purchase.purchasedAt, locale)}
+              </span>
             </p>
           </div>
         </div>

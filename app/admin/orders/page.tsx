@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin-shell";
+import { AdminWhatsAppLink } from "@/components/admin-whatsapp-link";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { listOrders } from "@/lib/checkout/db";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
@@ -131,12 +132,15 @@ export default async function AdminOrdersPage({
                   {order.exchange_rate_used ? order.exchange_rate_used.toFixed(4) : "-"}
                 </td>
                 <td className="px-4 py-3">
-                  <Link
-                    className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink"
-                    href={`/admin/orders/${order.id}`}
-                  >
-                    Abrir
-                  </Link>
+                  <div className="flex min-w-max flex-col gap-2">
+                    <Link
+                      className="inline-flex min-h-9 items-center justify-center rounded-md border border-ink/15 px-3 text-xs font-bold text-ink"
+                      href={`/admin/orders/${order.id}`}
+                    >
+                      Abrir
+                    </Link>
+                    <AdminWhatsAppLink compact order={order} />
+                  </div>
                 </td>
               </tr>
             ))}
