@@ -46,6 +46,7 @@ export default async function CheckoutSuccessPage({
   const order = params.order_id ? await getOrderById(params.order_id) : null;
   const isEnglish = params.locale === "en" || order?.metadata.checkout_locale === "en";
   const product = order ? getProductById(order.product_id) : null;
+  const isCoachingSubscription = product?.id === "online_coaching_monthly";
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
   const trialDays = Number(order?.metadata.trial_days || 0);
   const isLoadProTrial =
@@ -87,14 +88,18 @@ export default async function CheckoutSuccessPage({
       : order?.status === "failed"
         ? isEnglish ? "Failed" : "Falhou"
         : isEnglish ? "Processing" : "Em processamento";
-  const accessHref = isLoadProTrial
+  const accessHref = isCoachingSubscription
+    ? "/assessoria"
+    : isLoadProTrial
     ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
     : isRaptorProProgram
       ? getRaptorProProgramUrl(order!)
     : order?.status === "paid" && product
       ? `/my-programs/${product.slug}`
       : "/my-programs";
-  const title = isLoadProTrial
+  const title = isCoachingSubscription && order?.status === "paid"
+    ? "Assinatura da assessoria confirmada"
+    : isLoadProTrial
     ? trialIsReady
       ? isEnglish ? "Free trial activated" : "Teste gratuito ativado"
       : isEnglish ? "Activating your free trial" : "Ativando seu teste gratuito"
@@ -109,7 +114,9 @@ export default async function CheckoutSuccessPage({
     : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
-  const description = isLoadProTrial
+  const description = isCoachingSubscription && order?.status === "paid"
+    ? "Pagamento aprovado. Sua assinatura está ativa e nossa equipe entrará em contato pelo WhatsApp informado para iniciar o atendimento."
+    : isLoadProTrial
     ? trialIsReady
       ? isEnglish
         ? `We sent ${order?.customer_email || "your email"} a RumoAoPro message. Open it and click Create my password to access LoadPro.`
@@ -307,6 +314,8 @@ export default async function CheckoutSuccessPage({
             >
               {isLoadProTrial
                 ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
+                : isCoachingSubscription
+                  ? "Voltar para a assessoria"
                 : isRaptorProProgram
                   ? isEnglish ? "I already signed in — open RaptorPro" : "Já fiz meu acesso — abrir RaptorPro"
                 : order?.status === "paid"

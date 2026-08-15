@@ -253,15 +253,34 @@ export async function sendOnboardingEmail(input: {
   name: string;
   productName: string;
 }) {
+  const isCoachingSubscription = input.productName.includes("Assessoria Online RumoAoPro");
+
   await sendEmail({
     to: input.to,
-    subject: `Próximos passos - ${input.productName}`,
+    subject: isCoachingSubscription
+      ? "Assessoria RumoAoPro confirmada · próximos passos"
+      : `Próximos passos - ${input.productName}`,
     orderId: input.orderId,
-    html: `
-      <p>Fala, ${input.name}.</p>
-      <p>Pagamento confirmado para <strong>${input.productName}</strong>.</p>
-      <p>Em breve você recebe os próximos passos para onboarding e alinhamento inicial.</p>
-    `
+    html: isCoachingSubscription
+      ? `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+          <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
+            <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro Assessoria</p>
+            <h1 style="margin:0;font-size:26px">Assinatura confirmada</h1>
+          </div>
+          <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
+            <p>Fala, ${escapeHtml(input.name)}.</p>
+            <p>Sua assinatura da <strong>Assessoria Online RumoAoPro</strong> foi confirmada.</p>
+            <p>Nossa equipe usará o WhatsApp informado no checkout para fazer o contato inicial e organizar seu onboarding.</p>
+            <p style="color:#68707d;font-size:13px">Prazo de suporte: até 3 dias úteis.</p>
+          </div>
+        </div>
+      `
+      : `
+        <p>Fala, ${escapeHtml(input.name)}.</p>
+        <p>Pagamento confirmado para <strong>${escapeHtml(input.productName)}</strong>.</p>
+        <p>Em breve você recebe os próximos passos para onboarding e alinhamento inicial.</p>
+      `
   });
 }
 

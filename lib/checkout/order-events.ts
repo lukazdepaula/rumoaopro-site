@@ -237,7 +237,12 @@ export async function markOrderAsPaid(
   if (paidOrder) {
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
     await syncRaptorProSafely(paidOrder, "granted");
-    if (!isLoadProOrder(paidOrder)) await grantProductAccess(paidOrder);
+    if (
+      !isLoadProOrder(paidOrder) &&
+      paidOrder.product_id !== "online_coaching_monthly"
+    ) {
+      await grantProductAccess(paidOrder);
+    }
 
     if (firstConfirmation && !sandboxOrder) {
       await sendInternalSaleNotice({

@@ -44,16 +44,42 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      product.checkout_country_lock &&
+      input.country !== product.checkout_country_lock
+    ) {
+      return NextResponse.json(
+        { error: "Este checkout está disponível apenas para clientes no Brasil." },
+        { status: 400 }
+      );
+    }
+
     const mode = checkoutMode();
-    const brazil = isBrazil(input.country);
-    const stripeOnly = product.id === "loadpro_founders";
-    const paymentMethod = mode === "sandbox"
+    const checkoutCountry = product.checkout_country_lock || input.country;
+    const brazil = isBrazil(checkoutCountry);
+    const stripeOnly =
+      product.id === "loadpro_founders" ||
+      (product.checkout_payment_methods?.length === 1 &&
+        product.checkout_payment_methods[0] === "stripe");
+    const requestedPaymentMethod = mode === "sandbox"
       ? "stripe"
       : stripeOnly
       ? "stripe"
       : brazil
         ? input.paymentMethod
         : "stripe";
+    const paymentMethod = product.checkout_payment_methods?.length
+      ? product.checkout_payment_methods.includes(requestedPaymentMethod)
+        ? requestedPaymentMethod
+        : product.checkout_payment_methods[0]
+      : requestedPaymentMethod;
+
+    if (input.discountCode && product.discounts_enabled === false) {
+      return NextResponse.json(
+        { error: "Cupons não estão disponíveis para esta assinatura." },
+        { status: 400 }
+      );
+    }
     if (product.type === "subscription" && paymentMethod === "pix") {
       return NextResponse.json(
         { error: "Assinaturas mensais exigem um cartão." },
@@ -75,7 +101,7 @@ export async function POST(request: Request) {
         );
       }
     }
-    const localizedPrice = calculateLocalizedPrice(product, brazil ? "BR" : input.country);
+    const localizedPrice = calculateLocalizedPrice(product, checkoutCountry);
     const discount = input.discountCode
       ? await getDiscountByCode(input.discountCode)
       : null;
@@ -98,7 +124,7 @@ export async function POST(request: Request) {
       product_name: product.name,
       customer_name: input.name,
       customer_email: input.email,
-      customer_country: brazil ? "BR" : input.country,
+      customer_country: checkoutCountry,
       customer_document_type: input.documentType,
       customer_document: input.document,
       customer_postal_code: input.postalCode,
@@ -116,7 +142,7 @@ export async function POST(request: Request) {
       fiscal_status: brazil ? "pending" : "not_required",
       metadata: {
         product_slug: product.slug,
-        checkout_country: input.country,
+        checkout_country: checkoutCountry,
         checkout_gateway_mode: mode,
         checkout_payment_method: paymentMethod,
         checkout_locale: input.locale,

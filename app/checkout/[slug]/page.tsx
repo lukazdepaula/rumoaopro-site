@@ -46,7 +46,32 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   }
 
   const productCopy = getLocalizedProductCopy(product, locale);
+  const isLoadProSubscription = product.id === "loadpro_founders";
+  const isCoachingSubscription = product.id === "online_coaching_monthly";
   const loadProWhatsapp = (process.env.NEXT_PUBLIC_LOADPRO_WHATSAPP || "5519992811078").replace(/\D/g, "");
+  const subscriptionBenefits = isCoachingSubscription
+    ? [
+        "Assessoria individual por ciclos de 30 dias",
+        "Planejamento conectado à rotina e ao calendário do atleta",
+        "CPF/CNPJ, endereço e WhatsApp registrados para emissão fiscal",
+        "Cobrança recorrente segura pela Stripe",
+        "Assinatura e pagamentos acompanhados no admin RumoAoPro"
+      ]
+    : isEnglish
+      ? [
+          "Founding plan billed monthly",
+          "Up to 2 teams and 30 athletes per team",
+          "Founding price locked while your subscription remains active",
+          "Secure invitation sent after confirmation",
+          "Cancel whenever you need"
+        ]
+      : [
+          "Plano fundador de R$ 49,90 por mês",
+          "Até 2 equipes e 30 atletas por equipe",
+          "Preço protegido enquanto a assinatura permanecer ativa",
+          "Convite seguro enviado após a confirmação",
+          "Pedido e assinatura acompanhados no admin RumoAoPro"
+        ];
 
   return (
     <main className="min-h-screen bg-smoke">
@@ -83,7 +108,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             </h1>
             <p className="mt-4 text-base leading-8 text-white/72">
               {product.type === "subscription"
-                ? isEnglish
+                ? isCoachingSubscription
+                  ? "Preencha seus dados fiscais e confirme a assinatura da assessoria. A cobrança de R$ 399 é renovada automaticamente a cada 30 dias."
+                  : isEnglish
                   ? "Enter your details and confirm the monthly subscription. Your LoadPro access is provisioned after payment approval."
                   : "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
                 : isEnglish
@@ -102,30 +129,22 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
               <LockKeyhole aria-hidden="true" className="h-5 w-5" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-ink">
-              {isEnglish ? "Protected payment and access" : "Compra e acesso protegidos"}
+              {isCoachingSubscription
+                ? "Assinatura e dados protegidos"
+                : isEnglish
+                  ? "Protected payment and access"
+                  : "Compra e acesso protegidos"}
             </h2>
             <p className="mt-3 text-sm leading-6 text-graphite/72">
-              {isEnglish
+              {isCoachingSubscription
+                ? "O pagamento é processado pela Stripe. Após a confirmação, sua inscrição fica registrada no admin e a equipe recebe seus dados para iniciar o atendimento."
+                : isEnglish
                 ? `Payment is securely processed by Stripe. ${productCopy.name} appears in your account after confirmation.`
                 : "Seus dados são enviados diretamente aos provedores de pagamento. O programa aparece na sua conta após a confirmação da compra."}
             </p>
             <div className="mt-6 grid gap-3">
               {(product.type === "subscription"
-                ? isEnglish
-                  ? [
-                      "Founding plan billed monthly",
-                      "Up to 2 teams and 30 athletes per team",
-                      "Founding price locked while your subscription remains active",
-                      "Secure invitation sent after confirmation",
-                      "Cancel whenever you need"
-                    ]
-                  : [
-                    "Plano fundador de R$ 49,90 por mês",
-                    "Até 2 equipes e 30 atletas por equipe",
-                    "Preço protegido enquanto a assinatura permanecer ativa",
-                    "Convite seguro enviado após a confirmação",
-                    "Pedido e assinatura acompanhados no admin RumoAoPro"
-                  ]
+                ? subscriptionBenefits
                 : isEnglish
                 ? [
                     "Secure international card payment via Stripe",
@@ -150,7 +169,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                 </p>
               ))}
             </div>
-            {product.type === "subscription" ? (
+            {isLoadProSubscription ? (
               <a
                 className="focus-ring mt-6 inline-flex min-h-11 items-center justify-center rounded-md border border-ink/15 px-4 text-sm font-bold text-ink"
                 href={`https://wa.me/${loadProWhatsapp}?text=${encodeURIComponent(isEnglish ? "Hi! I have a question about the LoadPro Founding Coaches Plan." : "Olá! Tenho uma dúvida sobre o Plano Treinadores Fundadores do LoadPro.")}`}

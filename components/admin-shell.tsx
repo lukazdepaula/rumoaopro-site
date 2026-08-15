@@ -27,6 +27,9 @@ export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellPro
             <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/products">
               Produtos
             </Link>
+            <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/payment-links">
+              Links
+            </Link>
             <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/discounts">
               Descontos
             </Link>

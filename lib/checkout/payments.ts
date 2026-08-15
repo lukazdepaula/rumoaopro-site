@@ -43,16 +43,18 @@ function idempotencyKey(order: Order, suffix: string) {
 }
 
 function stripeCatalogPriceId(order: Order, product: CheckoutProduct) {
-  if (product.id !== "loadpro_founders" || order.currency !== "BRL") {
-    return null;
-  }
+  if (order.currency !== "BRL") return null;
 
   const configuredAmount = Math.round(product.price_brl * 100);
   const orderAmount = Math.round(order.amount * 100);
   const hasDiscount = typeof order.metadata.discount_code === "string";
 
   if (hasDiscount || configuredAmount !== orderAmount) return null;
-  return requireEnv("STRIPE_LOADPRO_FOUNDERS_PRICE_ID");
+  if (product.stripe_price_id) return product.stripe_price_id;
+  if (product.id === "loadpro_founders") {
+    return requireEnv("STRIPE_LOADPRO_FOUNDERS_PRICE_ID");
+  }
+  return null;
 }
 
 export async function createMercadoPagoPixPayment(

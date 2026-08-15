@@ -93,6 +93,10 @@ export type CheckoutProduct = {
   delivery_type: DeliveryType;
   file_id: string | null;
   billing_interval?: "month";
+  stripe_price_id?: string;
+  checkout_country_lock?: "BR";
+  checkout_payment_methods?: CheckoutPaymentMethod[];
+  discounts_enabled?: boolean;
   trial_days?: number;
   team_limit?: number;
   players_per_team_limit?: number;

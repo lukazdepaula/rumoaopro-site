@@ -30,6 +30,7 @@ const fixedBrlProductPrice = (basePriceUsd: number, brlPrice: number) => ({
 });
 
 export const checkoutLinks = {
+  onlineCoaching: "/checkout/assessoria-online",
   loadProFounders: "/checkout/loadpro-founders",
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
@@ -42,6 +43,33 @@ export const checkoutLinks = {
 };
 
 export const checkoutProducts: CheckoutProduct[] = [
+  {
+    id: "online_coaching_monthly",
+    name: "Assessoria Online RumoAoPro · 30 dias",
+    slug: "assessoria-online",
+    description:
+      "Acompanhamento individual com planejamento de treino, ajustes conforme o calendário e suporte da equipe RumoAoPro.",
+    language: "Portuguese",
+    type: "subscription",
+    ...fixedBrlProductPrice(
+      envPrice("RAP_COACHING_PRICE_USD", 75),
+      envPrice("RAP_COACHING_PRICE_BRL", 399)
+    ),
+    active: true,
+    sales_page_path: "/assessoria",
+    cover_image: "/assets/photos/lukaz-trainer-hero.jpg",
+    delivery_type: "onboarding_email",
+    file_id: null,
+    billing_interval: "month",
+    stripe_price_id:
+      process.env.STRIPE_COACHING_MONTHLY_PRICE_ID ||
+      "price_1SmeZyA6RupMT8QsC0IOu55B",
+    checkout_country_lock: "BR",
+    checkout_payment_methods: ["stripe"],
+    discounts_enabled: false,
+    created_at: now,
+    updated_at: now
+  },
   {
     id: "loadpro_founders",
     name: "LoadPro · Plano Treinadores Fundadores",

@@ -224,20 +224,23 @@ function CardNetworkBadges() {
 export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const isEnglish = locale === "en";
   const isLoadProFounders = product.id === "loadpro_founders";
+  const isCoachingSubscription = product.id === "online_coaching_monthly";
   const isProject36 =
     product.id === "project_36" || product.id === "projeto_36_2022_pt";
   const productCopy = getLocalizedProductCopy(product, locale);
-  const [country, setCountry] = useState(isEnglish ? "US" : "BR");
+  const initialCountry = product.checkout_country_lock || (isEnglish ? "US" : "BR");
+  const initialPaymentMethod =
+    product.checkout_payment_methods?.[0] ||
+    (isEnglish || isLoadProFounders ? "stripe" : "mercado_pago");
+  const [country, setCountry] = useState(initialCountry);
   const [paymentMethod, setPaymentMethod] =
-    useState<CheckoutPaymentMethod>(
-      isEnglish || isLoadProFounders ? "stripe" : "mercado_pago"
-    );
+    useState<CheckoutPaymentMethod>(initialPaymentMethod);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [document, setDocument] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
-  const [dialCode, setDialCode] = useState(isEnglish ? "+1" : "+55");
+  const [dialCode, setDialCode] = useState(initialCountry === "BR" ? "+55" : "+1");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -250,6 +253,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
 
   const isBrazil = country === "BR";
   const isSubscription = product.type === "subscription";
+  const acceptsPaymentMethod = (method: CheckoutPaymentMethod) =>
+    !product.checkout_payment_methods?.length ||
+    product.checkout_payment_methods.includes(method);
   const checkoutCurrency = isBrazil ? "BRL" : "USD";
   const checkoutAmount = isBrazil
     ? product.price_brl_estimated
@@ -291,7 +297,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       countryDialCodes[nextCountry] || (nextMarket === "BR" ? "+55" : "+1")
     );
     setPaymentMethod(
-      isLoadProFounders || nextMarket === "INTL" ? "stripe" : "mercado_pago"
+      product.checkout_payment_methods?.[0] ||
+        (isLoadProFounders || nextMarket === "INTL" ? "stripe" : "mercado_pago")
     );
   }
 
@@ -301,7 +308,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       setDialCode(countryDialCodes[nextCountry]);
     }
     setPaymentMethod(
-      isLoadProFounders || nextCountry !== "BR" ? "stripe" : "mercado_pago"
+      product.checkout_payment_methods?.[0] ||
+        (isLoadProFounders || nextCountry !== "BR" ? "stripe" : "mercado_pago")
     );
   }
 
@@ -500,6 +508,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 ? isLoadProFounders
                   ? "per month · 7-day free trial"
                   : "per month"
+                : isCoachingSubscription
+                  ? "a cada 30 dias"
                 : isLoadProFounders
                   ? "por mês · 7 dias grátis · preço fundador"
                   : "por mês · preço fundador"
@@ -513,6 +523,17 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       </div>
 
       <form className="mt-5 grid gap-4" onSubmit={submit}>
+        {product.checkout_country_lock ? (
+          <div className="grid gap-2 text-sm font-semibold text-ink">
+            <span>{isEnglish ? "Country" : "País de cobrança"}</span>
+            <div className="flex min-h-12 items-center rounded-md border border-ink/15 bg-smoke px-3 text-sm text-ink">
+              {flagEmoji("BR")} Brasil
+            </div>
+            <span className="text-xs font-normal leading-5 text-graphite/60">
+              Checkout brasileiro com dados fiscais e cobrança recorrente em reais.
+            </span>
+          </div>
+        ) : (
         <fieldset className="grid gap-3">
           <legend className="text-sm font-black text-ink">
             {isEnglish ? "Where will you pay?" : "Onde você vai pagar?"}
@@ -551,8 +572,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               : "Essa escolha define a moeda e as formas de pagamento, sem alterar o idioma do site."}
           </p>
         </fieldset>
+        )}
 
-        {!isBrazil ? (
+        {!product.checkout_country_lock && !isBrazil ? (
           <label className="grid gap-2 text-sm font-semibold text-ink">
             {isEnglish ? "Billing country" : "País de cobrança"}
             <select
@@ -579,6 +601,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               ? isEnglish
                 ? "Add a card securely. You pay nothing today and can cancel anytime."
                 : "Cadastre o cartão com segurança. Você não paga nada hoje e pode cancelar quando quiser."
+              : isCoachingSubscription
+              ? "R$ 399 a cada 30 dias no cartão. Cancele quando quiser."
               : isSubscription
               ? isEnglish
                 ? "Monthly card subscription. Cancel anytime."
@@ -592,7 +616,20 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 : "Pagamento internacional seguro via Stripe."}
           </p>
 
-          {isLoadProFounders ? (
+          {isCoachingSubscription && acceptsPaymentMethod("stripe") ? (
+            <PaymentOption
+              active
+              description="Cobrança recorrente de R$ 399 processada com segurança pela Stripe."
+              icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
+              label="Assinatura da assessoria"
+              name="payment-method"
+              onSelect={() => setPaymentMethod("stripe")}
+              value="stripe"
+            >
+              <StripeBadge />
+              <CardNetworkBadges />
+            </PaymentOption>
+          ) : isLoadProFounders ? (
             <PaymentOption
               active
               description={
@@ -801,6 +838,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           </div>
         ) : null}
 
+        {product.discounts_enabled !== false ? (
         <details className="group rounded-md border border-ink/10 bg-white p-3">
           <summary className="cursor-pointer list-none text-sm font-semibold text-graphite/75">
             {isEnglish ? "Have a discount code?" : "Tem um cupom de desconto?"}
@@ -853,6 +891,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           ) : null}
           </div>
         </details>
+        ) : null}
 
         <div className="rounded-md border border-ink/10 bg-smoke px-3 py-2 text-sm text-graphite/75">
           {isProject36 ? (
@@ -868,7 +907,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               </p>
             </div>
           ) : null}
-          {isEnglish ? (
+          {product.checkout_country_lock ? (
+            <p>
+              Valor recorrente: <strong>{brlEstimate}</strong> a cada 30 dias
+            </p>
+          ) : isEnglish ? (
             <p>
               International price: <strong>{usdPrice}</strong>
             </p>
@@ -900,6 +943,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               ? isEnglish
                 ? "Due today:"
                 : "Cobrança hoje:"
+              : isCoachingSubscription
+                ? "Assinatura da assessoria:"
               : isSubscription
               ? isEnglish
                 ? "Monthly subscription:"
@@ -919,7 +964,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             <p className="mt-1 text-xs text-graphite/65">
               {isEnglish
                 ? "The founding price remains locked while the subscription stays active."
-                : "O preço fundador permanece protegido enquanto a assinatura continuar ativa."}
+                : isCoachingSubscription
+                  ? "A cobrança é renovada automaticamente a cada 30 dias até o cancelamento."
+                  : "O preço fundador permanece protegido enquanto a assinatura continuar ativa."}
             </p>
           ) : null}
         </div>
@@ -943,7 +990,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 : "Começar 7 dias grátis"
               : isEnglish
                 ? "Start subscription"
-                : "Assinar com segurança"
+                : isCoachingSubscription
+                  ? "Assinar assessoria"
+                  : "Assinar com segurança"
             : isEnglish
               ? "Continue to secure payment"
               : "Continuar para pagamento"}
@@ -954,6 +1003,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             ? isEnglish
               ? "Stripe will request a valid card, but no charge is made today. Cancel before the trial ends to avoid the first monthly charge."
               : "A Stripe solicitará um cartão válido, mas não haverá cobrança hoje. Cancele antes do fim do teste para evitar a primeira mensalidade."
+            : isCoachingSubscription
+              ? "Você será redirecionado para a Stripe e poderá revisar os dados antes de confirmar a assinatura recorrente."
             : isEnglish
             ? "You will review the payment securely with Stripe before any charge is confirmed."
             : paymentMethod === "pix"
