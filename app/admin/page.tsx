@@ -16,7 +16,8 @@ const BRL_FALLBACK_RATE = 5.5;
 const gatewayLabels: Record<Gateway, string> = {
   mercado_pago: "Mercado Pago",
   mock: "Mock",
-  stripe: "Stripe"
+  stripe: "Stripe",
+  shopify_legacy: "Shopify legado"
 };
 
 function startOfDay(date: Date) {

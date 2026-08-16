@@ -58,6 +58,7 @@ export default async function AdminOrdersPage({
           <option value="mock">Mock</option>
           <option value="mercado_pago">Mercado Pago</option>
           <option value="stripe">Stripe</option>
+          <option value="shopify_legacy">Shopify legado</option>
         </select>
         <input className="min-h-11 rounded-md border border-ink/15 px-3 text-sm" defaultValue={filters.country || ""} name="country" placeholder="País, ex: BR" />
         <select className="min-h-11 rounded-md border border-ink/15 px-3 text-sm" name="product" defaultValue={filters.product || ""}>

@@ -11,7 +11,7 @@ export type DeliveryType =
   | "onboarding_email"
   | "manual";
 
-export type Gateway = "mock" | "mercado_pago" | "stripe";
+export type Gateway = "mock" | "mercado_pago" | "stripe" | "shopify_legacy";
 
 export type AnalyticsEventType =
   | "page_view"

@@ -24,6 +24,9 @@ export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellPro
             <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/entitlements">
               Acessos
             </Link>
+            <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/legacy-access">
+              Migrações
+            </Link>
             <Link className="rounded-md px-3 py-2 text-graphite hover:bg-smoke" href="/admin/products">
               Produtos
             </Link>
