@@ -119,6 +119,20 @@ export async function POST(request: Request) {
     const discountQuote = discount
       ? calculateDiscountQuote(discount, localizedPrice)
       : null;
+    const marketingConsent = input.marketing.consent === "granted";
+    const clientIpAddress = marketingConsent
+      ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        request.headers.get("x-real-ip")
+      : null;
+    const clientUserAgent = marketingConsent
+      ? request.headers.get("user-agent")?.slice(0, 500) || null
+      : null;
+    const marketingFbc = marketingConsent
+      ? input.marketing.fbc ||
+        (input.marketing.fbclid
+          ? `fb.1.${Date.now()}.${input.marketing.fbclid}`
+          : null)
+      : null;
     const order = await createOrder({
       product_id: product.id,
       product_name: product.name,
@@ -148,7 +162,7 @@ export async function POST(request: Request) {
         checkout_locale: input.locale,
         trial_days: product.trial_days || null,
         base_price_usd: localizedPrice.basePriceUsd,
-        marketing_consent: input.marketing.consent || "denied",
+        marketing_consent: marketingConsent ? "granted" : "denied",
         marketing_landing_url: input.marketing.landingUrl || null,
         marketing_utm_source: input.marketing.utmSource || null,
         marketing_utm_medium: input.marketing.utmMedium || null,
@@ -157,7 +171,12 @@ export async function POST(request: Request) {
         marketing_utm_term: input.marketing.utmTerm || null,
         marketing_fbclid: input.marketing.fbclid || null,
         marketing_fbp: input.marketing.fbp || null,
-        marketing_fbc: input.marketing.fbc || null,
+        marketing_fbc: marketingFbc,
+        marketing_client_ip_address: clientIpAddress,
+        marketing_client_user_agent: clientUserAgent,
+        marketing_attribution_recorded_at: marketingConsent
+          ? new Date().toISOString()
+          : null,
         ...discountMetadata(discountQuote)
       }
     });

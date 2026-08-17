@@ -13,6 +13,10 @@ export type MetaDataset = "rumoaopro" | "loadpro";
 type MetaUserData = {
   email?: string | null;
   phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
   externalId?: string | null;
   clientIpAddress?: string | null;
   clientUserAgent?: string | null;
@@ -32,6 +36,14 @@ export type MetaEventInput = {
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const normalizePhone = (value: string) => value.replace(/\D/g, "");
+const normalizeName = (value: string) => value
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z]/g, "");
+const normalizeCountry = (value: string) => value.trim().toLowerCase().replace(/[^a-z]/g, "");
+const normalizePostalCode = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 const normalizeExternalId = (value: string) => value.trim().toLowerCase();
 
 function hash(value: string) {
@@ -92,6 +104,10 @@ export async function sendMetaEvent(input: MetaEventInput) {
         user_data: {
           em: hashed(userData.email, normalizeEmail),
           ph: hashed(userData.phone, normalizePhone),
+          fn: hashed(userData.firstName, normalizeName),
+          ln: hashed(userData.lastName, normalizeName),
+          country: hashed(userData.country, normalizeCountry),
+          zp: hashed(userData.postalCode, normalizePostalCode),
           external_id: hashed(userData.externalId, normalizeExternalId),
           client_ip_address: userData.clientIpAddress || undefined,
           client_user_agent: userData.clientUserAgent || undefined,

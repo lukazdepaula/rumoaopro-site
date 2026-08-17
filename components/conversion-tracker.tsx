@@ -120,7 +120,16 @@ function captureAttribution(): MarketingAttribution {
 
   const params = new URLSearchParams(window.location.search);
   const fbclid = cleanParam(params.get("fbclid"));
-  if (fbclid && !readCookie("_fbc")) {
+  const incomingUtms = {
+    utmSource: cleanParam(params.get("utm_source")),
+    utmMedium: cleanParam(params.get("utm_medium")),
+    utmCampaign: cleanParam(params.get("utm_campaign")),
+    utmContent: cleanParam(params.get("utm_content")),
+    utmTerm: cleanParam(params.get("utm_term"))
+  };
+  const hasIncomingTouch = Boolean(fbclid || Object.values(incomingUtms).some(Boolean));
+  const currentFbc = readCookie("_fbc");
+  if (fbclid && !currentFbc?.endsWith(`.${fbclid}`)) {
     document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; Path=/; Max-Age=7776000; SameSite=Lax${
       window.location.protocol === "https:" ? "; Secure" : ""
     }`;
@@ -128,13 +137,15 @@ function captureAttribution(): MarketingAttribution {
 
   const attribution: MarketingAttribution = {
     consent,
-    landingUrl: current.landingUrl || window.location.href.slice(0, 500),
-    utmSource: current.utmSource || cleanParam(params.get("utm_source")),
-    utmMedium: current.utmMedium || cleanParam(params.get("utm_medium")),
-    utmCampaign: current.utmCampaign || cleanParam(params.get("utm_campaign")),
-    utmContent: current.utmContent || cleanParam(params.get("utm_content")),
-    utmTerm: current.utmTerm || cleanParam(params.get("utm_term")),
-    fbclid: current.fbclid || fbclid,
+    landingUrl: hasIncomingTouch
+      ? window.location.href.slice(0, 500)
+      : current.landingUrl || window.location.href.slice(0, 500),
+    utmSource: hasIncomingTouch ? incomingUtms.utmSource : current.utmSource,
+    utmMedium: hasIncomingTouch ? incomingUtms.utmMedium : current.utmMedium,
+    utmCampaign: hasIncomingTouch ? incomingUtms.utmCampaign : current.utmCampaign,
+    utmContent: hasIncomingTouch ? incomingUtms.utmContent : current.utmContent,
+    utmTerm: hasIncomingTouch ? incomingUtms.utmTerm : current.utmTerm,
+    fbclid: hasIncomingTouch ? fbclid : current.fbclid,
     fbp: readCookie("_fbp") || current.fbp,
     fbc: readCookie("_fbc") || current.fbc
   };
