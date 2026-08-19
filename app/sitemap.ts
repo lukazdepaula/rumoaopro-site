@@ -61,6 +61,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.82
     },
     {
+      url: `${baseUrl}/programas/power-pro`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.82
+    },
+    {
       url: `${baseUrl}/programas/elanga-in-season`,
       lastModified,
       changeFrequency: "monthly",

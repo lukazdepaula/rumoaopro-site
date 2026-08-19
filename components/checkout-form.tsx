@@ -227,6 +227,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const isCoachingSubscription = product.id === "online_coaching_monthly";
   const isProject36 =
     product.id === "project_36" || product.id === "projeto_36_2022_pt";
+  const isPowerPro = product.id === "power_pro";
   const productCopy = getLocalizedProductCopy(product, locale);
   const initialCountry = product.checkout_country_lock || (isEnglish ? "US" : "BR");
   const initialPaymentMethod =
@@ -514,7 +515,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                   ? "por mês · 7 dias grátis · preço fundador"
                   : "por mês · preço fundador"
               : isBrazil
-              ? `${usdPrice} internacional`
+              ? product.checkout_country_lock
+                ? "Pagamento único"
+                : `${usdPrice} internacional`
               : isEnglish
                 ? "One-time payment"
                 : `${brlEstimate} no Brasil`}
@@ -530,7 +533,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               {flagEmoji("BR")} Brasil
             </div>
             <span className="text-xs font-normal leading-5 text-graphite/60">
-              Checkout brasileiro com dados fiscais e cobrança recorrente em reais.
+              {isSubscription
+                ? "Checkout brasileiro com dados fiscais e cobrança recorrente em reais."
+                : "Checkout brasileiro com pagamento único em reais."}
             </span>
           </div>
         ) : (
@@ -657,7 +662,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                       : "Cobrança automática mensal enquanto a assinatura permanecer ativa."
                     : isEnglish
                       ? "Complete your payment through Mercado Pago. Installments and conditions appear before confirmation."
-                      : "Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
+                      : isPowerPro
+                        ? "Finalize com cartão no Mercado Pago e revise os dados antes da confirmação."
+                        : "Finalize no Mercado Pago. Parcelas e condições aparecem antes da confirmação."
                 }
                 icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
                 label={
@@ -667,7 +674,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                       : "Cartão · assinatura mensal"
                     : isEnglish
                       ? "Card and installments"
-                      : "Cartão e parcelamento"
+                      : isPowerPro
+                        ? "Cartão pelo Mercado Pago"
+                        : "Cartão e parcelamento"
                 }
                 name="payment-method"
                 onSelect={() => setPaymentMethod("mercado_pago")}
@@ -907,9 +916,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               </p>
             </div>
           ) : null}
-          {product.checkout_country_lock ? (
+          {product.checkout_country_lock && isSubscription ? (
             <p>
               Valor recorrente: <strong>{brlEstimate}</strong> a cada 30 dias
+            </p>
+          ) : product.checkout_country_lock ? (
+            <p>
+              Valor desta compra: <strong>{brlEstimate}</strong>
             </p>
           ) : isEnglish ? (
             <p>

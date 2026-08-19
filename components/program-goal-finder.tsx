@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarRange,
+  Dumbbell,
   Gauge,
   HeartPulse,
   ShieldCheck,
@@ -20,7 +21,7 @@ type ProgramGoalFinderProps = {
   tone?: "light" | "dark";
 };
 
-type GoalId = "speed" | "offseason" | "inseason" | "return-to-play";
+type GoalId = "power" | "speed" | "offseason" | "inseason" | "return-to-play";
 
 type GoalDefinition = {
   id: GoalId;
@@ -34,12 +35,27 @@ type GoalDefinition = {
   imagePosition: string;
   outcome: string;
   detail: string;
-  reviewGroup: ReviewGroupKey;
+  reviewGroup?: ReviewGroupKey;
   icon: typeof Gauge;
 };
 
 const goals: Record<"pt" | "en", GoalDefinition[]> = {
   pt: [
+    {
+      id: "power",
+      label: "Só tenho academia",
+      prompt: "Quero força e potência",
+      displayName: "Força & Potência — Power Pro",
+      coverTitle: "Power Pro",
+      productId: "power_pro",
+      href: "/programas/power-pro",
+      image: "/assets/photos/programs/programs-gym-briefing.jpg",
+      imagePosition: "object-[50%_40%]",
+      outcome:
+        "12 semanas, 100% academia, para jogadores que querem desenvolver força, potência e um físico mais atlético.",
+      detail: "12 semanas · português · 3 + 1 sessões · RaptorPro",
+      icon: Dumbbell
+    },
     {
       id: "offseason",
       label: "Offseason",
@@ -110,6 +126,21 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
     }
   ],
   en: [
+    {
+      id: "power",
+      label: "Gym access only",
+      prompt: "Build strength and power",
+      displayName: "Strength & Power — Power Pro",
+      coverTitle: "Power Pro",
+      productId: "power_pro",
+      href: "/programas/power-pro",
+      image: "/assets/photos/programs/programs-gym-briefing.jpg",
+      imagePosition: "object-[50%_40%]",
+      outcome:
+        "A 12-week, 100% gym-based program for footballers. The program is delivered in Portuguese.",
+      detail: "12 weeks · Portuguese only · 3 + 1 sessions · RaptorPro",
+      icon: Dumbbell
+    },
     {
       id: "offseason",
       label: "Offseason",
@@ -185,7 +216,7 @@ const copy = {
   pt: {
     eyebrow: "Programas prontos no RaptorPro",
     title: "Escolha seu próximo programa.",
-    body: "Escolha pelo seu momento: preparação de offseason, velocidade, manutenção durante a temporada ou retorno ao campo após a pubalgia.",
+    body: "Escolha pelo seu momento: força e potência na academia, preparação de offseason, velocidade, manutenção durante a temporada ou retorno ao campo.",
     recommendation: "Disponível na plataforma",
     reviews: "avaliações",
     price: "Pagamento único",
@@ -198,7 +229,7 @@ const copy = {
   en: {
     eyebrow: "Programs ready in RaptorPro",
     title: "Choose your next program.",
-    body: "Choose by your current goal: offseason preparation, speed, in-season maintenance or a structured return to football after pubalgia.",
+    body: "Choose by your current goal: gym-based strength and power, offseason preparation, speed, in-season maintenance or a structured return to football.",
     recommendation: "Available in the platform",
     reviews: "reviews",
     price: "One-time payment",
@@ -224,10 +255,12 @@ export function ProgramGoalFinder({
   const product = checkoutProducts.find(
     (item) => item.id === selectedGoal.productId
   );
-  const reviewGroup = reviewGroups[selectedGoal.reviewGroup];
+  const reviewGroup = selectedGoal.reviewGroup
+    ? reviewGroups[selectedGoal.reviewGroup]
+    : null;
   const page = copy[locale];
   const isDark = tone === "dark";
-  const price = product
+  const price = product && !(locale === "en" && product.checkout_country_lock === "BR")
     ? formatMoney(
         locale === "pt" ? product.price_brl : product.price_usd,
         locale === "pt" ? "BRL" : "USD"
@@ -262,7 +295,7 @@ export function ProgramGoalFinder({
         </p>
       </div>
 
-      <div className="mt-6 grid max-w-5xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid max-w-6xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {availableGoals.map((goal) => {
           const Icon = goal.icon;
           const selected = selectedGoal.id === goal.id;
@@ -378,6 +411,7 @@ export function ProgramGoalFinder({
               {selectedGoal.detail}
             </p>
 
+            {reviewGroup ? (
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <span
                 aria-hidden="true"
@@ -398,6 +432,7 @@ export function ProgramGoalFinder({
                 {page.reviews}
               </span>
             </div>
+            ) : null}
 
             <div
               className={`mt-5 flex items-end justify-between gap-4 border-t pt-5 ${

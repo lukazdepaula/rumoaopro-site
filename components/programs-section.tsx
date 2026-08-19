@@ -53,6 +53,7 @@ const getDisplayPrice = (
   currency: DisplayCurrency
 ) => {
   if (!product) return null;
+  if (currency === "USD" && product.checkout_country_lock === "BR") return null;
 
   const value =
     currency === "BRL" ? product.price_brl_estimated : product.base_price_usd;
@@ -70,7 +71,10 @@ const getProgramFeatures = (href: string, locale: "pt" | "en") => {
       calendar: "Calendário",
       matches: "Entre jogos",
       recovery: "Progressão",
-      app: "No app"
+      app: "No app",
+      strength: "Força",
+      power: "Potência",
+      sessions: "3 + 1 treinos"
     },
     en: {
       field: "Field",
@@ -80,7 +84,10 @@ const getProgramFeatures = (href: string, locale: "pt" | "en") => {
       calendar: "Calendar",
       matches: "Between games",
       recovery: "Progression",
-      app: "In the app"
+      app: "In the app",
+      strength: "Strength",
+      power: "Power",
+      sessions: "3 + 1 sessions"
     }
   }[locale];
 
@@ -90,6 +97,15 @@ const getProgramFeatures = (href: string, locale: "pt" | "en") => {
       [Activity, labels.field],
       [Dumbbell, labels.gym],
       [PlayCircle, labels.videos]
+    ] as const;
+  }
+
+  if (href.includes("power-pro")) {
+    return [
+      [Dumbbell, labels.gym],
+      [ShieldCheck, labels.strength],
+      [Activity, labels.power],
+      [CalendarDays, labels.sessions]
     ] as const;
   }
 
@@ -135,7 +151,7 @@ export function ProgramsSection({
       eyebrow: "Programas disponíveis",
       title: "Escolha o programa certo para o seu objetivo",
       body:
-        "Offseason 30 Days, Speed Pro e In-Season Pro estão disponíveis em português e inglês. De Volta aos Gramados está em português. Confira o idioma indicado em cada produto antes da compra.",
+        "Power Pro e De Volta aos Gramados estão disponíveis em português. Offseason 30 Days, Speed Pro e In-Season Pro estão disponíveis em português e inglês. Confira o idioma indicado antes da compra.",
       seeAll: "Ver todos",
       priceLabel: "Preço",
       currencyLabel: "Moeda de referência",
@@ -150,7 +166,7 @@ export function ProgramsSection({
       eyebrow: "Available programs",
       title: "Choose the right program for your goal",
       body:
-        "Offseason 30 Days, Speed Pro and In-Season Pro are available in English and Portuguese. Back to the Pitch is currently delivered in Portuguese.",
+        "Offseason 30 Days, Speed Pro and In-Season Pro are available in English and Portuguese. Power Pro and Back to the Pitch are currently delivered in Portuguese.",
       seeAll: "See all",
       priceLabel: "Price",
       currencyLabel: "Reference currency",

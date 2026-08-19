@@ -51,7 +51,7 @@ const entryCards = [
     image: assets.programsGameDuel,
     icon: Dumbbell,
     body:
-      "Offseason 30 Days, Speed Pro e In-Season Pro para cada fase da temporada.",
+      "Power Pro, Offseason 30 Days, Speed Pro e In-Season Pro para cada objetivo e fase da temporada.",
     cta: "Ver programas"
   },
   {
@@ -100,11 +100,11 @@ const productBlocks = [
     image: assets.sprintSide,
     imagePosition: "object-[64%_50%]",
     body:
-      "Offseason 30 Days, Speed Pro e In-Season Pro unem planejamento, vídeos e registro de treino em uma experiência interativa.",
+      "Power Pro, Offseason 30 Days, Speed Pro e In-Season Pro unem planejamento, vídeos e registro de treino em uma experiência interativa.",
     points: [
-      "Offseason 30 Days, Speed Pro e In-Season Pro",
+      "Power Pro, Offseason 30 Days, Speed Pro e In-Season Pro",
       "Calendário, vídeos, cargas, comentários e RPE",
-      "Português e inglês com acesso vitalício"
+      "Confira o idioma disponível em cada programa"
     ],
     href: "/programas",
     cta: "Comparar programas"
@@ -138,7 +138,7 @@ const seasonFlow = [
     step: "01",
     title: "Escolha seu programa",
     body:
-      "Escolha Offseason 30 Days, Speed Pro ou In-Season Pro de acordo com seu objetivo e momento da temporada."
+      "Escolha Power Pro, Offseason 30 Days, Speed Pro ou In-Season Pro de acordo com seu objetivo e momento da temporada."
   },
   {
     step: "02",
@@ -544,7 +544,7 @@ export default function HomePage() {
             </h2>
             <p className="mt-4 text-base leading-7 text-white/75">
               Se sua rotina muda toda semana, escolha a assessoria. Para treinar
-              com o Offseason 30 Days ou o Speed Pro, compre uma vez e acompanhe
+              com o Power Pro, Offseason 30 Days ou Speed Pro, compre uma vez e acompanhe
               o programa pelo RaptorPro. Os programas clássicos continuam no catálogo.
             </p>
           </div>

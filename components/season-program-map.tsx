@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
+  Dumbbell,
   Gauge,
   HeartPulse,
   ShieldCheck
@@ -28,6 +29,14 @@ const content = {
     mapEyebrow: "Mapa da temporada",
     mapTitle: "Escolha pelo seu momento, não pelo nome.",
     phases: [
+      {
+        label: "Só tenho academia",
+        title: "Construir força e potência",
+        body: "Power Pro · 12 semanas para desenvolver força, potência e físico atlético sem depender de campo.",
+        href: "/programas/power-pro",
+        icon: Dumbbell,
+        accent: "bg-red-600 text-white"
+      },
       {
         label: "Offseason",
         title: "Construir capacidade",
@@ -76,6 +85,14 @@ const content = {
     mapEyebrow: "Season map",
     mapTitle: "Choose by your moment, not just by the name.",
     phases: [
+      {
+        label: "Gym access only",
+        title: "Build strength and power",
+        body: "Power Pro · 12 weeks of gym training, delivered in Portuguese.",
+        href: "/programas/power-pro",
+        icon: Dumbbell,
+        accent: "bg-red-600 text-white"
+      },
       {
         label: "Offseason",
         title: "Build capacity",

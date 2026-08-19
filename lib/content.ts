@@ -620,7 +620,8 @@ export const shopifyProducts = {
   deVoltaAosGramados: "/checkout/de-volta-aos-gramados",
   projeto36: "/checkout/project-36",
   projeto362022: "/checkout/projeto-36-2022",
-  elanga: "/checkout/elanga-in-season"
+  elanga: "/checkout/elanga-in-season",
+  powerPro: "/checkout/power-pro"
 };
 
 export const legacyPortugueseProducts = {
@@ -681,6 +682,19 @@ export const programs = [
     image: assets.sprintSide,
     imageClass: "object-[64%_50%]",
     href: "/programas/projeto-36kmh",
+    cta: "Ver detalhes"
+  },
+  {
+    title: "Força & Potência — Power Pro",
+    tag: "Português",
+    duration: "12 semanas",
+    level: "Academia — força e potência",
+    body:
+      "12 semanas, 100% academia, para desenvolver força, potência e um físico atlético com uma progressão clara.",
+    outcomes: ["Academia", "Força e potência", "3 + 1 treinos"],
+    image: assets.programsGymBriefing,
+    imageClass: "object-[center_40%]",
+    href: "/programas/power-pro",
     cta: "Ver detalhes"
   },
   {
@@ -984,6 +998,19 @@ export const programsEn = [
     imageClass: "object-[64%_50%]",
     href: "/en/programs/project-36kmh",
     cta: "View page"
+  },
+  {
+    title: "Strength & Power — Power Pro",
+    tag: "Portuguese only",
+    duration: "12 weeks",
+    level: "Gym — strength and power",
+    body:
+      "A 100% gym-based progression for footballers who want to build strength, power and a more athletic physique. Delivered in Portuguese.",
+    outcomes: ["Gym-based training", "Strength and power", "Portuguese only"],
+    image: assets.programsGymBriefing,
+    imageClass: "object-[center_40%]",
+    href: "/programas/power-pro",
+    cta: "View Portuguese page"
   },
   {
     title: "In-Season Performance — In-Season Pro",

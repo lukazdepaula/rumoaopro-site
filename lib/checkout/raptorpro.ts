@@ -14,6 +14,9 @@ export const RAPTORPRO_ELANGA_PROGRAM_SLUG = "project-elanga-in-season";
 export const RAPTORPRO_DVG_PRODUCT_ID = "de_volta_aos_gramados_pt";
 export const RAPTORPRO_DVG_PROGRAM_ID = "commercial-program-de-volta-aos-gramados";
 export const RAPTORPRO_DVG_PROGRAM_SLUG = "de-volta-aos-gramados";
+export const RAPTORPRO_POWER_PRO_PRODUCT_ID = "power_pro";
+export const RAPTORPRO_POWER_PRO_PROGRAM_ID = "commercial-program-power-pro-v2";
+export const RAPTORPRO_POWER_PRO_PROGRAM_SLUG = "power-pro-v2";
 
 export type RaptorProProgramConfig = {
   productIds: string[];
@@ -46,6 +49,12 @@ const RAPTORPRO_PROGRAMS: RaptorProProgramConfig[] = [
     programId: RAPTORPRO_DVG_PROGRAM_ID,
     programSlug: RAPTORPRO_DVG_PROGRAM_SLUG,
     programTitle: "De Volta aos Gramados"
+  },
+  {
+    productIds: [RAPTORPRO_POWER_PRO_PRODUCT_ID],
+    programId: RAPTORPRO_POWER_PRO_PROGRAM_ID,
+    programSlug: RAPTORPRO_POWER_PRO_PROGRAM_SLUG,
+    programTitle: "Power Pro"
   }
 ];
 

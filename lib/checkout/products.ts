@@ -39,7 +39,8 @@ export const checkoutLinks = {
   deVoltaAosGramados: "/checkout/de-volta-aos-gramados",
   projeto36: "/checkout/project-36",
   projeto362022: "/checkout/projeto-36-2022",
-  elanga: "/checkout/elanga-in-season"
+  elanga: "/checkout/elanga-in-season",
+  powerPro: "/checkout/power-pro"
 };
 
 export const checkoutProducts: CheckoutProduct[] = [
@@ -145,6 +146,26 @@ export const checkoutProducts: CheckoutProduct[] = [
     delivery_type: "member_area",
     file_id: null,
     aliases: ["projeto-36kmh", "project-36kmh", "projeto-36-2022", "projeto-36", "projeto-36-12-semanas"],
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "power_pro",
+    name: "Força & Potência — Power Pro",
+    slug: "power-pro",
+    description:
+      "Programa de 12 semanas, 100% academia, para desenvolver força, potência e um físico atlético com uma progressão clara.",
+    language: "Portuguese",
+    type: "training_program",
+    ...fixedBrlProductPrice(39.9, 199.9),
+    active: true,
+    sales_page_path: "/programas/power-pro",
+    cover_image: "/assets/photos/programs/programs-gym-briefing.jpg",
+    delivery_type: "member_area",
+    file_id: null,
+    checkout_country_lock: "BR",
+    checkout_payment_methods: ["mercado_pago", "pix"],
+    discounts_enabled: false,
     created_at: now,
     updated_at: now
   },

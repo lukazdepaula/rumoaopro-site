@@ -48,6 +48,8 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   const productCopy = getLocalizedProductCopy(product, locale);
   const isLoadProSubscription = product.id === "loadpro_founders";
   const isCoachingSubscription = product.id === "online_coaching_monthly";
+  const isBrazilOnlyProgram =
+    product.type !== "subscription" && product.checkout_country_lock === "BR";
   const loadProWhatsapp = (process.env.NEXT_PUBLIC_LOADPRO_WHATSAPP || "5519992811078").replace(/\D/g, "");
   const subscriptionBenefits = isCoachingSubscription
     ? [
@@ -115,7 +117,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                   : "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
                 : isEnglish
                 ? "Pay securely in USD. Your program access is activated automatically after payment confirmation."
-                : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
+                : isBrazilOnlyProgram
+                  ? "Pague em reais com Pix ou cartão pelo Mercado Pago. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."
+                  : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
             </p>
           </div>
         </div>
@@ -152,6 +156,14 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                     "Automatic access after confirmation",
                     "Training materials protected in your account",
                     "Support directly from RumoAoPro"
+                  ]
+                : isBrazilOnlyProgram
+                ? [
+                    "Pagamento único de R$ 199,90",
+                    "Cartão pelo Mercado Pago no Brasil",
+                    "Pix com QR Code e aprovação rápida",
+                    "Acesso automático após a confirmação",
+                    "Pedido registrado no painel interno"
                   ]
                 : [
                     "CPF/CNPJ exigido apenas para Brasil",
