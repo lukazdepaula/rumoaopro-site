@@ -118,6 +118,7 @@ export const assets = {
   programsFieldControl: "/assets/photos/programs/programs-field-control.jpg",
   programsPlayerReady: "/assets/photos/programs/programs-player-ready.jpg",
   programsGymBriefing: "/assets/photos/programs/programs-gym-briefing.jpg",
+  powerProCover: "/assets/programs/power-pro/power-pro-cover-v2.png",
   programsJumpTest: "/assets/photos/programs/programs-jump-test.jpg",
   programsProMatch: "/assets/photos/programs/programs-pro-match.jpg",
   programsSprintChase: "/assets/photos/programs/programs-sprint-chase.jpg",
@@ -685,15 +686,15 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Força & Potência — Power Pro",
+    title: "Power Pro — Força, Potência e Hipertrofia",
     tag: "Português",
     duration: "12 semanas",
-    level: "Academia — força e potência",
+    level: "Academia — força, potência e hipertrofia",
     body:
-      "12 semanas, 100% academia, para desenvolver força, potência e um físico atlético com uma progressão clara.",
-    outcomes: ["Academia", "Força e potência", "3 + 1 treinos"],
-    image: assets.programsGymBriefing,
-    imageClass: "object-[center_40%]",
+      "12 semanas, 100% academia, para desenvolver força, potência, hipertrofia e um físico atlético com uma progressão clara.",
+    outcomes: ["Academia", "Força, potência e hipertrofia", "3 + 1 treinos"],
+    image: assets.powerProCover,
+    imageClass: "object-[center_35%]",
     href: "/programas/power-pro",
     cta: "Ver detalhes"
   },
@@ -1000,15 +1001,15 @@ export const programsEn = [
     cta: "View page"
   },
   {
-    title: "Strength & Power — Power Pro",
+    title: "Power Pro — Strength, Power & Hypertrophy",
     tag: "Portuguese only",
     duration: "12 weeks",
-    level: "Gym — strength and power",
+    level: "Gym — strength, power and hypertrophy",
     body:
-      "A 100% gym-based progression for footballers who want to build strength, power and a more athletic physique. Delivered in Portuguese.",
-    outcomes: ["Gym-based training", "Strength and power", "Portuguese only"],
-    image: assets.programsGymBriefing,
-    imageClass: "object-[center_40%]",
+      "A 100% gym-based progression for footballers who want to build strength, power, muscle and a more athletic physique. Delivered in Portuguese.",
+    outcomes: ["Gym-based training", "Strength, power and muscle", "Portuguese only"],
+    image: assets.powerProCover,
+    imageClass: "object-[center_35%]",
     href: "/programas/power-pro",
     cta: "View Portuguese page"
   },

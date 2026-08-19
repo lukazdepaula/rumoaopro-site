@@ -31,8 +31,8 @@ const content = {
     phases: [
       {
         label: "Só tenho academia",
-        title: "Construir força e potência",
-        body: "Power Pro · 12 semanas para desenvolver força, potência e físico atlético sem depender de campo.",
+        title: "Construir força, potência e massa muscular",
+        body: "Power Pro · 12 semanas para desenvolver força, potência, hipertrofia e físico atlético sem depender de campo.",
         href: "/programas/power-pro",
         icon: Dumbbell,
         accent: "bg-red-600 text-white"
@@ -87,8 +87,8 @@ const content = {
     phases: [
       {
         label: "Gym access only",
-        title: "Build strength and power",
-        body: "Power Pro · 12 weeks of gym training, delivered in Portuguese.",
+        title: "Build strength, power and muscle",
+        body: "Power Pro · 12 weeks of gym training for strength, power and hypertrophy, delivered in Portuguese.",
         href: "/programas/power-pro",
         icon: Dumbbell,
         accent: "bg-red-600 text-white"

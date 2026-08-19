@@ -50,6 +50,10 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   const isCoachingSubscription = product.id === "online_coaching_monthly";
   const isBrazilOnlyProgram =
     product.type !== "subscription" && product.checkout_country_lock === "BR";
+  const brazilPrice = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  }).format(product.price_brl);
   const loadProWhatsapp = (process.env.NEXT_PUBLIC_LOADPRO_WHATSAPP || "5519992811078").replace(/\D/g, "");
   const subscriptionBenefits = isCoachingSubscription
     ? [
@@ -159,7 +163,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                   ]
                 : isBrazilOnlyProgram
                 ? [
-                    "Pagamento único de R$ 199,90",
+                    `Pagamento único de ${brazilPrice}`,
                     "Cartão pelo Mercado Pago no Brasil",
                     "Pix com QR Code e aprovação rápida",
                     "Acesso automático após a confirmação",

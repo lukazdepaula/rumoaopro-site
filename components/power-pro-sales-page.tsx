@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ReviewsSection } from "@/components/reviews";
 import { nav, shopifyProducts } from "@/lib/content";
 
 const stats = [
@@ -59,9 +61,9 @@ const qualities = [
   },
   {
     icon: Sparkles,
-    title: "Físico do jogador",
+    title: "Hipertrofia funcional",
     body:
-      "Peito, costas, ombros e braços treinados com exercícios tradicionais, sem transformar o programa em uma ficha de fisiculturismo."
+      "Volume planejado para peito, costas, ombros, braços e pernas, construindo massa muscular útil para um físico mais forte e atlético."
   }
 ];
 
@@ -175,7 +177,7 @@ const included = [
 const comparisons = [
   {
     name: "Power Pro",
-    priority: "Força, potência e físico atlético",
+    priority: "Força, potência e hipertrofia funcional",
     environment: "100% academia",
     duration: "12 semanas",
     choice:
@@ -259,11 +261,11 @@ const faqs = [
 const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: "Força & Potência — Power Pro",
+  name: "Power Pro — Força, Potência e Hipertrofia",
   description:
-    "Programa de 12 semanas, 100% academia, para jogadores desenvolverem força, potência e um físico atlético com treinos no RaptorPro.",
+    "Programa de 12 semanas, 100% academia, para jogadores desenvolverem força, potência, hipertrofia e um físico atlético com treinos no RaptorPro.",
   image:
-    "https://rumoaopro.com/assets/photos/programs/programs-gym-briefing.jpg",
+    "https://rumoaopro.com/assets/programs/power-pro/power-pro-cover-v2.png",
   brand: {
     "@type": "Brand",
     name: "RumoAoPro"
@@ -271,7 +273,7 @@ const productSchema = {
   offers: {
     "@type": "Offer",
     priceCurrency: "BRL",
-    price: "199.90",
+    price: "199.00",
     availability: "https://schema.org/InStock",
     url: "https://rumoaopro.com/checkout/power-pro"
   }
@@ -297,27 +299,27 @@ export function PowerProSalesPage() {
 
       <section className="relative isolate overflow-hidden bg-ink text-white">
         <Image
-          alt="Treinador orientando atleta durante sessão de força na academia"
-          className="-z-20 object-cover object-[62%_35%] opacity-45"
+          alt="Lukaz de Paula jogando futebol"
+          className="-z-20 object-cover object-[center_42%] opacity-35"
           fill
           priority
           sizes="100vw"
-          src="/assets/photos/lukaz-gym-coaching-wide.jpg"
+          src="/assets/photos/lukaz-field-playing.jpg"
         />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,10,13,0.98)_0%,rgba(8,10,13,0.9)_45%,rgba(8,10,13,0.35)_100%)]" />
-        <div className="mx-auto grid min-h-[690px] max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:px-8">
-          <div className="max-w-3xl">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_82%_35%,rgba(204,20,40,0.25),transparent_31%),linear-gradient(90deg,rgba(8,10,13,0.98)_0%,rgba(8,10,13,0.9)_52%,rgba(8,10,13,0.68)_100%)]" />
+        <div className="mx-auto grid min-h-[720px] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8">
+          <div className="max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-red-300">
-              POWER PRO · RUMOAOPRO
+              POWER PRO · POTÊNCIA E HIPERTROFIA
             </p>
-            <h1 className="mt-5 font-display text-5xl uppercase leading-[0.95] sm:text-7xl lg:text-[5.7rem]">
-              Programa de força e potência para jogadores de futebol
+            <h1 className="mt-5 font-display text-4xl uppercase leading-[0.96] sm:text-5xl lg:text-[3.7rem]">
+              Força, potência e hipertrofia para o futebol
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-xl">
-              12 semanas, 100% academia, para construir força, potência e um físico mais atlético — mesmo quando você não tem campo para treinar.
+              12 semanas, 100% academia, com três treinos completos e uma sessão opcional para construir força, potência e massa muscular com progressão clara.
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
-              {["12 semanas", "3 fases progressivas", "3 treinos completos + 1 opcional", "100% academia", "Programa em português"].map((item) => (
+              {["12 semanas", "3 fases progressivas", "3 treinos + 1 opcional", "100% academia", "Força · potência · hipertrofia"].map((item) => (
                 <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white/85 backdrop-blur" key={item}>
                   {item}
                 </span>
@@ -333,8 +335,36 @@ export function PowerProSalesPage() {
               </Link>
             </div>
             <p className="mt-4 text-xs leading-5 text-white/55">
-              Pagamento único de R$ 199,90. Acesso digital pelo RaptorPro após a confirmação.
+              Pagamento único de R$ 199,00. Acesso digital pelo RaptorPro após a confirmação.
             </p>
+          </div>
+          <div className="relative mx-auto min-h-[550px] w-full max-w-[540px] sm:min-h-[610px]" aria-label="Power Pro no celular">
+            <div className="absolute left-[4%] top-3 w-[47%] -rotate-[7deg] sm:left-[7%] sm:w-[45%]">
+              <PhoneFrame label="Capa do programa Power Pro">
+                <Image
+                  alt="Capa Power Pro com Lukaz de Paula realizando levantamento terra"
+                  className="object-cover"
+                  fill
+                  priority
+                  sizes="260px"
+                  src="/assets/programs/power-pro/power-pro-cover-v2.png"
+                />
+              </PhoneFrame>
+            </div>
+            <div className="absolute bottom-[12%] right-0 z-10 w-[70%] rotate-[5deg] sm:bottom-[14%] sm:right-[1%] sm:w-[68%]">
+              <PhoneFrame label="Calendário do atleta no RaptorPro" orientation="landscape">
+                <Image
+                  alt="Calendário de treino do atleta no RaptorPro"
+                  className="object-cover"
+                  fill
+                  sizes="390px"
+                  src="/assets/programs/power-pro/power-pro-athlete-calendar-v2.png"
+                />
+              </PhoneFrame>
+            </div>
+            <div className="absolute bottom-14 left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/15 bg-black/75 px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-xl backdrop-blur sm:bottom-20">
+              Seu plano, semana por semana
+            </div>
           </div>
         </div>
       </section>
@@ -350,10 +380,17 @@ export function PowerProSalesPage() {
         </div>
       </section>
 
+      <ReviewsSection
+        eyebrow="Resultados da metodologia RumoAoPro"
+        groupKey="adama"
+        locale="pt"
+        title="Atletas que buscaram mais força e massa muscular."
+      />
+
       <section className="bg-white py-16 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div className="relative min-h-[430px] overflow-hidden rounded-2xl bg-ink shadow-card">
-            <Image alt="Sessão de treinamento de força para futebol na academia" className="object-cover object-[center_35%]" fill sizes="(max-width: 1023px) 100vw, 45vw" src="/assets/photos/lukaz-gym-instruction.jpg" />
+            <Image alt="Lukaz de Paula preparado para entrar em campo" className="object-cover object-[center_35%]" fill sizes="(max-width: 1023px) 100vw, 45vw" src="/assets/photos/programs/programs-player-ready.jpg" />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(0,0,0,0.75))]" />
           </div>
           <div>
@@ -372,7 +409,7 @@ export function PowerProSalesPage() {
       <section className="surface-gradient py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className={sectionLabel}>O que o programa desenvolve</p>
-          <h2 className={`${sectionTitle} max-w-4xl`}>Construa na academia o físico que o futebol exige.</h2>
+          <h2 className={`${sectionTitle} max-w-4xl`}>Potência, força e hipertrofia — tudo dentro da academia.</h2>
           <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {qualities.map(({ icon: Icon, title, body }) => (
               <article className="rounded-xl border border-ink/10 bg-white p-6 shadow-sm" key={title}>
@@ -388,7 +425,7 @@ export function PowerProSalesPage() {
       <section className="bg-ink py-16 text-white sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Para quem é</p>
-          <h2 className="mt-3 max-w-4xl font-display text-3xl uppercase leading-[1.02] sm:text-5xl">Feito para quem quer priorizar força e potência.</h2>
+          <h2 className="mt-3 max-w-4xl font-display text-3xl uppercase leading-[1.02] sm:text-5xl">Feito para quem quer força, potência e hipertrofia.</h2>
           <div className="mt-9 grid gap-5 lg:grid-cols-2">
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-6 sm:p-8">
               <h3 className="text-xl font-black text-emerald-200">Boa escolha</h3>
@@ -470,7 +507,7 @@ export function PowerProSalesPage() {
               </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111] p-2 shadow-2xl">
-              <Image alt="Calendário real do Power Pro organizado por semanas e sessões dentro do RaptorPro" className="h-auto w-full rounded-xl" height={1032} sizes="(max-width: 1023px) 100vw, 55vw" src="/assets/programs/power-pro/power-pro-raptorpro-calendar.png" width={1895} />
+              <Image alt="Tela real do atleta com o calendário do Power Pro organizado por semanas no RaptorPro" className="h-auto w-full rounded-xl" height={710} sizes="(max-width: 1023px) 100vw, 55vw" src="/assets/programs/power-pro/power-pro-athlete-calendar-v2.png" width={1265} />
             </div>
           </div>
         </div>
@@ -545,14 +582,14 @@ export function PowerProSalesPage() {
       <section className="relative overflow-hidden bg-signal py-16 text-white sm:py-24">
         <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-white/65">Power Pro</p>
-          <h2 className="mt-4 font-display text-4xl uppercase leading-[0.98] sm:text-6xl">Construa a força. Eleve a potência. Treine como atleta.</h2>
+          <h2 className="mt-4 font-display text-4xl uppercase leading-[0.98] sm:text-6xl">Construa força. Eleve a potência. Ganhe massa muscular.</h2>
           <div className="mx-auto mt-6 max-w-3xl space-y-3 text-base leading-7 text-white/78">
             <p>Você não precisa de mais exercícios aleatórios.</p>
             <p>Precisa de 12 semanas em que cada treino tenha uma função e cada fase prepare você para a próxima.</p>
             <p>Entre no Power Pro e construa na academia o físico que o futebol exige.</p>
           </div>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-white px-6 py-4 text-sm font-black text-ink transition hover:bg-smoke" href={checkoutHref}>Começar o Power Pro por R$ 199,90 <ArrowRight className="h-4 w-4" /></Link>
+            <Link className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-white px-6 py-4 text-sm font-black text-ink transition hover:bg-smoke" href={checkoutHref}>Começar o Power Pro por R$ 199,00 <ArrowRight className="h-4 w-4" /></Link>
             <Link className="focus-ring inline-flex min-h-14 items-center justify-center rounded-md border border-white/30 bg-white/10 px-6 py-4 text-sm font-black text-white transition hover:bg-white/20" href="/assessoria#aplicacao">Quero algo individual</Link>
           </div>
           <p className="mt-4 text-xs text-white/60">Pagamento único. Acesso digital pelo RaptorPro após a confirmação.</p>
@@ -561,5 +598,31 @@ export function PowerProSalesPage() {
 
       <SiteFooter />
     </main>
+  );
+}
+
+function PhoneFrame({
+  children,
+  label,
+  orientation = "portrait"
+}: {
+  children: ReactNode;
+  label: string;
+  orientation?: "portrait" | "landscape";
+}) {
+  const isLandscape = orientation === "landscape";
+
+  return (
+    <div
+      aria-label={label}
+      className={`relative overflow-hidden border-[5px] border-[#282828] bg-black p-[3px] shadow-[0_30px_75px_rgba(0,0,0,0.65)] ring-1 ring-white/20 ${isLandscape ? "aspect-[19.5/9] rounded-[2rem]" : "aspect-[9/19.5] rounded-[2.2rem]"}`}
+      role="img"
+    >
+      <div className={`${isLandscape ? "left-2 top-1/2 h-[42%] w-5 -translate-y-1/2" : "left-1/2 top-2 h-5 w-[42%] -translate-x-1/2"} absolute z-20 rounded-full bg-black`} />
+      <div className={`relative h-full w-full overflow-hidden bg-[#111] ${isLandscape ? "rounded-[1.5rem]" : "rounded-[1.72rem]"}`}>
+        {children}
+      </div>
+      <div className={`${isLandscape ? "right-2 top-1/2 h-[32%] w-1 -translate-y-1/2" : "bottom-2 left-1/2 h-1 w-[32%] -translate-x-1/2"} absolute z-20 rounded-full bg-white/80`} />
+    </div>
   );
 }

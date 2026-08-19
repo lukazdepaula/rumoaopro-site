@@ -44,15 +44,15 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
     {
       id: "power",
       label: "Só tenho academia",
-      prompt: "Quero força e potência",
-      displayName: "Força & Potência — Power Pro",
+      prompt: "Quero força, potência e hipertrofia",
+      displayName: "Power Pro — Força, Potência e Hipertrofia",
       coverTitle: "Power Pro",
       productId: "power_pro",
       href: "/programas/power-pro",
-      image: "/assets/photos/programs/programs-gym-briefing.jpg",
-      imagePosition: "object-[50%_40%]",
+      image: "/assets/programs/power-pro/power-pro-cover-v2.png",
+      imagePosition: "object-[50%_35%]",
       outcome:
-        "12 semanas, 100% academia, para jogadores que querem desenvolver força, potência e um físico mais atlético.",
+        "12 semanas, 100% academia, para jogadores que querem desenvolver força, potência, hipertrofia e um físico mais atlético.",
       detail: "12 semanas · português · 3 + 1 sessões · RaptorPro",
       icon: Dumbbell
     },
@@ -129,15 +129,15 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
     {
       id: "power",
       label: "Gym access only",
-      prompt: "Build strength and power",
-      displayName: "Strength & Power — Power Pro",
+      prompt: "Build strength, power and muscle",
+      displayName: "Power Pro — Strength, Power & Hypertrophy",
       coverTitle: "Power Pro",
       productId: "power_pro",
       href: "/programas/power-pro",
-      image: "/assets/photos/programs/programs-gym-briefing.jpg",
-      imagePosition: "object-[50%_40%]",
+      image: "/assets/programs/power-pro/power-pro-cover-v2.png",
+      imagePosition: "object-[50%_35%]",
       outcome:
-        "A 12-week, 100% gym-based program for footballers. The program is delivered in Portuguese.",
+        "A 12-week, 100% gym-based program for footballers who want strength, power and muscle. Delivered in Portuguese.",
       detail: "12 weeks · Portuguese only · 3 + 1 sessions · RaptorPro",
       icon: Dumbbell
     },
