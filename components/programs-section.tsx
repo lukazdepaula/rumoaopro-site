@@ -2,23 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  CalendarDays,
-  Dumbbell,
-  ExternalLink,
-  Gauge,
-  PlayCircle,
-  ShieldCheck
-} from "lucide-react";
+import { ArrowRight, ExternalLink, Star } from "lucide-react";
 import { useState } from "react";
 import { CtaButton } from "@/components/cta-button";
-import { ReviewBadge } from "@/components/reviews";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import type { CheckoutProduct } from "@/lib/checkout/types";
 import { programs, programsEn } from "@/lib/content";
-import { getReviewGroupForProgramHref } from "@/lib/reviews";
+import {
+  getReviewGroupForProgramHref,
+  reviewGroups
+} from "@/lib/reviews";
 
 type ProgramsSectionProps = {
   compact?: boolean;
@@ -61,78 +54,55 @@ const getDisplayPrice = (
   return formatMoney(value, currency);
 };
 
-const getProgramFeatures = (href: string, locale: "pt" | "en") => {
+const getProgramFocuses = (href: string, locale: "pt" | "en") => {
   const labels = {
     pt: {
-      field: "Campo",
-      gym: "Academia",
-      speed: "Velocidade",
-      videos: "Vídeos",
-      calendar: "Calendário",
-      matches: "Entre jogos",
-      recovery: "Progressão",
-      app: "No app",
+      endurance: "Resistência",
       strength: "Força",
+      speed: "Velocidade",
       power: "Potência",
-      sessions: "3 + 1 treinos"
+      hypertrophy: "Hipertrofia",
+      maintenance: "Manutenção",
+      return: "Retorno",
+      running: "Corrida"
     },
     en: {
-      field: "Field",
-      gym: "Gym",
-      speed: "Speed",
-      videos: "Videos",
-      calendar: "Calendar",
-      matches: "Between games",
-      recovery: "Progression",
-      app: "In the app",
+      endurance: "Endurance",
       strength: "Strength",
+      speed: "Speed",
       power: "Power",
-      sessions: "3 + 1 sessions"
+      hypertrophy: "Hypertrophy",
+      maintenance: "Maintenance",
+      return: "Return",
+      running: "Running"
     }
   }[locale];
 
-  if (href.includes("projeto-36") || href.includes("project-36")) {
-    return [
-      [Gauge, labels.speed],
-      [Activity, labels.field],
-      [Dumbbell, labels.gym],
-      [PlayCircle, labels.videos]
-    ] as const;
+  if (href.includes("offseason-30-days")) {
+    return [labels.endurance, labels.strength, labels.speed];
   }
 
-  if (href.includes("power-pro")) {
-    return [
-      [Dumbbell, labels.gym],
-      [ShieldCheck, labels.strength],
-      [Activity, labels.power],
-      [CalendarDays, labels.sessions]
-    ] as const;
+  if (href.includes("projeto-36") || href.includes("project-36")) {
+    return [labels.strength, labels.speed, labels.power];
+  }
+
+  if (
+    href.includes("power-pro") ||
+    href.includes("projeto-adama") ||
+    href.includes("adama-strength-power")
+  ) {
+    return [labels.hypertrophy, labels.strength, labels.power];
   }
 
   if (href.includes("elanga-in-season")) {
-    return [
-      [CalendarDays, labels.calendar],
-      [ShieldCheck, labels.matches],
-      [Dumbbell, labels.gym],
-      [Activity, labels.speed]
-    ] as const;
+    return [labels.maintenance, labels.strength, labels.speed];
   }
 
   if (href.includes("de-volta-aos-gramados")) {
-    return [
-      [ShieldCheck, labels.recovery],
-      [Dumbbell, labels.gym],
-      [Activity, labels.field],
-      [PlayCircle, labels.app]
-    ] as const;
+    return [labels.return, labels.running, labels.strength];
   }
 
-  return [
-    [CalendarDays, labels.calendar],
-    [Activity, labels.field],
-    [Dumbbell, labels.gym],
-    [PlayCircle, labels.videos]
-  ] as const;
+  return [labels.strength, labels.speed, labels.power];
 };
 
 export function ProgramsSection({
@@ -154,6 +124,8 @@ export function ProgramsSection({
         "Power Pro e De Volta aos Gramados estão disponíveis em português. Offseason 30 Days, Speed Pro e In-Season Pro estão disponíveis em português e inglês. Confira o idioma indicado antes da compra.",
       seeAll: "Ver todos",
       priceLabel: "Preço",
+      focusLabel: "Foco",
+      reviewsLabel: "avaliações",
       currencyLabel: "Moeda de referência",
       chooseEyebrow: "Assessoria esportiva",
       chooseTitle: "Sua rotina muda. Seu treinamento também deve mudar.",
@@ -169,6 +141,8 @@ export function ProgramsSection({
         "Offseason 30 Days, Speed Pro and In-Season Pro are available in English and Portuguese. Power Pro and Back to the Pitch are currently delivered in Portuguese.",
       seeAll: "See all",
       priceLabel: "Price",
+      focusLabel: "Focus",
+      reviewsLabel: "reviews",
       currencyLabel: "Reference currency",
       chooseEyebrow: "Online coaching",
       chooseTitle: "Your routine changes. Your training should too.",
@@ -239,9 +213,12 @@ export function ProgramsSection({
             const isExternal =
               !program.href.startsWith("/") && !program.href.startsWith("#");
             const reviewGroupKey = getReviewGroupForProgramHref(program.href);
+            const reviewGroup = reviewGroupKey
+              ? reviewGroups[reviewGroupKey]
+              : null;
             const product = findCheckoutProduct(program.href);
             const displayPrice = getDisplayPrice(product, currency);
-            const features = getProgramFeatures(program.href, locale);
+            const focuses = getProgramFocuses(program.href, locale);
 
             const content = (
               <article
@@ -265,46 +242,65 @@ export function ProgramsSection({
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col p-5">
-                    <div className="flex min-h-[54px] flex-wrap items-start justify-between gap-3">
-                      <p className="max-w-[180px] text-xs font-bold uppercase leading-5 text-signal">
+                    <div className="grid min-h-[76px] grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                      <p className="pr-1 text-xs font-bold uppercase leading-5 text-signal">
                         {program.level}
                       </p>
                       {displayPrice ? (
-                        <div className="text-right">
+                        <div className="min-w-[112px] text-right">
                           <p className="text-[11px] font-bold uppercase text-graphite/45">
                             {copy.priceLabel}
                           </p>
                           <p className="text-lg font-bold text-ink">
                             {displayPrice}
                           </p>
+                          {reviewGroup ? (
+                            <div
+                              aria-label={`${reviewGroup.average.toFixed(1)} / 5 · ${reviewGroup.count} ${copy.reviewsLabel}`}
+                              className="mt-1.5 flex items-center justify-end gap-1.5"
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="inline-flex gap-px text-signal"
+                              >
+                                {Array.from({ length: 5 }).map((_, index) => (
+                                  <Star
+                                    className="h-2.5 w-2.5 fill-current"
+                                    key={index}
+                                  />
+                                ))}
+                              </span>
+                              <span className="text-[10px] font-bold text-graphite/60">
+                                {reviewGroup.average.toFixed(1)} ·{" "}
+                                {reviewGroup.count}
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
-                    {reviewGroupKey ? (
-                      <ReviewBadge
-                        className="mt-3"
-                        groupKey={reviewGroupKey}
-                        locale={locale}
-                      />
-                    ) : null}
                     <h3 className="mt-3 min-h-[56px] text-xl font-bold leading-7 text-ink">
                       {program.title}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-graphite/70">
                       {program.body}
                     </p>
-                    <div className="mt-5 grid grid-cols-2 gap-2 border-t border-ink/10 pt-4">
-                      {features.map(([Icon, label]) => (
-                        <span
-                          className="inline-flex min-h-9 items-center gap-2 rounded-md bg-smoke px-2.5 text-[10px] font-bold uppercase leading-4 text-graphite/70"
-                          key={label}
-                        >
-                          <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-signal" />
-                          {label}
-                        </span>
-                      ))}
+                    <div className="mt-auto border-t border-ink/10 pt-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-graphite/45">
+                        {copy.focusLabel}
+                      </p>
+                      <div className="mt-2 grid grid-cols-3 gap-1.5">
+                        {focuses.map((focus) => (
+                          <span
+                            className="inline-flex min-h-9 items-center justify-center rounded-md bg-smoke px-1.5 text-center text-[9px] font-black uppercase leading-4 tracking-[0.04em] text-graphite/68"
+                            key={focus}
+                          >
+                            {focus}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="mt-auto inline-flex pt-5 text-sm font-bold text-ink">
+                    <p className="inline-flex pt-5 text-sm font-bold text-ink">
                       {program.cta}
                       {isExternal ? (
                         <ExternalLink

@@ -31,43 +31,38 @@ const content = {
     phases: [
       {
         label: "Só tenho academia",
-        title: "Construir força, potência e massa muscular",
+        title: "Construir força e potência",
         body: "Power Pro · 12 semanas para desenvolver força, potência, hipertrofia e físico atlético sem depender de campo.",
         href: "/programas/power-pro",
-        icon: Dumbbell,
-        accent: "bg-red-600 text-white"
+        icon: Dumbbell
       },
       {
         label: "Offseason",
         title: "Construir capacidade",
         body: "Speed Pro · força, potência, aceleração e velocidade.",
         href: "/programas/projeto-36kmh",
-        icon: Gauge,
-        accent: "bg-lime-300 text-[#07100b]"
+        icon: Gauge
       },
       {
         label: "30 dias finais",
         title: "Chegar pronto à pré-temporada",
         body: "Offseason 30 Days · campo, academia e condicionamento.",
         href: "/programas/offseason-30-days",
-        icon: CalendarClock,
-        accent: "bg-blue-600 text-white"
+        icon: CalendarClock
       },
       {
         label: "Temporada competitiva",
         title: "Manter sem atrapalhar os jogos",
         body: "In-Season Pro · dose de força, potência e velocidade entre partidas.",
         href: "/programas/elanga-in-season",
-        icon: ShieldCheck,
-        accent: "bg-orange-500 text-white"
+        icon: ShieldCheck
       },
       {
         label: "Quando necessário",
         title: "Reconstruir o retorno ao campo",
         body: "De Volta aos Gramados · progressão após liberação profissional.",
         href: "/programas/de-volta-aos-gramados",
-        icon: HeartPulse,
-        accent: "bg-emerald-500 text-white"
+        icon: HeartPulse
       }
     ]
   },
@@ -90,40 +85,35 @@ const content = {
         title: "Build strength, power and muscle",
         body: "Power Pro · 12 weeks of gym training for strength, power and hypertrophy, delivered in Portuguese.",
         href: "/programas/power-pro",
-        icon: Dumbbell,
-        accent: "bg-red-600 text-white"
+        icon: Dumbbell
       },
       {
         label: "Offseason",
         title: "Build capacity",
         body: "Speed Pro · strength, power, acceleration and top speed.",
         href: "/en/programs/project-36kmh",
-        icon: Gauge,
-        accent: "bg-lime-300 text-[#07100b]"
+        icon: Gauge
       },
       {
         label: "Final 30 days",
         title: "Arrive ready for preseason",
         body: "Offseason 30 Days · field, gym and conditioning work.",
         href: "/en/programs/offseason-30-days",
-        icon: CalendarClock,
-        accent: "bg-blue-600 text-white"
+        icon: CalendarClock
       },
       {
         label: "Competitive season",
         title: "Maintain without fighting match demands",
         body: "In-Season Pro · strength, power and speed between matches.",
         href: "/en/programs/elanga-in-season",
-        icon: ShieldCheck,
-        accent: "bg-orange-500 text-white"
+        icon: ShieldCheck
       },
       {
         label: "When needed",
         title: "Rebuild the return to football",
         body: "Back to the Pitch · progression after professional clearance.",
         href: "/en/programs/de-volta-aos-gramados",
-        icon: HeartPulse,
-        accent: "bg-emerald-500 text-white"
+        icon: HeartPulse
       }
     ]
   }
@@ -156,14 +146,14 @@ export function SeasonProgramMap({ locale }: SeasonProgramMapProps) {
           >
             <Image
               alt={page.featureTitle}
-              className="h-full w-full object-cover object-[64%_50%] transition duration-700 group-hover:scale-105"
+              className="h-full w-full object-cover object-[64%_50%] saturate-[0.78] contrast-[1.04] transition duration-700 group-hover:scale-105"
               fill
               sizes="(max-width: 1023px) 100vw, 45vw"
-              src={assets.sprintSide}
+              src={assets.programsProject36Sprint}
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05)_15%,rgba(0,0,0,0.28)_48%,rgba(0,0,0,0.94)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_12%,rgba(0,0,0,0.38)_50%,rgba(0,0,0,0.96)_100%)]" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-lime-300">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-white/58">
                 {page.featureEyebrow}
               </p>
               <h3 className="mt-3 max-w-lg font-display text-3xl uppercase leading-none sm:text-5xl">
@@ -179,7 +169,7 @@ export function SeasonProgramMap({ locale }: SeasonProgramMapProps) {
             </div>
           </Link>
 
-          <div className="rounded-2xl border border-ink/10 bg-smoke p-5 sm:p-7">
+          <div className="rounded-2xl border border-ink/10 bg-[#f4f4f5] p-5 sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-signal">
               {page.mapEyebrow}
             </p>
@@ -197,7 +187,7 @@ export function SeasonProgramMap({ locale }: SeasonProgramMapProps) {
                     href={phase.href}
                     key={phase.label}
                   >
-                    <span className={`relative z-10 grid h-12 w-12 place-items-center rounded-xl sm:h-14 sm:w-14 ${phase.accent}`}>
+                    <span className="relative z-10 grid h-12 w-12 place-items-center rounded-xl bg-ink text-white transition group-hover:bg-signal sm:h-14 sm:w-14">
                       <Icon aria-hidden="true" className="h-5 w-5" />
                     </span>
                     <span>

@@ -652,23 +652,6 @@ export const programs = [
     cta: "Ver detalhes"
   },
   {
-    title: "Adama Offseason Strength & Power",
-    tag: "Conteúdo em inglês",
-    duration: "12 semanas",
-    level: "Offseason - força e potência",
-    body:
-      "Construa força, potência e presença física para voltar mais forte, mais explosivo e melhor preparado para os duelos.",
-    outcomes: [
-      "Base sólida na offseason",
-      "Força e potência para o jogo",
-      "Conteúdo do programa em inglês"
-    ],
-    image: assets.programsJumpTest,
-    imageClass: "object-[center_48%]",
-    href: "/programas/adama-strength-power",
-    cta: "Ver detalhes"
-  },
-  {
     title: "Velocidade & Aceleração — Speed Pro",
     tag: "Português e inglês",
     duration: "12 semanas",
@@ -680,7 +663,7 @@ export const programs = [
       "Velocidade aplicada ao futebol",
       "Disponível em português e inglês"
     ],
-    image: assets.sprintSide,
+    image: assets.programsProject36Sprint,
     imageClass: "object-[64%_50%]",
     href: "/programas/projeto-36kmh",
     cta: "Ver detalhes"
@@ -732,7 +715,7 @@ export const programs = [
     href: "/programas/de-volta-aos-gramados",
     cta: "Ver detalhes"
   }
-].filter((program) => program.href !== "/programas/adama-strength-power");
+].filter((program) => program.href !== "/programas/de-volta-aos-gramados");
 
 export const programsPtLegacy = [
   {
