@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   ADMIN_COOKIE_NAME,
-  adminCookieOptions
+  ADMIN_MFA_PENDING_COOKIE_NAME,
+  ADMIN_MFA_RECOVERY_COOKIE_NAME,
+  adminCookieOptions,
+  adminMfaPendingCookieOptions,
+  adminMfaRecoveryCookieOptions
 } from "@/lib/checkout/admin-auth";
 import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
@@ -18,6 +22,18 @@ export async function POST(request: Request) {
     name: ADMIN_COOKIE_NAME,
     value: "",
     ...adminCookieOptions(),
+    maxAge: 0
+  });
+  response.cookies.set({
+    name: ADMIN_MFA_PENDING_COOKIE_NAME,
+    value: "",
+    ...adminMfaPendingCookieOptions(),
+    maxAge: 0
+  });
+  response.cookies.set({
+    name: ADMIN_MFA_RECOVERY_COOKIE_NAME,
+    value: "",
+    ...adminMfaRecoveryCookieOptions(),
     maxAge: 0
   });
   response.headers.set("Cache-Control", "no-store");

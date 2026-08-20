@@ -99,9 +99,19 @@ create table if not exists public.admin_accounts (
   password_hash text not null,
   active boolean not null default true,
   password_updated_at timestamptz not null default now(),
+  mfa_secret_encrypted text,
+  mfa_enabled_at timestamptz,
+  mfa_updated_at timestamptz,
+  mfa_last_used_step bigint,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.admin_accounts
+  add column if not exists mfa_secret_encrypted text,
+  add column if not exists mfa_enabled_at timestamptz,
+  add column if not exists mfa_updated_at timestamptz,
+  add column if not exists mfa_last_used_step bigint;
 
 create index if not exists idx_admin_accounts_email
   on public.admin_accounts(email);
@@ -120,8 +130,22 @@ create index if not exists idx_admin_password_reset_tokens_hash
 create index if not exists idx_admin_password_reset_tokens_email
   on public.admin_password_reset_tokens(email);
 
+create table if not exists public.admin_mfa_recovery_codes (
+  id text primary key,
+  email text not null references public.admin_accounts(email) on delete cascade,
+  code_hash text not null unique,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_admin_mfa_recovery_codes_email
+  on public.admin_mfa_recovery_codes(email);
+create index if not exists idx_admin_mfa_recovery_codes_active
+  on public.admin_mfa_recovery_codes(email, used_at);
+
 alter table public.admin_accounts enable row level security;
 alter table public.admin_password_reset_tokens enable row level security;
+alter table public.admin_mfa_recovery_codes enable row level security;
 
 create table if not exists public.entitlements (
   id text primary key,

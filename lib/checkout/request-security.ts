@@ -42,3 +42,22 @@ export function requestClientIp(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwarded || request.headers.get("x-real-ip") || "unknown";
 }
+
+export async function readUrlEncodedForm(
+  request: Request,
+  maxBytes: number
+) {
+  const rawBody = await request.text();
+  if (new TextEncoder().encode(rawBody).byteLength > maxBytes) {
+    return { ok: false as const, tooLarge: true as const };
+  }
+
+  try {
+    return {
+      ok: true as const,
+      form: new URLSearchParams(rawBody)
+    };
+  } catch {
+    return { ok: false as const, tooLarge: false as const };
+  }
+}

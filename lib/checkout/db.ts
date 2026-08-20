@@ -178,6 +178,10 @@ function migrate(db: SqliteDatabase) {
       password_hash TEXT NOT NULL,
       active INTEGER NOT NULL DEFAULT 1,
       password_updated_at TEXT NOT NULL,
+      mfa_secret_encrypted TEXT,
+      mfa_enabled_at TEXT,
+      mfa_updated_at TEXT,
+      mfa_last_used_step INTEGER,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -197,6 +201,19 @@ function migrate(db: SqliteDatabase) {
       ON admin_password_reset_tokens(token_hash);
     CREATE INDEX IF NOT EXISTS idx_admin_password_reset_tokens_email
       ON admin_password_reset_tokens(email);
+
+    CREATE TABLE IF NOT EXISTS admin_mfa_recovery_codes (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      code_hash TEXT NOT NULL UNIQUE,
+      used_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_mfa_recovery_codes_email
+      ON admin_mfa_recovery_codes(email);
+    CREATE INDEX IF NOT EXISTS idx_admin_mfa_recovery_codes_active
+      ON admin_mfa_recovery_codes(email, used_at);
 
     CREATE TABLE IF NOT EXISTS admin_push_subscriptions (
       id TEXT PRIMARY KEY,
@@ -276,6 +293,10 @@ function migrate(db: SqliteDatabase) {
   ensureColumn(db, "products", "cover_image", "cover_image TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "orders", "user_id", "user_id TEXT");
   ensureColumn(db, "orders", "exchange_rate_used", "exchange_rate_used REAL");
+  ensureColumn(db, "admin_accounts", "mfa_secret_encrypted", "mfa_secret_encrypted TEXT");
+  ensureColumn(db, "admin_accounts", "mfa_enabled_at", "mfa_enabled_at TEXT");
+  ensureColumn(db, "admin_accounts", "mfa_updated_at", "mfa_updated_at TEXT");
+  ensureColumn(db, "admin_accounts", "mfa_last_used_step", "mfa_last_used_step INTEGER");
   db.exec("CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);");
 }
 
@@ -442,6 +463,10 @@ export type AdminAccountRecord = {
   password_hash: string;
   active: boolean;
   password_updated_at: string;
+  mfa_secret_encrypted: string | null;
+  mfa_enabled_at: string | null;
+  mfa_updated_at: string | null;
+  mfa_last_used_step: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -470,6 +495,22 @@ function normalizeAdminAccount(row: Record<string, unknown>): AdminAccountRecord
     active:
       typeof row.active === "boolean" ? row.active : Number(row.active) === 1,
     password_updated_at: String(row.password_updated_at),
+    mfa_secret_encrypted:
+      row.mfa_secret_encrypted === null || row.mfa_secret_encrypted === undefined
+        ? null
+        : String(row.mfa_secret_encrypted),
+    mfa_enabled_at:
+      row.mfa_enabled_at === null || row.mfa_enabled_at === undefined
+        ? null
+        : String(row.mfa_enabled_at),
+    mfa_updated_at:
+      row.mfa_updated_at === null || row.mfa_updated_at === undefined
+        ? null
+        : String(row.mfa_updated_at),
+    mfa_last_used_step:
+      row.mfa_last_used_step === null || row.mfa_last_used_step === undefined
+        ? null
+        : Number(row.mfa_last_used_step),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
   };
@@ -1615,6 +1656,10 @@ export async function saveAdminAccountPassword(
     password_hash: passwordHash,
     active: true,
     password_updated_at: timestamp,
+    mfa_secret_encrypted: existing?.mfa_secret_encrypted || null,
+    mfa_enabled_at: existing?.mfa_enabled_at || null,
+    mfa_updated_at: existing?.mfa_updated_at || null,
+    mfa_last_used_step: existing?.mfa_last_used_step ?? null,
     created_at: existing?.created_at || timestamp,
     updated_at: timestamp
   };
@@ -1651,6 +1696,167 @@ export async function saveAdminAccountPassword(
     );
 
   return getAdminAccountByEmail(normalizedEmail);
+}
+
+export async function saveAdminMfaSetup(input: {
+  email: string;
+  encryptedSecret: string;
+  recoveryCodeHashes: string[];
+}) {
+  const email = normalizeEmail(input.email);
+  const timestamp = nowIso();
+  const recoveryCodes = input.recoveryCodeHashes.map((codeHash) => ({
+    id: randomUUID(),
+    email,
+    code_hash: codeHash,
+    used_at: null,
+    created_at: timestamp
+  }));
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("admin_mfa_recovery_codes", {
+      method: "DELETE",
+      query: eq("email", email),
+      prefer: "return=minimal"
+    });
+    await supabaseRequest("admin_mfa_recovery_codes", {
+      method: "POST",
+      body: recoveryCodes,
+      prefer: "return=minimal"
+    });
+    const rows = await supabaseRequest<Record<string, unknown>[]>("admin_accounts", {
+      method: "PATCH",
+      query: eq("email", email),
+      body: {
+        mfa_secret_encrypted: input.encryptedSecret,
+        mfa_enabled_at: timestamp,
+        mfa_updated_at: timestamp,
+        mfa_last_used_step: null,
+        updated_at: timestamp
+      },
+      prefer: "return=representation"
+    });
+    return rows[0] ? normalizeAdminAccount(rows[0]) : null;
+  }
+
+  const db = getDatabase();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare("DELETE FROM admin_mfa_recovery_codes WHERE email = ?").run(email);
+    const insertCode = db.prepare(
+      `INSERT INTO admin_mfa_recovery_codes
+        (id, email, code_hash, used_at, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    for (const code of recoveryCodes) {
+      insertCode.run(
+        code.id,
+        code.email,
+        code.code_hash,
+        code.used_at,
+        code.created_at
+      );
+    }
+    db.prepare(
+      `UPDATE admin_accounts
+       SET mfa_secret_encrypted = ?, mfa_enabled_at = ?, mfa_updated_at = ?,
+           mfa_last_used_step = NULL, updated_at = ?
+       WHERE email = ?`
+    ).run(input.encryptedSecret, timestamp, timestamp, timestamp, email);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getAdminAccountByEmail(email);
+}
+
+export async function consumeAdminMfaStep(emailValue: string, step: number) {
+  const email = normalizeEmail(emailValue);
+
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>("admin_accounts", {
+      method: "PATCH",
+      query: `${eq("email", email)}&mfa_enabled_at=not.is.null&or=(mfa_last_used_step.is.null,mfa_last_used_step.lt.${step})`,
+      body: { mfa_last_used_step: step },
+      prefer: "return=representation"
+    });
+    return rows[0] ? normalizeAdminAccount(rows[0]) : null;
+  }
+
+  const result = getDatabase()
+    .prepare(
+      `UPDATE admin_accounts
+       SET mfa_last_used_step = ?
+       WHERE email = ? AND mfa_enabled_at IS NOT NULL
+         AND (mfa_last_used_step IS NULL OR mfa_last_used_step < ?)`
+    )
+    .run(step, email, step);
+  return result.changes === 1 ? getAdminAccountByEmail(email) : null;
+}
+
+export async function consumeAdminMfaRecoveryCode(
+  emailValue: string,
+  codeHash: string
+) {
+  const email = normalizeEmail(emailValue);
+  const timestamp = nowIso();
+
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_mfa_recovery_codes",
+      {
+        query: selectQuery([
+          eq("email", email),
+          eq("code_hash", codeHash),
+          "used_at=is.null",
+          "limit=1"
+        ])
+      }
+    );
+    const row = rows[0];
+    if (!row) return false;
+    const consumedRows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_mfa_recovery_codes",
+      {
+        method: "PATCH",
+        query: `${eq("id", String(row.id))}&used_at=is.null`,
+        body: { used_at: timestamp },
+        prefer: "return=representation"
+      }
+    );
+    return consumedRows.length === 1;
+  }
+
+  const result = getDatabase()
+    .prepare(
+      `UPDATE admin_mfa_recovery_codes SET used_at = ?
+       WHERE email = ? AND code_hash = ? AND used_at IS NULL`
+    )
+    .run(timestamp, email, codeHash);
+  return result.changes === 1;
+}
+
+export async function countAdminMfaRecoveryCodes(emailValue: string) {
+  const email = normalizeEmail(emailValue);
+
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>(
+      "admin_mfa_recovery_codes",
+      {
+        query: selectQuery([eq("email", email), "used_at=is.null", "limit=20"])
+      }
+    );
+    return rows.length;
+  }
+
+  const row = getDatabase()
+    .prepare(
+      "SELECT COUNT(*) AS count FROM admin_mfa_recovery_codes WHERE email = ? AND used_at IS NULL"
+    )
+    .get(email);
+  return Number(row?.count || 0);
 }
 
 async function getAdminPushSubscriptionByEndpoint(endpoint: string) {

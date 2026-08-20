@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   ADMIN_COOKIE_NAME,
+  adminAccountAuthVersion,
   adminCookieOptions,
   createAdminSessionValue,
   getAdminRequestSession,
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
   const sessionValue = createAdminSessionValue(
     session.email,
-    account.password_updated_at
+    adminAccountAuthVersion(account)
   );
   if (!sessionValue) return accountRedirect(request, "password");
 
