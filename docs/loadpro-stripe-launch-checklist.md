@@ -30,6 +30,8 @@ Enable the Stripe Customer Portal in production with:
 - Subscription cancellation enabled.
 - Cancellation scheduled for the end of the current billing period.
 - A return URL under `https://loadpro.rumoaopro.com.br/`.
+- Customer-initiated plan switching disabled; LoadPro uses its authenticated,
+  explicit-confirmation upgrade flow so trials are not ended early.
 
 ## Release smoke tests
 
@@ -43,3 +45,7 @@ Enable the Stripe Customer Portal in production with:
 6. Send `customer.subscription.deleted` and confirm access is no longer active
    after the paid period ends.
 7. Confirm existing lifetime coaches remain unchanged.
+8. On Fundadores 30, attempt the 31st player and confirm the upgrade dialog opens
+   without changing Stripe or the entitlement.
+9. Confirm Fundadores 50 during a trial and verify the original trial end remains,
+   the first invoice changes to R$69.90, and the team limit becomes 50.

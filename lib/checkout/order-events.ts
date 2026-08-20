@@ -78,6 +78,14 @@ async function syncLoadProSafely(
         typeof gatewayData.event_id === "string"
           ? gatewayData.event_id
           : null,
+      planCode:
+        typeof gatewayData.plan_code === "string"
+          ? gatewayData.plan_code
+          : null,
+      priceCents:
+        typeof gatewayData.price_cents === "number"
+          ? gatewayData.price_cents
+          : null,
       invite
     });
     await updateOrderGatewayIds(order.id, {

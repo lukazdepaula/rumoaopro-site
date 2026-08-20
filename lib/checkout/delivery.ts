@@ -14,7 +14,7 @@ import {
   sendProgramAccessEmail
 } from "@/lib/checkout/email";
 import { getSiteUrl } from "@/lib/checkout/payments";
-import { getProductById } from "@/lib/checkout/products";
+import { getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import { getRaptorProProgramConfig, isRaptorProProgramOrder } from "@/lib/checkout/raptorpro";
 import type { CheckoutProduct, Order } from "@/lib/checkout/types";
 
@@ -99,7 +99,7 @@ export async function deliverOrder(orderId: string) {
     return;
   }
 
-  if (product.id === "loadpro_founders") {
+  if (isLoadProProductId(product.id)) {
     if (order.metadata.loadpro_provisioning_status !== "synced") {
       await updateDeliveryStatus(order.id, "manual_required", {
         reason: "loadpro_provisioning_not_confirmed"
@@ -110,7 +110,12 @@ export async function deliverOrder(orderId: string) {
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
-      appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
+      appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br",
+      productName: product.name,
+      teamLimit: product.team_limit || 2,
+      playersPerTeamLimit: product.players_per_team_limit || 30,
+      amount: order.amount,
+      currency: order.currency
     });
     if (!emailSent) {
       await updateDeliveryStatus(order.id, "manual_required", {

@@ -54,6 +54,9 @@ function stripeCatalogPriceId(order: Order, product: CheckoutProduct) {
   if (product.id === "loadpro_founders") {
     return requireEnv("STRIPE_LOADPRO_FOUNDERS_PRICE_ID");
   }
+  if (product.id === "loadpro_founders_50") {
+    return requireEnv("STRIPE_LOADPRO_FOUNDERS_50_PRICE_ID");
+  }
   return null;
 }
 
@@ -619,6 +622,42 @@ export async function fetchStripeSubscription(subscriptionId: string) {
   >;
   if (!response.ok) {
     throw new PaymentGatewayError("Não foi possível confirmar a assinatura Stripe.", {
+      status: response.status,
+      payload
+    });
+  }
+  return payload;
+}
+
+export async function changeStripeLoadProPlan(input: {
+  subscriptionId: string;
+  subscriptionItemId: string;
+  planCode: "loadpro_founders_50";
+}) {
+  const secretKey = requireEnv("STRIPE_SECRET_KEY");
+  const priceId = requireEnv("STRIPE_LOADPRO_FOUNDERS_50_PRICE_ID");
+  const params = new URLSearchParams({
+    "items[0][id]": input.subscriptionItemId,
+    "items[0][price]": priceId,
+    proration_behavior: "none",
+    "metadata[plan_code]": input.planCode,
+    "metadata[product_id]": input.planCode
+  });
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(input.subscriptionId)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Idempotency-Key": `loadpro-plan-change:${input.subscriptionId}:${input.planCode}`
+      },
+      body: params
+    }
+  );
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok) {
+    throw new PaymentGatewayError("Não foi possível trocar o plano na Stripe.", {
       status: response.status,
       payload
     });

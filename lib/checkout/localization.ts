@@ -5,9 +5,15 @@ const englishProductCopy: Record<
   { description: string; name?: string; salesPagePath: string }
 > = {
   "loadpro-founders": {
-    name: "LoadPro · Founding Coaches Plan",
+    name: "LoadPro · Founders 30",
     description:
       "Monthly LoadPro subscription for planning microcycles, collecting readiness and RPE, and reporting across up to two teams.",
+    salesPagePath: "https://loadpro.rumoaopro.com.br/"
+  },
+  "loadpro-founders-50": {
+    name: "LoadPro · Founders 50",
+    description:
+      "Monthly LoadPro subscription for planning microcycles, collecting readiness and RPE, and reporting across up to two larger squads.",
     salesPagePath: "https://loadpro.rumoaopro.com.br/"
   },
   "offseason-30-days": {

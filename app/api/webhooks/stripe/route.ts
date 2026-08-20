@@ -20,6 +20,7 @@ import {
   trackMetaPurchase,
   trackMetaStartTrial
 } from "@/lib/marketing/order-events";
+import { isLoadProOrder } from "@/lib/checkout/loadpro";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,11 @@ function subscriptionFields(
   object: Record<string, unknown>,
   fallbackStatus?: string
 ) {
+  const metadata = metadataOf(object);
+  const items = recordOf(object.items);
+  const data = Array.isArray(items.data) ? items.data : [];
+  const firstItem = recordOf(data[0]);
+  const price = recordOf(firstItem.price);
   return {
     provider_subscription_status: textValue(object.status) || fallbackStatus,
     current_period_start:
@@ -85,7 +91,10 @@ function subscriptionFields(
       typeof object.trial_end === "number" ? object.trial_end : undefined,
     cancel_at_period_end: object.cancel_at_period_end === true,
     canceled_at:
-      typeof object.canceled_at === "number" ? object.canceled_at : undefined
+      typeof object.canceled_at === "number" ? object.canceled_at : undefined,
+    plan_code: textValue(metadata.plan_code),
+    price_cents:
+      typeof price.unit_amount === "number" ? price.unit_amount : undefined
   };
 }
 
@@ -225,7 +234,7 @@ export async function POST(request: Request) {
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(subscription || {}, subscriptionStatus)
         });
-        if (order.product_id !== "loadpro_founders") {
+        if (!isLoadProOrder(order)) {
           await trackMetaPurchase(order, {
             eventId: `purchase:${order.id}`,
             amount:
@@ -242,7 +251,7 @@ export async function POST(request: Request) {
       const amountPaid =
         typeof object.amount_paid === "number" ? object.amount_paid : null;
       const zeroValueTrialInvoice =
-        order.product_id === "loadpro_founders" &&
+        isLoadProOrder(order) &&
         amountPaid === 0 &&
         Number(order.metadata.trial_days || 0) > 0;
 

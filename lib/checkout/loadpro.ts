@@ -5,7 +5,7 @@ import {
   sendLoadProPasswordRecoveryEmail,
   sendLoadProTrialInviteEmail
 } from "@/lib/checkout/email";
-import { getProductById } from "@/lib/checkout/products";
+import { getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import type { Order } from "@/lib/checkout/types";
 
 type LoadProSubscriptionStatus =
@@ -28,6 +28,8 @@ type SyncInput = {
   providerSubscriptionId?: string | null;
   invite?: boolean;
   eventId?: string | null;
+  planCode?: string | null;
+  priceCents?: number | null;
 };
 
 export type LoadProBillingAccess = {
@@ -52,7 +54,7 @@ export type LoadProBillingAccess = {
 };
 
 export function isLoadProOrder(order: Order) {
-  return order.product_id === "loadpro_founders";
+  return isLoadProProductId(order.product_id);
 }
 
 function config() {
@@ -334,7 +336,24 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     return { handled: true, configured: true, lifetime: true };
   }
 
-  const product = getProductById(order.product_id);
+  const metadataPlanCode = typeof order.metadata.subscription_plan_code === "string"
+    ? order.metadata.subscription_plan_code
+    : null;
+  const planCode = isLoadProProductId(input.planCode)
+    ? input.planCode
+    : isLoadProProductId(metadataPlanCode)
+      ? metadataPlanCode
+      : order.product_id;
+  const product = getProductById(planCode);
+  if (!product || !isLoadProProductId(product.id)) {
+    throw new Error(`Unknown LoadPro plan: ${planCode}`);
+  }
+  const configuredPrice = order.currency === "BRL"
+    ? product.price_brl
+    : product.base_price_usd;
+  const priceCents = typeof input.priceCents === "number" && Number.isFinite(input.priceCents)
+    ? input.priceCents
+    : Math.round(configuredPrice * 100);
   const currentPeriodEnd =
     input.status === "active" || input.status === "canceled"
       ? periodEnd(input.currentPeriodEnd)
@@ -358,15 +377,15 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
         email,
         status: input.status,
         access_kind: "subscription",
-        plan_code: order.product_id,
+        plan_code: planCode,
         current_period_end: currentPeriodEnd,
         billing_provider: order.gateway,
         provider_customer_id: input.providerCustomerId || null,
         provider_subscription_id: providerSubscriptionId,
         order_id: order.id,
         team_limit: product?.team_limit || 2,
-        players_per_team_limit: product?.players_per_team_limit || 25,
-        price_cents: Math.round(order.amount * 100),
+        players_per_team_limit: product.players_per_team_limit || 30,
+        price_cents: priceCents,
         currency: order.currency,
         price_locked: product?.founding_price_lock === true,
         metadata: {
@@ -374,6 +393,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
           gateway: order.gateway,
           event_id: input.eventId || null,
           provider_subscription_status: input.providerSubscriptionStatus || null,
+          plan_code: planCode,
           current_period_start: input.currentPeriodStart || null,
           trial_start: input.trialStart || null,
           trial_end: input.trialEnd || null,
@@ -394,7 +414,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     order.id,
     "loadpro.access.synced",
     `Acesso LoadPro atualizado para ${input.status}.`,
-    { currentPeriodEnd, providerSubscriptionId }
+    { currentPeriodEnd, providerSubscriptionId, planCode, priceCents }
   );
 
   if (input.invite && input.status === "active") {

@@ -296,8 +296,15 @@ export async function sendLoadProAccessEmail(input: {
   to: string;
   name: string;
   appUrl: string;
+  productName: string;
+  teamLimit: number;
+  playersPerTeamLimit: number;
+  amount: number;
+  currency: string;
 }) {
   const appUrl = escapeHtml(input.appUrl.replace(/\/$/, ""));
+  const planName = escapeHtml(input.productName);
+  const price = formatEmailMoney(input.amount, input.currency, "pt");
   return sendEmail({
     to: input.to,
     subject: "Seu acesso ao LoadPro está liberado",
@@ -310,7 +317,7 @@ export async function sendLoadProAccessEmail(input: {
         </div>
         <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
           <p>Fala, ${escapeHtml(input.name)}.</p>
-          <p>Seu Plano Treinadores Fundadores foi confirmado. Ele inclui até <strong>2 equipes</strong>, com até <strong>30 atletas por equipe</strong>, pelo preço fundador de <strong>R$ 49,90/mês</strong> enquanto a assinatura permanecer ativa.</p>
+          <p>Seu <strong>${planName}</strong> foi confirmado. Ele inclui até <strong>${input.teamLimit} equipes</strong>, com até <strong>${input.playersPerTeamLimit} atletas por equipe</strong>, pelo preço fundador de <strong>${price}/mês</strong> enquanto a assinatura permanecer ativa.</p>
           <p>Se este for seu primeiro acesso, você também receberá um convite para definir sua senha com segurança.</p>
           <p style="margin:24px 0"><a href="${appUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Abrir o LoadPro</a></p>
           <p style="color:#68707d;font-size:13px">Nunca envie sua senha por e-mail, WhatsApp ou suporte.</p>

@@ -7,7 +7,7 @@ import { CheckoutForm } from "@/components/checkout-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
-import { getProductBySlug } from "@/lib/checkout/products";
+import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +46,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   }
 
   const productCopy = getLocalizedProductCopy(product, locale);
-  const isLoadProSubscription = product.id === "loadpro_founders";
+  const isLoadProSubscription = isLoadProProductId(product.id);
   const isCoachingSubscription = product.id === "online_coaching_monthly";
   const isBrazilOnlyProgram =
     product.type !== "subscription" && product.checkout_country_lock === "BR";
@@ -65,15 +65,15 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
       ]
     : isEnglish
       ? [
-          "Founding plan billed monthly",
-          "Up to 2 teams and 30 athletes per team",
+          `Founding plan billed at ${brazilPrice} per month`,
+          `Up to ${product.team_limit || 2} teams and ${product.players_per_team_limit || 30} players per team`,
           "Founding price locked while your subscription remains active",
           "Secure invitation sent after confirmation",
           "Cancel whenever you need"
         ]
       : [
-          "Plano fundador de R$ 49,90 por mês",
-          "Até 2 equipes e 30 atletas por equipe",
+          `Plano fundador de ${brazilPrice} por mês`,
+          `Até ${product.team_limit || 2} equipes e ${product.players_per_team_limit || 30} atletas por equipe`,
           "Preço protegido enquanto a assinatura permanecer ativa",
           "Convite seguro enviado após a confirmação",
           "Pedido e assinatura acompanhados no admin RumoAoPro"
@@ -139,6 +139,8 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             <h2 className="mt-5 text-xl font-bold text-ink">
               {isCoachingSubscription
                 ? "Assinatura e dados protegidos"
+                : isLoadProSubscription
+                  ? isEnglish ? "Protected payment and access" : "Pagamento e acesso protegidos"
                 : isEnglish
                   ? "Protected payment and access"
                   : "Compra e acesso protegidos"}
@@ -146,6 +148,10 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             <p className="mt-3 text-sm leading-6 text-graphite/72">
               {isCoachingSubscription
                 ? "O pagamento é processado pela Stripe. Após a confirmação, sua inscrição fica registrada no admin e a equipe recebe seus dados para iniciar o atendimento."
+                : isLoadProSubscription
+                  ? isEnglish
+                    ? "Payment is securely processed by Stripe. Your LoadPro access and selected squad limit are synchronized after confirmation."
+                    : "O pagamento é processado com segurança pela Stripe. Após a confirmação, o acesso ao LoadPro e o limite do plano escolhido são sincronizados automaticamente."
                 : isEnglish
                 ? `Payment is securely processed by Stripe. ${productCopy.name} appears in your account after confirmation.`
                 : "Seus dados são enviados diretamente aos provedores de pagamento. O programa aparece na sua conta após a confirmação da compra."}
