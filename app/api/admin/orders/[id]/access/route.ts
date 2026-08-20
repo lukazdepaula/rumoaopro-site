@@ -47,12 +47,24 @@ export async function POST(
   const magicLink = new URL("/api/auth/verify", request.url);
   magicLink.searchParams.set("token", login.token);
 
-  await sendMagicLoginEmail({
+  const delivered = await sendMagicLoginEmail({
     to: order.customer_email,
     name: order.customer_name,
     loginUrl: magicLink.toString(),
     orderId: order.id
   });
+  if (!delivered) {
+    await appendOrderLog(
+      order.id,
+      "access.link_failed",
+      "Falha ao reenviar o link de acesso pelo admin."
+    );
+    return NextResponse.redirect(
+      new URL(`/admin/orders/${id}?access=error`, request.url),
+      303
+    );
+  }
+
   await appendOrderLog(
     order.id,
     "access.link_sent",

@@ -28,7 +28,13 @@ export async function POST(request: Request) {
     });
     const resetUrl = new URL("/admin/reset-password", request.url);
     resetUrl.searchParams.set("token", token);
-    await sendAdminPasswordResetEmail({ to: email, resetUrl: resetUrl.toString() });
+    const delivered = await sendAdminPasswordResetEmail({
+      to: email,
+      resetUrl: resetUrl.toString()
+    });
+    if (!delivered) {
+      throw new Error("Falha ao enviar convite de administrador.");
+    }
     redirectUrl.searchParams.set("invited", "1");
   } catch (error) {
     console.error("[admin.team.invite]", error);

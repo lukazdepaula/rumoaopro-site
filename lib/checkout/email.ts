@@ -8,9 +8,10 @@ type EmailInput = {
 };
 
 export function isEmailDeliveryConfigured() {
+  if (process.env.NODE_ENV !== "production") return true;
   return (
-    process.env.EMAIL_PROVIDER === "resend" &&
-    Boolean(process.env.RESEND_API_KEY)
+    process.env.EMAIL_PROVIDER?.trim().toLowerCase() === "resend" &&
+    Boolean(process.env.RESEND_API_KEY?.trim())
   );
 }
 
@@ -38,14 +39,19 @@ const formatEmailMoney = (
   }).format(amount);
 
 export async function sendEmail(input: EmailInput) {
-  const provider = process.env.EMAIL_PROVIDER || "mock";
+  const provider = (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
 
   try {
-    if (provider === "resend" && process.env.RESEND_API_KEY) {
+    if (provider === "resend") {
+      const apiKey = process.env.RESEND_API_KEY?.trim();
+      if (!apiKey) {
+        throw new Error("RESEND_API_KEY ausente.");
+      }
+
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -58,10 +64,7 @@ export async function sendEmail(input: EmailInput) {
       });
 
       if (!response.ok) {
-        const responseBody = await response.text().catch(() => "");
-        throw new Error(
-          `Resend retornou ${response.status}${responseBody ? `: ${responseBody}` : "."}`
-        );
+        throw new Error(`Resend retornou ${response.status}.`);
       }
 
       if (input.orderId) {
@@ -71,6 +74,10 @@ export async function sendEmail(input: EmailInput) {
         });
       }
       return true;
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("EMAIL_PROVIDER deve ser 'resend' em produção.");
     }
 
     console.info("[email:mock]", {
@@ -234,13 +241,13 @@ export async function sendPdfDeliveryEmail(input: {
   productName: string;
   downloadUrl: string;
 }) {
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: `Seu acesso - ${input.productName}`,
     orderId: input.orderId,
     html: `
-      <p>Fala, ${input.name}.</p>
-      <p>Pagamento confirmado. Seu acesso ao produto <strong>${input.productName}</strong> está liberado.</p>
+      <p>Fala, ${escapeHtml(input.name)}.</p>
+      <p>Pagamento confirmado. Seu acesso ao produto <strong>${escapeHtml(input.productName)}</strong> está liberado.</p>
       <p><a href="${input.downloadUrl}">Clique aqui para baixar o material</a>.</p>
       <p>Esse link é temporário por segurança. Se expirar, responda este e-mail ou peça reenvio pelo suporte.</p>
     `
@@ -255,7 +262,7 @@ export async function sendOnboardingEmail(input: {
 }) {
   const isCoachingSubscription = input.productName.includes("Assessoria Online RumoAoPro");
 
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: isCoachingSubscription
       ? "Assessoria RumoAoPro confirmada · próximos passos"
@@ -291,7 +298,7 @@ export async function sendLoadProAccessEmail(input: {
   appUrl: string;
 }) {
   const appUrl = escapeHtml(input.appUrl.replace(/\/$/, ""));
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: "Seu acesso ao LoadPro está liberado",
     orderId: input.orderId,
@@ -358,13 +365,13 @@ export async function sendProgramAccessEmail(input: {
   productName: string;
   accountUrl: string;
 }) {
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: `Acesso liberado - ${input.productName}`,
     orderId: input.orderId,
     html: `
-      <p>Fala, ${input.name}.</p>
-      <p>Pagamento confirmado. Seu acesso ao programa <strong>${input.productName}</strong> foi liberado.</p>
+      <p>Fala, ${escapeHtml(input.name)}.</p>
+      <p>Pagamento confirmado. Seu acesso ao programa <strong>${escapeHtml(input.productName)}</strong> foi liberado.</p>
       <p><a href="${input.accountUrl}">Clique aqui para acessar sua biblioteca</a>.</p>
     `
   });
@@ -376,12 +383,12 @@ export async function sendMagicLoginEmail(input: {
   loginUrl: string;
   orderId?: string;
 }) {
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: "Seu link de acesso RumoAoPro",
     orderId: input.orderId,
     html: `
-      <p>Fala${input.name ? `, ${input.name}` : ""}.</p>
+      <p>Fala${input.name ? `, ${escapeHtml(input.name)}` : ""}.</p>
       <p>Use o link abaixo para entrar na sua conta RumoAoPro:</p>
       <p><a href="${input.loginUrl}">Entrar na minha conta</a></p>
       <p>Esse link expira em alguns minutos por segurança.</p>
@@ -393,7 +400,7 @@ export async function sendAdminPasswordResetEmail(input: {
   to: string;
   resetUrl: string;
 }) {
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject: "Crie ou redefina sua senha de admin RumoAoPro",
     html: `

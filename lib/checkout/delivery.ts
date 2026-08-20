@@ -25,11 +25,12 @@ export function privateFilesDir() {
 }
 
 function downloadSecret() {
-  return (
-    process.env.SIGNED_DOWNLOAD_SECRET ||
-    process.env.ADMIN_SESSION_SECRET ||
-    "development-download-secret"
-  );
+  const configured = process.env.SIGNED_DOWNLOAD_SECRET?.trim();
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === "production") return null;
+
+  return process.env.ADMIN_SESSION_SECRET?.trim() || "development-download-secret";
 }
 
 export function privateFilePath(product: CheckoutProduct) {
@@ -39,11 +40,13 @@ export function privateFilePath(product: CheckoutProduct) {
 
 export function createSignedDownloadUrl(order: Order, product: CheckoutProduct) {
   if (!product.file_id) return null;
+  const secret = downloadSecret();
+  if (!secret) return null;
 
   const expires = Math.floor(Date.now() / 1000) + dayInSeconds;
   const payload = `${order.id}.${product.file_id}.${expires}`;
   const signature = crypto
-    .createHmac("sha256", downloadSecret())
+    .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
 
@@ -59,13 +62,15 @@ export function verifySignedDownload(input: {
   signature: string | null;
 }) {
   if (!input.expires || !input.signature) return false;
+  const secret = downloadSecret();
+  if (!secret) return false;
   const expiresNumber = Number(input.expires);
   if (!Number.isFinite(expiresNumber)) return false;
   if (expiresNumber < Math.floor(Date.now() / 1000)) return false;
 
   const payload = `${input.orderId}.${input.fileId}.${expiresNumber}`;
   const expected = crypto
-    .createHmac("sha256", downloadSecret())
+    .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
 
@@ -101,12 +106,18 @@ export async function deliverOrder(orderId: string) {
       });
       return;
     }
-    await sendLoadProAccessEmail({
+    const emailSent = await sendLoadProAccessEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
     });
+    if (!emailSent) {
+      await updateDeliveryStatus(order.id, "manual_required", {
+        reason: "email_delivery_failed"
+      });
+      return;
+    }
     await updateDeliveryStatus(order.id, "delivered", {
       delivery_type: "loadpro_access"
     });
@@ -141,13 +152,19 @@ export async function deliverOrder(orderId: string) {
       ? `${getSiteUrl()}/api/auth/verify?token=${login.token}&next=${encodeURIComponent(accountPath)}`
       : `${getSiteUrl()}${accountPath}`;
 
-    await sendProgramAccessEmail({
+    const emailSent = await sendProgramAccessEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       productName: product.name,
       accountUrl
     });
+    if (!emailSent) {
+      await updateDeliveryStatus(order.id, "manual_required", {
+        reason: "email_delivery_failed"
+      });
+      return;
+    }
     await updateDeliveryStatus(order.id, "delivered", {
       delivery_type: "member_area"
     });
@@ -172,13 +189,19 @@ export async function deliverOrder(orderId: string) {
       return;
     }
 
-    await sendPdfDeliveryEmail({
+    const emailSent = await sendPdfDeliveryEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       productName: product.name,
       downloadUrl
     });
+    if (!emailSent) {
+      await updateDeliveryStatus(order.id, "manual_required", {
+        reason: "email_delivery_failed"
+      });
+      return;
+    }
     await updateDeliveryStatus(order.id, "delivered", {
       download_url_expires_in_seconds: dayInSeconds
     });
@@ -186,12 +209,18 @@ export async function deliverOrder(orderId: string) {
   }
 
   if (product.delivery_type === "onboarding_email") {
-    await sendOnboardingEmail({
+    const emailSent = await sendOnboardingEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       productName: product.name
     });
+    if (!emailSent) {
+      await updateDeliveryStatus(order.id, "manual_required", {
+        reason: "email_delivery_failed"
+      });
+      return;
+    }
     await updateDeliveryStatus(order.id, "delivered");
     return;
   }

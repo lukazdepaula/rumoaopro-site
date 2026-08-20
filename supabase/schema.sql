@@ -320,6 +320,54 @@ on conflict(id) do update set
   is_active = excluded.is_active,
   updated_at = now();
 
+-- Security baseline: the application accesses public tables server-side with
+-- SUPABASE_SERVICE_ROLE_KEY. Auth and Storage use separate schemas.
+do $$
+declare
+  protected_table record;
+begin
+  for protected_table in
+    select schemaname, tablename
+    from pg_tables
+    where schemaname = 'public'
+  loop
+    execute format(
+      'alter table %I.%I enable row level security',
+      protected_table.schemaname,
+      protected_table.tablename
+    );
+  end loop;
+end
+$$;
+
+revoke all privileges on all tables in schema public
+  from public, anon, authenticated;
+revoke all privileges on all sequences in schema public
+  from public, anon, authenticated;
+revoke execute on all functions in schema public
+  from public, anon, authenticated;
+
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant execute on all functions in schema public to service_role;
+
+alter default privileges for role postgres in schema public
+  revoke all on tables from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  grant all on tables to service_role;
+alter default privileges for role postgres in schema public
+  revoke all on sequences from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  grant all on sequences to service_role;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  grant execute on functions to service_role;
+
+comment on column public.customer_login_tokens.token is
+  'SHA-256 hash of the one-time login token; legacy plaintext rows expire naturally.';
+
 insert into public.program_materials (
   id, product_id, title, description, type, sort_order, is_active,
   file_path_private, external_url, created_at, updated_at

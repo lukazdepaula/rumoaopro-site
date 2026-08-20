@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import {
   CUSTOMER_COOKIE_NAME,
   createCustomerSessionValue,
-  customerCookieOptions
+  customerCookieOptions,
+  isCustomerAuthConfigured
 } from "@/lib/checkout/customer-auth";
 import { consumeCustomerLoginToken } from "@/lib/checkout/db";
 
@@ -23,17 +24,28 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${siteUrl}/login?error=missing-token`);
   }
 
+  if (!isCustomerAuthConfigured()) {
+    console.error("[auth.verify] CUSTOMER_SESSION_SECRET ausente em produção.");
+    return NextResponse.redirect(`${siteUrl}/login?error=unavailable`);
+  }
+
   const user = await consumeCustomerLoginToken(token);
   if (!user) {
     return NextResponse.redirect(`${siteUrl}/login?error=invalid-token`);
   }
 
+  const sessionValue = createCustomerSessionValue(user.id);
+  if (!sessionValue) {
+    return NextResponse.redirect(`${siteUrl}/login?error=unavailable`);
+  }
+
   const response = NextResponse.redirect(`${siteUrl}${redirectPath}`);
   response.cookies.set(
     CUSTOMER_COOKIE_NAME,
-    createCustomerSessionValue(user.id),
+    sessionValue,
     customerCookieOptions()
   );
+  response.headers.set("Cache-Control", "no-store");
 
   return response;
 }

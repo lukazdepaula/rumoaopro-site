@@ -3,3 +3,10 @@ packages:
 
 allowBuilds:
   sharp: true
+
+# Keep transitive build tooling on patched releases. The same overrides remain
+# in package.json for the pnpm 9 version pinned by packageManager.
+overrides:
+  nanoid: 3.3.18
+  postcss: 8.5.23
+  sharp: 0.35.3

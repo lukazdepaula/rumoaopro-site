@@ -4,26 +4,39 @@ import { redirect } from "next/navigation";
 import { getUserById } from "@/lib/checkout/db";
 
 export const CUSTOMER_COOKIE_NAME = "rap_customer_session";
+const CUSTOMER_SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 function customerSecret() {
+  const configured = process.env.CUSTOMER_SESSION_SECRET?.trim();
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === "production") return null;
+
   return (
-    process.env.CUSTOMER_SESSION_SECRET ||
-    process.env.ADMIN_SESSION_SECRET ||
+    process.env.ADMIN_SESSION_SECRET?.trim() ||
     "development-customer-session-secret"
   );
 }
 
 function sign(payload: string) {
+  const secret = customerSecret();
+  if (!secret) return null;
+
   return crypto
-    .createHmac("sha256", customerSecret())
+    .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
 }
 
+export function isCustomerAuthConfigured() {
+  return Boolean(customerSecret());
+}
+
 export function createCustomerSessionValue(userId: string) {
-  const expires = Date.now() + 1000 * 60 * 60 * 24 * 30;
+  const expires = Date.now() + CUSTOMER_SESSION_MAX_AGE * 1000;
   const payload = `${userId}.${expires}`;
-  return `${payload}.${sign(payload)}`;
+  const signature = sign(payload);
+  return signature ? `${payload}.${signature}` : null;
 }
 
 export function isValidCustomerSession(value?: string | null) {
@@ -37,6 +50,7 @@ export function isValidCustomerSession(value?: string | null) {
 
   const payload = `${userId}.${expires}`;
   const expected = sign(payload);
+  if (!expected) return null;
   const left = Buffer.from(signature, "hex");
   const right = Buffer.from(expected, "hex");
 
@@ -75,6 +89,7 @@ export function customerCookieOptions() {
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30
+    maxAge: CUSTOMER_SESSION_MAX_AGE,
+    priority: "high" as const
   };
 }

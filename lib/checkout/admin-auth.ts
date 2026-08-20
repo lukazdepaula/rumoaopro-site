@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAdminPasswordHash } from "@/lib/checkout/admin-password";
 import { getAdminAccountByEmail } from "@/lib/checkout/db";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
 export const ADMIN_COOKIE_NAME = "rap_admin_session";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 4;
@@ -204,6 +205,13 @@ export async function requireAdmin(returnTo?: string) {
 }
 
 export async function getAdminRequestSession(request: Request) {
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase()) &&
+    !isSameSiteRequest(request)
+  ) {
+    return null;
+  }
+
   const cookieHeader = request.headers.get("cookie") || "";
   const match = cookieHeader
     .split(";")

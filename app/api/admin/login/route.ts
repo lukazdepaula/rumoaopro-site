@@ -11,11 +11,16 @@ import {
   clearAdminLoginFailures,
   recordAdminLoginFailure
 } from "@/lib/checkout/admin-login-rate-limit";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!isSameSiteRequest(request)) {
+    return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");

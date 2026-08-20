@@ -10,11 +10,16 @@ import {
 } from "@/lib/checkout/admin-login-rate-limit";
 import { createAdminPasswordResetToken } from "@/lib/checkout/db";
 import { sendAdminPasswordResetEmail } from "@/lib/checkout/email";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!isSameSiteRequest(request)) {
+    return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const redirectUrl = new URL("/admin/forgot-password?sent=1", request.url);

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { checkoutProducts } from "@/lib/checkout/products";
 import type {
@@ -42,6 +42,8 @@ const { DatabaseSync } = require("node:sqlite") as {
 let database: SqliteDatabase | null = null;
 
 const nowIso = () => new Date().toISOString();
+const hashCustomerLoginToken = (token: string) =>
+  createHash("sha256").update(token).digest("hex");
 
 function databasePath() {
   return (
@@ -1985,6 +1987,7 @@ export async function createCustomerLoginToken(email: string, name?: string | nu
   if (!user) return null;
 
   const token = randomUUID();
+  const tokenHash = hashCustomerLoginToken(token);
   const createdAt = nowIso();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 20).toISOString();
 
@@ -1994,7 +1997,7 @@ export async function createCustomerLoginToken(email: string, name?: string | nu
       body: {
         id: randomUUID(),
         user_id: user.id,
-        token,
+        token: tokenHash,
         expires_at: expiresAt,
         created_at: createdAt
       },
@@ -2010,51 +2013,73 @@ export async function createCustomerLoginToken(email: string, name?: string | nu
        (id, user_id, token, expires_at, created_at)
        VALUES (?, ?, ?, ?, ?)`
     )
-    .run(randomUUID(), user.id, token, expiresAt, createdAt);
+    .run(randomUUID(), user.id, tokenHash, expiresAt, createdAt);
 
   return { token, user, expiresAt };
 }
 
 export async function consumeCustomerLoginToken(token: string) {
+  const tokenHash = hashCustomerLoginToken(token);
+  const timestamp = nowIso();
+
   if (useSupabaseDriver()) {
-    const rows = await supabaseRequest<Record<string, unknown>[]>(
-      "customer_login_tokens",
-      {
-        query: selectQuery([
-          eq("token", token),
-          `expires_at=gt.${encodeURIComponent(nowIso())}`,
-          "limit=1"
-        ])
+    // The raw-token lookup keeps links issued shortly before this hardening
+    // deploy working. New rows contain only the SHA-256 hash.
+    for (const storedToken of [tokenHash, token]) {
+      const rows = await supabaseRequest<Record<string, unknown>[]>(
+        "customer_login_tokens",
+        {
+          query: selectQuery([
+            eq("token", storedToken),
+            "used_at=is.null",
+            `expires_at=gt.${encodeURIComponent(timestamp)}`,
+            "limit=1"
+          ])
+        }
+      );
+
+      const row = rows[0];
+      if (!row) continue;
+
+      const consumedRows = await supabaseRequest<Record<string, unknown>[]>(
+        "customer_login_tokens",
+        {
+          method: "PATCH",
+          query: `${eq("id", String(row.id))}&used_at=is.null&expires_at=gt.${encodeURIComponent(timestamp)}`,
+          body: { used_at: timestamp },
+          prefer: "return=representation"
+        }
+      );
+
+      if (consumedRows.length > 0) {
+        return getUserById(String(row.user_id));
       }
-    );
+    }
 
-    const row = rows[0];
-    if (!row) return null;
-
-    await supabaseRequest("customer_login_tokens", {
-      method: "PATCH",
-      query: eq("token", token),
-      body: {
-        used_at: nowIso()
-      },
-      prefer: "return=minimal"
-    });
-
-    return getUserById(String(row.user_id));
+    return null;
   }
 
   const row = getDatabase()
     .prepare(
       `SELECT * FROM customer_login_tokens
-       WHERE token = ? AND expires_at > ?`
+       WHERE token IN (?, ?)
+         AND used_at IS NULL
+         AND expires_at > ?
+       LIMIT 1`
     )
-    .get(token, nowIso());
+    .get(tokenHash, token, timestamp);
 
   if (!row) return null;
 
-  getDatabase()
-    .prepare("UPDATE customer_login_tokens SET used_at = ? WHERE token = ?")
-    .run(nowIso(), token);
+  const result = getDatabase()
+    .prepare(
+      `UPDATE customer_login_tokens
+       SET used_at = ?
+       WHERE id = ? AND used_at IS NULL AND expires_at > ?`
+    )
+    .run(timestamp, String(row.id), timestamp);
+
+  if (result.changes !== 1) return null;
 
   return getUserById(String(row.user_id));
 }

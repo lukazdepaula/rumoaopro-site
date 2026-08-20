@@ -9,6 +9,7 @@ import {
   consumeAdminPasswordResetToken,
   saveAdminAccountPassword
 } from "@/lib/checkout/db";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,10 @@ function resetRedirect(request: Request, token: string, error: string) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameSiteRequest(request)) {
+    return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const token = String(formData.get("token") || "");
   const password = String(formData.get("password") || "");

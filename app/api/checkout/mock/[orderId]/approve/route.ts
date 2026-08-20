@@ -37,11 +37,14 @@ export async function POST(_request: Request, { params }: MockRouteProps) {
 
     const response = NextResponse.json({ order: updatedOrder });
     if (updatedOrder?.user_id) {
-      response.cookies.set(
-        CUSTOMER_COOKIE_NAME,
-        createCustomerSessionValue(updatedOrder.user_id),
-        customerCookieOptions()
-      );
+      const sessionValue = createCustomerSessionValue(updatedOrder.user_id);
+      if (sessionValue) {
+        response.cookies.set(
+          CUSTOMER_COOKIE_NAME,
+          sessionValue,
+          customerCookieOptions()
+        );
+      }
     }
 
     return response;
