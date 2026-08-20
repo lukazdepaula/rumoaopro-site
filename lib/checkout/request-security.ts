@@ -2,7 +2,11 @@ export function isSameSiteRequest(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
 
-  const source = request.headers.get("origin") || request.headers.get("referer");
+  const origin = request.headers.get("origin");
+  const source =
+    origin && origin.toLowerCase() !== "null"
+      ? origin
+      : request.headers.get("referer");
   if (!source) {
     return (
       process.env.NODE_ENV !== "production" ||
