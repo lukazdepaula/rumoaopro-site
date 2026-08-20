@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { requirePendingAdminMfa } from "@/lib/checkout/admin-auth";
 import { adminMfaOtpAuthUri } from "@/lib/checkout/admin-mfa";
 import { getAdminAccountByEmail } from "@/lib/checkout/db";
@@ -22,6 +23,15 @@ export default async function AdminMfaSetupPage({
   if (!account || !session.setupSecret) redirect("/admin/login");
   const params = await searchParams;
   const otpAuthUri = adminMfaOtpAuthUri(account.email, session.setupSecret);
+  const qrCodeDataUrl = await QRCode.toDataURL(otpAuthUri, {
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 240,
+    color: {
+      dark: "#101827",
+      light: "#FFFFFF"
+    }
+  });
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-ink px-4 py-10 text-white">
@@ -32,12 +42,30 @@ export default async function AdminMfaSetupPage({
         </h1>
         <ol className="mt-4 grid gap-3 text-sm leading-6 text-white/70">
           <li>1. Abra Google Authenticator, Microsoft Authenticator ou 1Password.</li>
-          <li>2. Escolha adicionar uma conta e informe a chave abaixo.</li>
+          <li>2. Escolha adicionar uma conta e escaneie o QR Code abaixo.</li>
           <li>3. Digite o código de 6 dígitos gerado pelo aplicativo.</li>
         </ol>
 
+        <div className="mt-5 rounded-md border border-white/15 bg-white p-4 text-center text-ink">
+          <p className="text-xs font-bold uppercase text-ink/60">
+            Escaneie com o autenticador
+          </p>
+          <img
+            alt="QR Code para configurar a verificação em duas etapas do admin"
+            className="mx-auto mt-3 h-auto w-[240px] max-w-full"
+            height={240}
+            src={qrCodeDataUrl}
+            width={240}
+          />
+          <p className="mt-3 text-xs leading-5 text-ink/65">
+            No Google Authenticator, toque em + e escolha Ler código QR.
+          </p>
+        </div>
+
         <div className="mt-5 rounded-md border border-white/15 bg-black/25 p-4">
-          <p className="text-xs font-bold uppercase text-white/55">Chave de configuração</p>
+          <p className="text-xs font-bold uppercase text-white/55">
+            Alternativa: chave de configuração
+          </p>
           <code className="mt-2 block break-all font-mono text-base font-bold tracking-wider text-white">
             {session.setupSecret}
           </code>
