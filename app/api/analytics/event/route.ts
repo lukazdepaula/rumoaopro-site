@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { recordWebhookEvent } from "@/lib/checkout/db";
-import { getProductBySlug } from "@/lib/checkout/products";
+import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import type { AnalyticsEventType } from "@/lib/checkout/types";
 import { marketingConsentGranted, sendMetaEvent, type MetaEventName } from "@/lib/marketing/meta";
 
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     if (recorded && metaEvent && attribution.consent === "granted") {
       const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
       await sendMetaEvent({
-        dataset: product?.id === "loadpro_founders" ? "loadpro" : "rumoaopro",
+        dataset: isLoadProProductId(product?.id) ? "loadpro" : "rumoaopro",
         eventName: metaEvent,
         eventId,
         eventSourceUrl: new URL(path, request.url).toString(),

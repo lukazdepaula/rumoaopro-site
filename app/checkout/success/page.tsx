@@ -6,7 +6,7 @@ import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getOrderById } from "@/lib/checkout/db";
-import { formatMoney, getProductById } from "@/lib/checkout/products";
+import { formatMoney, getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import {
   getRaptorProProgramConfig,
   getRaptorProProgramUrl,
@@ -50,7 +50,7 @@ export default async function CheckoutSuccessPage({
   const showMockActions = order?.gateway === "mock" && order.status === "pending";
   const trialDays = Number(order?.metadata.trial_days || 0);
   const isLoadProTrial =
-    order?.product_id === "loadpro_founders" &&
+    isLoadProProductId(order?.product_id) &&
     trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
   const raptorProgram = order ? getRaptorProProgramConfig(order) : null;
@@ -152,7 +152,7 @@ export default async function CheckoutSuccessPage({
           event="StartTrial"
           orderId={order.id}
           productName={order.product_name}
-          productSlug="loadpro-founders"
+          productSlug={product?.slug || "loadpro-founders"}
           value={order.amount}
         />
       ) : order?.status === "paid" && product && !isLoadProTrial ? (

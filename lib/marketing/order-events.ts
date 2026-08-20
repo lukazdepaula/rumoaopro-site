@@ -1,6 +1,6 @@
 import type { Order } from "@/lib/checkout/types";
+import { getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import { appendOrderLog } from "@/lib/checkout/db";
-import { getProductById } from "@/lib/checkout/products";
 import {
   marketingConsentGranted,
   sendMetaEvent,
@@ -21,7 +21,7 @@ function orderMetaText(order: Order, field: string) {
 }
 
 function datasetForOrder(order: Order): MetaDataset {
-  return order.product_id === "loadpro_founders" ? "loadpro" : "rumoaopro";
+  return isLoadProProductId(order.product_id) ? "loadpro" : "rumoaopro";
 }
 
 function productSlug(order: Order) {
@@ -76,7 +76,7 @@ function eventSourceUrl(order: Order) {
 }
 
 export async function trackMetaStartTrial(order: Order) {
-  if (order.product_id !== "loadpro_founders") return;
+  if (!isLoadProProductId(order.product_id)) return;
   if (!marketingConsentGranted(order.metadata.marketing_consent)) return;
 
   const eventId = `start_trial:${order.id}`;
@@ -88,7 +88,7 @@ export async function trackMetaStartTrial(order: Order) {
     userData: userData(order),
     customData: {
       content_name: order.product_name,
-      content_ids: ["loadpro-founders"],
+      content_ids: [productSlug(order)],
       content_type: "product",
       currency: order.currency,
       value: order.amount

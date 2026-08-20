@@ -166,8 +166,12 @@ function metaEventFor(type: EventType): MetaEventName | null {
   return null;
 }
 
+function isLoadProSlug(productSlug: string) {
+  return productSlug === "loadpro-founders" || productSlug === "loadpro-founders-50";
+}
+
 function pixelIdForProduct(productSlug: string) {
-  if (productSlug === "loadpro-founders") {
+  if (isLoadProSlug(productSlug)) {
     return (
       process.env.NEXT_PUBLIC_LOADPRO_META_PIXEL_ID ||
       process.env.NEXT_PUBLIC_META_PIXEL_ID
@@ -218,8 +222,14 @@ function initMetaPixel(productSlug: string) {
 function trackMetaBrowser(eventName: MetaEventName, eventId: string, productSlug: string) {
   const pixelId = initMetaPixel(productSlug);
   if (!pixelId) return;
-  const customData = productSlug === "loadpro-founders"
-    ? { content_name: "LoadPro App - Plano Treinadores Fundadores", content_ids: [productSlug], content_type: "product", currency: "BRL", value: 49.9 }
+  const customData = isLoadProSlug(productSlug)
+    ? {
+        content_name: productSlug === "loadpro-founders-50" ? "LoadPro App - Fundadores 50" : "LoadPro App - Fundadores 30",
+        content_ids: [productSlug],
+        content_type: "product",
+        currency: "BRL",
+        value: productSlug === "loadpro-founders-50" ? 69.9 : 49.9
+      }
     : { content_ids: productSlug === "site" ? undefined : [productSlug], content_type: productSlug === "site" ? undefined : "product" };
   (window as MetaWindow).fbq?.("trackSingle", pixelId, eventName, customData, { eventID: eventId });
 }

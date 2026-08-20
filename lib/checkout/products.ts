@@ -32,6 +32,7 @@ const fixedBrlProductPrice = (basePriceUsd: number, brlPrice: number) => ({
 export const checkoutLinks = {
   onlineCoaching: "/checkout/assessoria-online",
   loadProFounders: "/checkout/loadpro-founders",
+  loadProFounders50: "/checkout/loadpro-founders-50",
   offseason30: "/checkout/offseason-30-days",
   adama: "/checkout/adama-offseason-strength-and-power",
   preTemporada: "/checkout/projeto-pre-temporada",
@@ -73,7 +74,7 @@ export const checkoutProducts: CheckoutProduct[] = [
   },
   {
     id: "loadpro_founders",
-    name: "LoadPro · Plano Treinadores Fundadores",
+    name: "LoadPro · Fundadores 30",
     slug: "loadpro-founders",
     description:
       "Assinatura mensal do LoadPro para organizar microciclos, coletar prontidão e PSE e gerar relatórios de até duas equipes.",
@@ -92,6 +93,31 @@ export const checkoutProducts: CheckoutProduct[] = [
     trial_days: 7,
     team_limit: 2,
     players_per_team_limit: 30,
+    founding_price_lock: true,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: "loadpro_founders_50",
+    name: "LoadPro · Fundadores 50",
+    slug: "loadpro-founders-50",
+    description:
+      "Assinatura mensal do LoadPro para organizar microciclos, coletar prontidão e PSE e gerar relatórios de até duas equipes com elencos maiores.",
+    language: "Portuguese",
+    type: "subscription",
+    ...fixedBrlProductPrice(
+      envPrice("LOADPRO_FOUNDERS_50_PRICE_USD", 13.9),
+      envPrice("LOADPRO_FOUNDERS_50_PRICE_BRL", 69.9)
+    ),
+    active: true,
+    sales_page_path: "https://loadpro.rumoaopro.com.br/",
+    cover_image: "/assets/brand/rumoaopro-logo.svg",
+    delivery_type: "onboarding_email",
+    file_id: null,
+    billing_interval: "month",
+    trial_days: 7,
+    team_limit: 2,
+    players_per_team_limit: 50,
     founding_price_lock: true,
     created_at: now,
     updated_at: now
@@ -338,6 +364,14 @@ export function getProductBySlug(slug: string) {
 
 export function getProductById(id: string) {
   return checkoutProducts.find((product) => product.id === id);
+}
+
+export function isLoadProProductId(value: unknown): value is "loadpro_founders" | "loadpro_founders_50" {
+  return value === "loadpro_founders" || value === "loadpro_founders_50";
+}
+
+export function isLoadProProductSlug(value: unknown) {
+  return value === "loadpro-founders" || value === "loadpro-founders-50";
 }
 
 export function formatMoney(amount: number, currency: string) {

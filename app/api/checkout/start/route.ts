@@ -16,7 +16,7 @@ import {
   PaymentGatewayError
 } from "@/lib/checkout/payments";
 import { calculateLocalizedPrice } from "@/lib/checkout/pricing";
-import { getProductBySlug } from "@/lib/checkout/products";
+import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import {
   CheckoutValidationError,
   isBrazil,
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const checkoutCountry = product.checkout_country_lock || input.country;
     const brazil = isBrazil(checkoutCountry);
     const stripeOnly =
-      product.id === "loadpro_founders" ||
+      isLoadProProductId(product.id) ||
       (product.checkout_payment_methods?.length === 1 &&
         product.checkout_payment_methods[0] === "stripe");
     const requestedPaymentMethod = mode === "sandbox"
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (mode === "live" && product.id === "loadpro_founders") {
+    if (mode === "live" && isLoadProProductId(product.id)) {
       try {
         await assertLoadProProvisioningReady();
       } catch (error) {
