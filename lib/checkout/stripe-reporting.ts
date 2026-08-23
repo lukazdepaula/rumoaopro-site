@@ -202,7 +202,6 @@ async function listStripeSubscriptions(secretKey: string, status: string) {
     const url = new URL("https://api.stripe.com/v1/subscriptions");
     url.searchParams.set("status", status);
     url.searchParams.set("limit", "100");
-    url.searchParams.append("expand[]", "data.items.data.price.product");
     if (startingAfter) url.searchParams.set("starting_after", startingAfter);
 
     const response = await fetch(url, {
