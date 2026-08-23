@@ -105,6 +105,54 @@ const getProgramFocuses = (href: string, locale: "pt" | "en") => {
   return [labels.strength, labels.speed, labels.power];
 };
 
+const getProgramAccent = (href: string) => {
+  if (href.includes("de-volta-aos-gramados")) {
+    return {
+      border: "from-teal-700/75 via-teal-500/55 to-cyan-400/70",
+      label: "text-teal-700",
+      chip:
+        "bg-teal-50 text-teal-950 ring-1 ring-inset ring-teal-200/75"
+    };
+  }
+
+  if (
+    href.includes("power-pro") ||
+    href.includes("projeto-adama") ||
+    href.includes("adama-strength-power")
+  ) {
+    return {
+      border: "from-red-800/80 via-red-600/60 to-rose-400/70",
+      label: "text-red-700",
+      chip: "bg-red-50 text-red-950 ring-1 ring-inset ring-red-200/75"
+    };
+  }
+
+  if (href.includes("projeto-36") || href.includes("project-36")) {
+    return {
+      border:
+        "from-emerald-800/75 via-emerald-500/55 to-lime-400/70",
+      label: "text-emerald-700",
+      chip:
+        "bg-emerald-50 text-emerald-950 ring-1 ring-inset ring-emerald-200/75"
+    };
+  }
+
+  if (href.includes("elanga-in-season")) {
+    return {
+      border: "from-orange-800/75 via-orange-500/55 to-amber-400/70",
+      label: "text-orange-700",
+      chip:
+        "bg-orange-50 text-orange-950 ring-1 ring-inset ring-orange-200/75"
+    };
+  }
+
+  return {
+    border: "from-blue-800/75 via-blue-500/55 to-cyan-400/70",
+    label: "text-blue-700",
+    chip: "bg-blue-50 text-blue-950 ring-1 ring-inset ring-blue-200/75"
+  };
+};
+
 export function ProgramsSection({
   compact = false,
   locale = "pt"
@@ -121,7 +169,7 @@ export function ProgramsSection({
       eyebrow: "Programas disponíveis",
       title: "Escolha o programa certo para o seu objetivo",
       body:
-        "Power Pro e De Volta aos Gramados estão disponíveis em português. Offseason 30 Days, Speed Pro e In-Season Pro estão disponíveis em português e inglês. Confira o idioma indicado antes da compra.",
+        "Offseason 30 Days, Speed Pro, Power Pro e In-Season Pro estão disponíveis em português e inglês. De Volta aos Gramados está disponível em português. Confira o idioma indicado antes da compra.",
       seeAll: "Ver todos",
       priceLabel: "Preço",
       focusLabel: "Foco",
@@ -138,7 +186,7 @@ export function ProgramsSection({
       eyebrow: "Available programs",
       title: "Choose the right program for your goal",
       body:
-        "Offseason 30 Days, Speed Pro and In-Season Pro are available in English and Portuguese. Power Pro and Back to the Pitch are currently delivered in Portuguese.",
+        "Offseason 30 Days, Speed Pro, Power Pro and In-Season Pro are available in English and Portuguese. Back to the Pitch is currently delivered in Portuguese.",
       seeAll: "See all",
       priceLabel: "Price",
       focusLabel: "Focus",
@@ -206,10 +254,10 @@ export function ProgramsSection({
           className={
             compact
               ? "mt-8 grid gap-5 md:grid-cols-3"
-              : "mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4"
+              : "mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-8"
           }
         >
-          {visiblePrograms.map((program) => {
+          {visiblePrograms.map((program, index) => {
             const isExternal =
               !program.href.startsWith("/") && !program.href.startsWith("#");
             const reviewGroupKey = getReviewGroupForProgramHref(program.href);
@@ -219,13 +267,21 @@ export function ProgramsSection({
             const product = findCheckoutProduct(program.href);
             const displayPrice = getDisplayPrice(product, currency);
             const focuses = getProgramFocuses(program.href, locale);
+            const accent = getProgramAccent(program.href);
+            const cardLayout = compact
+              ? ""
+              : `xl:col-span-2 ${
+                  visiblePrograms.length === 5 && index === 4
+                    ? "xl:col-start-4"
+                    : ""
+                }`;
 
             const content = (
               <article
-                className="group flex h-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-card"
+                className={`group flex h-full overflow-hidden rounded-[10px] bg-gradient-to-br p-[2px] shadow-sm transition hover:-translate-y-1 hover:shadow-card ${accent.border}`}
                 key={program.title}
               >
-                <div className="flex w-full flex-col">
+                <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[8px] bg-white">
                   <div className="relative overflow-hidden bg-ink">
                     <Image
                       alt={program.title}
@@ -243,7 +299,9 @@ export function ProgramsSection({
                   </div>
                   <div className="flex flex-1 flex-col p-5">
                     <div className="grid min-h-[76px] grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                      <p className="pr-1 text-xs font-bold uppercase leading-5 text-signal">
+                      <p
+                        className={`pr-1 text-xs font-bold uppercase leading-5 ${accent.label}`}
+                      >
                         {program.level}
                       </p>
                       {displayPrice ? (
@@ -286,13 +344,15 @@ export function ProgramsSection({
                       {program.body}
                     </p>
                     <div className="mt-auto border-t border-ink/10 pt-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-graphite/45">
+                      <p
+                        className={`text-[10px] font-black uppercase tracking-[0.14em] ${accent.label}`}
+                      >
                         {copy.focusLabel}
                       </p>
                       <div className="mt-2 grid grid-cols-3 gap-1.5">
                         {focuses.map((focus) => (
                           <span
-                            className="inline-flex min-h-9 items-center justify-center rounded-md bg-smoke px-1.5 text-center text-[9px] font-black uppercase leading-4 tracking-[0.04em] text-graphite/68"
+                            className={`inline-flex min-h-9 items-center justify-center rounded-md px-1.5 text-center text-[9px] font-black uppercase leading-4 tracking-[0.04em] ${accent.chip}`}
                             key={focus}
                           >
                             {focus}
@@ -321,7 +381,7 @@ export function ProgramsSection({
 
             return isExternal ? (
               <a
-                className="focus-ring block"
+                className={`focus-ring block ${cardLayout}`}
                 href={program.href}
                 key={program.title}
                 rel="noreferrer"
@@ -331,7 +391,7 @@ export function ProgramsSection({
               </a>
             ) : (
               <Link
-                className="focus-ring block"
+                className={`focus-ring block ${cardLayout}`}
                 href={program.href}
                 key={program.title}
               >

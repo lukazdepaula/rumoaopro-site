@@ -128,9 +128,9 @@ export const reviewGroups: Record<ReviewGroupKey, ReviewGroup> = {
     count: 46,
     sourceNote: {
       pt:
-        "Avaliações importadas do Loox da loja anterior, agrupando Projeto Adama e Adama II.",
+        "Avaliações importadas do Loox da loja anterior, agrupando versões da linha Adama com proposta semelhante ao Power Pro.",
       en:
-        "Reviews imported from the previous Loox store, grouped from Portuguese Adama editions."
+        "Reviews imported from the previous Loox store, grouped from Adama editions with a similar focus to Power Pro."
     },
     reviews: [
       {
@@ -364,6 +364,7 @@ export const reviewGroupByProgramHref: Record<string, ReviewGroupKey> = {
   "/programas/adama-strength-power": "adama",
   "/en/programs/adama-strength-power": "adama",
   "/programas/projeto-adama-2022": "adama",
+  "/programas/power-pro": "adama",
   "/programas/projeto-36kmh": "project36",
   "/en/programs/project-36kmh": "project36",
   "/programas/projeto-36-2022": "project36",

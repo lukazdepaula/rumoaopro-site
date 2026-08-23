@@ -670,7 +670,7 @@ export const programs = [
   },
   {
     title: "Power Pro — Força, Potência e Hipertrofia",
-    tag: "Português",
+    tag: "Português e inglês",
     duration: "12 semanas",
     level: "Academia — força, potência e hipertrofia",
     body:
@@ -715,7 +715,7 @@ export const programs = [
     href: "/programas/de-volta-aos-gramados",
     cta: "Ver detalhes"
   }
-].filter((program) => program.href !== "/programas/de-volta-aos-gramados");
+];
 
 export const programsPtLegacy = [
   {
@@ -985,16 +985,20 @@ export const programsEn = [
   },
   {
     title: "Power Pro — Strength, Power & Hypertrophy",
-    tag: "Portuguese only",
+    tag: "Portuguese & English",
     duration: "12 weeks",
     level: "Gym — strength, power and hypertrophy",
     body:
-      "A 100% gym-based progression for footballers who want to build strength, power, muscle and a more athletic physique. Delivered in Portuguese.",
-    outcomes: ["Gym-based training", "Strength, power and muscle", "Portuguese only"],
+      "A 100% gym-based progression for footballers who want to build strength, power, muscle and a more athletic physique.",
+    outcomes: [
+      "Gym-based training",
+      "Strength, power and muscle",
+      "Available in Portuguese and English"
+    ],
     image: assets.powerProCover,
     imageClass: "object-[center_35%]",
     href: "/programas/power-pro",
-    cta: "View Portuguese page"
+    cta: "View program"
   },
   {
     title: "In-Season Performance — In-Season Pro",

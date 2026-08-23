@@ -53,7 +53,8 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       imagePosition: "object-[50%_35%]",
       outcome:
         "12 semanas, 100% academia, para jogadores que querem desenvolver força, potência, hipertrofia e um físico mais atlético.",
-      detail: "12 semanas · português · 3 + 1 sessões · RaptorPro",
+      detail: "12 semanas · português e inglês · 3 + 1 sessões · RaptorPro",
+      reviewGroup: "adama",
       icon: Dumbbell
     },
     {
@@ -137,8 +138,9 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       image: "/assets/programs/power-pro/power-pro-cover-v2.png",
       imagePosition: "object-[50%_35%]",
       outcome:
-        "A 12-week, 100% gym-based program for footballers who want strength, power and muscle. Delivered in Portuguese.",
-      detail: "12 weeks · Portuguese only · 3 + 1 sessions · RaptorPro",
+        "A 12-week, 100% gym-based program for footballers who want strength, power and muscle.",
+      detail: "12 weeks · English and Portuguese · 3 + 1 sessions · RaptorPro",
+      reviewGroup: "adama",
       icon: Dumbbell
     },
     {

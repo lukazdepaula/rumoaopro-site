@@ -83,7 +83,7 @@ const content = {
       {
         label: "Gym access only",
         title: "Build strength, power and muscle",
-        body: "Power Pro · 12 weeks of gym training for strength, power and hypertrophy, delivered in Portuguese.",
+        body: "Power Pro · 12 weeks of gym training for strength, power and hypertrophy, available in English and Portuguese.",
         href: "/programas/power-pro",
         icon: Dumbbell
       },
