@@ -52,6 +52,13 @@ export type AnalyticsEvent = {
   created_at: string;
 };
 
+export type SitePresence = {
+  session_id: string;
+  path: string;
+  locale: "pt" | "en";
+  last_seen_at: string;
+};
+
 export type CheckoutPaymentMethod = "mercado_pago" | "pix" | "stripe";
 
 export type OrderStatus =

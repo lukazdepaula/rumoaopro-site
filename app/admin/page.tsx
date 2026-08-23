@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { CircleDollarSign, CreditCard, ShieldCheck } from "lucide-react";
+import { AdminLiveVisitors } from "@/components/admin-live-visitors";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
-import { listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
+import { listActiveSitePresence, listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
+import { getStripeRecurringMetrics } from "@/lib/checkout/stripe-reporting";
 import type { Gateway, Order } from "@/lib/checkout/types";
 
 export const dynamic = "force-dynamic";
@@ -73,9 +76,11 @@ export default async function AdminDashboardPage({
   const previousMonthKey = periodKey(lastMonthStart);
   const selectedPeriodKey = periodKey(monthStart);
   const isCurrentPeriod = selectedPeriodKey === periodKey(now);
-  const [orders, monthAnalyticsEvents] = await Promise.all([
+  const [orders, monthAnalyticsEvents, activePresence, recurringMetrics] = await Promise.all([
     listOrders({}),
-    listAnalyticsEvents(monthStart)
+    listAnalyticsEvents(monthStart),
+    listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
+    getStripeRecurringMetrics()
   ]);
   const selectedAnalyticsEvents = monthAnalyticsEvents.filter(
     (event) => new Date(event.created_at) < monthEnd
@@ -238,8 +243,121 @@ export default async function AdminDashboardPage({
     .map(([, value]) => value)
     .sort((a, b) => b.starts - a.starts);
 
+  const livePages = Array.from(
+    activePresence.reduce((map, visitor) => {
+      map.set(visitor.path, (map.get(visitor.path) || 0) + 1);
+      return map;
+    }, new Map<string, number>())
+  )
+    .map(([path, count]) => ({ path, count }))
+    .sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
+    .slice(0, 5);
+
   return (
     <AdminShell title="Painel">
+      <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(250px,0.72fr)_minmax(0,1.65fr)]">
+        <AdminLiveVisitors
+          initialData={{
+            activeVisitors: activePresence.length,
+            pages: livePages,
+            updatedAt: new Date().toISOString()
+          }}
+        />
+
+        <article className="overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-5 py-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <CircleDollarSign className="h-4 w-4 text-turf" />
+                <h2 className="text-sm font-bold text-ink">Receita recorrente</h2>
+              </div>
+              <p className="mt-1 text-xs text-graphite/55">Assinaturas consultadas diretamente na Stripe</p>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${
+              recurringMetrics.state === "ready"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-amber-50 text-amber-700"
+            }`}>
+              {recurringMetrics.state === "ready"
+                ? recurringMetrics.livemode
+                  ? "Stripe conectada"
+                  : "Stripe em modo teste"
+                : recurringMetrics.state === "missing"
+                  ? "Configuração pendente"
+                  : "Consulta indisponível"}
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-3">
+            <div className="bg-[#1f1f1f] p-5 text-white md:min-h-36">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">MRR estimado</p>
+              <p className="mt-2 text-3xl font-black tracking-tight">
+                {recurringMetrics.state === "ready" ? formatBrl(recurringMetrics.mrrBrlEstimate) : "—"}
+              </p>
+              <p className="mt-3 text-xs leading-relaxed text-white/55">
+                Assinaturas ativas e em atraso, normalizadas para um mês.
+              </p>
+            </div>
+            <div className="border-b border-ink/10 p-5 md:border-b-0 md:border-r">
+              <div className="flex items-center gap-2 text-graphite/50">
+                <CreditCard className="h-4 w-4" />
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Assinaturas</p>
+              </div>
+              <p className="mt-2 text-3xl font-black text-ink">
+                {recurringMetrics.state === "ready" ? recurringMetrics.activeSubscriptions : "—"}
+              </p>
+              <p className="mt-3 text-xs text-graphite/55">
+                {recurringMetrics.state === "ready"
+                  ? `${recurringMetrics.activeSubscribers} cliente${recurringMetrics.activeSubscribers === 1 ? "" : "s"} pagante${recurringMetrics.activeSubscribers === 1 ? "" : "s"}`
+                  : "Aguardando a conta Stripe"}
+              </p>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-2 text-graphite/50">
+                <ShieldCheck className="h-4 w-4" />
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Saúde</p>
+              </div>
+              <p className="mt-2 text-3xl font-black text-ink">
+                {recurringMetrics.state === "ready" ? recurringMetrics.pastDueSubscriptions : "—"}
+              </p>
+              <p className="mt-3 text-xs text-graphite/55">
+                {recurringMetrics.state === "ready"
+                  ? `${recurringMetrics.pastDueSubscriptions} em atraso · ${recurringMetrics.trialingSubscriptions} em teste`
+                  : recurringMetrics.state === "error"
+                    ? "Tente atualizar o painel em instantes"
+                    : "A chave permanece protegida no servidor"}
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-ink/10 bg-[#fafafa]">
+            {recurringMetrics.products.map((product) => (
+              <div className="grid gap-2 border-b border-ink/10 px-5 py-3 last:border-b-0 sm:grid-cols-[1fr_auto_auto] sm:items-center" key={product.id}>
+                <div>
+                  <p className="text-sm font-bold text-ink">{product.name}</p>
+                  <p className="mt-0.5 text-xs text-graphite/50">
+                    {product.subscriptions} assinatura{product.subscriptions === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <p className="text-xs font-semibold text-graphite/55 sm:text-right">
+                  {product.amounts.map((amount) => formatMoney(amount.amount, amount.currency)).join(" + ") || "Sem MRR"}
+                </p>
+                <p className="text-sm font-black text-ink sm:min-w-28 sm:text-right">
+                  {formatBrl(product.mrrBrlEstimate)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {recurringMetrics.state === "ready" ? (
+            <p className="border-t border-ink/10 px-5 py-3 text-[11px] leading-relaxed text-graphite/50">
+              MRR bruto, antes de impostos e descontos. Valores em USD são estimados a R$ {recurringMetrics.usdBrlRate.toFixed(2).replace(".", ",")}.
+              {recurringMetrics.hasUnconvertedCurrencies ? " Outras moedas permanecem fora do total estimado em BRL." : ""}
+            </p>
+          ) : null}
+        </article>
+      </section>
+
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink/10 bg-white p-4">
         <div>
           <p className="text-xs font-bold uppercase text-graphite/55">Período dos resultados</p>

@@ -15,7 +15,8 @@ import type {
   Order,
   OrderLog,
   OrderStatus,
-  ProgramMaterial
+  ProgramMaterial,
+  SitePresence
 } from "@/lib/checkout/types";
 
 type SqliteResult = {
@@ -1349,7 +1350,7 @@ export async function updateFiscalStatus(orderId: string, fiscalStatus: FiscalSt
 }
 
 export async function recordWebhookEvent(
-  provider: Gateway | "analytics",
+  provider: Gateway | "analytics" | "presence",
   eventId: string,
   payload: Record<string, unknown>
 ) {
@@ -1476,6 +1477,120 @@ export async function listAnalyticsEvents(since?: Date) {
   return rows
     .map(normalizeAnalyticsEvent)
     .filter((event): event is AnalyticsEvent => event !== null);
+}
+
+let lastPresenceCleanupAt = 0;
+
+async function cleanupStalePresence() {
+  const currentTime = Date.now();
+  if (currentTime - lastPresenceCleanupAt < 60 * 60 * 1000) return;
+  lastPresenceCleanupAt = currentTime;
+  const cutoff = new Date(currentTime - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    if (useSupabaseDriver()) {
+      await supabaseRequest("webhook_events", {
+        method: "DELETE",
+        query: [eq("provider", "presence"), `created_at=lt.${encodeURIComponent(cutoff)}`].join("&"),
+        prefer: "return=minimal"
+      });
+      return;
+    }
+
+    getDatabase()
+      .prepare("DELETE FROM webhook_events WHERE provider = 'presence' AND created_at < ?")
+      .run(cutoff);
+  } catch (error) {
+    console.error("[analytics.presence.cleanup]", error);
+  }
+}
+
+export async function upsertSitePresence(input: {
+  sessionId: string;
+  path: string;
+  locale: "pt" | "en";
+}) {
+  const timestamp = nowIso();
+  const id = `presence_${createHash("sha256")
+    .update(input.sessionId)
+    .digest("hex")}`;
+  const payload = {
+    session_id: input.sessionId,
+    path: input.path,
+    locale: input.locale
+  };
+
+  if (useSupabaseDriver()) {
+    await supabaseRequest("webhook_events", {
+      method: "POST",
+      query: "on_conflict=provider,event_id",
+      body: {
+        id,
+        provider: "presence",
+        event_id: input.sessionId,
+        payload,
+        created_at: timestamp
+      },
+      prefer: "resolution=merge-duplicates,return=minimal"
+    });
+  } else {
+    getDatabase()
+      .prepare(
+        `INSERT INTO webhook_events (id, provider, event_id, payload, created_at)
+         VALUES (?, 'presence', ?, ?, ?)
+         ON CONFLICT(provider, event_id) DO UPDATE SET
+           payload = excluded.payload,
+           created_at = excluded.created_at`
+      )
+      .run(id, input.sessionId, JSON.stringify(payload), timestamp);
+  }
+
+  await cleanupStalePresence();
+}
+
+function normalizeSitePresence(row: Record<string, unknown>): SitePresence | null {
+  const payload = parseMetadata(row.payload);
+  const sessionId =
+    typeof payload.session_id === "string"
+      ? payload.session_id
+      : typeof row.event_id === "string"
+        ? row.event_id
+        : "";
+  const path = typeof payload.path === "string" ? payload.path : "";
+
+  if (!sessionId || !path.startsWith("/")) return null;
+
+  return {
+    session_id: sessionId,
+    path,
+    locale: payload.locale === "en" ? "en" : "pt",
+    last_seen_at: String(row.created_at)
+  };
+}
+
+export async function listActiveSitePresence(since: Date) {
+  if (useSupabaseDriver()) {
+    const rows = await supabaseRequest<Record<string, unknown>[]>("webhook_events", {
+      query: selectQuery([
+        eq("provider", "presence"),
+        `created_at=gte.${encodeURIComponent(since.toISOString())}`,
+        "order=created_at.desc",
+        "limit=1000"
+      ])
+    });
+
+    return rows
+      .map(normalizeSitePresence)
+      .filter((presence): presence is SitePresence => presence !== null);
+  }
+
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM webhook_events WHERE provider = 'presence' AND created_at >= ? ORDER BY created_at DESC LIMIT 1000"
+    )
+    .all(since.toISOString())
+    .map(normalizeSitePresence)
+    .filter((presence): presence is SitePresence => presence !== null);
 }
 
 export async function appendOrderLog(

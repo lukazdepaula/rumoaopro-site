@@ -75,6 +75,20 @@ function getSessionId() {
   return created;
 }
 
+function getPresenceSessionId() {
+  try {
+    const key = "rap_presence_session";
+    const current = window.localStorage.getItem(key);
+    if (current) return current;
+
+    const created = crypto.randomUUID();
+    window.localStorage.setItem(key, created);
+    return created;
+  } catch {
+    return getSessionId();
+  }
+}
+
 function localeForPath(path: string) {
   return path.startsWith("/en/") || path === "/en" ? "en" : "pt";
 }
@@ -91,6 +105,25 @@ function referrerHost() {
     return url.origin === window.location.origin ? null : url.hostname;
   } catch {
     return null;
+  }
+}
+
+async function sendPresence(path: string) {
+  if (path.startsWith("/admin") || document.visibilityState !== "visible") return;
+
+  try {
+    await fetch("/api/analytics/presence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: getPresenceSessionId(),
+        path,
+        locale: localeForPath(path)
+      }),
+      keepalive: true
+    });
+  } catch {
+    // The next heartbeat retries when the visitor is online again.
   }
 }
 
@@ -308,6 +341,26 @@ export function trackCheckoutEvent(
 
 export function ConversionTracker() {
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin")) return;
+
+    const heartbeat = () => void sendPresence(pathname);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") heartbeat();
+    };
+
+    heartbeat();
+    const interval = window.setInterval(heartbeat, 30000);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", heartbeat);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", heartbeat);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     void sendEvent("page_view", "site", pathname);

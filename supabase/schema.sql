@@ -190,6 +190,9 @@ create table if not exists public.webhook_events (
   unique(provider, event_id)
 );
 
+create index if not exists idx_webhook_events_provider_created_at
+  on public.webhook_events(provider, created_at desc);
+
 create table if not exists public.order_logs (
   id text primary key,
   order_id text not null references public.orders(id),
