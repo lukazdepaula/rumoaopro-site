@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { PasswordField } from "@/components/password-field";
+import { SingleSubmitForm } from "@/components/single-submit-form";
+import {
+  ADMIN_COOKIE_NAME,
+  readAdminSession
+} from "@/lib/checkout/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +28,12 @@ export default async function AdminLoginPage({
     returnTo?: string;
   }>;
 }) {
+  const cookieStore = await cookies();
+  const existingSession = await readAdminSession(
+    cookieStore.get(ADMIN_COOKIE_NAME)?.value
+  );
+  if (existingSession) redirect("/admin");
+
   const params = await searchParams;
   const returnTo =
     params.returnTo?.startsWith("/admin") && !params.returnTo.startsWith("//")
@@ -37,7 +50,12 @@ export default async function AdminLoginPage({
         <p className="mt-3 text-sm leading-6 text-white/65">
           Área interna para acompanhar pedidos, entregas e dados fiscais.
         </p>
-        <form action="/api/admin/login" className="mt-6 grid gap-4" method="post">
+        <SingleSubmitForm
+          action="/api/admin/login"
+          className="mt-6 grid gap-4"
+          method="post"
+          pendingLabel="Entrando..."
+        >
           {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
           <label className="grid gap-2 text-sm font-semibold">
             E-mail
@@ -78,7 +96,7 @@ export default async function AdminLoginPage({
             </p>
           ) : null}
           <button
-            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
+            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink disabled:cursor-wait disabled:opacity-70"
             type="submit"
           >
             Entrar
@@ -89,7 +107,7 @@ export default async function AdminLoginPage({
           >
             Criar ou redefinir minha senha
           </Link>
-        </form>
+        </SingleSubmitForm>
       </section>
     </main>
   );

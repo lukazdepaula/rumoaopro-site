@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
+import { SingleSubmitForm } from "@/components/single-submit-form";
 import { requirePendingAdminMfa } from "@/lib/checkout/admin-auth";
 import { adminMfaOtpAuthUri } from "@/lib/checkout/admin-mfa";
 import { getAdminAccountByEmail } from "@/lib/checkout/db";
@@ -77,7 +78,12 @@ export default async function AdminMfaSetupPage({
           </a>
         </div>
 
-        <form action="/api/admin/mfa/setup" className="mt-6 grid gap-4" method="post">
+        <SingleSubmitForm
+          action="/api/admin/mfa/setup"
+          className="mt-6 grid gap-4"
+          method="post"
+          pendingLabel="Ativando..."
+        >
           <label className="grid gap-2 text-sm font-semibold">
             Código de 6 dígitos
             <input
@@ -107,12 +113,12 @@ export default async function AdminMfaSetupPage({
             </p>
           ) : null}
           <button
-            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
+            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink disabled:cursor-wait disabled:opacity-70"
             type="submit"
           >
             Ativar proteção
           </button>
-        </form>
+        </SingleSubmitForm>
       </section>
     </main>
   );

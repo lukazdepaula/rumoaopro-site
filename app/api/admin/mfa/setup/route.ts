@@ -8,6 +8,7 @@ import {
   adminMfaPendingCookieOptions,
   adminMfaRecoveryCookieOptions,
   createAdminSessionValue,
+  getAdminRequestSession,
   getPendingAdminMfaRequestSession
 } from "@/lib/checkout/admin-auth";
 import {
@@ -43,7 +44,14 @@ function setupRedirect(request: Request, error: string) {
 export async function POST(request: Request) {
   const session = await getPendingAdminMfaRequestSession(request);
   if (!session?.setupSecret) {
-    return NextResponse.redirect(new URL("/admin/login", request.url), 303);
+    const existingSession = await getAdminRequestSession(request);
+    return NextResponse.redirect(
+      new URL(
+        existingSession ? "/admin/mfa/recovery-codes" : "/admin/login",
+        request.url
+      ),
+      303
+    );
   }
 
   const contentLength = Number(request.headers.get("content-length") || "0");

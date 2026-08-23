@@ -61,3 +61,45 @@ export async function readUrlEncodedForm(
     return { ok: false as const, tooLarge: false as const };
   }
 }
+
+export async function readJsonBody(request: Request, maxBytes: number) {
+  const contentType = request.headers.get("content-type")?.toLowerCase() || "";
+  if (!contentType.startsWith("application/json")) {
+    return {
+      ok: false as const,
+      tooLarge: false as const,
+      unsupportedType: true as const
+    };
+  }
+
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    return {
+      ok: false as const,
+      tooLarge: true as const,
+      unsupportedType: false as const
+    };
+  }
+
+  const rawBody = await request.text();
+  if (new TextEncoder().encode(rawBody).byteLength > maxBytes) {
+    return {
+      ok: false as const,
+      tooLarge: true as const,
+      unsupportedType: false as const
+    };
+  }
+
+  try {
+    return {
+      ok: true as const,
+      data: JSON.parse(rawBody) as unknown
+    };
+  } catch {
+    return {
+      ok: false as const,
+      tooLarge: false as const,
+      unsupportedType: false as const
+    };
+  }
+}

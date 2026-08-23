@@ -71,8 +71,8 @@ async function recordMetaResult(
   }
 }
 
-function eventSourceUrl(order: Order) {
-  return `${siteUrl()}/checkout/success?order_id=${encodeURIComponent(order.id)}`;
+function eventSourceUrl() {
+  return `${siteUrl()}/checkout/success`;
 }
 
 export async function trackMetaStartTrial(order: Order) {
@@ -84,7 +84,7 @@ export async function trackMetaStartTrial(order: Order) {
     dataset: "loadpro",
     eventName: "StartTrial",
     eventId,
-    eventSourceUrl: eventSourceUrl(order),
+    eventSourceUrl: eventSourceUrl(),
     userData: userData(order),
     customData: {
       content_name: order.product_name,
@@ -115,7 +115,7 @@ export async function trackMetaPurchase(
     dataset: datasetForOrder(order),
     eventName: "Purchase",
     eventId,
-    eventSourceUrl: eventSourceUrl(order),
+    eventSourceUrl: eventSourceUrl(),
     userData: userData(order),
     customData: {
       content_name: order.product_name,

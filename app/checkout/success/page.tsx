@@ -1,10 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { CheckCircle2, CircleAlert, MailCheck } from "lucide-react";
 import { MockPaymentActions } from "@/components/mock-payment-actions";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import {
+  CHECKOUT_ACCESS_COOKIE_NAME,
+  verifyCheckoutAccessToken
+} from "@/lib/checkout/checkout-access";
 import { getOrderById } from "@/lib/checkout/db";
 import { formatMoney, getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import {
@@ -43,11 +48,23 @@ export default async function CheckoutSuccessPage({
   searchParams
 }: CheckoutSuccessPageProps) {
   const params = await searchParams;
-  const order = params.order_id ? await getOrderById(params.order_id) : null;
+  const cookieStore = await cookies();
+  const requestedOrderId = params.order_id || "";
+  const checkoutAccessAuthorized = verifyCheckoutAccessToken(
+    requestedOrderId,
+    cookieStore.get(CHECKOUT_ACCESS_COOKIE_NAME)?.value
+  );
+  const order = checkoutAccessAuthorized
+    ? await getOrderById(requestedOrderId)
+    : null;
   const isEnglish = params.locale === "en" || order?.metadata.checkout_locale === "en";
   const product = order ? getProductById(order.product_id) : null;
   const isCoachingSubscription = product?.id === "online_coaching_monthly";
-  const showMockActions = order?.gateway === "mock" && order.status === "pending";
+  const showMockActions =
+    process.env.NODE_ENV !== "production" &&
+    checkoutAccessAuthorized &&
+    order?.gateway === "mock" &&
+    order.status === "pending";
   const trialDays = Number(order?.metadata.trial_days || 0);
   const isLoadProTrial =
     isLoadProProductId(order?.product_id) &&
@@ -281,29 +298,39 @@ export default async function CheckoutSuccessPage({
                     : "Não foi possível gerar seu acesso seguro. Tente novamente ou fale com o suporte."}
                 </p>
               ) : null}
-              <form
-                action={`/api/checkout/orders/${order.id}/raptorpro-access`}
-                className="mt-5"
-                method="post"
-              >
-                <button
-                  className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-signal px-5 text-sm font-bold uppercase text-white transition hover:bg-signal/90"
-                  type="submit"
+              {checkoutAccessAuthorized ? (
+                <form
+                  action={`/api/checkout/orders/${order.id}/raptorpro-access`}
+                  className="mt-5"
+                  method="post"
                 >
-                  {raptorAccountCreated
-                    ? isEnglish
-                      ? "Create password and access now"
-                      : "Criar senha e acessar agora"
-                    : isEnglish
-                      ? "Access my program now"
-                      : "Acessar meu programa agora"}
-                </button>
-              </form>
-              <p className="mt-3 text-center text-xs leading-5 text-white/55">
-                {isEnglish
-                  ? "Works even if the email is delayed. The generated link is personal and one-time only."
-                  : "Funciona mesmo se o e-mail atrasar. O link gerado é pessoal e de uso único."}
-              </p>
+                  <button
+                    className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-signal px-5 text-sm font-bold uppercase text-white transition hover:bg-signal/90"
+                    type="submit"
+                  >
+                    {raptorAccountCreated
+                      ? isEnglish
+                        ? "Create password and access now"
+                        : "Criar senha e acessar agora"
+                      : isEnglish
+                        ? "Access my program now"
+                        : "Acessar meu programa agora"}
+                  </button>
+                </form>
+              ) : (
+                <p className="mt-5 rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm leading-6 text-white/65">
+                  {isEnglish
+                    ? "For security, direct access is available only during the protected payment return. Use the personal link sent to your email or contact support."
+                    : "Por segurança, o acesso direto fica disponível somente no retorno protegido do pagamento. Use o link pessoal enviado por e-mail ou fale com o suporte."}
+                </p>
+              )}
+              {checkoutAccessAuthorized ? (
+                <p className="mt-3 text-center text-xs leading-5 text-white/55">
+                  {isEnglish
+                    ? "Works even if the email is delayed. The generated link is personal and one-time only."
+                    : "Funciona mesmo se o e-mail atrasar. O link gerado é pessoal e de uso único."}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {showMockActions ? <MockPaymentActions orderId={order.id} /> : null}

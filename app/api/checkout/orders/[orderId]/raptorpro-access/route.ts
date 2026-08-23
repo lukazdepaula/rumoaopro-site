@@ -1,5 +1,12 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  CHECKOUT_ACCESS_COOKIE_NAME,
+  checkoutAccessCookieOptions,
+  verifyCheckoutAccessToken
+} from "@/lib/checkout/checkout-access";
 import { appendOrderLog, getOrderById } from "@/lib/checkout/db";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 import {
   createRaptorProCheckoutAccessLink,
   isRaptorProProgramOrder
@@ -18,6 +25,20 @@ export async function POST(request: Request, { params }: RouteProps) {
   fallbackUrl.searchParams.set("order_id", orderId);
 
   try {
+    if (!isSameSiteRequest(request)) {
+      fallbackUrl.searchParams.set("access_error", "invalid_origin");
+      return NextResponse.redirect(fallbackUrl, 303);
+    }
+
+    const cookieStore = await cookies();
+    const checkoutAccessToken = cookieStore.get(
+      CHECKOUT_ACCESS_COOKIE_NAME
+    )?.value;
+    if (!verifyCheckoutAccessToken(orderId, checkoutAccessToken)) {
+      fallbackUrl.searchParams.set("access_error", "invalid_access");
+      return NextResponse.redirect(fallbackUrl, 303);
+    }
+
     const order = await getOrderById(orderId);
     if (!order || order.status !== "paid" || !isRaptorProProgramOrder(order)) {
       fallbackUrl.searchParams.set("access_error", "not_available");
@@ -30,7 +51,12 @@ export async function POST(request: Request, { params }: RouteProps) {
       "raptorpro.access.opened_from_checkout",
       "Cliente abriu o acesso seguro diretamente pela confirmação da compra."
     );
-    return NextResponse.redirect(actionUrl, 303);
+    const response = NextResponse.redirect(actionUrl, 303);
+    response.cookies.set(CHECKOUT_ACCESS_COOKIE_NAME, "", {
+      ...checkoutAccessCookieOptions(),
+      maxAge: 0
+    });
+    return response;
   } catch (error) {
     console.error("[checkout.raptorpro-access]", error);
     await appendOrderLog(

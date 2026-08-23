@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createCheckoutAccessToken,
+  createCheckoutReturnUrl,
+  isCheckoutAccessConfigured
+} from "@/lib/checkout/checkout-access";
 import { createOrder, getDiscountByCode } from "@/lib/checkout/db";
 import {
   calculateDiscountQuote,
@@ -18,6 +23,10 @@ import {
 import { calculateLocalizedPrice } from "@/lib/checkout/pricing";
 import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import {
+  isSameSiteRequest,
+  readJsonBody
+} from "@/lib/checkout/request-security";
+import {
   CheckoutValidationError,
   isBrazil,
   validateCheckoutInput
@@ -29,12 +38,41 @@ export const dynamic = "force-dynamic";
 function checkoutMode() {
   const mode = process.env.CHECKOUT_GATEWAY_MODE;
   if (mode === "live" || mode === "sandbox") return mode;
-  return "mock";
+  if (process.env.NODE_ENV !== "production" && (!mode || mode === "mock")) {
+    return "mock";
+  }
+
+  throw new PaymentConfigurationError(
+    "O checkout está temporariamente indisponível."
+  );
 }
 
 export async function POST(request: Request) {
   try {
-    const input = validateCheckoutInput(await request.json());
+    if (!isSameSiteRequest(request)) {
+      return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+    }
+
+    const body = await readJsonBody(request, 32 * 1024);
+    if (!body.ok) {
+      return NextResponse.json(
+        {
+          error: body.tooLarge
+            ? "Os dados do checkout excederam o limite permitido."
+            : "Dados do checkout inválidos."
+        },
+        { status: body.tooLarge ? 413 : 400 }
+      );
+    }
+
+    const mode = checkoutMode();
+    if (!isCheckoutAccessConfigured()) {
+      throw new PaymentConfigurationError(
+        "O checkout está temporariamente indisponível."
+      );
+    }
+
+    const input = validateCheckoutInput(body.data);
     const product = getProductBySlug(input.productSlug);
 
     if (!product) {
@@ -54,7 +92,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const mode = checkoutMode();
     const checkoutCountry = product.checkout_country_lock || input.country;
     const brazil = isBrazil(checkoutCountry);
     const stripeOnly =
@@ -188,11 +225,28 @@ export async function POST(request: Request) {
       );
     }
 
+    const checkoutAccessToken = createCheckoutAccessToken(order.id);
+    const checkoutReturnUrl = checkoutAccessToken
+      ? createCheckoutReturnUrl(new URL(request.url).origin, order.id, {
+          locale: input.locale,
+          token: checkoutAccessToken
+        })
+      : null;
+
+    if (!checkoutAccessToken || !checkoutReturnUrl) {
+      await markOrderAsFailed(order.id, {
+        checkout_error: "checkout_access_not_configured"
+      });
+      throw new PaymentConfigurationError(
+        "O checkout está temporariamente indisponível."
+      );
+    }
+
     if (mode === "mock") {
       return NextResponse.json({
         gateway: "mock",
         orderId: order.id,
-        redirectUrl: `/checkout/success?order_id=${order.id}&mock=1${input.locale === "en" ? "&locale=en" : ""}`
+        redirectUrl: checkoutReturnUrl
       });
     }
 
@@ -203,6 +257,8 @@ export async function POST(request: Request) {
           gateway: "mercado_pago",
           paymentMethod: "pix",
           orderId: order.id,
+          checkoutAccessToken,
+          returnUrl: checkoutReturnUrl,
           pix
         });
       }
@@ -265,6 +321,13 @@ export async function POST(request: Request) {
       throw error;
     }
   } catch (error) {
+    if (error instanceof PaymentConfigurationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 503 }
+      );
+    }
+
     if (error instanceof CheckoutValidationError) {
       return NextResponse.json(
         { error: error.message, field: error.field },

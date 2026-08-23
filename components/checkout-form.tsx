@@ -20,6 +20,8 @@ type CheckoutFormProps = {
 
 type PixState = {
   orderId: string;
+  accessToken: string;
+  returnUrl: string;
   qrCode?: unknown;
   qrCodeBase64?: unknown;
   ticketUrl?: unknown;
@@ -423,10 +425,14 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       if (
         payload.gateway === "mercado_pago" &&
         payload.paymentMethod === "pix" &&
-        payload.pix
+        payload.pix &&
+        typeof payload.checkoutAccessToken === "string" &&
+        typeof payload.returnUrl === "string"
       ) {
         setPix({
           orderId: payload.orderId,
+          accessToken: payload.checkoutAccessToken,
+          returnUrl: payload.returnUrl,
           ...payload.pix
         });
         setPixStatus("pending");
@@ -454,8 +460,12 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
 
   useEffect(() => {
     const orderId = pix?.orderId;
-    if (!orderId) return;
+    const accessToken = pix?.accessToken;
+    const returnUrl = pix?.returnUrl;
+    if (!orderId || !accessToken || !returnUrl) return;
     const activeOrderId: string = orderId;
+    const activeAccessToken: string = accessToken;
+    const activeReturnUrl: string = returnUrl;
 
     let stopped = false;
 
@@ -463,7 +473,10 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       try {
         const response = await fetch(
           `/api/checkout/status/${encodeURIComponent(activeOrderId)}`,
-          { cache: "no-store" }
+          {
+            cache: "no-store",
+            headers: { Authorization: `Bearer ${activeAccessToken}` }
+          }
         );
 
         if (!response.ok) return;
@@ -474,9 +487,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         setPixStatus(payload.status);
 
         if (payload.status === "paid") {
-          window.location.href = `/checkout/success?order_id=${encodeURIComponent(
-            activeOrderId
-          )}${isEnglish ? "&locale=en" : ""}`;
+          window.location.href = activeReturnUrl;
         }
       } catch {
         // Keep the QR Code available if a transient status check fails.
@@ -490,7 +501,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       stopped = true;
       window.clearInterval(interval);
     };
-  }, [isEnglish, pix?.orderId]);
+  }, [pix?.accessToken, pix?.orderId, pix?.returnUrl]);
 
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">

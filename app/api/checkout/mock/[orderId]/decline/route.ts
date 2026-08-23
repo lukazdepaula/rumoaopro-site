@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrderById } from "@/lib/checkout/db";
 import { markOrderAsFailed } from "@/lib/checkout/order-events";
+import { isSameSiteRequest } from "@/lib/checkout/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +10,14 @@ type MockRouteProps = {
   params: Promise<{ orderId: string }>;
 };
 
-export async function POST(_request: Request, { params }: MockRouteProps) {
+export async function POST(request: Request, { params }: MockRouteProps) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Rota não encontrada." }, { status: 404 });
+  }
+  if (!isSameSiteRequest(request)) {
+    return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  }
+
   try {
     const { orderId } = await params;
     const order = await getOrderById(orderId);

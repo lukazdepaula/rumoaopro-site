@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { createCheckoutReturnUrl } from "@/lib/checkout/checkout-access";
 import type { CheckoutProduct, Order, OrderStatus } from "@/lib/checkout/types";
 import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
@@ -36,6 +37,18 @@ function requireEnv(key: string) {
     );
   }
   return value;
+}
+
+function requireCheckoutReturnUrl(order: Order, siteUrl: string) {
+  const returnUrl = createCheckoutReturnUrl(siteUrl, order.id, {
+    locale: order.metadata.checkout_locale === "en" ? "en" : "pt"
+  });
+  if (!returnUrl) {
+    throw new PaymentConfigurationError(
+      "Configure a variável de ambiente CHECKOUT_ACCESS_SECRET."
+    );
+  }
+  return returnUrl;
 }
 
 function idempotencyKey(order: Order, suffix: string) {
@@ -157,6 +170,7 @@ export async function createMercadoPagoCheckoutPreference(
 ) {
   const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
   const siteUrl = getSiteUrl();
+  const returnUrl = requireCheckoutReturnUrl(order, siteUrl);
   const nameParts = order.customer_name.trim().split(/\s+/);
 
   const response = await fetch(
@@ -187,8 +201,8 @@ export async function createMercadoPagoCheckoutPreference(
         external_reference: order.id,
         notification_url: `${siteUrl}/api/webhooks/mercado-pago`,
         back_urls: {
-          success: `${siteUrl}/checkout/success?order_id=${order.id}`,
-          pending: `${siteUrl}/checkout/success?order_id=${order.id}`,
+          success: returnUrl,
+          pending: returnUrl,
           failure: `${siteUrl}/checkout/${product.slug}?payment=failed`
         },
         statement_descriptor: "RUMOAOPRO",
@@ -260,6 +274,7 @@ export async function createMercadoPagoSubscription(
   const accessToken = requireEnv("MERCADO_PAGO_ACCESS_TOKEN");
   requireEnv("MERCADO_PAGO_WEBHOOK_SECRET");
   const siteUrl = getSiteUrl();
+  const returnUrl = requireCheckoutReturnUrl(order, siteUrl);
 
   const response = await fetch("https://api.mercadopago.com/preapproval", {
     method: "POST",
@@ -272,7 +287,7 @@ export async function createMercadoPagoSubscription(
       reason: product.name,
       external_reference: order.id,
       payer_email: order.customer_email,
-      back_url: `${siteUrl}/checkout/success?order_id=${order.id}`,
+      back_url: returnUrl,
       notification_url: `${siteUrl}/api/webhooks/mercado-pago`,
       status: "pending",
       auto_recurring: {
@@ -336,6 +351,7 @@ export async function createStripeCheckoutSession(
 ) {
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const siteUrl = getSiteUrl();
+  const returnUrl = requireCheckoutReturnUrl(order, siteUrl);
   const params = new URLSearchParams();
   const international =
     order.metadata.checkout_locale === "en" || order.customer_country !== "BR";
@@ -353,7 +369,7 @@ export async function createStripeCheckoutSession(
   params.set("client_reference_id", order.id);
   params.set(
     "success_url",
-    `${siteUrl}/checkout/success?order_id=${order.id}${international ? "&locale=en" : ""}`
+    returnUrl
   );
   params.set(
     "cancel_url",

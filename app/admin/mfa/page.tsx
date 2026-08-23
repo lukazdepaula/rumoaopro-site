@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { SingleSubmitForm } from "@/components/single-submit-form";
 import { requirePendingAdminMfa } from "@/lib/checkout/admin-auth";
 import { getAdminAccountByEmail } from "@/lib/checkout/db";
 
@@ -33,7 +34,12 @@ export default async function AdminMfaPage({
           Digite o código de 6 dígitos do seu aplicativo autenticador. Se perdeu
           o aparelho, use um dos códigos de recuperação.
         </p>
-        <form action="/api/admin/mfa/verify" className="mt-6 grid gap-4" method="post">
+        <SingleSubmitForm
+          action="/api/admin/mfa/verify"
+          className="mt-6 grid gap-4"
+          method="post"
+          pendingLabel="Verificando..."
+        >
           <label className="grid gap-2 text-sm font-semibold">
             Código de segurança
             <input
@@ -62,12 +68,12 @@ export default async function AdminMfaPage({
             </p>
           ) : null}
           <button
-            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink"
+            className="focus-ring min-h-12 rounded-md bg-white px-5 text-sm font-bold uppercase text-ink disabled:cursor-wait disabled:opacity-70"
             type="submit"
           >
             Verificar e entrar
           </button>
-        </form>
+        </SingleSubmitForm>
       </section>
     </main>
   );
