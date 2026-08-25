@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CircleDollarSign, CreditCard, ShieldCheck } from "lucide-react";
 import { AdminLiveVisitors } from "@/components/admin-live-visitors";
+import { AdminMonthlyExpenses } from "@/components/admin-monthly-expenses";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { listActiveSitePresence, listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
+import { getMonthlyExpenseMetrics } from "@/lib/checkout/expense-reporting";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import { getStripeRecurringMetrics } from "@/lib/checkout/stripe-reporting";
 import type { Gateway, Order } from "@/lib/checkout/types";
@@ -76,11 +78,12 @@ export default async function AdminDashboardPage({
   const previousMonthKey = periodKey(lastMonthStart);
   const selectedPeriodKey = periodKey(monthStart);
   const isCurrentPeriod = selectedPeriodKey === periodKey(now);
-  const [orders, monthAnalyticsEvents, activePresence, recurringMetrics] = await Promise.all([
+  const [orders, monthAnalyticsEvents, activePresence, recurringMetrics, expenseMetrics] = await Promise.all([
     listOrders({}),
     listAnalyticsEvents(monthStart),
     listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
-    getStripeRecurringMetrics()
+    getStripeRecurringMetrics(),
+    getMonthlyExpenseMetrics(selectedPeriodKey)
   ]);
   const selectedAnalyticsEvents = monthAnalyticsEvents.filter(
     (event) => new Date(event.created_at) < monthEnd
@@ -376,6 +379,9 @@ export default async function AdminDashboardPage({
           ) : null}
         </div>
       </section>
+
+      <AdminMonthlyExpenses initialData={expenseMetrics} />
+
       <div className="grid gap-4 md:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
