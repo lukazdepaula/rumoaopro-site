@@ -19,6 +19,8 @@ export type MonthlyExpenseSource = {
 export type MonthlyExpenseMetrics = {
   period: string;
   isCurrentPeriod: boolean;
+  elapsedDays: number;
+  daysInMonth: number;
   totalBrlEstimate: number;
   projectedBrlEstimate: number;
   budgetBrl: number | null;
@@ -347,6 +349,8 @@ async function loadMonthlyExpenseMetrics(period: string): Promise<MonthlyExpense
   return {
     period,
     isCurrentPeriod: range.isCurrentPeriod,
+    elapsedDays: range.elapsedDays,
+    daysInMonth: range.daysInMonth,
     totalBrlEstimate,
     projectedBrlEstimate,
     budgetBrl,

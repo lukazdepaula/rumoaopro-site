@@ -136,6 +136,9 @@ export default async function AdminDashboardPage({
     lastMonthRevenue > 0
       ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : null;
+  const projectedMonthRevenue = isCurrentPeriod
+    ? (monthRevenue / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
+    : monthRevenue;
 
   const seriesEnd = isCurrentPeriod
     ? new Date(startOfDay(now).getTime() + 86400000)
@@ -380,7 +383,10 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      <AdminMonthlyExpenses initialData={expenseMetrics} />
+      <AdminMonthlyExpenses
+        initialData={expenseMetrics}
+        projectedRevenueBrl={projectedMonthRevenue}
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">

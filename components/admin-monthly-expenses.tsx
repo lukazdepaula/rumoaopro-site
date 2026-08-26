@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  CircleDollarSign,
   Database,
-  Gauge,
   Github,
   Megaphone,
   RefreshCw,
@@ -66,9 +66,11 @@ function sourceValue(source: MonthlyExpenseSource) {
 }
 
 export function AdminMonthlyExpenses({
-  initialData
+  initialData,
+  projectedRevenueBrl
 }: {
   initialData: MonthlyExpenseMetrics;
+  projectedRevenueBrl: number;
 }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,12 +97,20 @@ export function AdminMonthlyExpenses({
     return () => window.clearInterval(interval);
   }, [refresh]);
 
+  useEffect(() => {
+    setData(initialData);
+    setReachable(true);
+  }, [initialData]);
+
   const configuredSources = data.sources.filter(
     (source) => source.state === "ready" || source.state === "estimate"
   ).length;
   const hasEstimatedSource = data.sources.some((source) => source.state === "estimate");
-  const budgetRemaining =
-    data.budgetBrl === null ? null : Math.max(0, data.budgetBrl - data.totalBrlEstimate);
+  const missingSourceCount = data.sources.length - configuredSources;
+  const estimatedProfitBrl = projectedRevenueBrl - data.projectedBrlEstimate;
+  const estimatedProfitMargin = projectedRevenueBrl > 0
+    ? (estimatedProfitBrl / projectedRevenueBrl) * 100
+    : null;
 
   return (
     <section className="mb-5 overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm">
@@ -165,30 +175,26 @@ export function AdminMonthlyExpenses({
         </div>
         <div className="p-5">
           <div className="flex items-center gap-2 text-graphite/50">
-            <Gauge className="h-4 w-4" />
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Orçamento consumido</p>
+            <CircleDollarSign className="h-4 w-4" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Lucro estimado</p>
           </div>
-          <p className="mt-2 text-3xl font-black text-ink">
-            {data.budgetUsedPercent === null ? "—" : `${formatPercent(data.budgetUsedPercent)}%`}
+          <p className={`mt-2 text-3xl font-black ${
+            estimatedProfitBrl < 0 ? "text-rose-600" : "text-ink"
+          }`}>
+            {data.hasSpendData ? formatMoney(estimatedProfitBrl) : "—"}
           </p>
-          {data.budgetBrl === null ? (
-            <p className="mt-3 text-xs text-graphite/55">Defina o orçamento mensal para acompanhar o limite.</p>
+          {!data.hasSpendData ? (
+            <p className="mt-3 text-xs text-graphite/55">Conecte pelo menos uma despesa para iniciar a estimativa.</p>
+          ) : missingSourceCount > 0 ? (
+            <p className="mt-3 text-xs text-amber-700">
+              Resultado parcial: ainda falta {missingSourceCount} fonte{missingSourceCount === 1 ? "" : "s"} de custo.
+            </p>
           ) : (
-            <>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-ink/10">
-                <div
-                  className={`h-full rounded-full ${
-                    (data.budgetUsedPercent || 0) > 100 ? "bg-rose-500" : "bg-turf"
-                  }`}
-                  style={{ width: `${Math.min(100, data.budgetUsedPercent || 0)}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-graphite/55">
-                {budgetRemaining === 0
-                  ? "Orçamento mensal atingido"
-                  : `${formatMoney(budgetRemaining || 0)} disponíveis de ${formatMoney(data.budgetBrl)}`}
-              </p>
-            </>
+            <p className="mt-3 text-xs text-graphite/55">
+              {estimatedProfitMargin === null
+                ? "Sem faturamento projetado para calcular a margem."
+                : `Margem operacional estimada de ${formatPercent(estimatedProfitMargin)}%.`}
+            </p>
           )}
         </div>
       </div>
@@ -228,7 +234,11 @@ export function AdminMonthlyExpenses({
       </div>
 
       <p className="border-t border-ink/10 px-5 py-3 text-[11px] leading-relaxed text-graphite/50">
-        Atualização automática a cada 5 minutos; consultas externas ficam protegidas no servidor por 15 minutos.
+        Lucro estimado = faturamento projetado menos as despesas monitoradas; não inclui impostos nem fontes pendentes.
+        {data.budgetBrl === null
+          ? " Orçamento mensal ainda não definido."
+          : ` Orçamento consumido: ${formatPercent(data.budgetUsedPercent || 0)}% de ${formatMoney(data.budgetBrl)}.`}
+        {" "}Atualização automática a cada 5 minutos; consultas externas ficam protegidas no servidor por 15 minutos.
         {hasEstimatedSource ? " A estimativa do Supabase segue o ciclo de faturamento da organização." : ""}
         {data.hasUnconvertedCurrencies ? " Valores em moedas sem taxa configurada ficaram fora do total em BRL." : ""}
         {` Última leitura: ${new Date(data.updatedAt).toLocaleTimeString("pt-BR", {

@@ -6,7 +6,10 @@ O bloco **Despesas do mês** reúne custos mensais no painel administrativo. Tod
 
 - **Acumulado no mês:** soma das fontes disponíveis convertida para BRL.
 - **Projeção de fechamento:** ritmo diário de Meta Ads e GitHub, acrescido dos custos fixos estimados.
+- **Lucro estimado:** faturamento projetado no ritmo do mês menos as despesas monitoradas projetadas.
 - **Orçamento consumido:** percentual de `ADMIN_MONTHLY_EXPENSE_BUDGET_BRL` já utilizado.
+
+O lucro exibido é um indicador operacional, não um resultado contábil. Ele não inclui impostos nem custos cuja fonte ainda esteja pendente, e por isso o painel identifica quando o valor é parcial.
 
 As consultas externas ficam em cache por 15 minutos. O painel tenta atualizar automaticamente a cada 5 minutos e também oferece atualização manual.
 
