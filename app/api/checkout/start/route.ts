@@ -82,6 +82,19 @@ export async function POST(request: Request) {
       );
     }
 
+    if (product.id === "online_coaching_monthly" && !input.whatsapp) {
+      return NextResponse.json(
+        {
+          error:
+            input.locale === "en"
+              ? "Enter a valid WhatsApp or phone number."
+              : "Informe um WhatsApp ou telefone válido.",
+          field: "whatsapp"
+        },
+        { status: 400 }
+      );
+    }
+
     if (
       product.checkout_country_lock &&
       input.country !== product.checkout_country_lock

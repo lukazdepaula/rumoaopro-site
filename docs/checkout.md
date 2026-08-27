@@ -37,6 +37,11 @@ Para manter a menor alteração possível, o checkout foi implementado com rotas
 
 O pedido continua registrado na moeda-base configurada no catálogo. A conversão e a cobrança na moeda apresentada são processadas pela Stripe.
 
+A assinatura da assessoria segue duas bases de preço:
+
+- Brasil: `R$ 399` a cada 30 dias, com dados fiscais obrigatórios;
+- exterior: `USD 75` por mês como preço-base, apresentado e cobrado pela Stripe em uma moeda local compatível quando o Adaptive Pricing estiver disponível.
+
 ## Variáveis de ambiente
 
 Copie `.env.example` para `.env.local` e configure:

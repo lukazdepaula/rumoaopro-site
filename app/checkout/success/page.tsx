@@ -106,7 +106,7 @@ export default async function CheckoutSuccessPage({
         ? isEnglish ? "Failed" : "Falhou"
         : isEnglish ? "Processing" : "Em processamento";
   const accessHref = isCoachingSubscription
-    ? "/assessoria"
+    ? isEnglish ? "/en/coaching" : "/assessoria"
     : isLoadProTrial
     ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
     : isRaptorProProgram
@@ -115,7 +115,7 @@ export default async function CheckoutSuccessPage({
       ? `/my-programs/${product.slug}`
       : "/my-programs";
   const title = isCoachingSubscription && order?.status === "paid"
-    ? "Assinatura da assessoria confirmada"
+    ? isEnglish ? "Coaching subscription confirmed" : "Assinatura da assessoria confirmada"
     : isLoadProTrial
     ? trialIsReady
       ? isEnglish ? "Free trial activated" : "Teste gratuito ativado"
@@ -132,7 +132,9 @@ export default async function CheckoutSuccessPage({
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
   const description = isCoachingSubscription && order?.status === "paid"
-    ? "Pagamento aprovado. Sua assinatura está ativa e nossa equipe entrará em contato pelo WhatsApp informado para iniciar o atendimento."
+    ? isEnglish
+      ? "Payment approved. Your subscription is active and our team will contact you using the details provided to begin onboarding."
+      : "Pagamento aprovado. Sua assinatura está ativa e nossa equipe entrará em contato pelo WhatsApp informado para iniciar o atendimento."
     : isLoadProTrial
     ? trialIsReady
       ? isEnglish
@@ -342,7 +344,7 @@ export default async function CheckoutSuccessPage({
               {isLoadProTrial
                 ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
                 : isCoachingSubscription
-                  ? "Voltar para a assessoria"
+                  ? isEnglish ? "Back to online coaching" : "Voltar para a assessoria"
                 : isRaptorProProgram
                   ? isEnglish ? "I already signed in — open RaptorPro" : "Já fiz meu acesso — abrir RaptorPro"
                 : order?.status === "paid"

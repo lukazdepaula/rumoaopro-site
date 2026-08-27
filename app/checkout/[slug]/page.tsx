@@ -56,13 +56,21 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   }).format(product.price_brl);
   const loadProWhatsapp = (process.env.NEXT_PUBLIC_LOADPRO_WHATSAPP || "5519992811078").replace(/\D/g, "");
   const subscriptionBenefits = isCoachingSubscription
-    ? [
-        "Assessoria individual por ciclos de 30 dias",
-        "Planejamento conectado à rotina e ao calendário do atleta",
-        "CPF/CNPJ, endereço e WhatsApp registrados para emissão fiscal",
-        "Cobrança recorrente segura pela Stripe",
-        "Assinatura e pagamentos acompanhados no admin RumoAoPro"
-      ]
+    ? isEnglish
+      ? [
+          "Individual coaching in 30-day cycles",
+          "Training adjusted to your routine and competition calendar",
+          "Tax details requested only for payments in Brazil",
+          "Secure recurring billing in a supported local currency",
+          "Subscription monitored by the RumoAoPro team"
+        ]
+      : [
+          "Assessoria individual por ciclos de 30 dias",
+          "Planejamento conectado à rotina e ao calendário do atleta",
+          "Dados fiscais solicitados apenas para pagamentos no Brasil",
+          "Cobrança recorrente segura em reais ou moeda local compatível",
+          "Assinatura e pagamentos acompanhados no admin RumoAoPro"
+        ]
     : isEnglish
       ? [
           `Founding plan billed at ${brazilPrice} per month`,
@@ -115,7 +123,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             <p className="mt-4 text-base leading-8 text-white/72">
               {product.type === "subscription"
                 ? isCoachingSubscription
-                  ? "Preencha seus dados fiscais e confirme a assinatura da assessoria. A cobrança de R$ 399 é renovada automaticamente a cada 30 dias."
+                  ? isEnglish
+                    ? "Choose your billing country and confirm the monthly coaching subscription. Stripe shows the supported local currency before payment."
+                    : `Escolha seu país e confirme a assinatura mensal da assessoria. No Brasil, a cobrança é de ${brazilPrice}; no exterior, a Stripe mostra a moeda local compatível.`
                   : isEnglish
                   ? "Enter your details and confirm the monthly subscription. Your LoadPro access is provisioned after payment approval."
                   : "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
@@ -138,7 +148,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             </div>
             <h2 className="mt-5 text-xl font-bold text-ink">
               {isCoachingSubscription
-                ? "Assinatura e dados protegidos"
+                ? isEnglish ? "Protected subscription and data" : "Assinatura e dados protegidos"
                 : isLoadProSubscription
                   ? isEnglish ? "Protected payment and access" : "Pagamento e acesso protegidos"
                 : isEnglish
@@ -147,7 +157,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
             </h2>
             <p className="mt-3 text-sm leading-6 text-graphite/72">
               {isCoachingSubscription
-                ? "O pagamento é processado pela Stripe. Após a confirmação, sua inscrição fica registrada no admin e a equipe recebe seus dados para iniciar o atendimento."
+                ? isEnglish
+                  ? "Payment is securely processed by Stripe. After confirmation, the RumoAoPro team receives your details to begin the coaching onboarding."
+                  : "O pagamento é processado pela Stripe. Após a confirmação, sua inscrição fica registrada no admin e a equipe recebe seus dados para iniciar o atendimento."
                 : isLoadProSubscription
                   ? isEnglish
                     ? "Payment is securely processed by Stripe. Your LoadPro access and selected squad limit are synchronized after confirmation."

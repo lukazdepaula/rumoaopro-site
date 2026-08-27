@@ -66,7 +66,6 @@ export const checkoutProducts: CheckoutProduct[] = [
     stripe_price_id:
       process.env.STRIPE_COACHING_MONTHLY_PRICE_ID ||
       "price_1SmeZyA6RupMT8QsC0IOu55B",
-    checkout_country_lock: "BR",
     checkout_payment_methods: ["stripe"],
     discounts_enabled: false,
     created_at: now,

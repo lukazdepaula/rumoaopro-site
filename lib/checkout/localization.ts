@@ -4,6 +4,12 @@ const englishProductCopy: Record<
   string,
   { description: string; name?: string; salesPagePath: string }
 > = {
+  "assessoria-online": {
+    name: "RumoAoPro Online Coaching · 30 days",
+    description:
+      "Individual coaching with personalized training, calendar-based adjustments and direct support from the RumoAoPro team.",
+    salesPagePath: "/en/coaching"
+  },
   "loadpro-founders": {
     name: "LoadPro · Founders 30",
     description:

@@ -552,6 +552,10 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                   ? isEnglish
                     ? "BRL · card with a 7-day free trial"
                     : "R$ · cartão com 7 dias grátis"
+                  : isCoachingSubscription
+                    ? isEnglish
+                      ? "BRL · monthly card subscription · Stripe"
+                      : "R$ · assinatura mensal no cartão · Stripe"
                   : isEnglish
                     ? "BRL · Pix or card · Mercado Pago"
                     : "R$ · Pix ou cartão · Mercado Pago"
@@ -615,7 +619,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 ? "Add a card securely. You pay nothing today and can cancel anytime."
                 : "Cadastre o cartão com segurança. Você não paga nada hoje e pode cancelar quando quiser."
               : isCoachingSubscription
-              ? "R$ 399 a cada 30 dias no cartão. Cancele quando quiser."
+              ? isBrazil
+                ? isEnglish
+                  ? `${brlEstimate} every 30 days by card. Cancel anytime.`
+                  : `${brlEstimate} a cada 30 dias no cartão. Cancele quando quiser.`
+                : isEnglish
+                  ? `${usdPrice} monthly base price. Stripe shows the supported local currency before confirmation.`
+                  : `Preço-base mensal de ${usdPrice}. A Stripe mostra a moeda local compatível antes da confirmação.`
               : isSubscription
               ? isEnglish
                 ? "Monthly card subscription. Cancel anytime."
@@ -632,9 +642,17 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           {isCoachingSubscription && acceptsPaymentMethod("stripe") ? (
             <PaymentOption
               active
-              description="Cobrança recorrente de R$ 399 processada com segurança pela Stripe."
+              description={
+                isBrazil
+                  ? isEnglish
+                    ? `Recurring charge of ${brlEstimate} processed securely by Stripe.`
+                    : `Cobrança recorrente de ${brlEstimate} processada com segurança pela Stripe.`
+                  : isEnglish
+                    ? `Monthly base price of ${usdPrice}, converted and charged in a supported local currency by Stripe.`
+                    : `Preço-base mensal de ${usdPrice}, convertido e cobrado pela Stripe em uma moeda local compatível.`
+              }
               icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
-              label="Assinatura da assessoria"
+              label={isEnglish ? "Online coaching subscription" : "Assinatura da assessoria"}
               name="payment-method"
               onSelect={() => setPaymentMethod("stripe")}
               value="stripe"
@@ -758,6 +776,10 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
           {isBrazil
             ? "WhatsApp com código do país (DDI)"
+            : isCoachingSubscription
+              ? isEnglish
+                ? "WhatsApp / phone"
+                : "WhatsApp / telefone"
             : isEnglish
               ? "WhatsApp / phone (optional)"
               : "WhatsApp / telefone (opcional)"}
@@ -772,7 +794,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               maxLength={30}
               onChange={(event) => setWhatsapp(event.target.value)}
               placeholder={phoneExample}
-              required={isBrazil}
+              required={isBrazil || isCoachingSubscription}
               type="tel"
               value={whatsapp}
             />
@@ -906,7 +928,30 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               </p>
             </div>
           ) : null}
-          {product.checkout_country_lock && isSubscription ? (
+          {isCoachingSubscription ? (
+            isBrazil ? (
+              <p>
+                {isEnglish ? "Recurring price:" : "Valor recorrente:"}{" "}
+                <strong>{brlEstimate}</strong> {isEnglish ? "every 30 days" : "a cada 30 dias"}
+              </p>
+            ) : (
+              <>
+                <p>
+                  {isEnglish ? "International monthly base price:" : "Preço-base mensal internacional:"}{" "}
+                  <strong>{usdPrice}</strong>
+                </p>
+                <p className="mt-1">
+                  {isEnglish ? "Stripe currency:" : "Moeda na Stripe:"}{" "}
+                  <strong>{preferredPresentmentCurrency || (isEnglish ? "local currency" : "moeda local")}</strong>
+                </p>
+                <p className="mt-1 text-xs text-graphite/65">
+                  {isEnglish
+                    ? "Stripe calculates the conversion and shows the exact recurring amount before confirmation."
+                    : "A Stripe calcula a conversão e mostra o valor recorrente exato antes da confirmação."}
+                </p>
+              </>
+            )
+          ) : product.checkout_country_lock && isSubscription ? (
             <p>
               Valor recorrente: <strong>{brlEstimate}</strong> a cada 30 dias
             </p>
@@ -964,7 +1009,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
                 ? "Due today:"
                 : "Cobrança hoje:"
               : isCoachingSubscription
-                ? "Assinatura da assessoria:"
+                ? isEnglish
+                  ? "Coaching subscription:"
+                  : "Assinatura da assessoria:"
               : isSubscription
               ? isEnglish
                 ? "Monthly subscription:"
@@ -982,10 +1029,12 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           ) : null}
           {isSubscription ? (
             <p className="mt-1 text-xs text-graphite/65">
-              {isEnglish
-                ? "The founding price remains locked while the subscription stays active."
-                : isCoachingSubscription
-                  ? "A cobrança é renovada automaticamente a cada 30 dias até o cancelamento."
+              {isCoachingSubscription
+                ? isEnglish
+                  ? "The subscription renews automatically every 30 days until cancellation."
+                  : "A cobrança é renovada automaticamente a cada 30 dias até o cancelamento."
+                : isEnglish
+                  ? "The founding price remains locked while the subscription stays active."
                   : "O preço fundador permanece protegido enquanto a assinatura continuar ativa."}
             </p>
           ) : null}
@@ -1024,7 +1073,9 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               ? "Stripe will request a valid card, but no charge is made today. Cancel before the trial ends to avoid the first monthly charge."
               : "A Stripe solicitará um cartão válido, mas não haverá cobrança hoje. Cancele antes do fim do teste para evitar a primeira mensalidade."
             : isCoachingSubscription
-              ? "Você será redirecionado para a Stripe e poderá revisar os dados antes de confirmar a assinatura recorrente."
+              ? isEnglish
+                ? "You will be redirected to Stripe to review the currency and recurring amount before confirming."
+                : "Você será redirecionado para a Stripe e poderá revisar a moeda e o valor recorrente antes de confirmar."
             : isEnglish
             ? "You will review the payment securely with Stripe before any charge is confirmed."
             : paymentMethod === "pix"
