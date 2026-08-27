@@ -27,13 +27,15 @@ Para manter a menor alteração possível, o checkout foi implementado com rotas
 ## Fluxo internacional - Stripe
 
 1. Cliente abre `/checkout/[slug]`.
-2. Escolhe país diferente de Brasil.
-3. Informa nome, e-mail e país. CPF/CNPJ não aparece.
+2. Escolhe um dos países e territórios suportados; o DDI correspondente é preenchido automaticamente.
+3. Informa nome, e-mail e, opcionalmente, telefone. CPF/CNPJ não aparece.
 4. A API cria o pedido interno `pending`.
-5. O sistema cria uma Stripe Checkout Session.
-6. O cliente é redirecionado para a Stripe.
+5. O sistema cria uma Stripe Checkout Session com Adaptive Pricing habilitado.
+6. O cliente é redirecionado para a Stripe, que apresenta uma moeda local compatível (incluindo EUR para Irlanda e zona do euro) e mostra a conversão antes da confirmação.
 7. O retorno `/checkout/success` não libera produto.
 8. O pedido só muda para `paid` quando `/api/webhooks/stripe` recebe evento assinado e válido.
+
+O pedido continua registrado na moeda-base configurada no catálogo. A conversão e a cobrança na moeda apresentada são processadas pela Stripe.
 
 ## Variáveis de ambiente
 

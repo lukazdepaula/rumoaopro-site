@@ -2,12 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowRight, Check, Copy, CreditCard, Globe2, Loader2, QrCode } from "lucide-react";
+import { ArrowRight, Check, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
 import type {
   CheckoutPaymentMethod,
   CheckoutProduct
 } from "@/lib/checkout/types";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
+import {
+  combineInternationalPhone,
+  getCheckoutCountries,
+  getCountryDialCode,
+  getPhoneExample,
+  getPreferredPresentmentCurrency
+} from "@/lib/checkout/countries";
 import {
   getMarketingCheckoutContext,
   trackCheckoutEvent
@@ -56,27 +63,6 @@ const formatPostalCode = (value: string) => {
     ? `${digits.slice(0, 5)}-${digits.slice(5)}`
     : digits;
 };
-
-const countryDialCodes: Record<string, string> = {
-  BR: "+55",
-  US: "+1",
-  PT: "+351",
-  GB: "+44",
-  ES: "+34"
-};
-
-const dialCodeOptions = [
-  { code: "+55", country: "BR" },
-  { code: "+1", country: "US" },
-  { code: "+351", country: "PT" },
-  { code: "+44", country: "GB" },
-  { code: "+34", country: "ES" },
-  { code: "+33", country: "FR" },
-  { code: "+49", country: "DE" },
-  { code: "+39", country: "IT" },
-  { code: "+966", country: "SA" },
-  { code: "+971", country: "AE" }
-];
 
 function flagEmoji(code: string) {
   return String.fromCodePoint(
@@ -244,8 +230,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const [document, setDocument] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
-  const [dialCode, setDialCode] = useState(initialCountry === "BR" ? "+55" : "+1");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
@@ -257,6 +242,14 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
 
   const isBrazil = country === "BR";
   const isSubscription = product.type === "subscription";
+  const checkoutCountries = useMemo(
+    () => getCheckoutCountries(locale),
+    [locale]
+  );
+  const countryDialCode = getCountryDialCode(country);
+  const phoneExample = getPhoneExample(country, locale);
+  const preferredPresentmentCurrency =
+    getPreferredPresentmentCurrency(country);
   const acceptsPaymentMethod = (method: CheckoutPaymentMethod) =>
     !product.checkout_payment_methods?.length ||
     product.checkout_payment_methods.includes(method);
@@ -297,9 +290,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
     const nextCountry =
       nextMarket === "BR" ? "BR" : country === "BR" ? "US" : country;
     setCountry(nextCountry);
-    setDialCode(
-      countryDialCodes[nextCountry] || (nextMarket === "BR" ? "+55" : "+1")
-    );
+    if (nextCountry !== country) setWhatsapp("");
     setPaymentMethod(
       product.checkout_payment_methods?.[0] ||
         (isLoadProSubscription || nextMarket === "INTL" ? "stripe" : "mercado_pago")
@@ -308,9 +299,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
 
   function selectCountry(nextCountry: string) {
     setCountry(nextCountry);
-    if (countryDialCodes[nextCountry]) {
-      setDialCode(countryDialCodes[nextCountry]);
-    }
+    setWhatsapp("");
     setPaymentMethod(
       product.checkout_payment_methods?.[0] ||
         (isLoadProSubscription || nextCountry !== "BR" ? "stripe" : "mercado_pago")
@@ -388,7 +377,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           document: isBrazil ? document : undefined,
           postalCode,
           address,
-          whatsapp: `${dialCode}${whatsappNumber.replace(/\D/g, "")}`,
+          whatsapp: combineInternationalPhone(whatsapp, countryDialCode),
           paymentMethod,
           locale,
           marketing: getMarketingCheckoutContext(),
@@ -504,7 +493,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   }, [pix?.accessToken, pix?.orderId, pix?.returnUrl]);
 
   return (
-    <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+    <div className="min-w-0 rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4 border-b border-ink/10 pb-5">
         <div>
           <p className="text-sm font-bold uppercase text-signal">Checkout</p>
@@ -575,8 +564,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               active={!isBrazil}
               description={
                 isEnglish
-                  ? "USD · international card · Stripe"
-                  : "US$ · cartão internacional · Stripe"
+                  ? "Local currency · international card · Stripe"
+                  : "Moeda local · cartão internacional · Stripe"
               }
               flag={String.fromCodePoint(0x1f30d)}
               label={isEnglish ? "Paying from abroad" : "Estou fora do Brasil"}
@@ -592,20 +581,27 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         )}
 
         {!product.checkout_country_lock && !isBrazil ? (
-          <label className="grid gap-2 text-sm font-semibold text-ink">
+          <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
             {isEnglish ? "Billing country" : "País de cobrança"}
             <select
               autoComplete="country"
-              className="min-h-12 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
+              className="min-h-12 w-full min-w-0 rounded-md border border-ink/15 bg-white px-3 text-sm text-ink"
               onChange={(event) => selectCountry(event.target.value)}
               value={country}
             >
-              <option value="US">{isEnglish ? "United States" : "Estados Unidos"}</option>
-              <option value="PT">Portugal</option>
-              <option value="GB">{isEnglish ? "United Kingdom" : "Reino Unido"}</option>
-              <option value="ES">{isEnglish ? "Spain" : "Espanha"}</option>
-              <option value="OTHER">{isEnglish ? "Other country" : "Outro país"}</option>
+              {checkoutCountries
+                .filter((option) => option.code !== "BR")
+                .map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.flag} {option.name} ({option.dialCode})
+                  </option>
+                ))}
             </select>
+            <span className="text-xs font-normal leading-5 text-graphite/60">
+              {isEnglish
+                ? "Your country sets the phone code. Stripe offers supported local currencies at payment."
+                : "O país define o DDI. A Stripe oferece as moedas locais compatíveis no pagamento."}
+            </span>
           </label>
         ) : null}
 
@@ -720,8 +716,8 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               active
               description={
                 isEnglish
-                  ? "You will complete payment on Stripe's secure checkout."
-                  : "Cartão de crédito em checkout internacional seguro."
+                  ? "Stripe shows and charges the supported local currency automatically."
+                  : "A Stripe mostra e cobra automaticamente na moeda local compatível."
               }
               icon={<CreditCard aria-hidden="true" className="h-5 w-5" />}
               label="Credit or debit card"
@@ -759,50 +755,32 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           />
         </label>
 
-        <label className="grid gap-2 text-sm font-semibold text-ink">
-          WhatsApp
-          <span className="grid grid-cols-[112px_1fr] gap-2">
-            <span className="relative">
-              <Globe2
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-graphite/45"
-              />
-              <select
-                aria-label={isEnglish ? "WhatsApp country code" : "DDI do WhatsApp"}
-                autoComplete="tel-country-code"
-                className="min-h-12 w-full appearance-none rounded-md border border-ink/15 bg-white pl-9 pr-2 text-sm font-bold text-ink"
-                onChange={(event) => setDialCode(event.target.value)}
-                value={dialCode}
-              >
-                {dialCodeOptions.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.code}
-                  </option>
-                ))}
-              </select>
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
+          {isBrazil
+            ? "WhatsApp com código do país (DDI)"
+            : isEnglish
+              ? "WhatsApp / phone (optional)"
+              : "WhatsApp / telefone (opcional)"}
+          <span className="grid grid-cols-[auto_minmax(0,1fr)] overflow-hidden rounded-md border border-ink/15 bg-white focus-within:border-ink/35 focus-within:ring-2 focus-within:ring-signal/20">
+            <span className="flex min-h-12 items-center border-r border-ink/10 bg-smoke px-3 text-sm font-bold text-ink">
+              {countryDialCode}
             </span>
             <input
               autoComplete="tel-national"
-              className="min-h-12 min-w-0 rounded-md border border-ink/15 px-3 text-sm text-ink"
+              className="min-h-12 min-w-0 border-0 px-3 text-sm text-ink outline-none"
               inputMode="tel"
-              maxLength={22}
-              onChange={(event) => setWhatsappNumber(event.target.value)}
-              placeholder={
-                isBrazil
-                  ? "11 99999-9999"
-                  : isEnglish
-                    ? "555 123 4567"
-                    : "número com DDD"
-              }
-              required
+              maxLength={30}
+              onChange={(event) => setWhatsapp(event.target.value)}
+              placeholder={phoneExample}
+              required={isBrazil}
               type="tel"
-              value={whatsappNumber}
+              value={whatsapp}
             />
           </span>
           <span className="text-xs font-normal leading-5 text-graphite/60">
             {isEnglish
-              ? "Include your country code so our team can help with your order if needed."
-              : "Inclua o DDI para que nossa equipe possa ajudar com seu pedido, se necessário."}
+              ? `Country code ${countryDialCode} is added automatically.`
+              : `O DDI ${countryDialCode} é adicionado automaticamente.`}
           </span>
         </label>
 
@@ -937,9 +915,21 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               Valor desta compra: <strong>{brlEstimate}</strong>
             </p>
           ) : isEnglish ? (
-            <p>
-              International price: <strong>{usdPrice}</strong>
-            </p>
+            <>
+              <p>
+                International base price: <strong>{usdPrice}</strong>
+              </p>
+              {!isBrazil ? (
+                <>
+                  <p className="mt-1">
+                    Stripe currency: <strong>{preferredPresentmentCurrency || "local currency"}</strong>
+                  </p>
+                  <p className="mt-1 text-xs text-graphite/65">
+                    Stripe calculates the conversion and shows the exact amount before payment.
+                  </p>
+                </>
+              ) : null}
+            </>
           ) : (
             <>
               <p>
@@ -948,6 +938,11 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               <p className="mt-1">
                 Preço no Brasil: <strong>{brlEstimate}</strong>
               </p>
+              {!isBrazil ? (
+                <p className="mt-1 text-xs text-graphite/65">
+                  A Stripe converte para {preferredPresentmentCurrency || "a moeda local compatível"} e mostra o valor exato antes do pagamento.
+                </p>
+              ) : null}
             </>
           )}
           {appliedDiscount ? (

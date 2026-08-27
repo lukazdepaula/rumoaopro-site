@@ -120,7 +120,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                   ? "Enter your details and confirm the monthly subscription. Your LoadPro access is provisioned after payment approval."
                   : "Informe seus dados, escolha o processador do cartão e confirme sua assinatura mensal. Seu acesso ao LoadPro será provisionado após a aprovação."
                 : isEnglish
-                ? "Pay securely in USD. Your program access is activated automatically after payment confirmation."
+                ? "Pay securely in a supported local currency, including EUR in Ireland. Your program access is activated automatically after payment confirmation."
                 : isBrazilOnlyProgram
                   ? "Pague em reais com Pix ou cartão pelo Mercado Pago. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."
                   : "Escolha a forma de pagamento ideal para o seu país. Seu acesso é liberado automaticamente assim que o pagamento for confirmado."}
@@ -162,7 +162,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                 : isEnglish
                 ? [
                     "Secure international card payment via Stripe",
-                    "Price charged in US dollars",
+                    "Local currency conversion handled by Stripe",
                     "Automatic access after confirmation",
                     "Training materials protected in your account",
                     "Support directly from RumoAoPro"
@@ -179,7 +179,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
                     "CPF/CNPJ exigido apenas para Brasil",
                     "Cartão e parcelamento via Mercado Pago no Brasil",
                     "Pix com QR Code e aprovação rápida",
-                    "Stripe para cartão no Brasil e no exterior",
+                    "Stripe com moedas locais compatíveis no exterior",
                     "Pedido registrado no painel interno"
                   ]).map((item) => (
                 <p className="flex gap-3 text-sm text-graphite/75" key={item}>

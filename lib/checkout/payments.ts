@@ -379,6 +379,10 @@ export async function createStripeCheckoutSession(
   );
   params.set("metadata[order_id]", order.id);
   params.set("metadata[product_id]", product.id);
+  params.set("metadata[checkout_country]", order.customer_country);
+  if (order.customer_country !== "BR") {
+    params.set("adaptive_pricing[enabled]", "true");
+  }
   if (trialDays > 0) {
     params.set("metadata[trial_days]", String(trialDays));
   }

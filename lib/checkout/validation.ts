@@ -4,6 +4,11 @@ import type {
   CustomerDocumentType,
   MarketingAttributionInput
 } from "@/lib/checkout/types";
+import {
+  getCountries,
+  parsePhoneNumberFromString,
+  type CountryCode
+} from "libphonenumber-js/min";
 
 export class CheckoutValidationError extends Error {
   constructor(
@@ -53,6 +58,8 @@ const normalizeMarketing = (value: unknown): MarketingAttributionInput => {
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
+const supportedPhoneCountries = new Set(getCountries());
+
 export const normalizeDiscountCode = (value: unknown) =>
   typeof value === "string"
     ? value.trim().toUpperCase().replace(/\s+/g, "")
@@ -94,7 +101,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const email = normalizeText(data.email).toLowerCase();
   const country = normalizeCountry(normalizeText(data.country));
   const address = normalizeText(data.address).replace(/\s+/g, " ");
-  const whatsappDigits = onlyDigits(normalizeText(data.whatsapp));
+  const whatsapp = normalizeText(data.whatsapp);
   const rawPostalCode = normalizeText(data.postalCode);
   const discountCode = normalizeDiscountCode(data.discountCode);
   const requestedPaymentMethod = normalizeText(data.paymentMethod);
@@ -116,15 +123,23 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     throw new CheckoutValidationError("Informe um e-mail válido.", "email");
   }
 
-  if (!country || country.length < 2) {
+  if (
+    !country ||
+    country.length !== 2 ||
+    !supportedPhoneCountries.has(country as CountryCode)
+  ) {
     throw new CheckoutValidationError("Informe seu país.", "country");
   }
 
-  if (whatsappDigits.length < 8 || whatsappDigits.length > 15) {
+  const parsedPhone = whatsapp
+    ? parsePhoneNumberFromString(whatsapp, country as CountryCode)
+    : undefined;
+
+  if (whatsapp && (!parsedPhone || !parsedPhone.isPossible())) {
     throw new CheckoutValidationError(
       locale === "en"
-        ? "Enter a valid WhatsApp number including the country code."
-        : "Informe um WhatsApp válido com o código do país (DDI).",
+        ? "Enter a valid phone number with country code."
+        : "Informe um telefone válido com o código do país (DDI).",
       "whatsapp"
     );
   }
@@ -134,6 +149,13 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       throw new CheckoutValidationError(
         "Informe seu endereço completo, incluindo cidade e região/estado.",
         "address"
+      );
+    }
+
+    if (!parsedPhone || !parsedPhone.isPossible()) {
+      throw new CheckoutValidationError(
+        "Informe um WhatsApp válido com o código do país (DDI).",
+        "whatsapp"
       );
     }
 
@@ -163,7 +185,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
       document: document.value,
       postalCode,
       address,
-      whatsapp: `+${whatsappDigits}`,
+      whatsapp: parsedPhone.number,
       discountCode: discountCode || null,
       paymentMethod,
       locale,
@@ -180,7 +202,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
     document: null,
     postalCode: rawPostalCode.replace(/\s+/g, " ") || null,
     address: address || null,
-    whatsapp: `+${whatsappDigits}`,
+    whatsapp: parsedPhone?.number || null,
     discountCode: discountCode || null,
     paymentMethod: "stripe",
     locale,
