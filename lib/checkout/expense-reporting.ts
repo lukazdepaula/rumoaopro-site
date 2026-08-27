@@ -4,7 +4,7 @@ export type ExpenseSourceState = "ready" | "estimate" | "missing" | "error";
 export type ExpenseCategory = "Marketing" | "Infraestrutura" | "Ferramentas";
 
 export type MonthlyExpenseSource = {
-  id: "meta_ads" | "supabase" | "github";
+  id: "meta_ads" | "supabase" | "github" | "chatgpt";
   name: string;
   category: ExpenseCategory;
   state: ExpenseSourceState;
@@ -259,6 +259,37 @@ function loadSupabaseExpense(period: string): MonthlyExpenseSource {
   };
 }
 
+function loadChatGptExpense(): MonthlyExpenseSource {
+  const amount = numberFromEnv("CHATGPT_MONTHLY_COST", { allowZero: true });
+  const configuredCurrency = process.env.CHATGPT_MONTHLY_COST_CURRENCY?.trim().toUpperCase();
+  const currency = configuredCurrency && /^[A-Z]{3}$/.test(configuredCurrency)
+    ? configuredCurrency
+    : "USD";
+
+  if (amount === null) {
+    return missingSource(
+      "chatgpt",
+      "ChatGPT",
+      "Ferramentas",
+      "fixed",
+      "Informe o valor mensal da assinatura e a moeda cobrados na sua conta."
+    );
+  }
+
+  return {
+    id: "chatgpt",
+    name: "ChatGPT",
+    category: "Ferramentas",
+    state: "estimate",
+    amount,
+    currency,
+    brlEstimate: toBrl(amount, currency),
+    projectionMode: "fixed",
+    detail: "Custo mensal fixo informado manualmente",
+    updatedAt: new Date().toISOString()
+  };
+}
+
 async function loadGithubExpense(period: string): Promise<MonthlyExpenseSource> {
   const token = process.env.GITHUB_BILLING_TOKEN?.trim();
   const account = process.env.GITHUB_BILLING_ACCOUNT?.trim();
@@ -324,7 +355,7 @@ async function loadMonthlyExpenseMetrics(period: string): Promise<MonthlyExpense
     loadMetaAdsExpense(period),
     loadGithubExpense(period)
   ]);
-  const sources = [metaAds, loadSupabaseExpense(period), github];
+  const sources = [metaAds, loadSupabaseExpense(period), github, loadChatGptExpense()];
   const convertedSources = sources.filter(
     (source) =>
       (source.state === "ready" || source.state === "estimate") &&

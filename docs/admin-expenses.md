@@ -57,6 +57,17 @@ O Supabase mostra o total previsto em **Organization > Billing > Upcoming Invoic
 
 Referência: [Supabase Cost Control](https://supabase.com/docs/guides/platform/cost-control).
 
+## ChatGPT
+
+Variáveis:
+
+```env
+CHATGPT_MONTHLY_COST=20.00
+CHATGPT_MONTHLY_COST_CURRENCY=USD
+```
+
+Informe o valor e a moeda realmente cobrados na assinatura. O painel trata esse custo como mensal fixo e o identifica como estimativa manual. Uso da API da OpenAI é uma cobrança separada e não deve ser somado aqui sem conferir a página de custos da organização.
+
 ## Conversão e orçamento
 
 ```env

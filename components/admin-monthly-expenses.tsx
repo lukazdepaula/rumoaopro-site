@@ -6,6 +6,7 @@ import {
   Database,
   Github,
   Megaphone,
+  MessageSquareText,
   RefreshCw,
   TrendingUp,
   WalletCards
@@ -50,6 +51,7 @@ function sourceStatus(source: MonthlyExpenseSource) {
 function SourceIcon({ source }: { source: MonthlyExpenseSource }) {
   if (source.id === "meta_ads") return <Megaphone className="h-4 w-4" />;
   if (source.id === "github") return <Github className="h-4 w-4" />;
+  if (source.id === "chatgpt") return <MessageSquareText className="h-4 w-4" />;
   return <Database className="h-4 w-4" />;
 }
 
@@ -70,7 +72,7 @@ export function AdminMonthlyExpenses({
   projectedRevenueBrl
 }: {
   initialData: MonthlyExpenseMetrics;
-  projectedRevenueBrl: number;
+  projectedRevenueBrl: number | null;
 }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,8 +109,10 @@ export function AdminMonthlyExpenses({
   ).length;
   const hasEstimatedSource = data.sources.some((source) => source.state === "estimate");
   const missingSourceCount = data.sources.length - configuredSources;
-  const estimatedProfitBrl = projectedRevenueBrl - data.projectedBrlEstimate;
-  const estimatedProfitMargin = projectedRevenueBrl > 0
+  const estimatedProfitBrl = projectedRevenueBrl === null
+    ? null
+    : projectedRevenueBrl - data.projectedBrlEstimate;
+  const estimatedProfitMargin = projectedRevenueBrl !== null && projectedRevenueBrl > 0 && estimatedProfitBrl !== null
     ? (estimatedProfitBrl / projectedRevenueBrl) * 100
     : null;
 
@@ -179,11 +183,13 @@ export function AdminMonthlyExpenses({
             <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Lucro estimado</p>
           </div>
           <p className={`mt-2 text-3xl font-black ${
-            estimatedProfitBrl < 0 ? "text-rose-600" : "text-ink"
+            estimatedProfitBrl !== null && estimatedProfitBrl < 0 ? "text-rose-600" : "text-ink"
           }`}>
-            {data.hasSpendData ? formatMoney(estimatedProfitBrl) : "—"}
+            {data.hasSpendData && estimatedProfitBrl !== null ? formatMoney(estimatedProfitBrl) : "—"}
           </p>
-          {!data.hasSpendData ? (
+          {projectedRevenueBrl === null ? (
+            <p className="mt-3 text-xs text-graphite/55">A projeção de lucro aparece ao selecionar o mês atual.</p>
+          ) : !data.hasSpendData ? (
             <p className="mt-3 text-xs text-graphite/55">Conecte pelo menos uma despesa para iniciar a estimativa.</p>
           ) : missingSourceCount > 0 ? (
             <p className="mt-3 text-xs text-amber-700">
@@ -239,7 +245,7 @@ export function AdminMonthlyExpenses({
           ? " Orçamento mensal ainda não definido."
           : ` Orçamento consumido: ${formatPercent(data.budgetUsedPercent || 0)}% de ${formatMoney(data.budgetBrl)}.`}
         {" "}Atualização automática a cada 5 minutos; consultas externas ficam protegidas no servidor por 15 minutos.
-        {hasEstimatedSource ? " A estimativa do Supabase segue o ciclo de faturamento da organização." : ""}
+        {hasEstimatedSource ? " Custos informados manualmente seguem os valores configurados para o mês." : ""}
         {data.hasUnconvertedCurrencies ? " Valores em moedas sem taxa configurada ficaram fora do total em BRL." : ""}
         {` Última leitura: ${new Date(data.updatedAt).toLocaleTimeString("pt-BR", {
           hour: "2-digit",

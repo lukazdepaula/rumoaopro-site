@@ -24,15 +24,47 @@ type StripePrice = {
   } | null;
 };
 
+type StripeCoupon = {
+  id?: string;
+  amount_off?: number | null;
+  currency?: string | null;
+  duration?: "forever" | "once" | "repeating" | null;
+  percent_off?: number | null;
+  valid?: boolean;
+};
+
+type StripeCouponReference = string | StripeCoupon;
+
+type StripePromotionCode = {
+  coupon?: StripeCouponReference | null;
+  promotion?: { coupon?: StripeCouponReference | null } | null;
+};
+
+type StripePromotionCodeReference = string | StripePromotionCode;
+
+type StripeDiscount = {
+  coupon?: StripeCouponReference | null;
+  end?: number | null;
+  source?: {
+    coupon?: StripeCouponReference | null;
+    promotion_code?: StripePromotionCodeReference | null;
+  } | null;
+};
+
+type StripeDiscountReference = string | StripeDiscount;
+
 type StripeSubscription = {
   id: string;
   customer?: string | { id?: string };
   livemode?: boolean;
   metadata?: Record<string, string>;
+  discount?: StripeDiscount | null;
+  discounts?: StripeDiscountReference[];
   items?: {
     data?: Array<{
       quantity?: number | null;
       price?: StripePrice;
+      discounts?: StripeDiscountReference[];
     }>;
   };
 };
@@ -48,6 +80,8 @@ export type StripeRecurringProductMetric = {
   subscriptions: number;
   subscribers: number;
   mrrBrlEstimate: number;
+  grossMrrBrlEstimate: number;
+  discountBrlEstimate: number;
   amounts: Array<{ currency: string; amount: number }>;
 };
 
@@ -59,6 +93,8 @@ export type StripeRecurringMetrics = {
   pastDueSubscriptions: number;
   trialingSubscriptions: number;
   mrrBrlEstimate: number;
+  grossMrrBrlEstimate: number;
+  discountBrlEstimate: number;
   usdBrlRate: number;
   amounts: Array<{ currency: string; amount: number }>;
   products: StripeRecurringProductMetric[];
@@ -98,6 +134,8 @@ function emptyMetrics(
     pastDueSubscriptions: 0,
     trialingSubscriptions: 0,
     mrrBrlEstimate: 0,
+    grossMrrBrlEstimate: 0,
+    discountBrlEstimate: 0,
     usdBrlRate: usdBrlRate(),
     amounts: [],
     products: localRecurringProducts.map((product) => ({
@@ -106,6 +144,8 @@ function emptyMetrics(
       subscriptions: 0,
       subscribers: 0,
       mrrBrlEstimate: 0,
+      grossMrrBrlEstimate: 0,
+      discountBrlEstimate: 0,
       amounts: []
     })),
     updatedAt: new Date().toISOString(),
@@ -131,18 +171,20 @@ function monthlyAmount(price: StripePrice, quantity: number) {
     return 0;
   }
 
-  const intervalCount = Math.max(1, price.recurring.interval_count || 1);
-  const amount = majorAmount(price) * Math.max(0, quantity);
+  return majorAmount(price) * Math.max(0, quantity) * monthlyMultiplier(price);
+}
 
-  switch (price.recurring.interval) {
+function monthlyMultiplier(price: StripePrice) {
+  const intervalCount = Math.max(1, price.recurring?.interval_count || 1);
+  switch (price.recurring?.interval) {
     case "day":
-      return (amount * 365) / (12 * intervalCount);
+      return 365 / (12 * intervalCount);
     case "week":
-      return (amount * 52) / (12 * intervalCount);
+      return 52 / (12 * intervalCount);
     case "year":
-      return amount / (12 * intervalCount);
+      return 1 / (12 * intervalCount);
     default:
-      return amount / intervalCount;
+      return 1 / intervalCount;
   }
 }
 
@@ -202,6 +244,8 @@ async function listStripeSubscriptions(secretKey: string, status: string) {
     const url = new URL("https://api.stripe.com/v1/subscriptions");
     url.searchParams.set("status", status);
     url.searchParams.set("limit", "100");
+    url.searchParams.append("expand[]", "data.discounts");
+    url.searchParams.append("expand[]", "data.items.data.discounts");
     if (startingAfter) url.searchParams.set("starting_after", startingAfter);
 
     const response = await fetch(url, {
@@ -240,6 +284,153 @@ function brlEstimate(amounts: Map<string, number>, rate: number) {
   return (amounts.get("BRL") || 0) + (amounts.get("USD") || 0) * rate;
 }
 
+function discountObjects(discounts?: StripeDiscountReference[]) {
+  return (discounts || []).filter(
+    (discount): discount is StripeDiscount => typeof discount === "object" && discount !== null
+  );
+}
+
+async function stripeObject<T>(secretKey: string, path: string) {
+  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${secretKey}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!response.ok) throw new Error(`Stripe discount lookup failed with ${response.status}`);
+  return (await response.json()) as T;
+}
+
+async function resolveDiscounts(
+  secretKey: string,
+  discounts: StripeDiscountReference[] | undefined,
+  couponRequests: Map<string, Promise<StripeCoupon | null>>,
+  promotionRequests: Map<string, Promise<StripePromotionCode | null>>
+) {
+  const couponById = (id: string) => {
+    let request = couponRequests.get(id);
+    if (!request) {
+      request = stripeObject<StripeCoupon>(secretKey, `coupons/${encodeURIComponent(id)}`)
+        .catch(() => null);
+      couponRequests.set(id, request);
+    }
+    return request;
+  };
+  const promotionById = (id: string) => {
+    let request = promotionRequests.get(id);
+    if (!request) {
+      request = stripeObject<StripePromotionCode>(
+        secretKey,
+        `promotion_codes/${encodeURIComponent(id)}`
+      ).catch(() => null);
+      promotionRequests.set(id, request);
+    }
+    return request;
+  };
+
+  return Promise.all(
+    (discounts || []).map(async (discount) => {
+      if (typeof discount === "string") return discount;
+      const directReference = discount.coupon || discount.source?.coupon;
+      let coupon =
+        directReference && typeof directReference === "object"
+          ? directReference
+          : directReference
+            ? await couponById(directReference)
+            : null;
+
+      const promotionReference = discount.source?.promotion_code;
+      if (!coupon && promotionReference) {
+        const promotion =
+          typeof promotionReference === "object"
+            ? promotionReference
+            : await promotionById(promotionReference);
+        const promotionCoupon = promotion?.coupon || promotion?.promotion?.coupon;
+        coupon =
+          promotionCoupon && typeof promotionCoupon === "object"
+            ? promotionCoupon
+            : promotionCoupon
+              ? await couponById(promotionCoupon)
+              : null;
+      }
+
+      return coupon ? { ...discount, coupon } : discount;
+    })
+  );
+}
+
+async function hydrateSubscriptionDiscounts(
+  secretKey: string,
+  subscriptions: StripeSubscription[]
+) {
+  const couponRequests = new Map<string, Promise<StripeCoupon | null>>();
+  const promotionRequests = new Map<string, Promise<StripePromotionCode | null>>();
+  await Promise.all(
+    subscriptions.map(async (subscription) => {
+      subscription.discounts = await resolveDiscounts(
+        secretKey,
+        subscription.discounts,
+        couponRequests,
+        promotionRequests
+      );
+      if (subscription.discount) {
+        const [resolved] = await resolveDiscounts(
+          secretKey,
+          [subscription.discount],
+          couponRequests,
+          promotionRequests
+        );
+        subscription.discount = typeof resolved === "object" ? resolved : subscription.discount;
+      }
+      await Promise.all(
+        (subscription.items?.data || []).map(async (item) => {
+          item.discounts = await resolveDiscounts(
+            secretKey,
+            item.discounts,
+            couponRequests,
+            promotionRequests
+          );
+        })
+      );
+    })
+  );
+}
+
+function applyDiscounts(
+  amount: number,
+  currency: string,
+  discounts: StripeDiscountReference[] | undefined,
+  nowInSeconds: number,
+  amountOffMultiplier = 1
+) {
+  if (process.env.STRIPE_MRR_SUBTRACT_DISCOUNTS?.trim().toLowerCase() === "false") {
+    return amount;
+  }
+
+  let result = amount;
+  for (const discount of discountObjects(discounts)) {
+    if (discount.end && discount.end <= nowInSeconds) continue;
+    const couponReference = discount.coupon || discount.source?.coupon;
+    const coupon =
+      couponReference && typeof couponReference === "object" ? couponReference : null;
+    if (!coupon || coupon.duration === "once") continue;
+    if (coupon.percent_off !== null && coupon.percent_off !== undefined) {
+      result *= Math.max(0, 1 - coupon.percent_off / 100);
+    }
+    if (
+      coupon.amount_off !== null &&
+      coupon.amount_off !== undefined &&
+      coupon.currency?.toUpperCase() === currency.toUpperCase()
+    ) {
+      result -=
+        (coupon.amount_off /
+          (ZERO_DECIMAL_CURRENCIES.has(currency.toLowerCase()) ? 1 : 100)) *
+        amountOffMultiplier;
+    }
+    result = Math.max(0, result);
+  }
+  return result;
+}
+
 async function loadStripeRecurringMetrics(secretKey: string) {
   const [active, pastDue, trialing] = await Promise.all([
     listStripeSubscriptions(secretKey, "active"),
@@ -247,7 +438,9 @@ async function loadStripeRecurringMetrics(secretKey: string) {
     listStripeSubscriptions(secretKey, "trialing")
   ]);
   const includedSubscriptions = [...active, ...pastDue];
+  await hydrateSubscriptionDiscounts(secretKey, includedSubscriptions);
   const totalAmounts = new Map<string, number>();
+  const grossTotalAmounts = new Map<string, number>();
   const activeSubscribers = new Set<string>();
   const positiveSubscriptions = new Set<string>();
   const rate = usdBrlRate();
@@ -260,6 +453,7 @@ async function loadStripeRecurringMetrics(secretKey: string) {
       subscriptions: Set<string>;
       subscribers: Set<string>;
       amounts: Map<string, number>;
+      grossAmounts: Map<string, number>;
     }
   >();
 
@@ -269,33 +463,83 @@ async function loadStripeRecurringMetrics(secretKey: string) {
       name: localProductLabels[product.id] || product.name,
       subscriptions: new Set(),
       subscribers: new Set(),
-      amounts: new Map()
+      amounts: new Map(),
+      grossAmounts: new Map()
     });
   }
 
   for (const subscription of includedSubscriptions) {
     let subscriptionHasMrr = false;
+    const entries: Array<{
+      identity: { id: string; name: string };
+      currency: string;
+      gross: number;
+      monthlyMultiplier: number;
+      afterItemDiscount: number;
+    }> = [];
+    const nowInSeconds = Math.floor(Date.now() / 1000);
 
     for (const item of subscription.items?.data || []) {
       if (!item.price) continue;
-      const amount = monthlyAmount(item.price, item.quantity || 1);
-      if (amount <= 0) continue;
+      const gross = monthlyAmount(item.price, item.quantity || 1);
+      if (gross <= 0) continue;
 
       subscriptionHasMrr = true;
       const currency = item.price.currency.toUpperCase();
       const identity = productIdentity(subscription, item.price);
-      const product = productMap.get(identity.id) || {
-        ...identity,
-        subscriptions: new Set<string>(),
-        subscribers: new Set<string>(),
-        amounts: new Map<string, number>()
-      };
+      entries.push({
+        identity,
+        currency,
+        gross,
+        monthlyMultiplier: monthlyMultiplier(item.price),
+        afterItemDiscount: applyDiscounts(
+          gross,
+          currency,
+          item.discounts,
+          nowInSeconds,
+          monthlyMultiplier(item.price)
+        )
+      });
+    }
 
-      addAmount(totalAmounts, currency, amount);
-      addAmount(product.amounts, currency, amount);
-      product.subscriptions.add(subscription.id);
-      product.subscribers.add(customerId(subscription));
-      productMap.set(identity.id, product);
+    const subscriptionDiscounts = subscription.discounts?.length
+      ? subscription.discounts
+      : subscription.discount
+        ? [subscription.discount]
+        : undefined;
+    const currencies = new Set(entries.map((entry) => entry.currency));
+    for (const currency of currencies) {
+      const currencyEntries = entries.filter((entry) => entry.currency === currency);
+      const discountedSubtotal = currencyEntries.reduce(
+        (total, entry) => total + entry.afterItemDiscount,
+        0
+      );
+      const subscriptionNet = applyDiscounts(
+        discountedSubtotal,
+        currency,
+        subscriptionDiscounts,
+        nowInSeconds,
+        currencyEntries[0]?.monthlyMultiplier || 1
+      );
+      const factor = discountedSubtotal > 0 ? subscriptionNet / discountedSubtotal : 0;
+
+      for (const entry of currencyEntries) {
+        const net = entry.afterItemDiscount * factor;
+        const product = productMap.get(entry.identity.id) || {
+          ...entry.identity,
+          subscriptions: new Set<string>(),
+          subscribers: new Set<string>(),
+          amounts: new Map<string, number>(),
+          grossAmounts: new Map<string, number>()
+        };
+        addAmount(totalAmounts, currency, net);
+        addAmount(grossTotalAmounts, currency, entry.gross);
+        addAmount(product.amounts, currency, net);
+        addAmount(product.grossAmounts, currency, entry.gross);
+        product.subscriptions.add(subscription.id);
+        product.subscribers.add(customerId(subscription));
+        productMap.set(entry.identity.id, product);
+      }
     }
 
     if (subscriptionHasMrr) {
@@ -311,6 +555,11 @@ async function loadStripeRecurringMetrics(secretKey: string) {
       subscriptions: product.subscriptions.size,
       subscribers: product.subscribers.size,
       mrrBrlEstimate: brlEstimate(product.amounts, rate),
+      grossMrrBrlEstimate: brlEstimate(product.grossAmounts, rate),
+      discountBrlEstimate: Math.max(
+        0,
+        brlEstimate(product.grossAmounts, rate) - brlEstimate(product.amounts, rate)
+      ),
       amounts: amountsArray(product.amounts)
     }))
     .sort((a, b) => b.mrrBrlEstimate - a.mrrBrlEstimate || a.name.localeCompare(b.name));
@@ -326,6 +575,11 @@ async function loadStripeRecurringMetrics(secretKey: string) {
     pastDueSubscriptions: pastDue.length,
     trialingSubscriptions: trialing.length,
     mrrBrlEstimate: brlEstimate(totalAmounts, rate),
+    grossMrrBrlEstimate: brlEstimate(grossTotalAmounts, rate),
+    discountBrlEstimate: Math.max(
+      0,
+      brlEstimate(grossTotalAmounts, rate) - brlEstimate(totalAmounts, rate)
+    ),
     usdBrlRate: rate,
     amounts: amountsArray(totalAmounts),
     products,
@@ -339,16 +593,18 @@ async function loadStripeRecurringMetrics(secretKey: string) {
 let metricsCache: { expiresAt: number; value: StripeRecurringMetrics } | undefined;
 let metricsRequest: Promise<StripeRecurringMetrics> | undefined;
 
-export async function getStripeRecurringMetrics(): Promise<StripeRecurringMetrics> {
+export async function getStripeRecurringMetrics(options?: {
+  bypassCache?: boolean;
+}): Promise<StripeRecurringMetrics> {
   const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
   if (!secretKey) return emptyMetrics("missing");
 
-  if (metricsCache && metricsCache.expiresAt > Date.now()) {
+  if (!options?.bypassCache && metricsCache && metricsCache.expiresAt > Date.now()) {
     return metricsCache.value;
   }
 
-  if (!metricsRequest) {
-    metricsRequest = loadStripeRecurringMetrics(secretKey)
+  if (!metricsRequest || options?.bypassCache) {
+    const request = loadStripeRecurringMetrics(secretKey)
       .catch((error) => {
         console.error("[stripe.reporting]", error);
         return emptyMetrics("error", !secretKey.startsWith("sk_test_"));
@@ -358,8 +614,9 @@ export async function getStripeRecurringMetrics(): Promise<StripeRecurringMetric
         return value;
       })
       .finally(() => {
-        metricsRequest = undefined;
+        if (metricsRequest === request) metricsRequest = undefined;
       });
+    metricsRequest = request;
   }
 
   return metricsRequest;

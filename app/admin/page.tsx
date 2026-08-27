@@ -1,12 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CircleDollarSign, CreditCard, ShieldCheck } from "lucide-react";
+import { AdminDateRangeFilter } from "@/components/admin-date-range-filter";
 import { AdminLiveVisitors } from "@/components/admin-live-visitors";
 import { AdminMonthlyExpenses } from "@/components/admin-monthly-expenses";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { listActiveSitePresence, listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
 import { getMonthlyExpenseMetrics } from "@/lib/checkout/expense-reporting";
+import {
+  getFinancialPeriodMetrics,
+  previousFinancialPeriod,
+  resolveFinancialPeriod
+} from "@/lib/checkout/financial-reporting";
 import { checkoutProducts, formatMoney } from "@/lib/checkout/products";
 import { getStripeRecurringMetrics } from "@/lib/checkout/stripe-reporting";
 import type { Gateway, Order } from "@/lib/checkout/types";
@@ -25,17 +31,6 @@ const gatewayLabels: Record<Gateway, string> = {
   shopify_legacy: "Shopify legado"
 };
 
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function dateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function paidDate(order: Order) {
   return new Date(order.paid_at || order.created_at);
 }
@@ -45,48 +40,53 @@ function orderValueBrl(order: Order) {
   return order.amount * (order.exchange_rate_used || BRL_FALLBACK_RATE);
 }
 
-function sumRevenue(orders: Order[]) {
-  return orders.reduce((total, order) => total + orderValueBrl(order), 0);
-}
-
 function formatBrl(value: number) {
   return formatMoney(value, "BRL");
 }
 
-function periodKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+function percentDelta(current: number, previous: number) {
+  return previous > 0 ? ((current - previous) / previous) * 100 : null;
 }
 
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    from?: string;
+    to?: string;
+    compare?: string;
+    refresh?: string;
+    period?: string;
+  }>;
 }) {
   await requireAdmin();
   const params = await searchParams;
   const now = new Date();
-  const requestedPeriod: string = /^\d{4}-\d{2}$/.test(params.period || "")
-    ? (params.period as string)
-    : periodKey(now);
-  const [requestedYear, requestedMonth] = requestedPeriod.split("-").map(Number);
-  const requestedStart = new Date(requestedYear, requestedMonth - 1, 1);
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthStart = requestedStart > currentMonthStart ? currentMonthStart : requestedStart;
-  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
-  const lastMonthStart = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1);
-  const nextMonthKey = periodKey(monthEnd);
-  const previousMonthKey = periodKey(lastMonthStart);
-  const selectedPeriodKey = periodKey(monthStart);
-  const isCurrentPeriod = selectedPeriodKey === periodKey(now);
+  const financialPeriod = resolveFinancialPeriod(params, now);
+  const comparisonEnabled = params.compare !== "0";
+  const bypassCache = params.refresh === "1";
+  const currentMonthPeriod = resolveFinancialPeriod({ range: "current_month" }, now);
+  const expensePeriodKey =
+    financialPeriod.startKey.slice(0, 7) === financialPeriod.endKey.slice(0, 7)
+      ? financialPeriod.startKey.slice(0, 7)
+      : currentMonthPeriod.startKey.slice(0, 7);
   const [orders, monthAnalyticsEvents, activePresence, recurringMetrics, expenseMetrics] = await Promise.all([
     listOrders({}),
-    listAnalyticsEvents(monthStart),
+    listAnalyticsEvents(financialPeriod.start),
     listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
-    getStripeRecurringMetrics(),
-    getMonthlyExpenseMetrics(selectedPeriodKey)
+    getStripeRecurringMetrics({ bypassCache }),
+    getMonthlyExpenseMetrics(expensePeriodKey, { bypassCache })
+  ]);
+  const comparisonPeriod = previousFinancialPeriod(financialPeriod);
+  const [financialMetrics, comparisonMetrics] = await Promise.all([
+    getFinancialPeriodMetrics(financialPeriod, orders, { bypassCache }),
+    comparisonEnabled
+      ? getFinancialPeriodMetrics(comparisonPeriod, orders, { bypassCache })
+      : Promise.resolve(null)
   ]);
   const selectedAnalyticsEvents = monthAnalyticsEvents.filter(
-    (event) => new Date(event.created_at) < monthEnd
+    (event) => new Date(event.created_at) < financialPeriod.end
   );
   const paidOrders = orders
     .filter((order) => order.status === "paid")
@@ -94,18 +94,13 @@ export default async function AdminDashboardPage({
 
   const monthPaidOrders = paidOrders.filter((order) => {
     const date = paidDate(order);
-    return date >= monthStart && date < monthEnd;
+    return date >= financialPeriod.start && date < financialPeriod.end;
   });
   const monthOrders = orders.filter((order) => {
     const date = new Date(order.created_at);
-    return date >= monthStart && date < monthEnd;
+    return date >= financialPeriod.start && date < financialPeriod.end;
   });
   const monthConvertedOrders = monthOrders.filter((order) => order.status === "paid");
-  const lastMonthPaidOrders = paidOrders.filter((order) => {
-    const date = paidDate(order);
-    return date >= lastMonthStart && date < monthStart;
-  });
-  const pendingOrders = orders.filter((order) => order.status === "pending");
   const monthConversion = monthOrders.length > 0
     ? (monthConvertedOrders.length / monthOrders.length) * 100
     : 0;
@@ -128,40 +123,18 @@ export default async function AdminDashboardPage({
   const viewToSaleConversion = productViews > 0
     ? (trackedPaidOrders.length / productViews) * 100
     : 0;
-  const monthRevenue = sumRevenue(monthPaidOrders);
-  const lastMonthRevenue = sumRevenue(lastMonthPaidOrders);
-  const averageTicket =
-    monthPaidOrders.length > 0 ? monthRevenue / monthPaidOrders.length : 0;
-  const revenueDelta =
-    lastMonthRevenue > 0
-      ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-      : null;
-  const projectedMonthRevenue = isCurrentPeriod
-    ? (monthRevenue / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
-    : monthRevenue;
-
-  const seriesEnd = isCurrentPeriod
-    ? new Date(startOfDay(now).getTime() + 86400000)
-    : monthEnd;
-  const dayCount = Math.max(
-    1,
-    Math.round((seriesEnd.getTime() - monthStart.getTime()) / 86400000)
-  );
-  const dailySeries = Array.from({ length: dayCount }, (_, index) => {
-    const date = new Date(monthStart);
-    date.setDate(monthStart.getDate() + index);
-    const key = dateKey(date);
-    const dayOrders = paidOrders.filter((order) => dateKey(paidDate(order)) === key);
-    return {
-      key,
-      label: date.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit"
-      }),
-      count: dayOrders.length,
-      revenue: sumRevenue(dayOrders)
-    };
-  });
+  const grossRevenueDelta = comparisonMetrics
+    ? percentDelta(financialMetrics.grossRevenueBrl, comparisonMetrics.grossRevenueBrl)
+    : null;
+  const projectedMonthRevenue = financialPeriod.isCurrentMonth
+    ? (financialMetrics.grossRevenueBrl / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
+    : null;
+  const dailySeries = financialMetrics.daily.map((day) => ({
+    key: day.key,
+    label: day.label,
+    count: day.paymentCount,
+    revenue: day.grossRevenueBrl
+  }));
   const maxDailyRevenue = Math.max(...dailySeries.map((day) => day.revenue), 1);
 
   const productRows = Array.from(
@@ -180,21 +153,9 @@ export default async function AdminDashboardPage({
     .map(([, value]) => value)
     .sort((a, b) => b.revenue - a.revenue);
 
-  const gatewayRows = Array.from(
-    monthPaidOrders.reduce((map, order) => {
-      const current = map.get(order.gateway) || {
-        count: 0,
-        gateway: order.gateway,
-        revenue: 0
-      };
-      current.count += 1;
-      current.revenue += orderValueBrl(order);
-      map.set(order.gateway, current);
-      return map;
-    }, new Map<Gateway, { count: number; gateway: Gateway; revenue: number }>())
-  )
-    .map(([, value]) => value)
-    .sort((a, b) => b.revenue - a.revenue);
+  const gatewayRows = financialMetrics.sources
+    .filter((source) => source.id !== "shopify_legacy" || source.grossRevenueBrl > 0)
+    .sort((a, b) => b.grossRevenueBrl - a.grossRevenueBrl);
 
   const productFunnelRows = checkoutProducts
     .filter((product) => product.active && product.id !== "pix_webhook_test")
@@ -275,9 +236,9 @@ export default async function AdminDashboardPage({
             <div>
               <div className="flex items-center gap-2">
                 <CircleDollarSign className="h-4 w-4 text-turf" />
-                <h2 className="text-sm font-bold text-ink">Receita recorrente</h2>
+                <h2 className="text-sm font-bold text-ink">MRR atual</h2>
               </div>
-              <p className="mt-1 text-xs text-graphite/55">Assinaturas consultadas diretamente na Stripe</p>
+              <p className="mt-1 text-xs text-graphite/55">Assinaturas ativas e em atraso consultadas na Stripe</p>
             </div>
             <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${
               recurringMetrics.state === "ready"
@@ -296,12 +257,14 @@ export default async function AdminDashboardPage({
 
           <div className="grid md:grid-cols-3">
             <div className="bg-[#1f1f1f] p-5 text-white md:min-h-36">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">MRR estimado</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">MRR após descontos</p>
               <p className="mt-2 text-3xl font-black tracking-tight">
                 {recurringMetrics.state === "ready" ? formatBrl(recurringMetrics.mrrBrlEstimate) : "—"}
               </p>
               <p className="mt-3 text-xs leading-relaxed text-white/55">
-                Assinaturas ativas e em atraso, normalizadas para um mês.
+                {recurringMetrics.state === "ready"
+                  ? `Bruto ${formatBrl(recurringMetrics.grossMrrBrlEstimate)} · descontos ${formatBrl(recurringMetrics.discountBrlEstimate)}.`
+                  : "Aguardando uma leitura válida da conta Stripe."}
               </p>
             </div>
             <div className="border-b border-ink/10 p-5 md:border-b-0 md:border-r">
@@ -343,6 +306,7 @@ export default async function AdminDashboardPage({
                   <p className="text-sm font-bold text-ink">{product.name}</p>
                   <p className="mt-0.5 text-xs text-graphite/50">
                     {product.subscriptions} assinatura{product.subscriptions === 1 ? "" : "s"}
+                    {product.discountBrlEstimate > 0 ? ` · ${formatBrl(product.discountBrlEstimate)} em descontos` : ""}
                   </p>
                 </div>
                 <p className="text-xs font-semibold text-graphite/55 sm:text-right">
@@ -357,61 +321,79 @@ export default async function AdminDashboardPage({
 
           {recurringMetrics.state === "ready" ? (
             <p className="border-t border-ink/10 px-5 py-3 text-[11px] leading-relaxed text-graphite/50">
-              MRR bruto, antes de impostos e descontos. Valores em USD são estimados a R$ {recurringMetrics.usdBrlRate.toFixed(2).replace(".", ",")}.
+              MRR normalizado com descontos recorrentes ativos; impostos e uso medido ficam fora. Valores em USD são estimados a R$ {recurringMetrics.usdBrlRate.toFixed(2).replace(".", ",")}.
               {recurringMetrics.hasUnconvertedCurrencies ? " Outras moedas permanecem fora do total estimado em BRL." : ""}
+              {` Atualizado às ${new Date(recurringMetrics.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })} (Brasília).`}
             </p>
           ) : null}
         </article>
       </section>
 
-      <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink/10 bg-white p-4">
-        <div>
-          <p className="text-xs font-bold uppercase text-graphite/55">Período dos resultados</p>
-          <p className="mt-1 text-lg font-black capitalize text-ink">
-            {monthStart.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink" href={`/admin?period=${previousMonthKey}`}>
-            ← Mês anterior
-          </Link>
-          {!isCurrentPeriod ? (
-            <Link className="rounded-md bg-ink px-3 py-2 text-xs font-bold text-white" href={`/admin?period=${nextMonthKey}`}>
-              Próximo mês →
-            </Link>
-          ) : null}
-        </div>
-      </section>
-
-      <AdminMonthlyExpenses
-        initialData={expenseMetrics}
-        projectedRevenueBrl={projectedMonthRevenue}
+      <AdminDateRangeFilter
+        compare={comparisonEnabled}
+        maxDate={currentMonthPeriod.endKey}
+        period={financialPeriod}
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <section className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
+        financialMetrics.state === "ready"
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-amber-200 bg-amber-50"
+      }`}>
+        <div>
+          <p className="text-xs font-black text-ink">
+            {financialMetrics.state === "ready"
+              ? "Faturamento sincronizado com os gateways"
+              : "Faturamento parcial — uma fonte está usando fallback"}
+          </p>
+          <p className="mt-1 text-[11px] text-graphite/60">
+            {financialMetrics.officialSourceCount}/2 gateways oficiais · renovações incluídas quando a fonte está conectada
+          </p>
+        </div>
+        <p className="text-[11px] font-semibold text-graphite/55">
+          Atualizado às {new Date(financialMetrics.updatedAt).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo"
+          })}
+        </p>
+      </section>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Faturamento do mês
+            Faturamento bruto
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(monthRevenue)}
+            {formatBrl(financialMetrics.grossRevenueBrl)}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            {monthPaidOrders.length} venda{monthPaidOrders.length === 1 ? "" : "s"} paga{monthPaidOrders.length === 1 ? "" : "s"}
-            {revenueDelta === null
+            Todas as vendas e renovações aprovadas
+            {grossRevenueDelta === null
               ? ""
-              : ` · ${revenueDelta >= 0 ? "+" : ""}${revenueDelta.toFixed(1)}% vs mês anterior`}
+              : ` · ${grossRevenueDelta >= 0 ? "+" : ""}${grossRevenueDelta.toFixed(1)}% vs período anterior`}
           </p>
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Vendas confirmadas
+            Faturamento líquido
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
-            {monthPaidOrders.length}
+            {formatBrl(financialMetrics.netRevenueBrl)}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            {formatBrl(monthRevenue)} no período selecionado
+            {formatBrl(financialMetrics.feesBrl)} em taxas · {formatBrl(financialMetrics.refundsBrl)} reembolsado
+          </p>
+        </article>
+        <article className="rounded-lg border border-ink/10 bg-white p-4">
+          <p className="text-xs font-bold uppercase text-graphite/55">
+            Pagamentos aprovados
+          </p>
+          <p className="mt-2 text-2xl font-black text-ink">
+            {financialMetrics.paymentCount}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-graphite/60">
+            Stripe + Mercado Pago + legado
           </p>
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
@@ -419,35 +401,31 @@ export default async function AdminDashboardPage({
             Ticket médio
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(averageTicket)}
+            {formatBrl(financialMetrics.averageTicketBrl)}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Base: vendas pagas do mês
+            Bruto dividido pelos pagamentos aprovados
           </p>
         </article>
-        <article className="rounded-lg border border-ink/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase text-graphite/55">
-            Conversão do checkout
-          </p>
-          <p className="mt-2 text-2xl font-black text-ink">
-            {monthConversion.toFixed(1)}%
-          </p>
-          <p className="mt-2 text-xs font-semibold text-graphite/60">
-            {monthConvertedOrders.length} de {monthOrders.length} pedidos iniciados no mês
-          </p>
-        </article>
+      </div>
+
+      <div className="mt-5">
+        <AdminMonthlyExpenses
+          initialData={expenseMetrics}
+          projectedRevenueBrl={projectedMonthRevenue}
+        />
       </div>
 
       <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-ink">Funil comercial do mês</h2>
+            <h2 className="text-lg font-bold text-ink">Funil comercial no período</h2>
             <p className="mt-1 text-sm text-graphite/60">
               Fonte: pedidos criados e confirmações recebidas pelos webhooks.
             </p>
           </div>
           <p className="rounded-full bg-smoke px-3 py-1 text-xs font-bold text-graphite/70">
-            {pendingOrders.length} pendente{pendingOrders.length === 1 ? "" : "s"} no total
+            {monthConversion.toFixed(1)}% dos pedidos locais convertidos
           </p>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
@@ -531,7 +509,7 @@ export default async function AdminDashboardPage({
           <div>
             <h2 className="text-lg font-bold text-ink">Vendas diárias</h2>
             <p className="mt-1 text-sm text-graphite/60">
-              Período selecionado, em BRL estimado quando a venda foi em USD.
+              Vendas e renovações dos gateways, em BRL estimado quando a cobrança foi em USD.
             </p>
           </div>
           <Link
@@ -541,7 +519,10 @@ export default async function AdminDashboardPage({
             Ver pedidos pagos
           </Link>
         </div>
-        <div className="mt-6 grid min-h-56 grid-cols-[repeat(14,minmax(3.5rem,1fr))] items-end gap-2 overflow-x-auto">
+        <div
+          className="mt-6 grid min-h-56 items-end gap-2 overflow-x-auto"
+          style={{ gridTemplateColumns: `repeat(${dailySeries.length}, minmax(3.5rem, 1fr))` }}
+        >
           {dailySeries.map((day) => {
             const height = Math.max(8, Math.round((day.revenue / maxDailyRevenue) * 160));
             return (
@@ -568,7 +549,8 @@ export default async function AdminDashboardPage({
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <section className="rounded-lg border border-ink/10 bg-white">
           <div className="border-b border-ink/10 p-4">
-            <h2 className="text-lg font-bold text-ink">Produtos no mês</h2>
+            <h2 className="text-lg font-bold text-ink">Novas vendas por produto</h2>
+            <p className="mt-1 text-xs text-graphite/55">Pedidos iniciais do período; renovações já estão no faturamento total.</p>
           </div>
           <div className="divide-y divide-ink/10">
             {productRows.map((row) => (
@@ -582,7 +564,7 @@ export default async function AdminDashboardPage({
             ))}
             {productRows.length === 0 ? (
               <p className="p-4 text-sm text-graphite/60">
-                Nenhuma venda paga neste mês.
+                Nenhuma nova venda paga no período.
               </p>
             ) : null}
           </div>
@@ -590,21 +572,27 @@ export default async function AdminDashboardPage({
 
         <section className="rounded-lg border border-ink/10 bg-white">
           <div className="border-b border-ink/10 p-4">
-            <h2 className="text-lg font-bold text-ink">Gateways no mês</h2>
+            <h2 className="text-lg font-bold text-ink">Faturamento por origem</h2>
           </div>
           <div className="divide-y divide-ink/10">
             {gatewayRows.map((row) => (
-              <div className="grid gap-2 p-4 sm:grid-cols-[1fr_auto_auto]" key={row.gateway}>
-                <p className="font-bold text-ink">{gatewayLabels[row.gateway]}</p>
+              <div className="grid gap-2 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center" key={row.id}>
+                <div>
+                  <p className="font-bold text-ink">{row.name}</p>
+                  <p className="mt-1 text-xs text-graphite/50">{row.detail}</p>
+                </div>
                 <p className="text-sm text-graphite/70">
-                  {row.count} venda{row.count === 1 ? "" : "s"}
+                  {row.paymentCount} pagamento{row.paymentCount === 1 ? "" : "s"} · {row.state === "ready" ? "oficial" : "fallback"}
                 </p>
-                <p className="font-bold text-ink">{formatBrl(row.revenue)}</p>
+                <div className="sm:text-right">
+                  <p className="font-bold text-ink">{formatBrl(row.grossRevenueBrl)}</p>
+                  <p className="mt-1 text-xs text-graphite/50">Líquido {formatBrl(row.netRevenueBrl)}</p>
+                </div>
               </div>
             ))}
             {gatewayRows.length === 0 ? (
               <p className="p-4 text-sm text-graphite/60">
-                Nenhum pagamento confirmado neste mês.
+                Nenhum pagamento confirmado no período.
               </p>
             ) : null}
           </div>
@@ -613,7 +601,8 @@ export default async function AdminDashboardPage({
 
       <section className="mt-5 rounded-lg border border-ink/10 bg-white">
         <div className="border-b border-ink/10 p-4">
-          <h2 className="text-lg font-bold text-ink">Últimas vendas pagas</h2>
+          <h2 className="text-lg font-bold text-ink">Últimos pedidos pagos</h2>
+          <p className="mt-1 text-xs text-graphite/55">Pedidos iniciais registrados no site; renovações aparecem nos totais dos gateways.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left text-sm">
