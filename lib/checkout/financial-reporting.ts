@@ -1,5 +1,6 @@
 import "server-only";
 
+import { checkoutProducts } from "@/lib/checkout/products";
 import type { Gateway, Order } from "@/lib/checkout/types";
 
 export type FinancialRangePreset =
@@ -33,6 +34,7 @@ export type FinancialSource = {
   refundsBrl: number;
   feesBrl: number;
   paymentCount: number;
+  excludedTransactionCount: number;
   detail: string;
   updatedAt: string;
   hasUnconvertedCurrencies: boolean;
@@ -79,6 +81,14 @@ type StripeBalanceTransaction = {
   net?: number;
   reporting_category?: string;
   type?: string;
+  source?: string | StripeResource | null;
+};
+
+type StripeResource = {
+  id?: string;
+  object?: string;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 };
 
 type StripeBalanceResponse = {
@@ -95,6 +105,8 @@ type MercadoPagoPayment = {
   transaction_amount_refunded?: number;
   transaction_details?: { net_received_amount?: number | null };
   fee_details?: Array<{ amount?: number }>;
+  external_reference?: string | number | null;
+  metadata?: Record<string, unknown>;
 };
 
 type MercadoPagoSearchResponse = {
@@ -112,6 +124,143 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
 
 const cache = new Map<string, { expiresAt: number; value: FinancialPeriodMetrics }>();
 const requests = new Map<string, Promise<FinancialPeriodMetrics>>();
+
+type SiteSalesIndex = {
+  orderIds: Set<string>;
+  productIds: Set<string>;
+  stripeIdentifiers: Set<string>;
+  mercadoPagoIdentifiers: Set<string>;
+};
+
+const PROVIDER_METADATA_KEYS = [
+  "gateway_payment_id",
+  "gateway_checkout_id",
+  "stripe_subscription_id",
+  "provider_subscription_id",
+  "mercado_pago_subscription_id",
+  "mercado_pago_preference_id",
+  "mercado_pago_payment_id",
+  "subscription_id",
+  "payment_id",
+  "checkout_id",
+  "invoice_id",
+  "session_id"
+] as const;
+
+function textValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function recordValue(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function addIdentifier(target: Set<string>, value: unknown) {
+  const text = textValue(value);
+  if (text) target.add(text);
+}
+
+function siteSalesIndex(orders: Order[]): SiteSalesIndex {
+  const index: SiteSalesIndex = {
+    orderIds: new Set(orders.map((order) => order.id)),
+    productIds: new Set(checkoutProducts.map((product) => product.id)),
+    stripeIdentifiers: new Set<string>(),
+    mercadoPagoIdentifiers: new Set<string>()
+  };
+
+  for (const order of orders) {
+    const identifiers =
+      order.gateway === "stripe"
+        ? index.stripeIdentifiers
+        : order.gateway === "mercado_pago"
+          ? index.mercadoPagoIdentifiers
+          : null;
+    if (!identifiers) continue;
+    addIdentifier(identifiers, order.id);
+    addIdentifier(identifiers, order.gateway_payment_id);
+    addIdentifier(identifiers, order.gateway_checkout_id);
+    for (const key of PROVIDER_METADATA_KEYS) {
+      addIdentifier(identifiers, order.metadata[key]);
+    }
+  }
+
+  return index;
+}
+
+function metadataMatchesSite(
+  metadata: Record<string, unknown> | null,
+  identifiers: Set<string>,
+  index: SiteSalesIndex
+) {
+  if (!metadata) return false;
+  const orderId = textValue(metadata.order_id) || textValue(metadata.orderId);
+  if (orderId && (index.orderIds.has(orderId) || identifiers.has(orderId))) return true;
+  const productId =
+    textValue(metadata.product_id) ||
+    textValue(metadata.productId) ||
+    textValue(metadata.plan_code);
+  return Boolean(productId && index.productIds.has(productId));
+}
+
+function resourceMatchesSite(
+  value: unknown,
+  identifiers: Set<string>,
+  index: SiteSalesIndex,
+  depth = 0
+): boolean {
+  if (depth > 7) return false;
+  if (typeof value === "string") return identifiers.has(value) || index.orderIds.has(value);
+  if (Array.isArray(value)) {
+    return value.some((item) => resourceMatchesSite(item, identifiers, index, depth + 1));
+  }
+  const resource = recordValue(value);
+  if (!resource) return false;
+  if (resourceMatchesSite(resource.id, identifiers, index, depth + 1)) return true;
+  if (metadataMatchesSite(recordValue(resource.metadata), identifiers, index)) return true;
+
+  for (const key of [
+    "payment_intent",
+    "invoice",
+    "subscription",
+    "charge",
+    "parent",
+    "lines",
+    "data"
+  ]) {
+    if (resourceMatchesSite(resource[key], identifiers, index, depth + 1)) return true;
+  }
+  return false;
+}
+
+function stripeReferencePath(id: string) {
+  if (id.startsWith("ch_")) return `charges/${encodeURIComponent(id)}`;
+  if (id.startsWith("in_")) return `invoices/${encodeURIComponent(id)}`;
+  if (id.startsWith("pi_")) return `payment_intents/${encodeURIComponent(id)}`;
+  if (id.startsWith("re_")) return `refunds/${encodeURIComponent(id)}`;
+  if (id.startsWith("dp_")) return `disputes/${encodeURIComponent(id)}`;
+  if (id.startsWith("sub_")) return `subscriptions/${encodeURIComponent(id)}`;
+  return null;
+}
+
+function collectStripeReferences(value: unknown, output = new Set<string>(), depth = 0) {
+  if (depth > 7) return output;
+  if (typeof value === "string") {
+    if (stripeReferencePath(value)) output.add(value);
+    return output;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectStripeReferences(item, output, depth + 1);
+    return output;
+  }
+  const resource = recordValue(value);
+  if (!resource) return output;
+  for (const item of Object.values(resource)) {
+    collectStripeReferences(item, output, depth + 1);
+  }
+  return output;
+}
 
 function numberFromEnv(name: string) {
   const value = Number(process.env[name]?.trim().replace(",", "."));
@@ -319,9 +468,48 @@ async function requestJson<T>(url: URL, headers: HeadersInit) {
   return payload;
 }
 
-async function loadStripeSource(period: FinancialPeriod): Promise<SourceResult> {
+async function stripeTransactionMatchesSite(
+  transaction: StripeBalanceTransaction,
+  secretKey: string,
+  index: SiteSalesIndex,
+  resourceRequests: Map<string, Promise<StripeResource | null>>
+) {
+  if (resourceMatchesSite(transaction.source, index.stripeIdentifiers, index)) return true;
+
+  const pending = Array.from(collectStripeReferences(transaction.source));
+  const checked = new Set<string>();
+  while (pending.length > 0 && checked.size < 12) {
+    const id = pending.shift();
+    if (!id || checked.has(id)) continue;
+    checked.add(id);
+    const path = stripeReferencePath(id);
+    if (!path) continue;
+
+    let request = resourceRequests.get(id);
+    if (!request) {
+      request = requestJson<StripeResource>(new URL(`https://api.stripe.com/v1/${path}`), {
+        Authorization: `Bearer ${secretKey}`
+      }).catch(() => null);
+      resourceRequests.set(id, request);
+    }
+    const resource = await request;
+    if (!resource) continue;
+    if (resourceMatchesSite(resource, index.stripeIdentifiers, index)) return true;
+    for (const reference of collectStripeReferences(resource)) {
+      if (!checked.has(reference)) pending.push(reference);
+    }
+  }
+
+  return false;
+}
+
+async function loadStripeSource(
+  period: FinancialPeriod,
+  orders: Order[]
+): Promise<SourceResult> {
   const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
   if (!secretKey) throw new Error("Stripe secret is not configured");
+  const index = siteSalesIndex(orders);
 
   const transactions: StripeBalanceTransaction[] = [];
   let startingAfter: string | null = null;
@@ -330,6 +518,7 @@ async function loadStripeSource(period: FinancialPeriod): Promise<SourceResult> 
     url.searchParams.set("created[gte]", String(Math.floor(period.start.getTime() / 1000)));
     url.searchParams.set("created[lt]", String(Math.floor(period.end.getTime() / 1000)));
     url.searchParams.set("limit", "100");
+    url.searchParams.append("expand[]", "data.source");
     if (startingAfter) url.searchParams.set("starting_after", startingAfter);
     const payload = await requestJson<StripeBalanceResponse>(url, {
       Authorization: `Bearer ${secretKey}`
@@ -347,15 +536,37 @@ async function loadStripeSource(period: FinancialPeriod): Promise<SourceResult> 
   let refundsBrl = 0;
   let feesBrl = 0;
   let paymentCount = 0;
+  let excludedTransactionCount = 0;
   let hasUnconvertedCurrencies = false;
 
-  for (const transaction of transactions) {
+  const uniqueTransactions = Array.from(
+    new Map(transactions.map((transaction) => [transaction.id, transaction])).values()
+  );
+  const resourceRequests = new Map<string, Promise<StripeResource | null>>();
+  for (const transaction of uniqueTransactions) {
+    const source = recordValue(transaction.source) as StripeResource | null;
+    if (source?.id) resourceRequests.set(source.id, Promise.resolve(source));
+  }
+  const siteMatches = new Map(
+    await Promise.all(
+      uniqueTransactions.map(async (transaction) => [
+        transaction.id,
+        await stripeTransactionMatchesSite(transaction, secretKey, index, resourceRequests)
+      ] as const)
+    )
+  );
+
+  for (const transaction of uniqueTransactions) {
     const category = transaction.reporting_category || transaction.type || "";
     const isPayment = category === "charge" || category === "payment";
     const isRefund = category === "refund" || category === "payment_refund";
     const isDispute = category === "dispute" || category === "payment_dispute";
     const isDisputeReversal = category === "dispute_reversal";
     if (!isPayment && !isRefund && !isDispute && !isDisputeReversal) continue;
+    if (!siteMatches.get(transaction.id)) {
+      excludedTransactionCount += 1;
+      continue;
+    }
 
     const currency = (transaction.currency || "BRL").toUpperCase();
     const amount = convertToBrl(stripeMajorAmount(transaction.amount || 0, currency), currency);
@@ -388,16 +599,44 @@ async function loadStripeSource(period: FinancialPeriod): Promise<SourceResult> 
     refundsBrl,
     feesBrl,
     paymentCount,
-    detail: "Transações de saldo oficiais, incluindo renovações",
+    excludedTransactionCount,
+    detail:
+      excludedTransactionCount > 0
+        ? `Somente vendas vinculadas ao site; ${excludedTransactionCount} movimentação(ões) externa(s) ignorada(s)`
+        : "Somente vendas vinculadas ao site, incluindo renovações",
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
     daily
   };
 }
 
-async function loadMercadoPagoSource(period: FinancialPeriod): Promise<SourceResult> {
+function mercadoPagoPaymentMatchesSite(payment: MercadoPagoPayment, index: SiteSalesIndex) {
+  const paymentId = payment.id === null || payment.id === undefined ? null : String(payment.id);
+  if (paymentId && index.mercadoPagoIdentifiers.has(paymentId)) return true;
+  const externalReference =
+    payment.external_reference === null || payment.external_reference === undefined
+      ? null
+      : String(payment.external_reference);
+  if (
+    externalReference &&
+    (index.orderIds.has(externalReference) || index.mercadoPagoIdentifiers.has(externalReference))
+  ) {
+    return true;
+  }
+  return metadataMatchesSite(
+    recordValue(payment.metadata),
+    index.mercadoPagoIdentifiers,
+    index
+  );
+}
+
+async function loadMercadoPagoSource(
+  period: FinancialPeriod,
+  orders: Order[]
+): Promise<SourceResult> {
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
   if (!accessToken) throw new Error("Mercado Pago token is not configured");
+  const index = siteSalesIndex(orders);
 
   const payments: MercadoPagoPayment[] = [];
   for (let offset = 0; offset < 5000; offset += 100) {
@@ -425,10 +664,26 @@ async function loadMercadoPagoSource(period: FinancialPeriod): Promise<SourceRes
   let refundsBrl = 0;
   let feesBrl = 0;
   let paymentCount = 0;
+  let excludedTransactionCount = 0;
   let hasUnconvertedCurrencies = false;
 
-  for (const payment of payments) {
+  const uniquePayments = Array.from(
+    new Map(
+      payments.map((payment, position) => [
+        payment.id === null || payment.id === undefined
+          ? `${payment.date_approved || "unknown"}:${payment.transaction_amount || 0}:${position}`
+          : String(payment.id),
+        payment
+      ])
+    ).values()
+  );
+
+  for (const payment of uniquePayments) {
     if (!payment.date_approved || !["approved", "refunded", "charged_back"].includes(payment.status || "")) {
+      continue;
+    }
+    if (!mercadoPagoPaymentMatchesSite(payment, index)) {
+      excludedTransactionCount += 1;
       continue;
     }
     const currency = (payment.currency_id || "BRL").toUpperCase();
@@ -467,17 +722,48 @@ async function loadMercadoPagoSource(period: FinancialPeriod): Promise<SourceRes
     refundsBrl,
     feesBrl,
     paymentCount,
-    detail: "Pagamentos aprovados oficiais, incluindo renovações",
+    excludedTransactionCount,
+    detail:
+      excludedTransactionCount > 0
+        ? `Somente vendas vinculadas ao site; ${excludedTransactionCount} pagamento(s) externo(s) ignorado(s)`
+        : "Somente vendas vinculadas ao site, incluindo renovações",
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
     daily
   };
 }
 
-function orderValueBrl(order: Order) {
-  if (order.currency.toUpperCase() === "BRL") return order.amount;
-  if (order.currency.toUpperCase() === "USD") {
-    return order.amount * (order.exchange_rate_used || usdBrlRate());
+export function financialOrderDate(order: Order) {
+  const shopifyPurchaseDate =
+    order.gateway === "shopify_legacy"
+      ? textValue(order.metadata.shopify_purchase_date)
+      : null;
+  if (shopifyPurchaseDate && validDateKey(shopifyPurchaseDate)) {
+    return new Date(`${shopifyPurchaseDate}T12:00:00.000Z`);
+  }
+  return new Date(order.paid_at || order.created_at);
+}
+
+export function financialOrderValueBrl(order: Order) {
+  const rawShopifyAmount = order.metadata.shopify_amount_paid;
+  const shopifyAmount =
+    order.gateway === "shopify_legacy" &&
+    rawShopifyAmount !== null &&
+    rawShopifyAmount !== undefined &&
+    rawShopifyAmount !== ""
+      ? Number(rawShopifyAmount)
+      : Number.NaN;
+  const amount = Number.isFinite(shopifyAmount) && shopifyAmount >= 0
+    ? shopifyAmount
+    : order.amount;
+  const shopifyCurrency =
+    order.gateway === "shopify_legacy"
+      ? textValue(order.metadata.shopify_currency)
+      : null;
+  const currency = (shopifyCurrency || order.currency).toUpperCase();
+  if (currency === "BRL") return amount;
+  if (currency === "USD") {
+    return amount * (order.exchange_rate_used || usdBrlRate());
   }
   return null;
 }
@@ -491,7 +777,7 @@ function localSource(
 ): SourceResult {
   const sourceOrders = orders.filter((order) => {
     if (order.status !== "paid" || order.gateway !== gateway) return false;
-    const paidAt = new Date(order.paid_at || order.created_at);
+    const paidAt = financialOrderDate(order);
     return paidAt >= period.start && paidAt < period.end;
   });
   const daily = new Map<string, SourceDailyValue>();
@@ -499,7 +785,7 @@ function localSource(
   let paymentCount = 0;
   let hasUnconvertedCurrencies = false;
   for (const order of sourceOrders) {
-    const value = orderValueBrl(order);
+    const value = financialOrderValueBrl(order);
     if (value === null) {
       hasUnconvertedCurrencies = true;
       continue;
@@ -508,7 +794,7 @@ function localSource(
     paymentCount += 1;
     addDaily(
       daily,
-      dateKeyInReportingZone(new Date(order.paid_at || order.created_at)),
+      dateKeyInReportingZone(financialOrderDate(order)),
       value,
       value,
       1
@@ -533,6 +819,7 @@ function localSource(
     refundsBrl: 0,
     feesBrl: 0,
     paymentCount,
+    excludedTransactionCount: 0,
     detail,
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
@@ -561,7 +848,9 @@ async function sourceWithFallback(
   }
 
   try {
-    return id === "stripe" ? await loadStripeSource(period) : await loadMercadoPagoSource(period);
+    return id === "stripe"
+      ? await loadStripeSource(period, orders)
+      : await loadMercadoPagoSource(period, orders);
   } catch (error) {
     console.error(`[financial-reporting.${id}]`, error);
     return localSource(
@@ -609,8 +898,8 @@ async function loadFinancialPeriodMetrics(
     period,
     orders,
     "shopify_legacy",
-    "fallback",
-    "Histórico migrado dos pedidos locais"
+    "ready",
+    "Vendas do Shopify pela data e pelo valor original informados na migração"
   );
   const sources = [stripe, mercadoPago, shopify];
   const grossRevenueBrl = sources.reduce((total, source) => total + source.grossRevenueBrl, 0);

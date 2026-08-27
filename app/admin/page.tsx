@@ -9,6 +9,8 @@ import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { listActiveSitePresence, listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
 import { getMonthlyExpenseMetrics } from "@/lib/checkout/expense-reporting";
 import {
+  financialOrderDate,
+  financialOrderValueBrl,
   getFinancialPeriodMetrics,
   previousFinancialPeriod,
   resolveFinancialPeriod
@@ -23,7 +25,6 @@ export const metadata: Metadata = {
   title: "Admin - Painel"
 };
 
-const BRL_FALLBACK_RATE = 5.5;
 const gatewayLabels: Record<Gateway, string> = {
   mercado_pago: "Mercado Pago",
   mock: "Mock",
@@ -32,12 +33,11 @@ const gatewayLabels: Record<Gateway, string> = {
 };
 
 function paidDate(order: Order) {
-  return new Date(order.paid_at || order.created_at);
+  return financialOrderDate(order);
 }
 
 function orderValueBrl(order: Order) {
-  if (order.currency === "BRL") return order.amount;
-  return order.amount * (order.exchange_rate_used || BRL_FALLBACK_RATE);
+  return financialOrderValueBrl(order) || 0;
 }
 
 function formatBrl(value: number) {
@@ -343,11 +343,11 @@ export default async function AdminDashboardPage({
         <div>
           <p className="text-xs font-black text-ink">
             {financialMetrics.state === "ready"
-              ? "Faturamento sincronizado com os gateways"
+              ? "Vendas do site conciliadas com os gateways"
               : "Faturamento parcial — uma fonte está usando fallback"}
           </p>
           <p className="mt-1 text-[11px] text-graphite/60">
-            {financialMetrics.officialSourceCount}/2 gateways oficiais · renovações incluídas quando a fonte está conectada
+            {financialMetrics.officialSourceCount}/2 gateways conectados · pagamentos externos à operação do site são ignorados
           </p>
         </div>
         <p className="text-[11px] font-semibold text-graphite/55">
@@ -362,13 +362,13 @@ export default async function AdminDashboardPage({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Faturamento bruto
+            Vendas brutas do site
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
             {formatBrl(financialMetrics.grossRevenueBrl)}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Todas as vendas e renovações aprovadas
+            Compras e renovações vinculadas ao site
             {grossRevenueDelta === null
               ? ""
               : ` · ${grossRevenueDelta >= 0 ? "+" : ""}${grossRevenueDelta.toFixed(1)}% vs período anterior`}
@@ -387,13 +387,13 @@ export default async function AdminDashboardPage({
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Pagamentos aprovados
+            Vendas confirmadas
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
             {financialMetrics.paymentCount}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Stripe + Mercado Pago + legado
+            Stripe + Mercado Pago + Shopify conciliados
           </p>
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
@@ -509,7 +509,7 @@ export default async function AdminDashboardPage({
           <div>
             <h2 className="text-lg font-bold text-ink">Vendas diárias</h2>
             <p className="mt-1 text-sm text-graphite/60">
-              Vendas e renovações dos gateways, em BRL estimado quando a cobrança foi em USD.
+              Somente vendas vinculadas ao site; valores em USD são convertidos para BRL.
             </p>
           </div>
           <Link
@@ -582,7 +582,7 @@ export default async function AdminDashboardPage({
                   <p className="mt-1 text-xs text-graphite/50">{row.detail}</p>
                 </div>
                 <p className="text-sm text-graphite/70">
-                  {row.paymentCount} pagamento{row.paymentCount === 1 ? "" : "s"} · {row.state === "ready" ? "oficial" : "fallback"}
+                  {row.paymentCount} pagamento{row.paymentCount === 1 ? "" : "s"} · {row.id === "shopify_legacy" ? "histórico local" : row.state === "ready" ? "conciliado" : "fallback"}
                 </p>
                 <div className="sm:text-right">
                   <p className="font-bold text-ink">{formatBrl(row.grossRevenueBrl)}</p>

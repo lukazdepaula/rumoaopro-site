@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         customer_document_type: null,
         customer_document: null,
         gateway: "shopify_legacy",
-        amount: 0,
+        amount: shopifyAmount,
         currency: "BRL",
         fiscal_status: "not_required",
         metadata: {
