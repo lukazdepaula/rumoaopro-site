@@ -1,9 +1,10 @@
 # Indicadores financeiros do admin
 
-O painel financeiro separa duas métricas que respondem a perguntas diferentes:
+O painel financeiro separa três métricas que respondem a perguntas diferentes:
 
 - **MRR atual:** fotografia das assinaturas ativas e em atraso na Stripe, normalizada para um mês. Descontos recorrentes ativos são subtraídos por padrão.
 - **Faturamento por período:** vendas do site aprovadas entre as datas selecionadas. Inclui compras iniciais, renovações conciliadas e vendas do Shopify registradas na migração.
+- **Faturamento mensal combinado:** MRR atual após descontos mais as vendas avulsas de produtos do tipo `training_program` acumuladas no mês atual. Cobranças de assinatura não entram novamente na parcela de programas, evitando duplicidade.
 
 ## Fontes
 
@@ -21,6 +22,8 @@ As credenciais são lidas somente no servidor. As respostas financeiras ficam em
 - **Faturamento líquido:** saldo dos eventos financeiros do período após taxas, reembolsos e disputas informados pelos gateways.
 - **Pagamentos aprovados:** quantidade de cobranças vinculadas ao site, inclusive renovações.
 - **Ticket médio:** faturamento bruto dividido pelos pagamentos aprovados.
+
+O faturamento mensal combinado é um indicador gerencial, não uma conciliação de caixa: o MRR representa a fotografia recorrente atual, enquanto as vendas de programas representam pagamentos já confirmados no mês. Em filtros diferentes de **Mês atual**, o painel mantém o indicador indisponível para não misturar períodos.
 
 O filtro abre no mês atual e aceita hoje, últimos 7 ou 30 dias, mês anterior, ano atual e uma faixa personalizada de até 366 dias. A pesquisa do Mercado Pago está limitada aos últimos 12 meses pela API do provedor.
 

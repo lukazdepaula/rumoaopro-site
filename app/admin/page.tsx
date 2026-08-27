@@ -32,6 +32,13 @@ const gatewayLabels: Record<Gateway, string> = {
   shopify_legacy: "Shopify legado"
 };
 
+const productTypeById = new Map(
+  checkoutProducts.flatMap((product) => [
+    [product.id, product.type] as const,
+    ...(product.aliases || []).map((alias) => [alias, product.type] as const)
+  ])
+);
+
 function paidDate(order: Order) {
   return financialOrderDate(order);
 }
@@ -126,9 +133,18 @@ export default async function AdminDashboardPage({
   const grossRevenueDelta = comparisonMetrics
     ? percentDelta(financialMetrics.grossRevenueBrl, comparisonMetrics.grossRevenueBrl)
     : null;
-  const projectedMonthRevenue = financialPeriod.isCurrentMonth
-    ? (financialMetrics.grossRevenueBrl / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
-    : null;
+  const programSalesBrl = monthPaidOrders
+    .filter((order) => productTypeById.get(order.product_id) === "training_program")
+    .reduce((total, order) => total + orderValueBrl(order), 0);
+  const combinedMonthlyRevenueBrl =
+    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready"
+      ? recurringMetrics.mrrBrlEstimate + programSalesBrl
+      : null;
+  const projectedMonthRevenue =
+    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready"
+      ? recurringMetrics.mrrBrlEstimate +
+        (programSalesBrl / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
+      : null;
   const dailySeries = financialMetrics.daily.map((day) => ({
     key: day.key,
     label: day.label,
@@ -359,16 +375,53 @@ export default async function AdminDashboardPage({
         </p>
       </section>
 
+      <article className="mb-4 overflow-hidden rounded-lg bg-ink text-white shadow-sm">
+        <div className="grid gap-5 p-5 lg:grid-cols-[1.15fr_1fr] lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
+              Faturamento mensal combinado
+            </p>
+            <p className="mt-2 text-3xl font-black sm:text-4xl">
+              {combinedMonthlyRevenueBrl === null
+                ? "—"
+                : formatBrl(combinedMonthlyRevenueBrl)}
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
+              MRR atual mais as vendas avulsas de programas acumuladas no mês, sem contar renovações duas vezes.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-bold uppercase text-white/45">MRR atual</p>
+              <p className="mt-2 text-xl font-black">
+                {recurringMetrics.state === "ready"
+                  ? formatBrl(recurringMetrics.mrrBrlEstimate)
+                  : "—"}
+              </p>
+            </div>
+            <div className="rounded-md border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-bold uppercase text-white/45">Programas no mês</p>
+              <p className="mt-2 text-xl font-black">{formatBrl(programSalesBrl)}</p>
+            </div>
+          </div>
+        </div>
+        <p className="border-t border-white/10 px-5 py-3 text-[11px] leading-relaxed text-white/45">
+          {financialPeriod.isCurrentMonth
+            ? "Indicador gerencial: o MRR é uma fotografia atual e as vendas de programas são acumuladas até hoje."
+            : "Selecione Mês atual para calcular o total combinado sem misturar períodos diferentes."}
+        </p>
+      </article>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-lg border border-ink/10 bg-white p-4">
           <p className="text-xs font-bold uppercase text-graphite/55">
-            Vendas brutas do site
+            Faturamento recebido
           </p>
           <p className="mt-2 text-2xl font-black text-ink">
             {formatBrl(financialMetrics.grossRevenueBrl)}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Compras e renovações vinculadas ao site
+            Pagamentos efetivamente confirmados no período
             {grossRevenueDelta === null
               ? ""
               : ` · ${grossRevenueDelta >= 0 ? "+" : ""}${grossRevenueDelta.toFixed(1)}% vs período anterior`}
