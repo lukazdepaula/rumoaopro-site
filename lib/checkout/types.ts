@@ -20,6 +20,7 @@ export type AnalyticsEventType =
   | "checkout_view"
   | "checkout_submit"
   | "checkout_error"
+  | "application_submit"
   | "whatsapp_click";
 
 export type MarketingAttributionInput = {

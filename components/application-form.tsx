@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Send } from "lucide-react";
+import { trackApplicationSubmit } from "@/components/conversion-tracker";
 import { contact } from "@/lib/content";
 
 type ApplicationFormProps = {
@@ -159,6 +160,7 @@ export function ApplicationForm({ copy, id }: ApplicationFormProps) {
       return;
     }
 
+    void trackApplicationSubmit();
     window.open(whatsappHref, "_blank", "noopener,noreferrer");
     router.push(copy.thankYouPath);
   };

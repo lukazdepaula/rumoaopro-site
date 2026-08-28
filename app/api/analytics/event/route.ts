@@ -15,6 +15,7 @@ const allowedTypes = new Set<AnalyticsEventType>([
   "checkout_view",
   "checkout_submit",
   "checkout_error",
+  "application_submit",
   "whatsapp_click"
 ]);
 
@@ -41,7 +42,7 @@ function metaEventFor(type: AnalyticsEventType): MetaEventName | null {
   if (type === "page_view") return "PageView";
   if (type === "product_view") return "ViewContent";
   if (type === "checkout_submit") return "InitiateCheckout";
-  if (type === "whatsapp_click") return "Contact";
+  if (type === "application_submit" || type === "whatsapp_click") return "Contact";
   return null;
 }
 

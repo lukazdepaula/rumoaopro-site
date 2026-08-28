@@ -14,6 +14,7 @@ export type EventType =
   | "checkout_view"
   | "checkout_submit"
   | "checkout_error"
+  | "application_submit"
   | "whatsapp_click";
 
 type CheckoutEventDetails = {
@@ -195,7 +196,7 @@ function metaEventFor(type: EventType): MetaEventName | null {
   if (type === "page_view") return "PageView";
   if (type === "product_view") return "ViewContent";
   if (type === "checkout_submit") return "InitiateCheckout";
-  if (type === "whatsapp_click") return "Contact";
+  if (type === "application_submit" || type === "whatsapp_click") return "Contact";
   return null;
 }
 
@@ -337,6 +338,10 @@ export function trackCheckoutEvent(
   details: CheckoutEventDetails
 ) {
   return sendEvent(type, productSlug, window.location.pathname, undefined, details);
+}
+
+export function trackApplicationSubmit() {
+  return sendEvent("application_submit", "site", window.location.pathname);
 }
 
 export function ConversionTracker() {

@@ -1419,6 +1419,7 @@ function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent |
     type !== "checkout_view" &&
     type !== "checkout_submit" &&
     type !== "checkout_error" &&
+    type !== "application_submit" &&
     type !== "whatsapp_click"
   ) {
     return null;
