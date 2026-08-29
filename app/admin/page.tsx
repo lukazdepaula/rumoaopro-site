@@ -55,6 +55,16 @@ function percentDelta(current: number, previous: number) {
   return previous > 0 ? ((current - previous) / previous) * 100 : null;
 }
 
+function financialSourceStatusLabel(
+  source: Awaited<ReturnType<typeof getFinancialPeriodMetrics>>["sources"][number]
+) {
+  if (source.id === "shopify_legacy") return "histórico local";
+  if (source.state === "ready") return "conciliado";
+  if (source.state === "missing") return "configuração pendente";
+  if (source.state === "error") return "indisponível";
+  return "fallback";
+}
+
 export default async function AdminDashboardPage({
   searchParams
 }: {
@@ -133,9 +143,14 @@ export default async function AdminDashboardPage({
   const grossRevenueDelta = comparisonMetrics
     ? percentDelta(financialMetrics.grossRevenueBrl, comparisonMetrics.grossRevenueBrl)
     : null;
-  const programSalesBrl = monthPaidOrders
+  const kiwifySource = financialMetrics.sources.find((source) => source.id === "kiwify");
+  const localProgramSalesBrl = monthPaidOrders
     .filter((order) => productTypeById.get(order.product_id) === "training_program")
     .reduce((total, order) => total + orderValueBrl(order), 0);
+  const kiwifyProgramSalesBrl = kiwifySource?.state === "ready"
+    ? kiwifySource.grossRevenueBrl
+    : 0;
+  const programSalesBrl = localProgramSalesBrl + kiwifyProgramSalesBrl;
   const combinedMonthlyRevenueBrl =
     financialPeriod.isCurrentMonth && recurringMetrics.state === "ready"
       ? recurringMetrics.mrrBrlEstimate + programSalesBrl
@@ -168,6 +183,14 @@ export default async function AdminDashboardPage({
   )
     .map(([, value]) => value)
     .sort((a, b) => b.revenue - a.revenue);
+  if (kiwifySource?.state === "ready") {
+    productRows.push({
+      count: kiwifySource.paymentCount,
+      name: "Preparador PRO",
+      revenue: kiwifySource.grossRevenueBrl
+    });
+    productRows.sort((a, b) => b.revenue - a.revenue);
+  }
 
   const gatewayRows = financialMetrics.sources
     .filter((source) => source.id !== "shopify_legacy" || source.grossRevenueBrl > 0)
@@ -360,10 +383,10 @@ export default async function AdminDashboardPage({
           <p className="text-xs font-black text-ink">
             {financialMetrics.state === "ready"
               ? "Vendas do site conciliadas com os gateways"
-              : "Faturamento parcial — uma fonte está usando fallback"}
+              : "Faturamento parcial — falta conciliar uma fonte"}
           </p>
           <p className="mt-1 text-[11px] text-graphite/60">
-            {financialMetrics.officialSourceCount}/2 gateways conectados · pagamentos externos à operação do site são ignorados
+            {financialMetrics.officialSourceCount}/3 gateways conectados · cada fonte é limitada aos produtos desta operação
           </p>
         </div>
         <p className="text-[11px] font-semibold text-graphite/55">
@@ -446,7 +469,7 @@ export default async function AdminDashboardPage({
             {financialMetrics.paymentCount}
           </p>
           <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Stripe + Mercado Pago + Shopify conciliados
+            Stripe + Mercado Pago + Kiwify + Shopify conciliados
           </p>
         </article>
         <article className="rounded-lg border border-ink/10 bg-white p-4">
@@ -635,7 +658,7 @@ export default async function AdminDashboardPage({
                   <p className="mt-1 text-xs text-graphite/50">{row.detail}</p>
                 </div>
                 <p className="text-sm text-graphite/70">
-                  {row.paymentCount} pagamento{row.paymentCount === 1 ? "" : "s"} · {row.id === "shopify_legacy" ? "histórico local" : row.state === "ready" ? "conciliado" : "fallback"}
+                  {row.paymentCount} pagamento{row.paymentCount === 1 ? "" : "s"} · {financialSourceStatusLabel(row)}
                 </p>
                 <div className="sm:text-right">
                   <p className="font-bold text-ink">{formatBrl(row.grossRevenueBrl)}</p>

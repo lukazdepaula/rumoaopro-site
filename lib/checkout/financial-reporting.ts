@@ -26,7 +26,7 @@ export type FinancialPeriod = {
 export type FinancialSourceState = "ready" | "fallback" | "missing" | "error";
 
 export type FinancialSource = {
-  id: "stripe" | "mercado_pago" | "shopify_legacy";
+  id: "stripe" | "mercado_pago" | "kiwify" | "shopify_legacy";
   name: string;
   state: FinancialSourceState;
   grossRevenueBrl: number;
@@ -114,6 +114,43 @@ type MercadoPagoSearchResponse = {
   paging?: { total?: number; limit?: number; offset?: number };
 };
 
+type KiwifyOAuthResponse = {
+  access_token?: string;
+  expires_in?: number | string;
+};
+
+type KiwifyProduct = {
+  id?: string;
+  name?: string;
+  status?: string;
+};
+
+type KiwifyPayment = {
+  charge_amount?: number | null;
+  charge_currency?: string | null;
+  net_amount?: number | null;
+  settlement_amount?: number | null;
+  settlement_currency?: string | null;
+  fee?: number | null;
+  fee_currency?: string | null;
+};
+
+type KiwifySale = {
+  id?: string;
+  created_at?: string;
+  approved_date?: string | null;
+  status?: string;
+  currency?: string;
+  net_amount?: number | null;
+  product?: { id?: string; name?: string } | null;
+  payment?: KiwifyPayment | null;
+};
+
+type KiwifyListResponse<T> = {
+  pagination?: { count?: number; page_number?: number; page_size?: number };
+  data?: T[];
+};
+
 const REPORTING_TIME_ZONE = "America/Sao_Paulo";
 const CACHE_TTL_MS = 60 * 1000;
 const MAX_RANGE_DAYS = 366;
@@ -124,6 +161,11 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
 
 const cache = new Map<string, { expiresAt: number; value: FinancialPeriodMetrics }>();
 const requests = new Map<string, Promise<FinancialPeriodMetrics>>();
+let kiwifyTokenCache: {
+  credentialsKey: string;
+  token: string;
+  expiresAt: number;
+} | null = null;
 
 type SiteSalesIndex = {
   orderIds: Set<string>;
@@ -466,6 +508,255 @@ async function requestJson<T>(url: URL, headers: HeadersInit) {
     throw new Error(`Financial provider returned HTTP ${response.status}`);
   }
   return payload;
+}
+
+function kiwifyCredentials() {
+  const clientId = process.env.KIWIFY_CLIENT_ID?.trim();
+  const clientSecret = process.env.KIWIFY_CLIENT_SECRET?.trim();
+  const accountId = process.env.KIWIFY_ACCOUNT_ID?.trim();
+  if (!clientId || !clientSecret || !accountId) return null;
+  return { clientId, clientSecret, accountId };
+}
+
+async function kiwifyAccessToken(clientId: string, clientSecret: string) {
+  const credentialsKey = `${clientId}:${clientSecret}`;
+  if (
+    kiwifyTokenCache?.credentialsKey === credentialsKey &&
+    kiwifyTokenCache.expiresAt > Date.now() + 60_000
+  ) {
+    return kiwifyTokenCache.token;
+  }
+
+  const response = await fetch("https://public-api.kiwify.com/v1/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000)
+  });
+  const payload = (await response.json().catch(() => ({}))) as KiwifyOAuthResponse;
+  if (!response.ok || !payload.access_token) {
+    throw new Error(`Kiwify OAuth returned HTTP ${response.status}`);
+  }
+  const expiresIn = Number(payload.expires_in || 3600);
+  kiwifyTokenCache = {
+    credentialsKey,
+    token: payload.access_token,
+    expiresAt: Date.now() + Math.max(300, expiresIn) * 1000
+  };
+  return payload.access_token;
+}
+
+function normalizedKiwifyProductName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+async function resolveKiwifyProductId(token: string, accountId: string) {
+  const configured = process.env.KIWIFY_PREPARADOR_PRO_PRODUCT_ID?.trim();
+  if (configured) return configured;
+
+  const products: KiwifyProduct[] = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const url = new URL("https://public-api.kiwify.com/v1/products");
+    url.searchParams.set("page_size", "100");
+    url.searchParams.set("page_number", String(page));
+    const payload = await requestJson<KiwifyListResponse<KiwifyProduct>>(url, {
+      Authorization: `Bearer ${token}`,
+      "x-kiwify-account-id": accountId
+    });
+    const pageData = Array.isArray(payload.data) ? payload.data : [];
+    products.push(...pageData);
+    if (pageData.length < 100) break;
+    if (page === 50) throw new Error("Kiwify products exceeded the pagination safety limit");
+  }
+
+  const expectedName = "preparador pro";
+  const matches = products.filter((product) =>
+    normalizedKiwifyProductName(product.name || "").includes(expectedName)
+  );
+  const activeMatches = matches.filter((product) => product.status === "active");
+  const match = activeMatches.length === 1
+    ? activeMatches[0]
+    : matches.length === 1
+      ? matches[0]
+      : null;
+  if (!match?.id) {
+    throw new Error("Preparador PRO product could not be resolved uniquely in Kiwify");
+  }
+  return match.id;
+}
+
+function kiwifyPeriodChunks(period: FinancialPeriod) {
+  const chunks: Array<{ start: Date; end: Date }> = [];
+  for (
+    let startKey = period.startKey;
+    startKey <= period.endKey;
+    startKey = addDays(startKey, 90)
+  ) {
+    const candidateEndKey = addDays(startKey, 89);
+    const endKey = candidateEndKey < period.endKey ? candidateEndKey : period.endKey;
+    chunks.push({
+      start: startOfReportingDay(startKey),
+      end: startOfReportingDay(addDays(endKey, 1))
+    });
+  }
+  return chunks;
+}
+
+function emptyKiwifySource(
+  state: Extract<FinancialSourceState, "missing" | "error">,
+  detail: string
+): SourceResult {
+  return {
+    id: "kiwify",
+    name: "Kiwify · Preparador PRO",
+    state,
+    grossRevenueBrl: 0,
+    netRevenueBrl: 0,
+    refundsBrl: 0,
+    feesBrl: 0,
+    paymentCount: 0,
+    excludedTransactionCount: 0,
+    detail,
+    updatedAt: new Date().toISOString(),
+    hasUnconvertedCurrencies: false,
+    daily: new Map<string, SourceDailyValue>()
+  };
+}
+
+async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> {
+  const credentials = kiwifyCredentials();
+  if (!credentials) {
+    return emptyKiwifySource(
+      "missing",
+      "Configure a API da Kiwify para importar as vendas do Preparador PRO"
+    );
+  }
+
+  const token = await kiwifyAccessToken(credentials.clientId, credentials.clientSecret);
+  const productId = await resolveKiwifyProductId(token, credentials.accountId);
+  const sales: KiwifySale[] = [];
+  for (const chunk of kiwifyPeriodChunks(period)) {
+    for (let page = 1; page <= 50; page += 1) {
+      const url = new URL("https://public-api.kiwify.com/v1/sales");
+      url.searchParams.set("start_date", chunk.start.toISOString());
+      url.searchParams.set("end_date", new Date(chunk.end.getTime() - 1).toISOString());
+      url.searchParams.set("product_id", productId);
+      url.searchParams.set("view_full_sale_details", "true");
+      url.searchParams.set("page_size", "100");
+      url.searchParams.set("page_number", String(page));
+      const payload = await requestJson<KiwifyListResponse<KiwifySale>>(url, {
+        Authorization: `Bearer ${token}`,
+        "x-kiwify-account-id": credentials.accountId
+      });
+      const pageData = Array.isArray(payload.data) ? payload.data : [];
+      sales.push(...pageData);
+      if (pageData.length < 100) break;
+      if (page === 50) throw new Error("Kiwify sales exceeded the pagination safety limit");
+    }
+  }
+
+  const uniqueSales = Array.from(
+    new Map(
+      sales.map((sale, position) => [
+        sale.id || `${sale.created_at || "unknown"}:${sale.net_amount || 0}:${position}`,
+        sale
+      ])
+    ).values()
+  );
+  const daily = new Map<string, SourceDailyValue>();
+  let grossRevenueBrl = 0;
+  let netRevenueBrl = 0;
+  let refundsBrl = 0;
+  let feesBrl = 0;
+  let paymentCount = 0;
+  let refundedCount = 0;
+  let excludedTransactionCount = 0;
+  let hasUnconvertedCurrencies = false;
+
+  for (const sale of uniqueSales) {
+    if (sale.product?.id !== productId) {
+      excludedTransactionCount += 1;
+      continue;
+    }
+    const status = sale.status || "";
+    const isPaid = status === "paid";
+    const isRefunded = status === "refunded" || status === "chargedback";
+    if (!isPaid && !isRefunded) continue;
+    const approvedAt = new Date(sale.approved_date || sale.created_at || "");
+    if (
+      Number.isNaN(approvedAt.getTime()) ||
+      approvedAt < period.start ||
+      approvedAt >= period.end
+    ) {
+      continue;
+    }
+
+    const payment = sale.payment || {};
+    const grossCurrency = (payment.charge_currency || sale.currency || "BRL").toUpperCase();
+    const netCurrency = (
+      payment.settlement_currency || sale.currency || grossCurrency
+    ).toUpperCase();
+    const feeCurrency = (payment.fee_currency || netCurrency).toUpperCase();
+    const grossMinor = Number(payment.charge_amount ?? sale.net_amount ?? 0);
+    const netMinor = Number(
+      payment.settlement_amount ?? payment.net_amount ?? sale.net_amount ?? 0
+    );
+    const feeMinor = Number(payment.fee ?? 0);
+    const gross = convertToBrl(stripeMajorAmount(grossMinor, grossCurrency), grossCurrency);
+    const settledNet = convertToBrl(stripeMajorAmount(netMinor, netCurrency), netCurrency);
+    const providerFee = convertToBrl(stripeMajorAmount(feeMinor, feeCurrency), feeCurrency);
+    if (gross === null || settledNet === null || providerFee === null) {
+      hasUnconvertedCurrencies = true;
+      continue;
+    }
+
+    if (isRefunded) {
+      refundsBrl += gross;
+      refundedCount += 1;
+      continue;
+    }
+    grossRevenueBrl += gross;
+    netRevenueBrl += settledNet;
+    feesBrl += providerFee;
+    paymentCount += 1;
+    addDaily(daily, dateKeyInReportingZone(approvedAt), gross, settledNet, 1);
+  }
+
+  return {
+    id: "kiwify",
+    name: "Kiwify · Preparador PRO",
+    state: "ready",
+    grossRevenueBrl,
+    netRevenueBrl,
+    refundsBrl,
+    feesBrl,
+    paymentCount,
+    excludedTransactionCount,
+    detail: refundedCount > 0
+      ? `Produto conciliado pela API oficial · ${refundedCount} reembolso(s) ou chargeback(s)`
+      : "Somente o Preparador PRO, conciliado pela API oficial",
+    updatedAt: new Date().toISOString(),
+    hasUnconvertedCurrencies,
+    daily
+  };
+}
+
+async function safeKiwifySource(period: FinancialPeriod) {
+  try {
+    return await loadKiwifySource(period);
+  } catch (error) {
+    console.error("[financial-reporting.kiwify]", error);
+    return emptyKiwifySource(
+      "error",
+      "Consulta indisponível; nenhum valor da Kiwify foi somado"
+    );
+  }
 }
 
 async function stripeTransactionMatchesSite(
@@ -890,9 +1181,10 @@ async function loadFinancialPeriodMetrics(
   period: FinancialPeriod,
   orders: Order[]
 ): Promise<FinancialPeriodMetrics> {
-  const [stripe, mercadoPago] = await Promise.all([
+  const [stripe, mercadoPago, kiwify] = await Promise.all([
     sourceWithFallback("stripe", period, orders),
-    sourceWithFallback("mercado_pago", period, orders)
+    sourceWithFallback("mercado_pago", period, orders),
+    safeKiwifySource(period)
   ]);
   const shopify = localSource(
     period,
@@ -901,17 +1193,18 @@ async function loadFinancialPeriodMetrics(
     "ready",
     "Vendas do Shopify pela data e pelo valor original informados na migração"
   );
-  const sources = [stripe, mercadoPago, shopify];
+  const sources = [stripe, mercadoPago, kiwify, shopify];
   const grossRevenueBrl = sources.reduce((total, source) => total + source.grossRevenueBrl, 0);
   const netRevenueBrl = sources.reduce((total, source) => total + source.netRevenueBrl, 0);
   const refundsBrl = sources.reduce((total, source) => total + source.refundsBrl, 0);
   const feesBrl = sources.reduce((total, source) => total + source.feesBrl, 0);
   const paymentCount = sources.reduce((total, source) => total + source.paymentCount, 0);
-  const officialSourceCount = [stripe, mercadoPago].filter((source) => source.state === "ready").length;
+  const officialSources = [stripe, mercadoPago, kiwify];
+  const officialSourceCount = officialSources.filter((source) => source.state === "ready").length;
 
   return {
     period,
-    state: officialSourceCount === 2 ? "ready" : "partial",
+    state: officialSourceCount === officialSources.length ? "ready" : "partial",
     grossRevenueBrl,
     netRevenueBrl,
     refundsBrl,
