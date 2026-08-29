@@ -556,9 +556,12 @@ function normalizedKiwifyProductName(value: string) {
     .trim();
 }
 
-async function resolveKiwifyProductId(token: string, accountId: string) {
-  const configured = process.env.KIWIFY_PREPARADOR_PRO_PRODUCT_ID?.trim();
-  if (configured) return configured;
+async function resolveKiwifyProductIds(token: string, accountId: string) {
+  const configured = process.env.KIWIFY_PREPARADOR_PRO_PRODUCT_ID
+    ?.split(/[\s,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (configured?.length) return Array.from(new Set(configured));
 
   const products: KiwifyProduct[] = [];
   for (let page = 1; page <= 50; page += 1) {
@@ -575,20 +578,19 @@ async function resolveKiwifyProductId(token: string, accountId: string) {
     if (page === 50) throw new Error("Kiwify products exceeded the pagination safety limit");
   }
 
-  const expectedName = "preparador pro";
-  const matches = products.filter((product) =>
-    normalizedKiwifyProductName(product.name || "").includes(expectedName)
+  const matches = products.filter((product) => {
+    const normalizedName = normalizedKiwifyProductName(product.name || "");
+    return normalizedName.includes("preparador pro") ||
+      normalizedName.replace(/\s+/g, "").includes("preparadorpro");
+  });
+  const matchingIds = Array.from(
+    new Set(matches.map((product) => product.id).filter((id): id is string => Boolean(id)))
   );
-  const activeMatches = matches.filter((product) => product.status === "active");
-  const match = activeMatches.length === 1
-    ? activeMatches[0]
-    : matches.length === 1
-      ? matches[0]
-      : null;
-  if (!match?.id) {
-    throw new Error("Preparador PRO product could not be resolved uniquely in Kiwify");
-  }
-  return match.id;
+  if (matchingIds.length) return matchingIds;
+
+  throw new Error(
+    `Preparador PRO product could not be resolved in Kiwify (${products.length} products found)`
+  );
 }
 
 function kiwifyPeriodChunks(period: FinancialPeriod) {
@@ -639,25 +641,30 @@ async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> 
   }
 
   const token = await kiwifyAccessToken(credentials.clientId, credentials.clientSecret);
-  const productId = await resolveKiwifyProductId(token, credentials.accountId);
+  const productIds = await resolveKiwifyProductIds(token, credentials.accountId);
+  const productIdSet = new Set(productIds);
   const sales: KiwifySale[] = [];
-  for (const chunk of kiwifyPeriodChunks(period)) {
-    for (let page = 1; page <= 50; page += 1) {
-      const url = new URL("https://public-api.kiwify.com/v1/sales");
-      url.searchParams.set("start_date", chunk.start.toISOString());
-      url.searchParams.set("end_date", new Date(chunk.end.getTime() - 1).toISOString());
-      url.searchParams.set("product_id", productId);
-      url.searchParams.set("view_full_sale_details", "true");
-      url.searchParams.set("page_size", "100");
-      url.searchParams.set("page_number", String(page));
-      const payload = await requestJson<KiwifyListResponse<KiwifySale>>(url, {
-        Authorization: `Bearer ${token}`,
-        "x-kiwify-account-id": credentials.accountId
-      });
-      const pageData = Array.isArray(payload.data) ? payload.data : [];
-      sales.push(...pageData);
-      if (pageData.length < 100) break;
-      if (page === 50) throw new Error("Kiwify sales exceeded the pagination safety limit");
+  for (const productId of productIds) {
+    for (const chunk of kiwifyPeriodChunks(period)) {
+      for (let page = 1; page <= 50; page += 1) {
+        const url = new URL("https://public-api.kiwify.com/v1/sales");
+        url.searchParams.set("start_date", chunk.start.toISOString());
+        url.searchParams.set("end_date", new Date(chunk.end.getTime() - 1).toISOString());
+        url.searchParams.set("product_id", productId);
+        url.searchParams.set("view_full_sale_details", "true");
+        url.searchParams.set("page_size", "100");
+        url.searchParams.set("page_number", String(page));
+        const payload = await requestJson<KiwifyListResponse<KiwifySale>>(url, {
+          Authorization: `Bearer ${token}`,
+          "x-kiwify-account-id": credentials.accountId
+        });
+        const pageData = Array.isArray(payload.data) ? payload.data : [];
+        sales.push(...pageData);
+        if (pageData.length < 100) break;
+        if (page === 50) {
+          throw new Error("Kiwify sales exceeded the pagination safety limit");
+        }
+      }
     }
   }
 
@@ -680,7 +687,7 @@ async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> 
   let hasUnconvertedCurrencies = false;
 
   for (const sale of uniqueSales) {
-    if (sale.product?.id !== productId) {
+    if (!sale.product?.id || !productIdSet.has(sale.product.id)) {
       excludedTransactionCount += 1;
       continue;
     }
@@ -739,8 +746,8 @@ async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> 
     paymentCount,
     excludedTransactionCount,
     detail: refundedCount > 0
-      ? `Produto conciliado pela API oficial · ${refundedCount} reembolso(s) ou chargeback(s)`
-      : "Somente o Preparador PRO, conciliado pela API oficial",
+      ? `${productIds.length} cadastro(s) do Preparador PRO conciliado(s) · ${refundedCount} reembolso(s) ou chargeback(s)`
+      : `${productIds.length} cadastro(s) do Preparador PRO conciliado(s) pela API oficial`,
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
     daily
@@ -752,9 +759,12 @@ async function safeKiwifySource(period: FinancialPeriod) {
     return await loadKiwifySource(period);
   } catch (error) {
     console.error("[financial-reporting.kiwify]", error);
+    const detail = error instanceof Error && error.message.includes("could not be resolved")
+      ? "Produto não identificado; configure o ID do Preparador PRO na Vercel"
+      : "Consulta indisponível; nenhum valor da Kiwify foi somado";
     return emptyKiwifySource(
       "error",
-      "Consulta indisponível; nenhum valor da Kiwify foi somado"
+      detail
     );
   }
 }
