@@ -10,7 +10,7 @@ O painel financeiro separa três métricas que respondem a perguntas diferentes:
 
 O Stripe é lido por `balance_transactions`, o que permite reconciliar valor bruto, taxas, reembolsos e líquido. Cada movimentação precisa estar ligada a um pedido, assinatura ou produto conhecido do site. O Mercado Pago é lido pela pesquisa de pagamentos e só aceita registros cujo `external_reference`, metadado ou ID do gateway corresponda a uma venda do site. Pagamentos da mesma conta que não tenham esse vínculo são ignorados e aparecem como exclusões no detalhamento da fonte.
 
-A Kiwify é consultada exclusivamente para o produto **Preparador PRO**. O painel usa o ID configurado ou descobre todos os cadastros cujo nome contém “Preparador PRO” e combina as vendas sem duplicá-las. Somente registros com status `paid` entram no faturamento bruto, líquido e na contagem; vendas reembolsadas ou contestadas ficam fora desses totais e aparecem no campo de reembolsos. Períodos maiores são divididos em janelas de até 90 dias, respeitando o limite da API. A fonte não possui fallback local: se a consulta falhar, o valor somado é zero e o painel marca a Kiwify como indisponível para impedir uma estimativa silenciosa.
+A Kiwify é consultada exclusivamente para o produto **Preparador PRO**. O painel usa o ID configurado ou descobre todos os cadastros cujos nomes contêm “Preparador PRO” ou “Preparo Pro” e combina as vendas sem duplicá-las. Somente registros com status `paid` entram no faturamento bruto, líquido e na contagem; vendas reembolsadas ou contestadas ficam fora desses totais e aparecem no campo de reembolsos. Períodos maiores são divididos em janelas de até 90 dias, respeitando o limite da API. A fonte não possui fallback local: se a consulta falhar, o valor somado é zero e o painel marca a Kiwify como indisponível para impedir uma estimativa silenciosa.
 
 O histórico do Shopify permanece vindo dos pedidos migrados. Para esses registros, o painel usa `shopify_purchase_date` e `shopify_amount_paid`, preservando a data e o valor da venda original mesmo quando o acesso foi migrado depois.
 
@@ -28,7 +28,7 @@ KIWIFY_CLIENT_ID=...
 KIWIFY_CLIENT_SECRET=...
 ```
 
-Se os cadastros não tiverem “Preparador PRO” no nome, informe o ID exato. Mais de um ID pode ser separado por vírgula:
+Se os cadastros não tiverem “Preparador PRO” ou “Preparo Pro” no nome, informe o ID exato. Mais de um ID pode ser separado por vírgula:
 
 ```env
 KIWIFY_PREPARADOR_PRO_PRODUCT_ID=id_principal,id_antigo

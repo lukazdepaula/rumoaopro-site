@@ -580,8 +580,8 @@ async function resolveKiwifyProductIds(token: string, accountId: string) {
 
   const matches = products.filter((product) => {
     const normalizedName = normalizedKiwifyProductName(product.name || "");
-    return normalizedName.includes("preparador pro") ||
-      normalizedName.replace(/\s+/g, "").includes("preparadorpro");
+    const compactName = normalizedName.replace(/\s+/g, "");
+    return compactName.includes("preparadorpro") || compactName.includes("preparopro");
   });
   const matchingIds = Array.from(
     new Set(matches.map((product) => product.id).filter((id): id is string => Boolean(id)))
