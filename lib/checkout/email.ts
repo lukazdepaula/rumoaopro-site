@@ -4,6 +4,7 @@ type EmailInput = {
   to: string | string[];
   subject: string;
   html: string;
+  text?: string;
   orderId?: string;
 };
 
@@ -38,6 +39,52 @@ const formatEmailMoney = (
     currency
   }).format(amount);
 
+function loadProEmailShell(input: {
+  preheader: string;
+  eyebrow: string;
+  title: string;
+  content: string;
+  locale?: "pt" | "en";
+}) {
+  const isEnglish = input.locale === "en";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://rumoaopro.com").replace(/\/$/, "");
+  const logoUrl = escapeHtml(`${siteUrl}/assets/loadpro/loadpro-logo-white-red-transparent.png`);
+  return `<!doctype html>
+    <html lang="${isEnglish ? "en" : "pt-BR"}">
+      <body style="margin:0;padding:0;background:#eef0f3;color:#17191d;font-family:Arial,Helvetica,sans-serif">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(input.preheader)}</div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#eef0f3">
+          <tr><td align="center" style="padding:28px 12px">
+            <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:620px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 14px 36px rgba(15,23,42,.12)">
+              <tr><td style="padding:25px 30px;background:#08090b;border-bottom:4px solid #ed1b2f">
+                <img src="${logoUrl}" width="178" alt="LoadPro" style="display:block;width:178px;max-width:70%;height:auto;border:0" />
+              </td></tr>
+              <tr><td style="padding:34px 34px 28px">
+                <p style="margin:0 0 9px;color:#d9162a;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p>
+                <h1 style="margin:0 0 20px;color:#111318;font-size:28px;line-height:1.15">${escapeHtml(input.title)}</h1>
+                ${input.content}
+              </td></tr>
+              <tr><td style="padding:20px 34px;background:#f6f7f9;border-top:1px solid #e4e7ec;color:#68707d;font-size:11px;line-height:1.55">
+                ${isEnglish ? "LoadPro App · Football performance monitoring" : "LoadPro App · Monitoramento de performance no futebol"}<br />
+                ${isEnglish ? "Transactional message sent by RumoAoPro. We will never ask for your password or full card details." : "Mensagem transacional enviada pela RumoAoPro. Nunca solicitaremos sua senha ou os dados completos do cartão."}
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+    </html>`;
+}
+
+function loadProEmailButton(url: string, label: string) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:25px 0"><tr><td style="border-radius:9px;background:#ed1b2f"><a href="${url}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none">${escapeHtml(label)}</a></td></tr></table>`;
+}
+
+function loadProEmailSummary(rows: Array<[string, string]>) {
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:23px 0;background:#f6f7f9;border:1px solid #e1e5eb;border-radius:11px">${rows
+    .map(([label, value], index) => `<tr><td style="padding:12px 15px;color:#68707d;font-size:12px;${index < rows.length - 1 ? "border-bottom:1px solid #e1e5eb" : ""}">${escapeHtml(label)}</td><td align="right" style="padding:12px 15px;color:#17191d;font-size:13px;font-weight:800;${index < rows.length - 1 ? "border-bottom:1px solid #e1e5eb" : ""}">${escapeHtml(value)}</td></tr>`)
+    .join("")}</table>`;
+}
+
 export async function sendEmail(input: EmailInput) {
   const provider = (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
 
@@ -59,7 +106,8 @@ export async function sendEmail(input: EmailInput) {
             process.env.EMAIL_FROM || "RumoAoPro <no-reply@rumoaopro.com>",
           to: input.to,
           subject: input.subject,
-          html: input.html
+          html: input.html,
+          ...(input.text ? { text: input.text } : {})
         })
       });
 
@@ -126,30 +174,24 @@ export async function sendLoadProTrialInviteEmail(input: {
       ? "Create your password and access LoadPro"
       : "Crie sua senha e acesse o LoadPro",
     orderId: input.orderId,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
-        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
-          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
-          <h1 style="margin:0;font-size:26px">${isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo"}</h1>
-        </div>
-        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
-          <p>${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
-          <p>${isEnglish
-            ? "Create your password now to access LoadPro and set up your first club."
-            : "Crie sua senha agora para acessar o LoadPro e configurar seu primeiro clube."}</p>
-          <p style="margin:24px 0"><a href="${inviteUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Create my password" : "Criar minha senha"}</a></p>
-          <div style="background:#f4f5f7;border-radius:8px;padding:16px;font-size:14px;line-height:1.6">
-            <strong>${isEnglish ? "No charge today." : "Nenhuma cobrança foi feita hoje."}</strong><br>
-            ${isEnglish
-              ? `After 7 days, the subscription renews for ${renewalPrice} per month. You can cancel at any time.`
-              : `Depois de 7 dias, a assinatura será renovada por ${renewalPrice}/mês. Você pode cancelar quando quiser.`}
-          </div>
-          <p style="color:#68707d;font-size:13px;margin-top:20px">${isEnglish
-            ? "For security, this link expires and can only be used to activate your own account. Never share your password."
-            : "Por segurança, este link expira e deve ser usado apenas para ativar sua própria conta. Nunca compartilhe sua senha."}</p>
-        </div>
-      </div>
-    `
+    text: isEnglish
+      ? `Hi, ${input.name}. Your 7-day LoadPro trial is active. Create your password: ${input.inviteUrl}. No charge today; after 7 days the subscription renews for ${renewalPrice} per month.`
+      : `Fala, ${input.name}. Seu teste gratuito de 7 dias do LoadPro está ativo. Crie sua senha: ${input.inviteUrl}. Nenhuma cobrança foi feita hoje; depois de 7 dias a assinatura será renovada por ${renewalPrice}/mês.`,
+    html: loadProEmailShell({
+      locale: isEnglish ? "en" : "pt",
+      preheader: isEnglish ? "Create your password to open LoadPro." : "Crie sua senha para acessar o LoadPro.",
+      eyebrow: isEnglish ? "Access ready" : "Acesso preparado",
+      title: isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo",
+      content: `
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.65">${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
+        <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">${isEnglish ? "Create your password now to access LoadPro and set up your first club." : "Crie sua senha agora para acessar o LoadPro e configurar seu primeiro clube."}</p>
+        ${loadProEmailButton(inviteUrl, isEnglish ? "Create my password" : "Criar minha senha")}
+        ${loadProEmailSummary([
+          [isEnglish ? "Today" : "Hoje", isEnglish ? "No charge" : "Sem cobrança"],
+          [isEnglish ? "After the trial" : "Após o teste", `${renewalPrice}${isEnglish ? " / month" : " / mês"}`]
+        ])}
+        <p style="margin:18px 0 0;color:#68707d;font-size:12px;line-height:1.55">${isEnglish ? "This personal activation link expires for security. Never share your password." : "Este link pessoal de ativação expira por segurança. Nunca compartilhe sua senha."}</p>`
+    })
   });
 }
 
@@ -177,24 +219,23 @@ export async function sendLoadProExistingAccountEmail(input: {
       ? "Your LoadPro trial is active"
       : "Seu teste do LoadPro está ativo",
     orderId: input.orderId,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
-        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
-          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
-          <h1 style="margin:0;font-size:26px">${isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo"}</h1>
-        </div>
-        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
-          <p>${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
-          <p>${isEnglish
-            ? "This email already has a LoadPro account. Sign in with your existing password; if needed, use Forgot password on the login screen."
-            : "Este e-mail já possui uma conta no LoadPro. Entre com sua senha atual; se precisar, use Esqueci minha senha na tela de login."}</p>
-          <p style="margin:24px 0"><a href="${appUrl}/?view=login" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Open LoadPro" : "Abrir o LoadPro"}</a></p>
-          <p style="color:#68707d;font-size:13px">${isEnglish
-            ? `No charge was made today. After 7 days, the subscription renews for ${renewalPrice} per month.`
-            : `Nenhuma cobrança foi feita hoje. Depois de 7 dias, a assinatura será renovada por ${renewalPrice}/mês.`}</p>
-        </div>
-      </div>
-    `
+    text: isEnglish
+      ? `Hi, ${input.name}. Your 7-day LoadPro trial is active. Sign in with your existing password: ${input.appUrl.replace(/\/$/, "")}/?view=login. After 7 days the subscription renews for ${renewalPrice} per month.`
+      : `Fala, ${input.name}. Seu teste gratuito de 7 dias do LoadPro está ativo. Entre com sua senha atual: ${input.appUrl.replace(/\/$/, "")}/?view=login. Depois de 7 dias a assinatura será renovada por ${renewalPrice}/mês.`,
+    html: loadProEmailShell({
+      locale: isEnglish ? "en" : "pt",
+      preheader: isEnglish ? "Your LoadPro trial is ready." : "Seu teste do LoadPro está pronto.",
+      eyebrow: isEnglish ? "Access ready" : "Acesso preparado",
+      title: isEnglish ? "Your 7-day free trial is active" : "Seu teste gratuito de 7 dias está ativo",
+      content: `
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.65">${isEnglish ? `Hi, ${name}.` : `Fala, ${name}.`}</p>
+        <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">${isEnglish ? "This email already has a LoadPro account. Sign in with your existing password; if needed, use Forgot password on the login screen." : "Este e-mail já possui uma conta no LoadPro. Entre com sua senha atual; se precisar, use Esqueci minha senha na tela de login."}</p>
+        ${loadProEmailButton(`${appUrl}/?view=login`, isEnglish ? "Open LoadPro" : "Abrir o LoadPro")}
+        ${loadProEmailSummary([
+          [isEnglish ? "Today" : "Hoje", isEnglish ? "No charge" : "Sem cobrança"],
+          [isEnglish ? "After the trial" : "Após o teste", `${renewalPrice}${isEnglish ? " / month" : " / mês"}`]
+        ])}`
+    })
   });
 }
 
@@ -211,26 +252,19 @@ export async function sendLoadProPasswordRecoveryEmail(input: {
     subject: isEnglish
       ? "Reset your LoadPro password"
       : "Redefina sua senha do LoadPro",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
-        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
-          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RumoAoPro · LoadPro App</p>
-          <h1 style="margin:0;font-size:26px">${isEnglish ? "Reset your password" : "Redefina sua senha"}</h1>
-        </div>
-        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
-          <p>${isEnglish
-            ? "We received a request to reset the password for your LoadPro account."
-            : "Recebemos uma solicitação para redefinir a senha da sua conta LoadPro."}</p>
-          <p style="margin:24px 0"><a href="${recoveryUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${isEnglish ? "Create a new password" : "Criar nova senha"}</a></p>
-          <p style="color:#68707d;font-size:13px">${isEnglish
-            ? "This secure link expires. If you did not request a new password, you can ignore this email."
-            : "Este link seguro expira. Se você não solicitou uma nova senha, pode ignorar este e-mail."}</p>
-          <p style="color:#68707d;font-size:13px">${isEnglish
-            ? "RumoAoPro support will never ask for your password."
-            : "O suporte RumoAoPro nunca solicitará sua senha."}</p>
-        </div>
-      </div>
-    `
+    text: isEnglish
+      ? `We received a request to reset your LoadPro password. Create a new password: ${input.recoveryUrl}. If you did not request this, ignore this email.`
+      : `Recebemos uma solicitação para redefinir sua senha do LoadPro. Crie uma nova senha: ${input.recoveryUrl}. Se você não fez essa solicitação, ignore este e-mail.`,
+    html: loadProEmailShell({
+      locale: isEnglish ? "en" : "pt",
+      preheader: isEnglish ? "Securely reset your LoadPro password." : "Redefina sua senha do LoadPro com segurança.",
+      eyebrow: isEnglish ? "Account security" : "Segurança da conta",
+      title: isEnglish ? "Reset your password" : "Redefina sua senha",
+      content: `
+        <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">${isEnglish ? "We received a request to reset the password for your LoadPro account." : "Recebemos uma solicitação para redefinir a senha da sua conta LoadPro."}</p>
+        ${loadProEmailButton(recoveryUrl, isEnglish ? "Create a new password" : "Criar nova senha")}
+        <p style="margin:0;color:#68707d;font-size:12px;line-height:1.55">${isEnglish ? "This secure link expires. If you did not request a new password, you can ignore this email." : "Este link seguro expira. Se você não solicitou uma nova senha, pode ignorar este e-mail."}</p>`
+    })
   });
 }
 
@@ -309,21 +343,63 @@ export async function sendLoadProAccessEmail(input: {
     to: input.to,
     subject: "Seu acesso ao LoadPro está liberado",
     orderId: input.orderId,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
-        <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
-          <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">LoadPro</p>
-          <h1 style="margin:0;font-size:26px">Assinatura confirmada</h1>
-        </div>
-        <div style="border:1px solid #d8dde6;border-top:0;padding:24px">
-          <p>Fala, ${escapeHtml(input.name)}.</p>
-          <p>Seu <strong>${planName}</strong> foi confirmado. Ele inclui até <strong>${input.teamLimit} equipes</strong>, com até <strong>${input.playersPerTeamLimit} atletas por equipe</strong>, pelo preço fundador de <strong>${price}/mês</strong> enquanto a assinatura permanecer ativa.</p>
-          <p>Se este for seu primeiro acesso, você também receberá um convite para definir sua senha com segurança.</p>
-          <p style="margin:24px 0"><a href="${appUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:12px 18px;text-decoration:none;font-weight:700">Abrir o LoadPro</a></p>
-          <p style="color:#68707d;font-size:13px">Nunca envie sua senha por e-mail, WhatsApp ou suporte.</p>
-        </div>
-      </div>
-    `
+    text: `Fala, ${input.name}. Seu ${input.productName} foi confirmado. O plano inclui até ${input.teamLimit} equipes, com até ${input.playersPerTeamLimit} atletas por equipe, por ${price}/mês. Acesse: ${input.appUrl.replace(/\/$/, "")}.`,
+    html: loadProEmailShell({
+      preheader: "Sua assinatura do LoadPro foi confirmada.",
+      eyebrow: "Pagamento confirmado",
+      title: "Seu acesso está liberado",
+      content: `
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.65">Fala, ${escapeHtml(input.name)}.</p>
+        <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">Seu <strong>${planName}</strong> foi confirmado e o workspace está disponível.</p>
+        ${loadProEmailSummary([
+          ["Equipes", `Até ${input.teamLimit}`],
+          ["Atletas por equipe", `Até ${input.playersPerTeamLimit}`],
+          ["Valor", `${price} / mês`]
+        ])}
+        ${loadProEmailButton(appUrl, "Abrir o LoadPro")}
+        <p style="margin:0;color:#68707d;font-size:12px;line-height:1.55">Se este for seu primeiro acesso, você também receberá um convite separado para definir sua senha com segurança.</p>`
+    })
+  });
+}
+
+export async function sendLoadProPaymentFailedEmail(input: {
+  orderId: string;
+  to: string;
+  productName: string;
+  amount: number;
+  currency: string;
+  appUrl: string;
+  locale?: "pt" | "en";
+}) {
+  const isEnglish = input.locale === "en";
+  const recoveryUrl = escapeHtml(`${input.appUrl.replace(/\/$/, "")}/?view=billing`);
+  const amount = formatEmailMoney(input.amount, input.currency, isEnglish ? "en" : "pt");
+
+  return sendEmail({
+    to: input.to,
+    subject: isEnglish
+      ? "Please update your LoadPro payment"
+      : "Precisamos atualizar seu pagamento do LoadPro",
+    orderId: input.orderId,
+    text: isEnglish
+      ? `We could not confirm your latest LoadPro payment. Your data remains protected. Update your payment to restore workspace access: ${input.appUrl.replace(/\/$/, "")}/?view=billing.`
+      : `Não conseguimos confirmar sua última cobrança do LoadPro. Seus dados continuam preservados. Regularize o pagamento para recuperar o acesso ao workspace: ${input.appUrl.replace(/\/$/, "")}/?view=billing.`,
+    html: loadProEmailShell({
+      locale: isEnglish ? "en" : "pt",
+      preheader: isEnglish ? "Update your payment to restore workspace access." : "Regularize o pagamento para recuperar o acesso ao workspace.",
+      eyebrow: isEnglish ? "Account notice" : "Aviso sobre sua assinatura",
+      title: isEnglish ? "We could not confirm your payment" : "Não conseguimos confirmar seu pagamento",
+      content: `
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.65">${isEnglish ? "Hi!" : "Fala!"}</p>
+        <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">${isEnglish ? "The latest charge for your LoadPro subscription was not approved. Your clubs, teams, athletes and reports remain protected." : "A última cobrança da sua assinatura do LoadPro não foi aprovada. Seus clubes, equipes, atletas e relatórios continuam preservados."}</p>
+        ${loadProEmailSummary([
+          [isEnglish ? "Plan" : "Plano", input.productName || "LoadPro"],
+          [isEnglish ? "Monthly amount" : "Valor mensal", amount],
+          [isEnglish ? "Status" : "Status", isEnglish ? "Payment pending" : "Pagamento pendente"]
+        ])}
+        ${loadProEmailButton(recoveryUrl, isEnglish ? "Update payment" : "Regularizar pagamento")}
+        <p style="margin:0;color:#68707d;font-size:12px;line-height:1.55">${isEnglish ? "After Stripe confirms the payment, workspace access is restored automatically. Need help? Reply to this email and our team will assist you." : "Assim que a Stripe confirmar o pagamento, o acesso ao workspace será restabelecido automaticamente. Se precisar de ajuda, responda este e-mail e a nossa equipe cuida com você."}</p>`
+    })
   });
 }
 

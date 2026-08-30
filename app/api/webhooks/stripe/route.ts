@@ -21,6 +21,8 @@ import {
   trackMetaStartTrial
 } from "@/lib/marketing/order-events";
 import { isLoadProOrder } from "@/lib/checkout/loadpro";
+import { sendLoadProPaymentFailedEmail } from "@/lib/checkout/email";
+import type { Order } from "@/lib/checkout/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,6 +128,53 @@ function accessStatus(status: unknown) {
   if (status === "unpaid") return "unpaid" as const;
   if (status === "canceled" || status === "incomplete_expired") return "canceled" as const;
   return null;
+}
+
+async function sendLoadProPaymentFailureOnce(input: {
+  order: Order;
+  invoice: Record<string, unknown>;
+  eventId: string;
+}) {
+  const { order, invoice, eventId } = input;
+  if (!isLoadProOrder(order) || order.metadata.checkout_gateway_mode === "sandbox") return;
+
+  const invoiceId = textValue(invoice.id);
+  if (!invoiceId) return;
+  if (
+    order.metadata.loadpro_payment_failed_email_invoice_id === invoiceId &&
+    order.metadata.loadpro_payment_failed_email_status === "sent"
+  ) {
+    return;
+  }
+
+  const amount = typeof invoice.amount_due === "number"
+    ? invoice.amount_due / 100
+    : order.amount;
+  const currency = textValue(invoice.currency)?.toUpperCase() || order.currency;
+  const locale = String(order.metadata.locale || order.metadata.checkout_locale || "pt")
+    .toLowerCase()
+    .startsWith("en") ? "en" as const : "pt" as const;
+  const sent = await sendLoadProPaymentFailedEmail({
+    orderId: order.id,
+    to: order.customer_email,
+    productName: order.product_name,
+    amount,
+    currency,
+    appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br",
+    locale
+  });
+
+  await updateOrderGatewayIds(order.id, {
+    metadata: {
+      loadpro_payment_failed_email_invoice_id: invoiceId,
+      loadpro_payment_failed_email_status: sent ? "sent" : "failed",
+      loadpro_payment_failed_email_event_id: eventId,
+      loadpro_payment_failed_email_updated_at: new Date().toISOString(),
+      ...(sent
+        ? { loadpro_payment_failed_email_sent_at: new Date().toISOString() }
+        : {})
+    }
+  });
 }
 
 export async function POST(request: Request) {
@@ -334,6 +383,9 @@ export async function POST(request: Request) {
         provider_subscription_id: subscriptionId,
         ...subscriptionFields(object, "past_due")
       });
+      if (event.type === "invoice.payment_failed") {
+        await sendLoadProPaymentFailureOnce({ order, invoice: object, eventId });
+      }
     } else if (
       event.type === "checkout.session.async_payment_failed" ||
       event.type === "payment_intent.payment_failed"
