@@ -37,10 +37,37 @@ function challengeRedirect(request: Request, error: string) {
   );
 }
 
+function isInteractiveRequest(request: Request) {
+  return request.headers.get("x-admin-mfa-interactive") === "1";
+}
+
+function challengeResponse(
+  request: Request,
+  error: "invalid" | "rate-limit" | "unavailable",
+  status = 400
+) {
+  if (!isInteractiveRequest(request)) return challengeRedirect(request, error);
+  const response = NextResponse.json({ ok: false, error }, { status });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
 export async function POST(request: Request) {
   const session = await getPendingAdminMfaRequestSession(request);
   if (!session) {
     const existingSession = await getAdminRequestSession(request);
+    if (isInteractiveRequest(request)) {
+      const response = NextResponse.json(
+        {
+          ok: false,
+          error: "unavailable",
+          redirectTo: existingSession ? "/admin" : "/admin/login"
+        },
+        { status: 401 }
+      );
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
     return NextResponse.redirect(
       new URL(existingSession ? "/admin" : "/admin/login", request.url),
       303
@@ -49,24 +76,24 @@ export async function POST(request: Request) {
 
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (contentLength > 4 * 1024) {
-    return challengeRedirect(request, "invalid");
+    return challengeResponse(request, "invalid");
   }
 
   const rateLimit = checkAdminMfaRateLimit(request, session.email);
   if (!rateLimit.allowed) {
     logAdminSecurityEvent("mfa_rate_limited", session.email);
-    const response = challengeRedirect(request, "rate-limit");
+    const response = challengeResponse(request, "rate-limit", 429);
     response.headers.set("Retry-After", String(rateLimit.retryAfterSeconds));
     response.headers.set("Cache-Control", "no-store");
     return response;
   }
 
   const parsedForm = await readUrlEncodedForm(request, 4 * 1024);
-  if (!parsedForm.ok) return challengeRedirect(request, "invalid");
+  if (!parsedForm.ok) return challengeResponse(request, "invalid");
   const code = String(parsedForm.form.get("code") || "").trim();
   const account = await getAdminAccountByEmail(session.email);
   if (!account?.mfa_secret_encrypted || !account.mfa_enabled_at) {
-    return challengeRedirect(request, "unavailable");
+    return challengeResponse(request, "unavailable", 503);
   }
 
   let verifiedAccount = null;
@@ -92,7 +119,7 @@ export async function POST(request: Request) {
   if (!verifiedAccount) {
     recordAdminMfaFailure(request, session.email);
     logAdminSecurityEvent("mfa_failed", session.email);
-    const response = challengeRedirect(request, "invalid");
+    const response = challengeResponse(request, "invalid");
     response.headers.set("Cache-Control", "no-store");
     return response;
   }
@@ -101,17 +128,16 @@ export async function POST(request: Request) {
     verifiedAccount.email,
     adminAccountAuthVersion(verifiedAccount)
   );
-  if (!sessionValue) return challengeRedirect(request, "unavailable");
+  if (!sessionValue) return challengeResponse(request, "unavailable", 503);
 
   clearAdminMfaFailures(request, session.email);
   logAdminSecurityEvent(
     usedRecoveryCode ? "recovery_code_used" : "mfa_verified",
     session.email
   );
-  const response = NextResponse.redirect(
-    new URL(session.returnTo, request.url),
-    303
-  );
+  const response = isInteractiveRequest(request)
+    ? NextResponse.json({ ok: true, redirectTo: session.returnTo })
+    : NextResponse.redirect(new URL(session.returnTo, request.url), 303);
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
     value: sessionValue,

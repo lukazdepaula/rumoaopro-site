@@ -139,8 +139,147 @@ img {
   animation: social-proof-toast-in 280ms ease-out both;
 }
 
+.admin-mfa-background {
+  background:
+    radial-gradient(circle at 50% 32%, rgba(213, 22, 42, 0.14), transparent 32%),
+    radial-gradient(circle at 15% 90%, rgba(119, 213, 223, 0.08), transparent 30%),
+    #08090b;
+}
+
+.admin-mfa-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  content: "";
+}
+
+.admin-mfa-slot {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.admin-mfa-slot-active {
+  animation: admin-mfa-slot-glow 1.15s ease-in-out infinite;
+}
+
+.admin-mfa-orbit {
+  animation: admin-mfa-float 1.8s ease-in-out infinite;
+}
+
+.admin-mfa-orbit-track {
+  animation: admin-mfa-spin 7s linear infinite;
+}
+
+.admin-mfa-orbit-chip {
+  margin: -1.125rem;
+  transform: rotate(var(--mfa-angle)) translateY(-4.75rem) rotate(calc(-1 * var(--mfa-angle)));
+  animation: admin-mfa-chip-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.admin-mfa-success-icon {
+  animation: admin-mfa-success-pop 520ms cubic-bezier(0.22, 1.35, 0.45, 1) both;
+}
+
+.admin-mfa-success-ring {
+  animation: admin-mfa-success-ring 1s ease-out infinite;
+}
+
+.admin-mfa-success-ring-delay {
+  animation-delay: 180ms;
+}
+
+.admin-mfa-confetti-piece {
+  animation: admin-mfa-confetti 820ms ease-out var(--mfa-confetti-delay) both;
+}
+
+@keyframes admin-mfa-slot-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(213, 22, 42, 0.12);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(213, 22, 42, 0.12), 0 0 22px rgba(213, 22, 42, 0.28);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes admin-mfa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes admin-mfa-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes admin-mfa-chip-pulse {
+  from {
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.35);
+  }
+  to {
+    border-color: rgba(213, 22, 42, 0.58);
+    box-shadow: 0 0 22px rgba(213, 22, 42, 0.2);
+  }
+}
+
+@keyframes admin-mfa-success-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-14deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes admin-mfa-success-ring {
+  from {
+    opacity: 0.85;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes admin-mfa-confetti {
+  0% {
+    opacity: 0;
+    transform: translateY(4.6rem) rotate(0deg) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-1.25rem) rotate(var(--mfa-confetti-rotate)) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .social-proof-toast {
+  .social-proof-toast,
+  .admin-mfa-slot-active,
+  .admin-mfa-orbit,
+  .admin-mfa-orbit-track,
+  .admin-mfa-orbit-chip,
+  .admin-mfa-success-icon,
+  .admin-mfa-success-ring,
+  .admin-mfa-confetti-piece {
     animation: none;
+  }
+
+  .admin-mfa-confetti-piece {
+    display: none;
   }
 }
