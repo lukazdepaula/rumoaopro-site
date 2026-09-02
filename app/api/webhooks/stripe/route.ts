@@ -101,6 +101,12 @@ function subscriptionFields(
 }
 
 function stripePeriodEnd(object: Record<string, unknown>) {
+  if (
+    (object.status === "canceled" || object.status === "incomplete_expired") &&
+    typeof object.ended_at === "number"
+  ) {
+    return object.ended_at;
+  }
   if (object.status === "trialing" && typeof object.trial_end === "number") {
     return object.trial_end;
   }
