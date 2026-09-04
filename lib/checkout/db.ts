@@ -644,41 +644,74 @@ type SupabaseRequestOptions = {
   allowConflict?: boolean;
 };
 
+const SUPABASE_REQUEST_TIMEOUT_MS = 5_000;
+const SUPABASE_RETRYABLE_STATUSES = new Set([401, 408, 429, 500, 502, 503, 504]);
+
+class SupabaseResponseError extends Error {}
+
+function waitForSupabaseRetry(attempt: number) {
+  return new Promise((resolve) => setTimeout(resolve, 150 * attempt));
+}
+
 async function supabaseRequest<T>(
   table: string,
   options: SupabaseRequestOptions = {}
 ): Promise<T> {
   const config = supabaseConfig();
   const query = options.query ? `?${options.query}` : "";
-  const response = await fetch(`${config.url}/rest/v1/${table}${query}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
-      "Content-Type": "application/json",
-      ...(options.prefer ? { Prefer: options.prefer } : {})
-    },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    cache: "no-store"
-  });
+  const method = options.method || "GET";
+  const maxAttempts = method === "GET" ? 2 : 1;
 
-  if (options.allowConflict && response.status === 409) {
-    return [] as T;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(`${config.url}/rest/v1/${table}${query}`, {
+        method,
+        headers: {
+          apikey: config.key,
+          Authorization: `Bearer ${config.key}`,
+          "Content-Type": "application/json",
+          ...(options.prefer ? { Prefer: options.prefer } : {})
+        },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: "no-store",
+        signal: AbortSignal.timeout(SUPABASE_REQUEST_TIMEOUT_MS)
+      });
+
+      if (
+        attempt < maxAttempts &&
+        SUPABASE_RETRYABLE_STATUSES.has(response.status)
+      ) {
+        await response.body?.cancel().catch(() => undefined);
+        await waitForSupabaseRetry(attempt);
+        continue;
+      }
+
+      if (options.allowConflict && response.status === 409) {
+        return [] as T;
+      }
+
+      if (!response.ok) {
+        throw new SupabaseResponseError(
+          `Supabase ${table} ${method} failed: ${response.status}`
+        );
+      }
+
+      if (response.status === 204) {
+        return [] as T;
+      }
+
+      const text = await response.text();
+      return text ? (JSON.parse(text) as T) : ([] as T);
+    } catch (error) {
+      if (attempt < maxAttempts && !(error instanceof SupabaseResponseError)) {
+        await waitForSupabaseRetry(attempt);
+        continue;
+      }
+      throw error;
+    }
   }
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(
-      `Supabase ${table} ${options.method || "GET"} failed: ${response.status} ${message}`
-    );
-  }
-
-  if (response.status === 204) {
-    return [] as T;
-  }
-
-  const text = await response.text();
-  return text ? (JSON.parse(text) as T) : ([] as T);
+  throw new Error(`Supabase ${table} ${method} failed after retries`);
 }
 
 function eq(column: string, value: string) {

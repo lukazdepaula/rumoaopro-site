@@ -27,14 +27,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid presence" }, { status: 400 });
     }
 
-    await upsertSitePresence({ sessionId, path, locale });
+    try {
+      await upsertSitePresence({ sessionId, path, locale });
+    } catch (error) {
+      console.error("[analytics.presence.storage]", error);
+      return new NextResponse(null, {
+        status: 202,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": "30"
+        }
+      });
+    }
 
     return new NextResponse(null, {
       status: 204,
       headers: { "Cache-Control": "no-store" }
     });
   } catch (error) {
-    console.error("[analytics.presence]", error);
-    return NextResponse.json({ error: "Presence unavailable" }, { status: 500 });
+    console.error("[analytics.presence.payload]", error);
+    return NextResponse.json({ error: "Invalid presence" }, { status: 400 });
   }
 }

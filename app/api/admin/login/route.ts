@@ -31,6 +31,21 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function authenticateAdmin(email: string, password: string) {
+  const authorizedAdmin = await verifyAdminCredentials(email, password);
+  if (!authorizedAdmin) return { state: "invalid" as const };
+
+  let account = await getAdminAccountByEmail(authorizedAdmin.email);
+  if (!authorizedAdmin.usesIndividualPassword) {
+    const passwordHash = await hashAdminPassword(password);
+    account = await saveAdminAccountPassword(authorizedAdmin.email, passwordHash);
+  }
+
+  return account
+    ? { state: "ready" as const, account }
+    : { state: "unavailable" as const };
+}
+
 export async function POST(request: Request) {
   if (!isSameSiteRequest(request)) {
     return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
@@ -82,8 +97,18 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const authorizedAdmin = await verifyAdminCredentials(email, password);
-  if (!authorizedAdmin) {
+  let authentication: Awaited<ReturnType<typeof authenticateAdmin>>;
+  try {
+    authentication = await authenticateAdmin(email, password);
+  } catch (error) {
+    console.error("[admin.login.provider]", error);
+    redirectToLogin("unavailable");
+    const response = NextResponse.redirect(redirectTo, 303);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
+
+  if (authentication.state === "invalid") {
     recordAdminLoginFailure(request, email);
     logAdminSecurityEvent("password_failed", email);
     redirectToLogin("invalid");
@@ -92,16 +117,11 @@ export async function POST(request: Request) {
     return response;
   }
 
-  let account = await getAdminAccountByEmail(authorizedAdmin.email);
-  if (!authorizedAdmin.usesIndividualPassword) {
-    const passwordHash = await hashAdminPassword(password);
-    account = await saveAdminAccountPassword(authorizedAdmin.email, passwordHash);
-  }
-
-  if (!account) {
+  if (authentication.state === "unavailable") {
     redirectToLogin("unavailable");
     return NextResponse.redirect(redirectTo, 303);
   }
+  const account = authentication.account;
 
   const mfaEnabled = Boolean(
     account.mfa_enabled_at &&

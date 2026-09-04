@@ -32,6 +32,15 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+async function getAdminAccountSafely(email: string, context: string) {
+  try {
+    return await getAdminAccountByEmail(email);
+  } catch (error) {
+    console.error(`[admin.auth.${context}]`, error);
+    return null;
+  }
+}
+
 function adminSecret() {
   const configured = process.env.ADMIN_SESSION_SECRET?.trim();
   if (configured) return configured;
@@ -175,7 +184,7 @@ export async function readAdminSession(value?: string | null) {
   const session = readSignedAdminSession(value);
   if (!session) return null;
 
-  const account = await getAdminAccountByEmail(session.email);
+  const account = await getAdminAccountSafely(session.email, "session_lookup");
   if (account) {
     const mfaEnabled = Boolean(
       account.mfa_enabled_at &&
@@ -257,7 +266,7 @@ export async function readPendingAdminMfaSession(value?: string | null) {
   const session = readSignedPendingAdminMfa(value);
   if (!session) return null;
 
-  const account = await getAdminAccountByEmail(session.email);
+  const account = await getAdminAccountSafely(session.email, "mfa_session_lookup");
   if (account) {
     return account.active &&
       safeEqual(session.authVersion, account.password_updated_at)
@@ -275,7 +284,7 @@ export async function readPendingAdminMfaSession(value?: string | null) {
 
 export async function isEligibleAdminEmail(email: string) {
   if (isAllowedAdminEmail(email)) return true;
-  const account = await getAdminAccountByEmail(email);
+  const account = await getAdminAccountSafely(email, "eligibility_lookup");
   return Boolean(account?.active);
 }
 

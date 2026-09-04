@@ -326,7 +326,12 @@ async function sendEvent(
       body: payload,
       keepalive: true
     });
-    if (response.ok) window.sessionStorage.setItem(storageKey, "1");
+    const result = (await response.json().catch(() => null)) as
+      | { recorded?: boolean }
+      | null;
+    if (response.ok && result?.recorded !== false) {
+      window.sessionStorage.setItem(storageKey, "1");
+    }
   } catch {
     // A later navigation can retry the event when the network is available.
   }

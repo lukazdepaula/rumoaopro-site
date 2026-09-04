@@ -95,21 +95,36 @@ export async function POST(request: Request) {
       fbp: cleanText(marketing.fbp, 240) || null,
       fbc: cleanText(marketing.fbc, 240) || null
     };
-    const recorded = await recordWebhookEvent("analytics", eventId, {
-      type,
-      session_id: sessionId,
-      product_id: product?.id || "site",
-      product_slug: product?.slug || "site",
-      locale,
-      path,
-      source_path: sourcePath || null,
-      referrer_host: referrerHost || null,
-      country: country || null,
-      payment_method: paymentMethod || null,
-      error_code: errorCode || null,
-      attribution,
-      request_id: randomUUID()
-    });
+    let recorded = false;
+    try {
+      recorded = await recordWebhookEvent("analytics", eventId, {
+        type,
+        session_id: sessionId,
+        product_id: product?.id || "site",
+        product_slug: product?.slug || "site",
+        locale,
+        path,
+        source_path: sourcePath || null,
+        referrer_host: referrerHost || null,
+        country: country || null,
+        payment_method: paymentMethod || null,
+        error_code: errorCode || null,
+        attribution,
+        request_id: randomUUID()
+      });
+    } catch (error) {
+      console.error("[analytics.event.storage]", error);
+      return NextResponse.json(
+        { accepted: true, recorded: false },
+        {
+          status: 202,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": "30"
+          }
+        }
+      );
+    }
 
     const metaEvent = metaEventFor(type);
     if (recorded && metaEvent && attribution.consent === "granted") {

@@ -55,6 +55,19 @@ function percentDelta(current: number, previous: number) {
   return previous > 0 ? ((current - previous) / previous) * 100 : null;
 }
 
+async function loadAdminData<T>(
+  source: string,
+  loader: () => Promise<T>,
+  fallback: T
+) {
+  try {
+    return { available: true as const, value: await loader() };
+  } catch (error) {
+    console.error(`[admin.dashboard.${source}]`, error);
+    return { available: false as const, value: fallback };
+  }
+}
+
 function financialSourceStatusLabel(
   source: Awaited<ReturnType<typeof getFinancialPeriodMetrics>>["sources"][number]
 ) {
@@ -88,13 +101,25 @@ export default async function AdminDashboardPage({
     financialPeriod.startKey.slice(0, 7) === financialPeriod.endKey.slice(0, 7)
       ? financialPeriod.startKey.slice(0, 7)
       : currentMonthPeriod.startKey.slice(0, 7);
-  const [orders, monthAnalyticsEvents, activePresence, recurringMetrics, expenseMetrics] = await Promise.all([
-    listOrders({}),
-    listAnalyticsEvents(financialPeriod.start),
-    listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
+  const [ordersData, analyticsData, presenceData, recurringMetrics, expenseMetrics] = await Promise.all([
+    loadAdminData("orders", () => listOrders({}), [] as Order[]),
+    loadAdminData("analytics", () => listAnalyticsEvents(financialPeriod.start), []),
+    loadAdminData(
+      "presence",
+      () => listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
+      []
+    ),
     getStripeRecurringMetrics({ bypassCache }),
     getMonthlyExpenseMetrics(expensePeriodKey, { bypassCache })
   ]);
+  const orders = ordersData.value;
+  const monthAnalyticsEvents = analyticsData.value;
+  const activePresence = presenceData.value;
+  const unavailableData = [
+    !ordersData.available ? "pedidos" : null,
+    !analyticsData.available ? "analytics" : null,
+    !presenceData.available ? "visitantes ao vivo" : null
+  ].filter((value): value is string => Boolean(value));
   const comparisonPeriod = previousFinancialPeriod(financialPeriod);
   const [financialMetrics, comparisonMetrics] = await Promise.all([
     getFinancialPeriodMetrics(financialPeriod, orders, { bypassCache }),
@@ -261,6 +286,14 @@ export default async function AdminDashboardPage({
 
   return (
     <AdminShell title="Painel">
+      {unavailableData.length > 0 ? (
+        <section className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950 shadow-sm">
+          <p className="text-sm font-black">Parte dos dados está temporariamente indisponível</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900/75">
+            Falha momentânea ao consultar {unavailableData.join(", ")}. O restante do painel continua funcionando e nenhuma informação indisponível foi inventada. Atualize em alguns instantes.
+          </p>
+        </section>
+      ) : null}
       <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(250px,0.72fr)_minmax(0,1.65fr)]">
         <AdminLiveVisitors
           initialData={{
