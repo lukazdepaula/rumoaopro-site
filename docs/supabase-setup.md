@@ -31,17 +31,18 @@ No Supabase:
 1. Vá em `Project Settings`.
 2. Abra `API`.
 3. Copie `Project URL`.
-4. Copie `service_role` em `Project API keys`.
+4. Copie a chave secreta `sb_secret_...` em `API Keys`.
 
 Na Vercel, adicione a variável:
 
 ```txt
 CHECKOUT_DB_DRIVER=postgres
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_SECRET_KEY=your-secret-key
+SUPABASE_SERVICE_ROLE_KEY=your-legacy-service-role-key
 ```
 
-Importante: `SUPABASE_SERVICE_ROLE_KEY` é segredo de servidor. Não coloque em variável pública e não exponha no front-end.
+Importante: `SUPABASE_SECRET_KEY` e `SUPABASE_SERVICE_ROLE_KEY` são segredos de servidor. Prefira a chave opaca `sb_secret_...`; mantenha a chave legada apenas durante a migração. Não coloque nenhuma delas em variável pública nem exponha no front-end.
 
 ## 3. Fallback local
 

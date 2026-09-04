@@ -7,12 +7,14 @@ let bucketReady = false;
 
 function storageConfig() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key =
+    process.env.SUPABASE_SECRET_KEY?.trim() ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   const bucket = process.env.SUPABASE_MATERIALS_BUCKET || "program-materials";
 
   if (!url || !key) {
     throw new Error(
-      "Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY para subir arquivos."
+      "Configure SUPABASE_URL e SUPABASE_SECRET_KEY para subir arquivos."
     );
   }
 
