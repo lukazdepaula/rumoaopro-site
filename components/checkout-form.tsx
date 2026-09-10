@@ -232,6 +232,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const [address, setAddress] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [error, setError] = useState("");
+  const [loadProAccountRequired, setLoadProAccountRequired] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixStatus, setPixStatus] = useState<string | null>(null);
@@ -355,6 +356,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setLoadProAccountRequired(false);
     setPix(null);
     setPixStatus(null);
     setLoading(true);
@@ -387,6 +389,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       const payload = await response.json();
 
       if (!response.ok) {
+        setLoadProAccountRequired(payload.code === "LOADPRO_USE_EXISTING_ACCOUNT");
         void trackCheckoutEvent("checkout_error", product.slug, {
           country,
           paymentMethod,
@@ -1044,6 +1047,12 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
           <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
             {error}
           </p>
+        ) : null}
+        {loadProAccountRequired ? (
+          <a className="focus-ring rounded-md border border-current px-4 py-3 text-center font-semibold"
+            href="https://loadpro.rumoaopro.com.br/?view=login">
+            {isEnglish ? "Sign in to manage my LoadPro plan" : "Entrar para gerenciar meu plano LoadPro"}
+          </a>
         ) : null}
 
         <button

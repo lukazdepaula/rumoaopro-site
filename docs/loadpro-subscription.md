@@ -6,6 +6,42 @@ The LoadPro founding plans use the central RumoAoPro checkout and order admin:
 - `loadpro_founders_50`: R$69.90/month, two teams, 50 active players per team.
 
 Both keep a seven-day trial and lock the contracted founding price while active.
+International USD plans cost US$9.90 and US$13.90 respectively (configurable catalog prices).
+
+## Safe upgrades and duplicate prevention (September 2026)
+
+- Apply `supabase/loadpro-checkout-reservations.sql` to the **LoadPro** database
+  before deploying this release. RLS remains enabled and only service_role may
+  reserve a checkout. No coach/player tables are modified.
+- Live checkout checks the normalized email before creating an order or a Stripe
+  session. An existing subscription or simultaneous checkout is blocked and the
+  customer is directed to sign in. The reservation serializes concurrent requests
+  and outlives the Stripe session (40 versus 35 minutes).
+- Returning canceled subscribers may subscribe again, but receive no repeat trial.
+- GET `/api/loadpro/billing/change-plan` provides an authenticated, read-only
+  quote. POST confirms the quoted currency/amount and updates the **same** monthly
+  subscription with no proration, no new trial and an unchanged billing date.
+- BRL and USD are supported. Unknown currencies fail closed for manual support.
+- Webhooks reconcile with Stripe's current subscription, including item-level
+  period dates. A different subscription cannot overwrite the selected access;
+  replacement is allowed only for a newer order after the previous one ended.
+- Duplicate-subscription cancellation/payment-failure notices must not block or
+  notify the owner of an unrelated active subscription. Ignored events are logged.
+
+Run `node --test scripts/tests/loadpro-billing.test.mjs`, `pnpm check` and `pnpm build`.
+Official API references: [subscription updates](https://docs.stripe.com/api/subscriptions/update),
+[checkout sessions](https://docs.stripe.com/api/checkout/sessions/create).
+
+### Repairing a pre-existing duplicate
+
+Verify customer email, both subscriptions, currency, renewal date, successful
+payments and the current billing_access binding. Never cancel a subscription on
+the basis of its display name alone. With customer/operator authorization, retain
+the original paid subscription, apply the upgrade without proration or a new
+trial, reconcile billing_access to that subscription, and only then cancel the
+duplicate trial without generating an invoice. Verify the original renewal amount,
+the canceled duplicate, the access binding and unchanged player/history counts.
+Do not move, recreate, delete or merge clubs/players as part of a billing repair.
 
 ## Safe deployment order
 

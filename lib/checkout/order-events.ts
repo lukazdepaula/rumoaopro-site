@@ -86,12 +86,13 @@ async function syncLoadProSafely(
         typeof gatewayData.price_cents === "number"
           ? gatewayData.price_cents
           : null,
+      currency: typeof gatewayData.currency === "string" ? gatewayData.currency : null,
       invite
     });
     await updateOrderGatewayIds(order.id, {
       metadata: {
         loadpro_provisioning_status:
-          result.configured === false ? "pending_configuration" : "synced"
+          result.configured === false ? "pending_configuration" : result.ignored ? "other_subscription_ignored" : "synced"
       }
     });
   } catch (error) {

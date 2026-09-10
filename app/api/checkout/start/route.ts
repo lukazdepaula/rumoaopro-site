@@ -11,7 +11,7 @@ import {
   validateDiscountForCheckout
 } from "@/lib/checkout/discounts";
 import { markOrderAsFailed } from "@/lib/checkout/order-events";
-import { assertLoadProProvisioningReady } from "@/lib/checkout/loadpro";
+import { assertLoadProProvisioningReady, reserveLoadProCheckout } from "@/lib/checkout/loadpro";
 import {
   createMercadoPagoCheckoutPreference,
   createMercadoPagoPixPayment,
@@ -137,9 +137,20 @@ export async function POST(request: Request) {
       );
     }
 
+    let loadProReservation: Awaited<ReturnType<typeof reserveLoadProCheckout>> | null = null;
     if (mode === "live" && isLoadProProductId(product.id)) {
       try {
         await assertLoadProProvisioningReady();
+        loadProReservation = await reserveLoadProCheckout(input.email);
+        if (!loadProReservation.allowed) {
+          return NextResponse.json({
+            code: "LOADPRO_USE_EXISTING_ACCOUNT",
+            error: input.locale === "en"
+              ? "A subscription or checkout already exists. Sign in to LoadPro to manage or upgrade your plan without creating another subscription. If a checkout was interrupted, try again in 40 minutes."
+              : "Já existe uma assinatura ou checkout em andamento. Entre no LoadPro para gerenciar ou trocar seu plano sem criar outra assinatura. Se interrompeu um checkout, tente novamente em 40 minutos.",
+            loginUrl: "https://loadpro.rumoaopro.com.br/?view=login"
+          }, { status: 409 });
+        }
       } catch (error) {
         console.error("[checkout.start.loadpro_preflight]", error);
         return NextResponse.json(
@@ -210,7 +221,11 @@ export async function POST(request: Request) {
         checkout_gateway_mode: mode,
         checkout_payment_method: paymentMethod,
         checkout_locale: input.locale,
-        trial_days: product.trial_days || null,
+        trial_days: loadProReservation?.trial_eligible === false ? 0 : product.trial_days || null,
+        ...(loadProReservation ? {
+          loadpro_trial_eligible: loadProReservation.trial_eligible === true,
+          loadpro_checkout_expires_at: loadProReservation.expires_at
+        } : {}),
         base_price_usd: localizedPrice.basePriceUsd,
         marketing_consent: marketingConsent ? "granted" : "denied",
         marketing_landing_url: input.marketing.landingUrl || null,
