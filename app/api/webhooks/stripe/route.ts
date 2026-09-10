@@ -20,7 +20,8 @@ import {
   trackMetaPurchase,
   trackMetaStartTrial
 } from "@/lib/marketing/order-events";
-import { isLoadProOrder } from "@/lib/checkout/loadpro";
+import { isLoadProOrder, isCurrentLoadProSubscription } from "@/lib/checkout/loadpro";
+import { stripeSubscriptionPeriod } from "@/lib/checkout/loadpro-billing-policy";
 import { sendLoadProPaymentFailedEmail } from "@/lib/checkout/email";
 import type { Order } from "@/lib/checkout/types";
 
@@ -82,10 +83,7 @@ function subscriptionFields(
   const price = recordOf(firstItem.price);
   return {
     provider_subscription_status: textValue(object.status) || fallbackStatus,
-    current_period_start:
-      typeof object.current_period_start === "number"
-        ? object.current_period_start
-        : undefined,
+    current_period_start: stripeSubscriptionPeriod(object).start || undefined,
     current_period_end: stripePeriodEnd(object),
     trial_start:
       typeof object.trial_start === "number" ? object.trial_start : undefined,
@@ -96,11 +94,14 @@ function subscriptionFields(
       typeof object.canceled_at === "number" ? object.canceled_at : undefined,
     plan_code: textValue(metadata.plan_code),
     price_cents:
-      typeof price.unit_amount === "number" ? price.unit_amount : undefined
+      typeof price.unit_amount === "number" ? price.unit_amount : undefined,
+    currency: textValue(price.currency)?.toUpperCase() || textValue(object.currency)?.toUpperCase()
   };
 }
 
 function stripePeriodEnd(object: Record<string, unknown>) {
+  const subscriptionEnd = stripeSubscriptionPeriod(object).end;
+  if (subscriptionEnd) return subscriptionEnd;
   if (
     (object.status === "canceled" || object.status === "incomplete_expired") &&
     typeof object.ended_at === "number"
@@ -143,6 +144,8 @@ async function sendLoadProPaymentFailureOnce(input: {
 }) {
   const { order, invoice, eventId } = input;
   if (!isLoadProOrder(order) || order.metadata.checkout_gateway_mode === "sandbox") return;
+  const subscriptionId = stripeSubscriptionId(invoice);
+  if (!subscriptionId || !await isCurrentLoadProSubscription(order, subscriptionId)) return;
 
   const invoiceId = textValue(invoice.id);
   if (!invoiceId) return;
@@ -303,12 +306,25 @@ export async function POST(request: Request) {
     }
 
     if (event.type === "invoice.paid" && subscriptionId) {
+      // Invoice metadata may describe the original plan and may arrive late.
+      // The current subscription owns the plan, currency and access period.
+      const liveSubscription = isLoadProOrder(order) ? await fetchStripeSubscription(subscriptionId) : null;
+      const invoiceSubscription = liveSubscription || object;
+      if (liveSubscription && !["active", "trialing"].includes(String(liveSubscription.status))) {
+        const liveStatus = accessStatus(liveSubscription.status);
+        if (liveStatus) await syncOrderSubscription(order.id, liveStatus, {
+          ...environmentData, event_id: eventId,
+          provider_customer_id: textValue(liveSubscription.customer), provider_subscription_id: subscriptionId,
+          ...subscriptionFields(liveSubscription)
+        });
+        return NextResponse.json({ received: true, reconciled: true });
+      }
       const amountPaid =
         typeof object.amount_paid === "number" ? object.amount_paid : null;
       const zeroValueTrialInvoice =
         isLoadProOrder(order) &&
         amountPaid === 0 &&
-        Number(order.metadata.trial_days || 0) > 0;
+        liveSubscription?.status === "trialing";
 
       if (zeroValueTrialInvoice) {
         await syncOrderSubscription(
@@ -319,7 +335,7 @@ export async function POST(request: Request) {
             event_id: eventId,
             provider_customer_id: textValue(object.customer),
             provider_subscription_id: subscriptionId,
-            ...subscriptionFields(object, "trialing")
+            ...subscriptionFields(invoiceSubscription, "trialing")
           },
           { invite: true }
         );
@@ -330,7 +346,7 @@ export async function POST(request: Request) {
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
-          ...subscriptionFields(object, "active")
+          ...subscriptionFields(invoiceSubscription, "active")
         });
       } else {
         await syncOrderSubscription(order.id, "active", {
@@ -338,7 +354,7 @@ export async function POST(request: Request) {
           event_id: eventId,
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
-          ...subscriptionFields(object, "active")
+          ...subscriptionFields(invoiceSubscription, "active")
         });
       }
 
@@ -352,10 +368,12 @@ export async function POST(request: Request) {
     }
 
     if (event.type?.startsWith("customer.subscription.")) {
+      const currentObject = isLoadProOrder(order) && subscriptionId
+        ? await fetchStripeSubscription(subscriptionId) : object;
       const status =
         event.type === "customer.subscription.deleted"
           ? "canceled"
-          : accessStatus(object.status);
+          : accessStatus(currentObject.status);
       if (status) {
         await syncOrderSubscription(
           order.id,
@@ -363,14 +381,14 @@ export async function POST(request: Request) {
           {
             ...environmentData,
             event_id: eventId,
-            provider_customer_id: textValue(object.customer),
+            provider_customer_id: textValue(currentObject.customer),
             provider_subscription_id: subscriptionId,
-            ...subscriptionFields(object, textValue(object.status))
+            ...subscriptionFields(currentObject, textValue(currentObject.status))
           },
           {
             invite:
               event.type === "customer.subscription.created" &&
-              object.status === "trialing"
+              currentObject.status === "trialing"
           }
         );
       }
@@ -382,14 +400,16 @@ export async function POST(request: Request) {
         event.type === "invoice.finalization_failed") &&
       subscriptionId
     ) {
-      await syncOrderSubscription(order.id, "past_due", {
+      const failedSubscription = isLoadProOrder(order) ? await fetchStripeSubscription(subscriptionId) : null;
+      const failedStatus = failedSubscription ? accessStatus(failedSubscription.status) : "past_due";
+      if (failedStatus) await syncOrderSubscription(order.id, failedStatus, {
         ...environmentData,
         event_id: eventId,
         provider_customer_id: textValue(object.customer),
         provider_subscription_id: subscriptionId,
-        ...subscriptionFields(object, "past_due")
+        ...subscriptionFields(failedSubscription || object, "past_due")
       });
-      if (event.type === "invoice.payment_failed") {
+      if (event.type === "invoice.payment_failed" && failedStatus === "past_due") {
         await sendLoadProPaymentFailureOnce({ order, invoice: object, eventId });
       }
     } else if (

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
+import { appendOrderLog, getOrderById, updateOrderGatewayIds } from "@/lib/checkout/db";
+import { canReplaceLoadProSubscription } from "@/lib/checkout/loadpro-billing-policy";
 import {
   sendLoadProExistingAccountEmail,
   sendLoadProPasswordRecoveryEmail,
@@ -30,6 +31,7 @@ type SyncInput = {
   eventId?: string | null;
   planCode?: string | null;
   priceCents?: number | null;
+  currency?: string | null;
 };
 
 export type LoadProBillingAccess = {
@@ -160,11 +162,24 @@ export async function assertLoadProProvisioningReady() {
 
 async function existingAccess(email: string) {
   const response = await requestLoadPro(
-    `/rest/v1/billing_access?select=access_kind,status&email=eq.${encodeURIComponent(email)}&limit=1`
+    `/rest/v1/billing_access?select=id,access_kind,status,provider_subscription_id,order_id,metadata&email=eq.${encodeURIComponent(email)}&limit=1`
   );
-  if (!response.ok) return null;
+  if (!response.ok) throw new Error("Unable to verify existing LoadPro billing access.");
   const rows = (await response.json()) as Array<Record<string, unknown>>;
   return rows[0] || null;
+}
+
+export async function reserveLoadProCheckout(email: string) {
+  const response = await requestLoadPro("/rest/v1/rpc/reserve_loadpro_checkout", {
+    method: "POST", body: JSON.stringify({ p_email: email.trim().toLowerCase(), p_reservation_id: crypto.randomUUID() })
+  });
+  if (!response.ok) throw new Error("LoadPro checkout reservation is unavailable.");
+  return await response.json() as { allowed: boolean; reason?: string; trial_eligible?: boolean; expires_at?: number };
+}
+
+export async function isCurrentLoadProSubscription(order: Order, subscriptionId: string) {
+  const current = await existingAccess(order.customer_email.trim().toLowerCase());
+  return !current?.provider_subscription_id || current.provider_subscription_id === subscriptionId;
 }
 
 async function inviteCoach(order: Order) {
@@ -348,7 +363,8 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
   if (!product || !isLoadProProductId(product.id)) {
     throw new Error(`Unknown LoadPro plan: ${planCode}`);
   }
-  const configuredPrice = order.currency === "BRL"
+  const currency = (input.currency || order.currency).toUpperCase();
+  const configuredPrice = currency === "BRL"
     ? product.price_brl
     : product.base_price_usd;
   const priceCents = typeof input.priceCents === "number" && Number.isFinite(input.priceCents)
@@ -368,11 +384,26 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     order.gateway_payment_id ||
     order.gateway_checkout_id;
 
+  const currentSubscription = typeof current?.provider_subscription_id === "string" ? current.provider_subscription_id : null;
+  const currentOrder = currentSubscription && currentSubscription !== providerSubscriptionId && typeof current?.order_id === "string"
+    ? await getOrderById(current.order_id) : null;
+  if (!canReplaceLoadProSubscription({
+    currentSubscription, incomingSubscription: providerSubscriptionId,
+    currentStatus: String(current?.status || ""), incomingStatus: input.status,
+    currentOrderCreatedAt: currentOrder?.created_at, incomingOrderCreatedAt: order.created_at
+  })) {
+    await appendOrderLog(order.id, "loadpro.access.other_subscription_ignored",
+      "Evento de outra assinatura ignorado; acesso principal preservado.", { providerSubscriptionId, currentSubscription });
+    return { handled: true, configured: true, ignored: true };
+  }
+
   const response = await requestLoadPro(
-    "/rest/v1/billing_access?on_conflict=email",
+    current
+      ? `/rest/v1/billing_access?id=eq.${encodeURIComponent(String(current.id))}&provider_subscription_id=${currentSubscription ? `eq.${encodeURIComponent(currentSubscription)}` : "is.null"}`
+      : "/rest/v1/billing_access?on_conflict=email",
     {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      method: current ? "PATCH" : "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
       body: JSON.stringify({
         email,
         status: input.status,
@@ -386,7 +417,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
         team_limit: product?.team_limit || 2,
         players_per_team_limit: product.players_per_team_limit || 30,
         price_cents: priceCents,
-        currency: order.currency,
+        currency,
         price_locked: product?.founding_price_lock === true,
         metadata: {
           source: "rumoaopro_checkout",
@@ -409,6 +440,8 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     const message = await response.text().catch(() => "");
     throw new Error(`LoadPro access sync failed: ${response.status} ${message}`);
   }
+  const written = await response.json() as Array<Record<string, unknown>>;
+  if (!written.length) throw new Error("LoadPro billing changed concurrently; reconciliation required.");
 
   await appendOrderLog(
     order.id,

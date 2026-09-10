@@ -3,6 +3,8 @@ import { createCheckoutReturnUrl } from "@/lib/checkout/checkout-access";
 import type { CheckoutProduct, Order, OrderStatus } from "@/lib/checkout/types";
 import { appendOrderLog, updateOrderGatewayIds } from "@/lib/checkout/db";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
+import { getProductById, isLoadProProductId } from "@/lib/checkout/products";
+import { loadProUpgradePrice } from "@/lib/checkout/loadpro-billing-policy";
 
 export class PaymentConfigurationError extends Error {
   constructor(message: string) {
@@ -359,7 +361,7 @@ export async function createStripeCheckoutSession(
   const isSubscription = product.type === "subscription";
   const locale = order.metadata.checkout_locale === "en" ? "en" : "pt";
   const productCopy = getLocalizedProductCopy(product, locale);
-  const trialDays = isSubscription
+  const trialDays = isSubscription && order.metadata.loadpro_trial_eligible !== false
     ? Math.max(0, Math.floor(product.trial_days || 0))
     : 0;
   const catalogPriceId = stripeCatalogPriceId(order, product);
@@ -367,6 +369,9 @@ export async function createStripeCheckoutSession(
   params.set("mode", isSubscription ? "subscription" : "payment");
   params.set("customer_email", order.customer_email);
   params.set("client_reference_id", order.id);
+  if (isLoadProProductId(product.id) && typeof order.metadata.loadpro_checkout_expires_at === "number") {
+    params.set("expires_at", String(order.metadata.loadpro_checkout_expires_at));
+  }
   params.set(
     "success_url",
     returnUrl
@@ -653,16 +658,36 @@ export async function changeStripeLoadProPlan(input: {
   subscriptionId: string;
   subscriptionItemId: string;
   planCode: "loadpro_founders_50";
+  currency: string;
 }) {
   const secretKey = requireEnv("STRIPE_SECRET_KEY");
   const priceId = requireEnv("STRIPE_LOADPRO_FOUNDERS_50_PRICE_ID");
+  const quote = getLoadProUpgradePrice(input.currency);
+  const catalogResponse = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store"
+  });
+  const catalog = await catalogResponse.json() as Record<string, unknown>;
+  if (!catalogResponse.ok || typeof catalog.product !== "string") {
+    throw new PaymentGatewayError("Unable to validate the upgrade catalog.");
+  }
   const params = new URLSearchParams({
     "items[0][id]": input.subscriptionItemId,
-    "items[0][price]": priceId,
+    "items[0][quantity]": "1",
     proration_behavior: "none",
+    billing_cycle_anchor: "unchanged",
     "metadata[plan_code]": input.planCode,
     "metadata[product_id]": input.planCode
   });
+  if (catalog.currency === quote.currency.toLowerCase() && catalog.unit_amount === quote.priceCents) {
+    params.set("items[0][price]", priceId);
+  } else {
+    // Retain the subscription currency. International subscribers must never
+    // receive the BRL price. Inline prices use the same Fundadores 50 product.
+    params.set("items[0][price_data][product]", catalog.product);
+    params.set("items[0][price_data][currency]", quote.currency.toLowerCase());
+    params.set("items[0][price_data][unit_amount]", String(quote.priceCents));
+    params.set("items[0][price_data][recurring][interval]", "month");
+  }
   const response = await fetch(
     `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(input.subscriptionId)}`,
     {
@@ -670,7 +695,7 @@ export async function changeStripeLoadProPlan(input: {
       headers: {
         Authorization: `Bearer ${secretKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `loadpro-plan-change:${input.subscriptionId}:${input.planCode}`
+        "Idempotency-Key": `loadpro-plan-change:v2:${input.subscriptionId}:${input.planCode}:${quote.currency}:${quote.priceCents}`
       },
       body: params
     }
@@ -683,6 +708,12 @@ export async function changeStripeLoadProPlan(input: {
     });
   }
   return payload;
+}
+
+export function getLoadProUpgradePrice(currency: string) {
+  const product = getProductById("loadpro_founders_50");
+  if (!product) throw new PaymentConfigurationError("LoadPro upgrade is unavailable.");
+  return loadProUpgradePrice(currency, product.price_brl, product.base_price_usd);
 }
 
 export async function createStripeBillingPortalSession(

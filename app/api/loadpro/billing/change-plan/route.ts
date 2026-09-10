@@ -10,8 +10,10 @@ import {
 } from "@/lib/checkout/loadpro";
 import {
   changeStripeLoadProPlan,
-  fetchStripeSubscription
+  fetchStripeSubscription,
+  getLoadProUpgradePrice
 } from "@/lib/checkout/payments";
+import { stripeSubscriptionPeriod } from "@/lib/checkout/loadpro-billing-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +33,7 @@ function corsHeaders(request: Request) {
   return {
     ...(origin ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Cache-Control": "no-store",
     Vary: "Origin"
   };
@@ -75,7 +77,10 @@ export async function OPTIONS(request: Request) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
 }
 
-export async function POST(request: Request) {
+export async function GET(request: Request) { return handle(request, true); }
+export async function POST(request: Request) { return handle(request, false); }
+
+async function handle(request: Request, quoteOnly: boolean) {
   if (!allowedOrigin(request)) return json(request, { error: "Origin not allowed" }, 403);
 
   const authorization = request.headers.get("authorization") || "";
@@ -84,8 +89,8 @@ export async function POST(request: Request) {
     : "";
   if (!accessToken) return json(request, { error: "Authentication required" }, 401);
 
-  const body = (await request.json().catch(() => ({}))) as { plan_code?: unknown };
-  if (body.plan_code !== TARGET_PLAN) {
+  const body = (quoteOnly ? {} : await request.json().catch(() => ({}))) as { plan_code?: unknown; currency?: unknown; price_cents?: unknown };
+  if (!quoteOnly && body.plan_code !== TARGET_PLAN) {
     return json(request, { error: "Unsupported plan change" }, 400);
   }
 
@@ -123,39 +128,62 @@ export async function POST(request: Request) {
     const currentCustomer = textValue(currentSubscription.customer);
     const currentStatus = textValue(currentSubscription.status);
     const item = subscriptionItem(currentSubscription);
+    const price = recordOf(item.price);
+    const recurring = recordOf(price.recurring);
     const itemId = textValue(item.id);
     if (
       currentCustomer !== access.provider_customer_id ||
       !itemId ||
+      (recordOf(currentSubscription.items).data as unknown[])?.length !== 1 ||
+      item.quantity !== 1 || recurring.interval !== "month" || recurring.interval_count !== 1 ||
       !["active", "trialing"].includes(currentStatus || "")
     ) {
       return json(request, { error: "Stripe subscription is not eligible" }, 409);
     }
 
+    const quote = getLoadProUpgradePrice(String(price.currency || currentSubscription.currency || ""));
+    const period = stripeSubscriptionPeriod(currentSubscription);
+    if (!period.end) return json(request, { error: "Subscription renewal date unavailable" }, 409);
+    if (quoteOnly) return json(request, { quote: {
+      plan_code: TARGET_PLAN, currency: quote.currency, price_cents: quote.priceCents,
+      current_period_end: new Date(period.end * 1000).toISOString(),
+      is_trial: currentStatus === "trialing"
+    } });
+    // Old clients explicitly confirm R$69.90. They remain compatible only at
+    // that exact price; all other currencies/prices require a fresh quote.
+    const legacyBrlConfirmation = body.currency === undefined && body.price_cents === undefined
+      && quote.currency === "BRL" && quote.priceCents === 6990;
+    if (!legacyBrlConfirmation && (body.currency !== quote.currency || body.price_cents !== quote.priceCents)) {
+      return json(request, { error: "Refresh and confirm the current upgrade price", code: "QUOTE_CHANGED" }, 409);
+    }
+
     const updated = await changeStripeLoadProPlan({
       subscriptionId: access.provider_subscription_id,
       subscriptionItemId: itemId,
-      planCode: TARGET_PLAN
+      planCode: TARGET_PLAN,
+      currency: quote.currency
     });
     const updatedStatus = textValue(updated.status);
     const mappedStatus = accessStatus(updatedStatus);
     if (!mappedStatus) throw new Error("Stripe returned an unsupported subscription status.");
+    const updatedPrice = recordOf(subscriptionItem(updated).price);
+    const updatedPeriod = stripeSubscriptionPeriod(updated);
+    if (updatedPrice.unit_amount !== quote.priceCents || String(updatedPrice.currency).toUpperCase() !== quote.currency
+      || updatedPeriod.end !== period.end) throw new Error("Stripe upgrade did not preserve the confirmed terms.");
 
     await updateOrderGatewayIds(order.id, {
       metadata: {
         subscription_plan_code: TARGET_PLAN,
-        subscription_price_cents: 6990,
+        subscription_price_cents: quote.priceCents,
+        subscription_currency: quote.currency,
         subscription_plan_changed_at: new Date().toISOString()
       }
     });
 
     await syncLoadProAccess(order, {
       status: mappedStatus,
-      currentPeriodStart: numberValue(updated.current_period_start),
-      currentPeriodEnd:
-        numberValue(updated.trial_end) ||
-        numberValue(updated.current_period_end) ||
-        access.current_period_end,
+      currentPeriodStart: updatedPeriod.start,
+      currentPeriodEnd: updatedPeriod.end,
       trialStart: numberValue(updated.trial_start),
       trialEnd: numberValue(updated.trial_end),
       providerSubscriptionStatus: updatedStatus,
@@ -164,7 +192,8 @@ export async function POST(request: Request) {
       providerCustomerId: currentCustomer,
       providerSubscriptionId: access.provider_subscription_id,
       planCode: TARGET_PLAN,
-      priceCents: 6990,
+      priceCents: quote.priceCents,
+      currency: quote.currency,
       eventId: `direct-plan-change:${order.id}`
     });
 
