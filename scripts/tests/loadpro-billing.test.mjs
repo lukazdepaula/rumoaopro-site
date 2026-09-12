@@ -88,6 +88,58 @@ test('stale cancellation never writes billing_access or touches club/player data
   assert.equal(result.ignored,true);
   assert.equal(writes.length,0);
 });
+
+async function syncAccessFixture(input) {
+  const writes=[];
+  const loadpro=load('lib/checkout/loadpro.ts',{
+    '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
+    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-billing-policy':policy
+  },{fetch:async(url,init)=>{
+    if(init.method && init.method!=='GET') writes.push({url,body:JSON.parse(init.body)});
+    return Response.json([{id:'access',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',order_id:'order_main'}]);
+  }});
+  await loadpro.syncLoadProAccess({id:'order_main',product_id:'loadpro_founders_50',currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'},
+    {providerSubscriptionId:'sub_main',...input});
+  assert.equal(writes.length,1);
+  assert.match(writes[0].url,/\/rest\/v1\/billing_access\?/);
+  return writes[0].body;
+}
+
+test('cancellation with a missing or invalid period ends access now, never next month', async () => {
+  for(const currentPeriodEnd of [undefined,null,'','invalid-date',NaN,Infinity]) {
+    const before=Date.now();
+    const access=await syncAccessFixture({status:'canceled',currentPeriodEnd});
+    assert.equal(access.status,'canceled');
+    assert.ok(Date.parse(access.current_period_end)>=before);
+    assert.ok(Date.parse(access.current_period_end)<=Date.now());
+  }
+});
+
+test('cancellation preserves a verified explicit period end in seconds, milliseconds or ISO', async () => {
+  const iso='2030-10-01T12:00:00.000Z';
+  for(const currentPeriodEnd of [Date.parse(iso)/1000,Date.parse(iso),iso]) {
+    const access=await syncAccessFixture({status:'canceled',currentPeriodEnd});
+    assert.equal(access.current_period_end,iso);
+  }
+});
+
+test('already-ended cancellation stays ended on repeated synchronization', async () => {
+  const iso='2020-01-01T12:00:00.000Z';
+  for(let attempt=0;attempt<2;attempt++) {
+    assert.equal((await syncAccessFixture({status:'canceled',currentPeriodEnd:iso})).current_period_end,iso);
+  }
+});
+
+test('paid and trial periods are preserved and failed payments gain no fallback period', async () => {
+  const iso='2030-10-01T12:00:00.000Z';
+  for(const providerSubscriptionStatus of ['active','trialing']) {
+    const access=await syncAccessFixture({status:'active',providerSubscriptionStatus,currentPeriodEnd:iso});
+    assert.equal(access.current_period_end,iso);
+  }
+  for(const status of ['past_due','unpaid','paused']) {
+    assert.equal((await syncAccessFixture({status})).current_period_end,null);
+  }
+});
 test('quote endpoint is read-only and requires explicit matching currency/amount for USD', async () => {
   let writes=0;
   const subscription={customer:'cus_main',status:'active',trial_end:100,current_period_end:2000000000,items:{data:[{id:'si_main',quantity:1,price:{currency:'usd',unit_amount:990,recurring:{interval:'month',interval_count:1}}}]}};

@@ -70,13 +70,16 @@ function config() {
   };
 }
 
-function periodEnd(value: SyncInput["currentPeriodEnd"]) {
+function periodEnd(value: SyncInput["currentPeriodEnd"], fallback: "next_month" | "now" = "next_month") {
   if (typeof value === "number" && Number.isFinite(value)) {
     return new Date(value > 10_000_000_000 ? value : value * 1000).toISOString();
   }
   if (typeof value === "string" && Number.isFinite(Date.parse(value))) {
     return new Date(value).toISOString();
   }
+  // Missing cancellation dates must never create a new access period.
+  // A supplied valid end still preserves an explicitly paid remaining period.
+  if (fallback === "now") return new Date().toISOString();
   const nextMonth = new Date();
   nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
   return nextMonth.toISOString();
@@ -371,7 +374,9 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     ? input.priceCents
     : Math.round(configuredPrice * 100);
   const currentPeriodEnd =
-    input.status === "active" || input.status === "canceled"
+    input.status === "canceled"
+      ? periodEnd(input.currentPeriodEnd, "now")
+      : input.status === "active"
       ? periodEnd(input.currentPeriodEnd)
       : input.currentPeriodEnd
         ? periodEnd(input.currentPeriodEnd)
