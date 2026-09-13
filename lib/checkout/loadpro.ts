@@ -32,6 +32,8 @@ type SyncInput = {
   planCode?: string | null;
   priceCents?: number | null;
   currency?: string | null;
+  billingInterval?: string | null;
+  annualPaymentConfirmed?: boolean;
 };
 
 export type LoadProBillingAccess = {
@@ -85,7 +87,7 @@ function periodEnd(value: SyncInput["currentPeriodEnd"], fallback: "next_month" 
   return nextMonth.toISOString();
 }
 
-async function requestLoadPro(path: string, init: RequestInit = {}) {
+export async function requestLoadPro(path: string, init: RequestInit = {}) {
   const environment = config();
   if (!environment) throw new Error("LoadPro provisioning environment is not configured.");
   const headers = new Headers(init.headers);
@@ -142,7 +144,7 @@ export async function resolveLoadProBillingAccess(accessToken: string) {
   }
 
   const access = rows[0] || null;
-  if (!access || access.email !== email) return null;
+  if (!access || access.email !== email || (access.user_id && access.user_id !== userId)) return null;
   return { identity: { id: userId, email }, access, appUrl: environment.appUrl };
 }
 
@@ -165,7 +167,7 @@ export async function assertLoadProProvisioningReady() {
 
 async function existingAccess(email: string) {
   const response = await requestLoadPro(
-    `/rest/v1/billing_access?select=id,access_kind,status,provider_subscription_id,order_id,metadata&email=eq.${encodeURIComponent(email)}&limit=1`
+    `/rest/v1/billing_access?select=id,access_kind,status,provider_subscription_id,order_id,metadata,current_period_end,updated_at,team_limit,players_per_team_limit&email=eq.${encodeURIComponent(email)}&limit=1`
   );
   if (!response.ok) throw new Error("Unable to verify existing LoadPro billing access.");
   const rows = (await response.json()) as Array<Record<string, unknown>>;
@@ -373,7 +375,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
   const priceCents = typeof input.priceCents === "number" && Number.isFinite(input.priceCents)
     ? input.priceCents
     : Math.round(configuredPrice * 100);
-  const currentPeriodEnd =
+  let currentPeriodEnd =
     input.status === "canceled"
       ? periodEnd(input.currentPeriodEnd, "now")
       : input.status === "active"
@@ -381,6 +383,15 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
       : input.currentPeriodEnd
         ? periodEnd(input.currentPeriodEnd)
         : null;
+  const currentMetadata = current?.metadata && typeof current.metadata === 'object' ? current.metadata as Record<string, unknown> : {};
+  const annual = input.billingInterval === 'year' || (input.billingInterval == null && currentMetadata.billing_interval === 'year');
+  if (annual && input.status === 'active' && !input.annualPaymentConfirmed) {
+    // A schedule/return/subscription update is not evidence of a paid year.
+    currentPeriodEnd = typeof current?.current_period_end === 'string' ? current.current_period_end : null;
+  }
+  if (annual && input.status === 'canceled' && typeof current?.current_period_end === 'string') {
+    currentPeriodEnd = current.current_period_end;
+  }
   const providerSubscriptionId =
     input.providerSubscriptionId ||
     (typeof order.metadata.mercado_pago_subscription_id === "string"
@@ -404,7 +415,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
 
   const response = await requestLoadPro(
     current
-      ? `/rest/v1/billing_access?id=eq.${encodeURIComponent(String(current.id))}&provider_subscription_id=${currentSubscription ? `eq.${encodeURIComponent(currentSubscription)}` : "is.null"}`
+      ? `/rest/v1/billing_access?updated_at=eq.${encodeURIComponent(String(current.updated_at))}&id=eq.${encodeURIComponent(String(current.id))}&provider_subscription_id=${currentSubscription ? `eq.${encodeURIComponent(currentSubscription)}` : "is.null"}`
       : "/rest/v1/billing_access?on_conflict=email",
     {
       method: current ? "PATCH" : "POST",
@@ -419,12 +430,18 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
         provider_customer_id: input.providerCustomerId || null,
         provider_subscription_id: providerSubscriptionId,
         order_id: order.id,
-        team_limit: product?.team_limit || 2,
-        players_per_team_limit: product.players_per_team_limit || 30,
+        team_limit: annual && current?.team_limit ? current.team_limit : product?.team_limit || 2,
+        players_per_team_limit: annual && current?.players_per_team_limit ? current.players_per_team_limit : product.players_per_team_limit || 30,
         price_cents: priceCents,
         currency,
         price_locked: product?.founding_price_lock === true,
         metadata: {
+          ...currentMetadata,
+          billing_interval: annual ? 'year' : 'month',
+          payment_method: 'card', renewal_mode: 'automatic',
+          ...(annual && input.annualPaymentConfirmed && currentMetadata.annual_change ? {
+            annual_change: { ...(currentMetadata.annual_change as Record<string, unknown>), state: 'paid' }
+          } : {}),
           source: "rumoaopro_checkout",
           gateway: order.gateway,
           event_id: input.eventId || null,

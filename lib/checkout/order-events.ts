@@ -87,6 +87,8 @@ async function syncLoadProSafely(
           ? gatewayData.price_cents
           : null,
       currency: typeof gatewayData.currency === "string" ? gatewayData.currency : null,
+      billingInterval: typeof gatewayData.billing_interval === 'string' ? gatewayData.billing_interval : null,
+      annualPaymentConfirmed: gatewayData.annual_payment_confirmed === true,
       invite
     });
     await updateOrderGatewayIds(order.id, {
