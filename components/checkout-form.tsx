@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowRight, Check, Copy, CreditCard, Loader2, QrCode } from "lucide-react";
 import type {
@@ -23,6 +23,7 @@ import {
 type CheckoutFormProps = {
   product: CheckoutProduct;
   locale?: "pt" | "en";
+  initialDiscountCode?: string;
 };
 
 type PixState = {
@@ -209,7 +210,7 @@ function CardNetworkBadges() {
   );
 }
 
-export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
+export function CheckoutForm({ product, locale = "pt", initialDiscountCode = "" }: CheckoutFormProps) {
   const isEnglish = locale === "en";
   const isLoadProSubscription =
     product.id === "loadpro_founders" || product.id === "loadpro_founders_50";
@@ -236,10 +237,13 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
   const [loading, setLoading] = useState(false);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixStatus, setPixStatus] = useState<string | null>(null);
-  const [discountCode, setDiscountCode] = useState("");
-  const [discountLoading, setDiscountLoading] = useState(false);
+  const linkedDiscountCode = product.discounts_enabled !== false ? initialDiscountCode : "";
+  const [discountCode, setDiscountCode] = useState(linkedDiscountCode);
+  const [discountLoading, setDiscountLoading] = useState(Boolean(linkedDiscountCode));
   const [discountError, setDiscountError] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountPreview | null>(null);
+  const discountCodeForMarket = useRef(linkedDiscountCode);
+  const discountRequestId = useRef(0);
 
   const isBrazil = country === "BR";
   const isSubscription = product.type === "subscription";
@@ -282,11 +286,6 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
     [appliedDiscount]
   );
 
-  useEffect(() => {
-    setAppliedDiscount(null);
-    setDiscountError("");
-  }, [country, product.slug]);
-
   function selectMarket(nextMarket: "BR" | "INTL") {
     const nextCountry =
       nextMarket === "BR" ? "BR" : country === "BR" ? "US" : country;
@@ -307,12 +306,15 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
     );
   }
 
-  async function applyDiscount() {
+  const applyDiscount = useCallback(async (requestedCode: string) => {
+    const requestId = ++discountRequestId.current;
     setDiscountError("");
     setAppliedDiscount(null);
 
-    const code = discountCode.trim();
+    const code = requestedCode.trim();
+    discountCodeForMarket.current = code;
     if (!code) {
+      setDiscountLoading(false);
       setDiscountError(isEnglish ? "Enter a discount code." : "Informe um cupom.");
       return;
     }
@@ -332,6 +334,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         })
       });
       const payload = await response.json();
+      if (requestId !== discountRequestId.current) return;
 
       if (!response.ok) {
         setDiscountError(
@@ -343,18 +346,31 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
       setAppliedDiscount(payload as DiscountPreview);
       setDiscountCode(String(payload.code || code));
     } catch {
+      if (requestId !== discountRequestId.current) return;
       setDiscountError(
         isEnglish
           ? "We could not validate this discount code."
           : "Não foi possível validar o cupom."
       );
     } finally {
+      if (requestId === discountRequestId.current) setDiscountLoading(false);
+    }
+  }, [country, isEnglish, product.slug]);
+
+  useEffect(() => {
+    setAppliedDiscount(null);
+    setDiscountError("");
+    if (discountCodeForMarket.current) {
+      void applyDiscount(discountCodeForMarket.current);
+    } else {
       setDiscountLoading(false);
     }
-  }
+    return () => { discountRequestId.current += 1; };
+  }, [applyDiscount]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (discountLoading) return;
     setError("");
     setLoadProAccountRequired(false);
     setPix(null);
@@ -863,7 +879,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
         ) : null}
 
         {product.discounts_enabled !== false ? (
-        <details className="group rounded-md border border-ink/10 bg-white p-3">
+        <details className="group rounded-md border border-ink/10 bg-white p-3" open={linkedDiscountCode ? true : undefined}>
           <summary className="cursor-pointer list-none text-sm font-semibold text-graphite/75">
             {isEnglish ? "Have a discount code?" : "Tem um cupom de desconto?"}
             <span className="ml-2 text-signal group-open:hidden">+</span>
@@ -878,7 +894,10 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
               id="discount-code"
               onChange={(event) => {
                 const value = event.target.value;
+                discountRequestId.current += 1;
+                discountCodeForMarket.current = value;
                 setDiscountCode(value);
+                setDiscountLoading(false);
                 setDiscountError("");
                 if (
                   appliedDiscount &&
@@ -894,7 +913,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             <button
               className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-ink/15 px-4 text-sm font-bold text-ink hover:bg-smoke disabled:cursor-not-allowed disabled:opacity-60"
               disabled={discountLoading}
-              onClick={applyDiscount}
+              onClick={() => void applyDiscount(discountCode)}
               type="button"
             >
               {discountLoading ? (
@@ -904,14 +923,14 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
             </button>
           </div>
           {appliedDiscount ? (
-            <p className="text-sm font-bold text-turf">
+            <p className="text-sm font-bold text-turf" role="status">
               {isEnglish
                 ? `Code ${appliedDiscount.code} applied.`
                 : `Cupom ${appliedDiscount.code} aplicado.`}
             </p>
           ) : null}
           {discountError ? (
-            <p className="text-sm font-semibold text-red-700">{discountError}</p>
+            <p className="text-sm font-semibold text-red-700" role="alert">{discountError}</p>
           ) : null}
           </div>
         </details>
@@ -1057,7 +1076,7 @@ export function CheckoutForm({ product, locale = "pt" }: CheckoutFormProps) {
 
         <button
           className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-5 text-sm font-bold uppercase text-white transition hover:bg-[#b90f20] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={loading}
+          disabled={loading || discountLoading}
           type="submit"
         >
           {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}

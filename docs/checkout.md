@@ -165,3 +165,16 @@ A aba Fiscal lista vendas pagas e exporta CSV com dados básicos para emissão d
 - Emissor fiscal e regras do contador para Brasil/exterior.
 - Preços finais dos produtos.
 - Upload dos PDFs/ZIPs finais para `PRIVATE_FILES_DIR` ou storage privado equivalente.
+# Links com desconto no De Volta aos Gramados
+
+O checkout deste programa aceita `?coupon=CODIGO`. O cupom deve existir no admin.
+O cliente vê o campo aberto, a validação automática e o total confirmado pelo servidor.
+Validade, produto e limite de usos continuam sendo verificados no servidor, inclusive
+ao iniciar o pagamento. A consulta do desconto não consome um uso.
+
+O preço público não muda. Códigos inválidos ou expirados mostram o erro do checkout.
+Ao trocar o país, o código atual é revalidado na moeda correspondente. Respostas
+atrasadas de uma consulta anterior são ignoradas, e o envio aguarda a validação.
+Outros produtos e a assessoria não aceitam o preenchimento automático por este link.
+
+Teste das regras: `node scripts/test-discount-links.mjs`.
