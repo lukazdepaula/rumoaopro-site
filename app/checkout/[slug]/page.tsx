@@ -9,12 +9,13 @@ import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
 import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
+import { normalizeCouponCode } from "@/lib/checkout/discounts";
 
 export const dynamic = "force-dynamic";
 
 type CheckoutPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ locale?: string }>;
+  searchParams: Promise<{ locale?: string; coupon?: string | string[] }>;
 };
 
 export async function generateMetadata({
@@ -31,7 +32,7 @@ export async function generateMetadata({
 
 export default async function CheckoutPage({ params, searchParams }: CheckoutPageProps) {
   const { slug } = await params;
-  const { locale: requestedLocale } = await searchParams;
+  const { locale: requestedLocale, coupon } = await searchParams;
   const locale = requestedLocale === "en" ? "en" : "pt";
   const isEnglish = locale === "en";
 
@@ -44,6 +45,12 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
   if (!product) {
     notFound();
   }
+
+  const initialDiscountCode =
+    product.id === "de_volta_aos_gramados_pt" &&
+    typeof coupon === "string" && coupon.length <= 64
+      ? normalizeCouponCode(coupon)
+      : "";
 
   const productCopy = getLocalizedProductCopy(product, locale);
   const isLoadProSubscription = isLoadProProductId(product.id);
@@ -141,7 +148,12 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
 
       <section className="py-14">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_0.55fr] lg:px-8">
-          <CheckoutForm locale={locale} product={product} />
+          <CheckoutForm
+            key={`${product.id}:${initialDiscountCode}`}
+            initialDiscountCode={initialDiscountCode}
+            locale={locale}
+            product={product}
+          />
           <aside className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
             <div className="flex h-11 w-11 items-center justify-center rounded-md bg-ink text-white">
               <LockKeyhole aria-hidden="true" className="h-5 w-5" />
