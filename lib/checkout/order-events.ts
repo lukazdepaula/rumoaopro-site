@@ -16,6 +16,7 @@ import {
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
 import { getRaptorProProgramConfig, isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
 import type { Order } from "@/lib/checkout/types";
+import { canProvisionLoadProSandbox } from "@/lib/preview-safety";
 
 async function assertOrder(orderId: string): Promise<Order> {
   const order = await getOrderById(orderId);
@@ -33,7 +34,8 @@ async function syncLoadProSafely(
   invite = false
 ) {
   if (!isLoadProOrder(order)) return;
-  if (order.metadata.checkout_gateway_mode === "sandbox") {
+  const sandboxOrder = order.metadata.checkout_gateway_mode === "sandbox";
+  if (sandboxOrder && !canProvisionLoadProSandbox()) {
     await updateOrderGatewayIds(order.id, {
       metadata: { loadpro_provisioning_status: "sandbox_skipped" }
     });
@@ -89,7 +91,7 @@ async function syncLoadProSafely(
       currency: typeof gatewayData.currency === "string" ? gatewayData.currency : null,
       billingInterval: typeof gatewayData.billing_interval === 'string' ? gatewayData.billing_interval : null,
       annualPaymentConfirmed: gatewayData.annual_payment_confirmed === true,
-      invite
+      invite: invite && !sandboxOrder
     });
     await updateOrderGatewayIds(order.id, {
       metadata: {

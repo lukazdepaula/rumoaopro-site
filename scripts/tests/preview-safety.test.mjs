@@ -52,3 +52,50 @@ test('public links never send a preview customer to the production app',()=>{
  for(const LOADPRO_APP_URL of [undefined,'https://loadpro.rumoaopro.com.br','https://user:secret@example.invalid','https://preview.vercel.app/?token=fixture']) assert.equal(load('lib/preview-safety.ts',{VERCEL_ENV:'preview',LOADPRO_APP_URL}).publicLoadProAppUrl(),'');
  assert.equal(load('lib/preview-safety.ts',env).publicLoadProAppUrl(),'https://loadpro-sandbox.vercel.app/');
 });
+
+test('sandbox provisioning needs a separate opt-in and all preview boundaries',()=>{
+ const enabled={...env,LOADPRO_PREVIEW_PROVISIONING_ENABLED:'true'};
+ assert.equal(load('lib/preview-safety.ts',env).canProvisionLoadProSandbox(),false);
+ assert.equal(load('lib/preview-safety.ts',enabled).canProvisionLoadProSandbox(),true);
+ for(const patch of [{STRIPE_SECRET_KEY:'sk_live_fixture'},{LOADPRO_SUPABASE_URL:'https://iqkzqdoyvxblnsgnsfbz.supabase.co'},{LOADPRO_PREVIEW_INTEGRATION_ENABLED:'false'}]) {
+  assert.throws(()=>load('lib/preview-safety.ts',{...enabled,...patch}).canProvisionLoadProSandbox());
+ }
+ assert.equal(load('lib/preview-safety.ts',{...enabled,VERCEL_ENV:'production',LOADPRO_TEST_MODE:'true'}).canProvisionLoadProSandbox(),false);
+});
+
+async function subscriptionEvent(settings, sandbox=true) {
+ const order={id:'sandbox-order',product_id:'loadpro_founders',metadata:{checkout_gateway_mode:sandbox?'sandbox':'live'}};
+ const calls=[];
+ const mocks={
+  '@/lib/preview-safety':load('lib/preview-safety.ts',settings),
+  '@/lib/checkout/db':{getOrderById:async()=>order,updateOrderGatewayIds:async(id,data)=>{calls.push({kind:'metadata',data});},appendOrderLog:async()=>{}},
+  '@/lib/checkout/loadpro':{isLoadProOrder:()=>true,syncLoadProAccess:async(order,input)=>{calls.push({kind:'access',input});return {};}}
+ };
+ const events=load('lib/checkout/order-events.ts',settings,{require:id=>mocks[id]||{}});
+ await events.syncOrderSubscription(order.id,'active',{provider_subscription_id:'sub_test',current_period_end:2000000000},{invite:true});
+ return calls;
+}
+
+test('approved sandbox subscription updates isolated access without sending an invitation',async()=>{
+ const calls=await subscriptionEvent({...env,LOADPRO_PREVIEW_PROVISIONING_ENABLED:'true'});
+ const accesses=calls.filter(call=>call.kind==='access');
+ assert.equal(accesses.length,1);
+ assert.equal(accesses[0].input.invite,false);
+ assert.equal(accesses[0].input.providerSubscriptionId,'sub_test');
+ assert.equal(accesses[0].input.currentPeriodEnd,2000000000);
+ assert.ok(calls.some(call=>call.data?.metadata?.loadpro_provisioning_status==='synced'));
+});
+
+test('sandbox orders still cannot provision on production or a non-enabled preview',async()=>{
+ for(const settings of [env,{...env,VERCEL_ENV:'production',LOADPRO_TEST_MODE:'true',LOADPRO_PREVIEW_PROVISIONING_ENABLED:'true'}]) {
+  const calls=await subscriptionEvent(settings);
+  assert.equal(calls.some(call=>call.kind==='access'),false);
+  assert.ok(calls.some(call=>call.data?.metadata?.loadpro_provisioning_status==='sandbox_skipped'));
+ }
+});
+
+test('production live subscription keeps its existing invitation and access flow',async()=>{
+ const calls=await subscriptionEvent({VERCEL_ENV:'production'},false);
+ assert.equal(calls.filter(call=>call.kind==='access').length,1);
+ assert.equal(calls.find(call=>call.kind==='access').input.invite,true);
+});

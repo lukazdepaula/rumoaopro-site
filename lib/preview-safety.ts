@@ -46,6 +46,13 @@ export function assertPreviewIntegration() {
   if (process.env.MERCADO_PAGO_ACCESS_TOKEN) assertPreviewProvider('MERCADO_PAGO_ACCESS_TOKEN', process.env.MERCADO_PAGO_ACCESS_TOKEN);
 }
 
+/** Opt in only on the pinned preview; production sandbox events still skip access changes. */
+export function canProvisionLoadProSandbox() {
+  if (process.env.VERCEL_ENV === 'production' || !isPreviewEnvironment() || process.env.LOADPRO_PREVIEW_PROVISIONING_ENABLED !== 'true') return false;
+  assertPreviewIntegration();
+  return true;
+}
+
 export function publicLoadProAppUrl() {
   if (!isPreviewEnvironment()) return 'https://loadpro.rumoaopro.com.br/';
   try { assertPreviewOrigin(process.env.LOADPRO_APP_URL); }
