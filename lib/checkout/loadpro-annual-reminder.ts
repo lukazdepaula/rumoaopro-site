@@ -4,7 +4,7 @@ import { ANNUAL_PLANS, type AnnualPlanCode } from './loadpro-annual-policy';
 // Pure preparation only: no sender, scheduler, contacts API, or production mail.
 // The caller must re-read access/preferences just before any future approved send.
 export function prepareAnnualTrialReminder(access:LoadProBillingAccess, options:{
-  now?:number; locale?:'pt'|'en'; offerConsent:boolean; suppressed:boolean;
+  now?:number; locale?:'pt'|'en'; offerConsent:boolean; suppressed:boolean; existingTrialReminder:boolean;
   deliveredKeys:ReadonlySet<string>; appUrl:string;
 }) {
   const now=options.now ?? Date.now();
@@ -14,7 +14,7 @@ export function prepareAnnualTrialReminder(access:LoadProBillingAccess, options:
   const end=typeof meta.trial_end==='number' ? meta.trial_end*1000 : Date.parse(String(meta.trial_end || ''));
   const left=end-now;
   const key=`loadpro:trial-ending:v1:${access.id}:${end}`;
-  if (!options.offerConsent || options.suppressed || options.deliveredKeys.has(key)
+  if (options.existingTrialReminder !== false || !options.offerConsent || options.suppressed || options.deliveredKeys.has(key)
     || !plan || access.currency!=='BRL' || access.price_cents!==plan.monthlyCents
     || !access.user_id || access.access_kind==='lifetime' || meta.provider_subscription_status!=='trialing'
     || meta.cancel_at_period_end===true || meta.annual_change || meta.billing_interval==='year'

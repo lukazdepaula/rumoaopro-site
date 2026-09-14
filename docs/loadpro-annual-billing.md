@@ -27,7 +27,7 @@ Variáveis de acesso ao Supabase e dos provedores são somente do servidor. Nunc
 
 ## Lembretes
 
-Auditados: ativação de teste, conta existente, recuperação de senha e pagamento recusado na Stripe. Nenhum lembrete de fim de teste ou cron correspondente foi encontrado. Configurações de e-mails automáticos do painel Stripe/Resend ainda devem ser conferidas pelo operador para evitar duplicidade fora do código.
+Auditados: ativação de teste, conta existente, recuperação de senha e pagamento recusado na Stripe. Nenhum lembrete de fim de teste ou cron correspondente foi encontrado. O painel Stripe foi conferido em 14/09/2026: aviso 7 dias antes do fim de uma avaliação está **ativo**, avisos de renovações futuras **inativos**, expiração de cartão e falha no cartão **ativos**. Nenhum controle foi alterado. A configuração de campanhas fora do código no Resend ainda deve ser conferida.
 
 `prepareAnnualTrialReminder` prepara PT/EN, somente nas últimas 48 horas de um teste comercial de sete dias, com cobrança mensal prevista e link autenticado. Exige consentimento comercial explícito e ausência de supressão; consentimento de rastreamento não equivale a consentimento de e-mail. Exclui anual escolhido/comprado, teste encerrado, cancelamento e chave já entregue. Não contém envio nem cron. Ao integrar ao remetente, reconsultar acesso e preferências no momento do envio e reservar a chave duravelmente com unicidade antes de enviar. Usar a mesma chave no Resend, registrar entrega e não reenviar em resultado incerto. A ativação do remetente/agendamento depende de aprovação; não disparar campanhas de teste.
 
@@ -42,3 +42,5 @@ Documentação dos provedores: https://docs.stripe.com/billing/subscriptions/sub
 31 testes passaram (`node --test scripts/tests/loadpro-annual.test.mjs scripts/tests/loadpro-billing.test.mjs`), com PostgreSQL PGlite isolado, ambos os planos e testes mensais de regressão. TypeScript/build passaram. Há 28 cenários de UI do app e 16 verificações da vitrine PT/EN em desktop/celular no repositório LoadPro. Todos usam dados fictícios e rede de pagamento interceptada.
 
 A configuração do app sandbox também precisa apontar Auth/REST do Supabase e API anual para os ambientes isolados. Os previews visuais existentes não devem ser usados para confirmar uma assinatura real. Nenhuma migração remota, preço de produção, assinatura, cobrança ou envio foi modificado.
+
+O preparador exige `existingTrialReminder=false`, apurado pelo operador; com outro lembrete ativo ou situação desconhecida, não gera o novo envio. A Stripe atualmente tem esse aviso ativo, portanto o novo remetente deve continuar desligado até aprovar qual canal será responsável. Preferências, ausência de anual confirmado e unicidade precisam ser rechecadas no instante do envio. O código existente também envia aviso de falha de cartão; há possível sobreposição com a Stripe que precisa ser revisada antes de acrescentar mensagens.

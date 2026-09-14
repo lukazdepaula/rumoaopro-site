@@ -59,11 +59,11 @@ test('preview rejects live Stripe credentials before any network operation',asyn
 test('reminder stays a draft; preferences, suppression, existing annual and duplicate keys exclude it',()=>{
  const reminder=load('lib/checkout/loadpro-annual-reminder.ts',{'./loadpro-annual-policy':policy});const now=Date.parse('2030-01-06');
  const access={...base,metadata:{provider_subscription_status:'trialing',trial_start:'2030-01-01Z',trial_end:'2030-01-08Z'}};
- const options={now,offerConsent:true,suppressed:false,deliveredKeys:new Set(),appUrl:'https://loadpro.example.invalid'};
+ const options={now,existingTrialReminder:false,offerConsent:true,suppressed:false,deliveredKeys:new Set(),appUrl:'https://loadpro.example.invalid'};
  const draft=reminder.prepareAnnualTrialReminder(access,options);assert.ok(draft);assert.match(draft.text,/view=setup&settings=security/);assert.ok(draft.text.includes(plan.players===30?'R$ 49,90':'R$ 69,90'));
  assert.ok(draft.text.includes(plan.players===30?'Economize R$ 99,80':'Economize R$ 139,80'));
  const en=reminder.prepareAnnualTrialReminder(access,{...options,locale:'en'});assert.ok(en.text.includes(plan.players===30?'R$499/year':'R$699/year'));
- for(const patch of [{offerConsent:false},{suppressed:true},{now:Date.parse('2030-01-09')},{deliveredKeys:new Set([draft.idempotencyKey])}])assert.equal(reminder.prepareAnnualTrialReminder(access,{...options,...patch}),null);
+ for(const patch of [{existingTrialReminder:true},{existingTrialReminder:undefined},{offerConsent:false},{suppressed:true},{now:Date.parse('2030-01-09')},{deliveredKeys:new Set([draft.idempotencyKey])}])assert.equal(reminder.prepareAnnualTrialReminder(access,{...options,...patch}),null);
  assert.equal(reminder.prepareAnnualTrialReminder({...access,metadata:{...access.metadata,annual_change:{state:'paid'}}},options),null);
 });
 
