@@ -61,3 +61,10 @@ Executar `node --test scripts/tests/preview-safety.test.mjs scripts/tests/loadpr
 A API Pix implementada continua sendo Payments (`/v1/payments`). A [amostra oficial](https://github.com/mercadopago/pix-payment-sample-java#-testing) documenta teste pendente sem aprovação pelo QR. O teste APRO com credencial APP_USR pertence à [API Orders](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/integration-test/pix), outra integração. Não remover a restrição TEST- da integração atual para usar uma credencial produtiva. A decisão de adaptar somente o anual para Orders ou outro método oficial de testar aprovação continua pendente; nenhum Pix real foi gerado ou pago.
 
 O build define `NEXT_PUBLIC_LOADPRO_APP_URL` a partir da origem de teste validada. Sem ela, os links de assinatura da página de vendas ficam no próprio preview; o login no checkout também não aponta para produção.
+
+
+### Dedicated sandbox installed (2026-09-14)
+
+The empty `loadpro-annual-sandbox` project (`xxibnkscktibljtrqmxy`) now has 29 RLS-protected tables and zero auth users, orders or entitlements. This test instance hosts the website checkout tables (service-only) and LoadPro tables (explicit tenant/RPC grants). Production databases remain separate and unchanged. A transactional empty-project installer was validated with 15 synthetic PostgreSQL checks before installation; metadata checks on the hosted project confirm that clients cannot modify memberships, billing or annual grants.
+
+Thirteen non-secret backend settings and five frontend settings were saved only for the annual preview branch. Integration and annual feature flags remain false. Private credentials still require authorized transfer to Vercel Secret variables; no provider sandbox payment has been performed. Existing monthly sandbox orders deliberately skip LoadPro provisioning; a narrowly guarded isolated-test option is still needed for an end-to-end signup/webhook test. Legacy transfer/reset RPC recovery and broad hosted app regression remain incomplete. Do not merge or enable production.
