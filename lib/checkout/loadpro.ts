@@ -170,7 +170,7 @@ export async function assertLoadProProvisioningReady() {
 
 async function existingAccess(email: string) {
   const response = await requestLoadPro(
-    `/rest/v1/billing_access?select=id,access_kind,status,provider_subscription_id,order_id,metadata,current_period_end,updated_at,team_limit,players_per_team_limit&email=eq.${encodeURIComponent(email)}&limit=1`
+    `/rest/v1/billing_access?select=id,access_kind,status,plan_code,provider_subscription_id,order_id,metadata,current_period_end,updated_at,team_limit,players_per_team_limit&email=eq.${encodeURIComponent(email)}&limit=1`
   );
   if (!response.ok) throw new Error("Unable to verify existing LoadPro billing access.");
   const rows = (await response.json()) as Array<Record<string, unknown>>;

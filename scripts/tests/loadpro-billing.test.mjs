@@ -168,7 +168,16 @@ test('annual synchronization preserves paid days on refusal and requires the con
   const service=load('lib/checkout/loadpro.ts',{
    '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
-  },{fetch:async(url,init)=>{if(init.method && init.method!=='GET') writes.push(JSON.parse(init.body));return Response.json([current]);}});
+  },{fetch:async(url,init)=>{
+   if(init.method && init.method!=='GET') {
+    writes.push(JSON.parse(init.body));
+    return Response.json([current]);
+   }
+   // PostgREST returns only the selected columns. Returning the entire fixture
+   // masked a missing plan_code projection in the real annual reconciliation.
+   const select=new URL(url).searchParams.get('select');
+   return Response.json([select ? Object.fromEntries(select.split(',').map(key=>[key,current[key]])) : current]);
+  }});
   const order={id:'order_main',product_id:planCode,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'};
   const input={providerSubscriptionId:'sub_main',planCode,priceCents:plan.annualCents,currency:'BRL',billingInterval:'year',currentPeriodEnd:'2031-10-01T00:00:00.000Z'};
   for(const status of ['active','past_due','unpaid','canceled']) {
