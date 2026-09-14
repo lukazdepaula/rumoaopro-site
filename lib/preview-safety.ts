@@ -43,7 +43,10 @@ export function assertPreviewIntegration() {
     throw new Error('Preview data and checkout configuration is incomplete');
   }
   assertPreviewProvider('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY || '');
-  if (process.env.MERCADO_PAGO_ACCESS_TOKEN) assertPreviewProvider('MERCADO_PAGO_ACCESS_TOKEN', process.env.MERCADO_PAGO_ACCESS_TOKEN);
+  // Explicit non-credential override lets Stripe-only QA disable inherited Pix keys.
+  if (process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.MERCADO_PAGO_ACCESS_TOKEN !== 'disabled') {
+    assertPreviewProvider('MERCADO_PAGO_ACCESS_TOKEN', process.env.MERCADO_PAGO_ACCESS_TOKEN);
+  }
 }
 
 /** Opt in only on the pinned preview; production sandbox events still skip access changes. */

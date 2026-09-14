@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canProvisionLoadProSandbox, publicLoadProAppUrl } from "@/lib/preview-safety";
 import {
   createCheckoutAccessToken,
   createCheckoutReturnUrl,
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
     }
 
     let loadProReservation: Awaited<ReturnType<typeof reserveLoadProCheckout>> | null = null;
-    if (mode === "live" && isLoadProProductId(product.id)) {
+    if (isLoadProProductId(product.id) && (mode === "live" || (mode === "sandbox" && canProvisionLoadProSandbox()))) {
       try {
         await assertLoadProProvisioningReady();
         loadProReservation = await reserveLoadProCheckout(input.email);
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
             error: input.locale === "en"
               ? "A subscription or checkout already exists. Sign in to LoadPro to manage or upgrade your plan without creating another subscription. If a checkout was interrupted, try again in 40 minutes."
               : "Já existe uma assinatura ou checkout em andamento. Entre no LoadPro para gerenciar ou trocar seu plano sem criar outra assinatura. Se interrompeu um checkout, tente novamente em 40 minutos.",
-            loginUrl: "https://loadpro.rumoaopro.com.br/?view=login"
+            loginUrl: `${publicLoadProAppUrl()}?view=login`
           }, { status: 409 });
         }
       } catch (error) {

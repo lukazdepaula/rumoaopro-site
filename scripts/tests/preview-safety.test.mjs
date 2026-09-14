@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
@@ -98,4 +99,49 @@ test('production live subscription keeps its existing invitation and access flow
  const calls=await subscriptionEvent({VERCEL_ENV:'production'},false);
  assert.equal(calls.filter(call=>call.kind==='access').length,1);
  assert.equal(calls.find(call=>call.kind==='access').input.invite,true);
+});
+
+
+test('preview checkout return tokens use a separate purpose-bound test key',()=>{
+ const production={VERCEL_ENV:'production',NODE_ENV:'production',CHECKOUT_ACCESS_SECRET:'production-secret-fixture'};
+ const preview={...env,NODE_ENV:'production',CHECKOUT_ACCESS_SECRET:production.CHECKOUT_ACCESS_SECRET};
+ const access=settings=>load('lib/checkout/checkout-access.ts',settings,{Buffer,require:id=>id==='node:crypto'?{default:crypto}:load('lib/preview-safety.ts',settings)});
+ const live=access(production), isolated=access(preview);
+ const token=isolated.createCheckoutAccessToken('same-order');
+ assert.equal(isolated.verifyCheckoutAccessToken('same-order',token),true);
+ assert.equal(live.verifyCheckoutAccessToken('same-order',token),false);
+ assert.equal(isolated.verifyCheckoutAccessToken('same-order',live.createCheckoutAccessToken('same-order')),false);
+ assert.equal(access({...preview,CHECKOUT_ACCESS_SECRET:'different-inherited-secret'}).verifyCheckoutAccessToken('same-order',token),true);
+ assert.equal(access({...preview,NEXT_PUBLIC_SITE_URL:'https://another-preview.vercel.app'}).verifyCheckoutAccessToken('same-order',token),false);
+ assert.throws(()=>access({...preview,STRIPE_SECRET_KEY:'sk_live_fixture'}).createCheckoutAccessToken('same-order'));
+});
+
+test('isolated checkout reservation blocks a second subscription before creating any order or provider session',async()=>{
+ let ready=0,reserved=0,created=0;
+ const settings={...env,LOADPRO_PREVIEW_PROVISIONING_ENABLED:'true'};
+ const mocks={
+  'next/server':{NextResponse:{json:(body,options)=>({body,...options})}},
+  '@/lib/preview-safety':load('lib/preview-safety.ts',settings),
+  '@/lib/checkout/request-security':{isSameSiteRequest:()=>true,readJsonBody:async()=>({ok:true,data:{}})},
+  '@/lib/checkout/checkout-access':{isCheckoutAccessConfigured:()=>true},
+  '@/lib/checkout/validation':{validateCheckoutInput:()=>({productSlug:'loadpro-founders',country:'BR',email:'fixture@example.invalid',locale:'pt'}),isBrazil:()=>true},
+  '@/lib/checkout/products':{getProductBySlug:()=>({id:'loadpro_founders',type:'subscription'}),isLoadProProductId:()=>true},
+  '@/lib/checkout/loadpro':{assertLoadProProvisioningReady:async()=>{ready++;},reserveLoadProCheckout:async()=>{reserved++;return {allowed:false};}},
+  '@/lib/checkout/db':{createOrder:async()=>{created++;throw Error('must not create another order');}}
+ };
+ const endpoint=load('app/api/checkout/start/route.ts',settings,{require:id=>mocks[id]||{}});
+ const response=await endpoint.POST({url:settings.NEXT_PUBLIC_SITE_URL+'/api/checkout/start'});
+ assert.equal(response.status,409);
+ assert.equal(response.body.code,'LOADPRO_USE_EXISTING_ACCOUNT');
+ assert.equal(response.body.loginUrl,settings.LOADPRO_APP_URL+'/?view=login');
+ assert.equal(ready,1);assert.equal(reserved,1);assert.equal(created,0);
+});
+
+
+test('explicitly disabled Pix allows Stripe QA but cannot make a Pix provider request',()=>{
+ const settings={...env,MERCADO_PAGO_ACCESS_TOKEN:'disabled'};
+ const safety=load('lib/preview-safety.ts',settings);
+ safety.assertPreviewIntegration();
+ assert.throws(()=>safety.assertPreviewProvider('MERCADO_PAGO_ACCESS_TOKEN','disabled'),/Pix/);
+ assert.throws(()=>load('lib/preview-safety.ts',{...settings,MERCADO_PAGO_ACCESS_TOKEN:'APP_USR_live_fixture'}).assertPreviewIntegration(),/Pix/);
 });

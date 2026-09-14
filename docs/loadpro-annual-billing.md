@@ -74,3 +74,12 @@ The annual preview branch now has the isolated Supabase server credentials, Stri
 A dedicated Stripe TEST webhook, `loadpro-annual-preview-20260914`, now targets the annual backend preview and listens to 13 checkout/subscription/invoice events (API 2025-08-27.basil). Before generating subscription/payment events, resolve the existing TEST destination `rumoaopro-site-test` (`we_1TrM2mA6RupMT8Qs5lcZOUme`) that points to `https://rumoaopro-site.vercel.app/api/webhooks/stripe`. It remains active and unchanged. A temporary pause of this old TEST destination, followed by restoration after QA, is proposed so synthetic events cannot reach the main site. Production/live destinations must remain untouched.
 
 Pending: old TEST destination isolation approval; hosted synthetic accounts and complete test-clock/webhook validation; Payments API Pix sandbox approval support; legacy transfer/reset RPC recovery and broad hosted app regression. Do not merge or enable production.
+
+
+### Hosted Stripe QA preparation
+
+The user authorized temporarily pausing and restoring the pre-existing TEST webhook. It is paused only during this QA round; restore `we_1TrM2mA6RupMT8Qs5lcZOUme` before stopping work. Live webhook destinations and production remain unchanged.
+
+The preview integration and annual flags are enabled only for `codex/loadpro-annual-billing`. `MERCADO_PAGO_ACCESS_TOKEN=disabled` on this branch explicitly masks inherited live Pix credentials. This sentinel permits Stripe-only QA, while all Pix provider calls remain blocked by their credential checks. Do not substitute a fabricated `TEST-` key.
+
+Preview checkout return links derive a purpose-specific HMAC key from the validated Stripe test secret, pinned database reference and preview origin, ignoring any inherited production checkout secret. The opt-in preview now executes the same checkout reservation used in production so duplicates and returning-customer trial eligibility can be verified. Production secret selection and monthly checkout behavior remain unchanged. Validation now covers 45 tests, including token isolation, duplicate checkout rejection before order creation, and disabled Pix rejection.
