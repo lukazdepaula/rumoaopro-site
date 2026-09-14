@@ -44,3 +44,20 @@ Documentação dos provedores: https://docs.stripe.com/billing/subscriptions/sub
 A configuração do app sandbox também precisa apontar Auth/REST do Supabase e API anual para os ambientes isolados. Os previews visuais existentes não devem ser usados para confirmar uma assinatura real. Nenhuma migração remota, preço de produção, assinatura, cobrança ou envio foi modificado.
 
 O preparador exige `existingTrialReminder=false`, apurado pelo operador; com outro lembrete ativo ou situação desconhecida, não gera o novo envio. A Stripe atualmente tem esse aviso ativo, portanto o novo remetente deve continuar desligado até aprovar qual canal será responsável. Preferências, ausência de anual confirmado e unicidade precisam ser rechecadas no instante do envio. O código existente também envia aviso de falha de cartão; há possível sobreposição com a Stripe que precisa ser revisada antes de acrescentar mensagens.
+
+
+## Preview isolado (14/09/2026)
+
+O middleware fecha APIs, checkout e áreas privadas em Vercel Preview quando a configuração não está pronta. Para teste local usar `LOADPRO_TEST_MODE=true`; nunca copiar `.env` de produção. São necessários:
+
+- `LOADPRO_PREVIEW_INTEGRATION_ENABLED=true`.
+- `LOADPRO_TEST_SUPABASE_PROJECT_REF` correspondente exatamente a `LOADPRO_SUPABASE_URL`, com segredo somente do novo banco.
+- `CHECKOUT_TEST_SUPABASE_PROJECT_REF` correspondente exatamente a `SUPABASE_URL`, `CHECKOUT_DB_DRIVER=postgres` e segredo somente do banco de pedidos de teste.
+- `LOADPRO_APP_URL` e `NEXT_PUBLIC_SITE_URL` apontando para os previews, `CHECKOUT_GATEWAY_MODE=sandbox`, `STRIPE_SECRET_KEY=sk_test_...`, preços mensais/anuais e webhook Stripe de teste.
+- E-mails e Meta ficam bloqueados mesmo se houver configurações herdadas. As contas de teste precisam ser preparadas no banco separado, sem depender de convites reais. O RaptorPro não tem acesso ao banco habitual no preview.
+
+Executar `node --test scripts/tests/preview-safety.test.mjs scripts/tests/loadpro-annual.test.mjs scripts/tests/loadpro-billing.test.mjs` (38 testes), `pnpm check` e `pnpm build`. A configuração normal de produção permanece inalterada.
+
+A API Pix implementada continua sendo Payments (`/v1/payments`). A [amostra oficial](https://github.com/mercadopago/pix-payment-sample-java#-testing) documenta teste pendente sem aprovação pelo QR. O teste APRO com credencial APP_USR pertence à [API Orders](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/integration-test/pix), outra integração. Não remover a restrição TEST- da integração atual para usar uma credencial produtiva. A decisão de adaptar somente o anual para Orders ou outro método oficial de testar aprovação continua pendente; nenhum Pix real foi gerado ou pago.
+
+O build define `NEXT_PUBLIC_LOADPRO_APP_URL` a partir da origem de teste validada. Sem ela, os links de assinatura da página de vendas ficam no próprio preview; o login no checkout também não aponta para produção.

@@ -16,7 +16,7 @@ type LoadProPromoProps = {
   locale: "pt" | "en";
 };
 
-const loadProUrl = "https://loadpro.rumoaopro.com.br/";
+const loadProUrl = process.env.NEXT_PUBLIC_LOADPRO_APP_URL || "#loadpro";
 const whatsappNumber = "5519992811078";
 
 const copy = {
@@ -118,7 +118,7 @@ export function LoadProPromo({
   const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
     page.whatsappMessage
   )}`;
-  const subscriptionHref = `${loadProUrl}?view=setup&settings=security&lang=${locale}`;
+  const subscriptionHref = loadProUrl.startsWith("#") ? loadProUrl : `${loadProUrl}?view=setup&settings=security&lang=${locale}&subscription=annual`;
 
   return (
     <section
@@ -258,7 +258,7 @@ export function LoadProPromo({
                   <p className="mt-3 font-bold text-white">{locale === "pt" ? `Economize ${money(plan.saving)} por ano` : `Save ${money(plan.saving)} per year`}</p>
                   <p className="mt-2 text-sm font-bold text-white/80">{page.annualPayment}</p>
                   <p className="mt-3 text-sm leading-6 text-white/70">{page.annualTerms}</p>
-                  <a className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-red-500" href={`${subscriptionHref}&subscription=annual`}>
+                  <a className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-red-500" href={subscriptionHref}>
                     {page.annualCta}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </a>
                 </div>

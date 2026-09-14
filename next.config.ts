@@ -1,3 +1,4 @@
+import { publicLoadProAppUrl } from "./lib/preview-safety";
 import type { NextConfig } from "next";
 
 const legacyShopifyProducts = [
@@ -51,6 +52,7 @@ const legacyShopifyProducts = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: { NEXT_PUBLIC_LOADPRO_APP_URL: publicLoadProAppUrl() },
   async redirects() {
     return [
       ...legacyShopifyProducts.flatMap(([handle, destination]) => [

@@ -13,6 +13,7 @@ function load(file, mocks = {}, extras = {}) {
   }).outputText;
   vm.runInNewContext(code, { module, exports: module.exports, require: id => {
     if (id in mocks) return mocks[id];
+    if (id === '@/lib/preview-safety') return load('lib/preview-safety.ts', {}, extras);
     if (id.startsWith('node:')) return require(id);
     throw new Error(`Unmocked dependency ${id}`);
   }, process: { env: { STRIPE_SECRET_KEY: 'sk_test_fixture', STRIPE_LOADPRO_FOUNDERS_50_PRICE_ID: 'price_brl', LOADPRO_SUPABASE_URL: 'https://loadpro.invalid', LOADPRO_SUPABASE_SERVICE_ROLE_KEY: 'test-only' } },

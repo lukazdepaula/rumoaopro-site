@@ -1,3 +1,4 @@
+import { isPreviewEnvironment } from "@/lib/preview-safety";
 import { createHash } from "node:crypto";
 
 export type MetaEventName =
@@ -89,6 +90,7 @@ export function marketingConsentGranted(value: unknown) {
 }
 
 export async function sendMetaEvent(input: MetaEventInput) {
+  if (isPreviewEnvironment()) return { sent: false, reason: "preview_disabled" as const };
   const config = configuredMeta(input.dataset);
   if (!config) return { sent: false, reason: "not_configured" as const };
 

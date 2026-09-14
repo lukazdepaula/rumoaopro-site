@@ -1,3 +1,4 @@
+import { isPreviewEnvironment } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 
 type EmailInput = {
@@ -9,6 +10,7 @@ type EmailInput = {
 };
 
 export function isEmailDeliveryConfigured() {
+  if (isPreviewEnvironment()) return false;
   if (process.env.NODE_ENV !== "production") return true;
   return (
     process.env.EMAIL_PROVIDER?.trim().toLowerCase() === "resend" &&
@@ -86,6 +88,7 @@ function loadProEmailSummary(rows: Array<[string, string]>) {
 }
 
 export async function sendEmail(input: EmailInput) {
+  if (isPreviewEnvironment()) return false;
   const provider = (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
 
   try {

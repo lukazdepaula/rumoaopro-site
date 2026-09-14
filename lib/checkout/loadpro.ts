@@ -1,3 +1,4 @@
+import { assertPreviewDatabase } from "@/lib/preview-safety";
 import crypto from "node:crypto";
 import { annualPlan } from "@/lib/checkout/loadpro-annual-policy";
 import { appendOrderLog, getOrderById, updateOrderGatewayIds } from "@/lib/checkout/db";
@@ -64,6 +65,7 @@ export function isLoadProOrder(order: Order) {
 
 function config() {
   const url = process.env.LOADPRO_SUPABASE_URL;
+  assertPreviewDatabase(url, "loadpro");
   const serviceRoleKey = process.env.LOADPRO_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey) return null;
   return {

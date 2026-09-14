@@ -1,3 +1,4 @@
+import { assertPreviewDatabase } from "@/lib/preview-safety";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
@@ -6,6 +7,7 @@ const SUPABASE_STORAGE_PREFIX = "supabase:";
 let bucketReady = false;
 
 function storageConfig() {
+  assertPreviewDatabase(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL, "checkout");
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SECRET_KEY?.trim() ||

@@ -102,8 +102,8 @@ export async function stopMonthlyForPix(id: string, subscriptionId: string, cust
 export async function annualMercadoPago(path: string, data?: Record<string, unknown>, key?: string) {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!token || !process.env.MERCADO_PAGO_WEBHOOK_SECRET) throw new Error("Pix is not configured");
-  // Mercado Pago test credentials do not have a reliable prefix. Preview calls
-  // require a separately configured, explicitly declared sandbox environment.
+  // Payments API preview remains restricted to explicit test configuration.
+  // Orders API credentials must not be enabled by relaxing this boundary.
   if (process.env.VERCEL_ENV !== "production" && (process.env.LOADPRO_ANNUAL_PIX_SANDBOX !== "true" || !token.startsWith("TEST-"))) {
     throw new Error("Preview Pix sandbox is not configured");
   }
