@@ -6,6 +6,8 @@ Esta branch prepara o anual do Fundadores 30 por R$ 499 em BRL. O mensal de R$ 4
 
 A escolha ocorre na área autenticada de assinatura. Na página de planos, quem ainda não tem conta começa o teste comercial existente pelo checkout mensal e depois confirma o anual na assinatura. O checkout mensal informa as condições mensais; clicar na oferta anual nunca muda um contrato sozinho.
 
+A vitrine do site em `/apps` e `/links`, incluindo as versões em inglês, apresenta mensal e anual lado a lado no desktop e em cartões empilhados no celular. O preço principal anual é R$ 499/ano à vista, com “12 meses pelo preço de 10” e economia de R$ 99,80. Mostra os mesmos recursos/limites e explica cartão, Pix, dias preservados e o caminho de cadastro. O botão anual leva à assinatura autenticada; a página não cria cobrança nem confirma mudança. Publicar a oferta junto com a integração habilitada, após validação sandbox.
+
 Cartão: cronograma na mesma assinatura Stripe, fase mensal/teste até o limite atual e fase anual a partir dele. Sem rateio e sem nova assinatura. O ano pago só é liberado após `invoice.paid` da fatura atual, de R$ 499 em BRL. Atualizações de assinatura e retorno do checkout não comprovam pagamento. O período informado para o anual agendado é condicionado ao pagamento.
 
 Pix: a revisão informa pagamento agora e interrupção da renovação mensal ao confirmar a escolha. O cancelamento da próxima mensal é confirmado antes de criar/exibir o Pix. Se o Pix não for pago, restam somente os dias atuais. Quando o provedor confirma, o início anual é o maior entre o fim do período protegido e a aprovação; acrescenta-se um ano de calendário, preservando anos bissextos e dias pagos. Renovação anual por Pix é manual e usa nova confirmação autenticada.
