@@ -1,3 +1,4 @@
+import { isAnnualAmount, matchesAnnualPayment } from "@/lib/checkout/loadpro-annual-policy";
 import { reconcileAnnualCard } from "@/lib/checkout/loadpro-annual";
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
@@ -207,7 +208,7 @@ export async function POST(request: Request) {
     }
     const eventId = event.id || randomUUID();
     const firstDelivery = await recordWebhookEvent("stripe", eventId, event);
-    const annualInvoiceRetry=event.type === "invoice.paid" && event.data?.object?.amount_paid === 49900 && event.data?.object?.currency === "brl";
+    const annualInvoiceRetry=event.type === "invoice.paid" && isAnnualAmount(event.data?.object?.amount_paid) && event.data?.object?.currency === "brl";
     if (!firstDelivery && !annualInvoiceRetry) {
       return NextResponse.json({ received: true, duplicate: true });
     }
@@ -326,6 +327,10 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ received: true, reconciled: true });
       }
+      const currentFields=subscriptionFields(invoiceSubscription, 'active');
+      const annualInvoiceConfirmed=object.paid===true && currentFields.billing_interval==='year'
+        && matchesAnnualPayment(currentFields.plan_code,currentFields.price_cents,object.amount_paid,String(object.currency).toUpperCase())
+        && object.id === (typeof liveSubscription?.latest_invoice === 'string' ? liveSubscription.latest_invoice : recordOf(liveSubscription?.latest_invoice).id);
       const amountPaid =
         typeof object.amount_paid === "number" ? object.amount_paid : null;
       const zeroValueTrialInvoice =
@@ -354,8 +359,7 @@ export async function POST(request: Request) {
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(invoiceSubscription, "active"),
-          annual_payment_confirmed: object.paid === true && Number(object.amount_paid) === 49900 && String(object.currency).toLowerCase() === "brl"
-            && object.id === (typeof liveSubscription?.latest_invoice === "string" ? liveSubscription.latest_invoice : recordOf(liveSubscription?.latest_invoice).id)
+          annual_payment_confirmed: annualInvoiceConfirmed
         });
       } else {
         await syncOrderSubscription(order.id, "active", {
@@ -364,8 +368,7 @@ export async function POST(request: Request) {
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(invoiceSubscription, "active"),
-          annual_payment_confirmed: object.paid === true && Number(object.amount_paid) === 49900 && String(object.currency).toLowerCase() === "brl"
-            && object.id === (typeof liveSubscription?.latest_invoice === "string" ? liveSubscription.latest_invoice : recordOf(liveSubscription?.latest_invoice).id)
+          annual_payment_confirmed: annualInvoiceConfirmed
         });
       }
 

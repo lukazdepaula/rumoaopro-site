@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { annualPlan } from "@/lib/checkout/loadpro-annual-policy";
 import { appendOrderLog, getOrderById, updateOrderGatewayIds } from "@/lib/checkout/db";
 import { canReplaceLoadProSubscription } from "@/lib/checkout/loadpro-billing-policy";
 import {
@@ -385,7 +386,15 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
         : null;
   const currentMetadata = current?.metadata && typeof current.metadata === 'object' ? current.metadata as Record<string, unknown> : {};
   const annual = input.billingInterval === 'year' || (input.billingInterval == null && currentMetadata.billing_interval === 'year');
-  if (annual && input.status === 'active' && !input.annualPaymentConfirmed) {
+  if (annual) {
+    const plan=annualPlan(planCode);
+    const accepted=currentMetadata.annual_change as Record<string, unknown> | undefined;
+    if (!current || current.plan_code !== planCode || currency !== 'BRL' || priceCents !== plan.annualCents
+      || !accepted || accepted.plan_code !== planCode || accepted.price_cents !== plan.annualCents || accepted.payment_method !== 'card') {
+      throw new Error('Annual access requires the matching confirmed plan');
+    }
+  }
+  if (annual && !input.annualPaymentConfirmed) {
     // A schedule/return/subscription update is not evidence of a paid year.
     currentPeriodEnd = typeof current?.current_period_end === 'string' ? current.current_period_end : null;
   }

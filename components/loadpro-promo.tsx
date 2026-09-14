@@ -78,7 +78,7 @@ const copy = {
     annualPayment: "Annual payment in full, with no installments. Prices in BRL.",
     annualTerms: "Card: charged at the end of your trial or paid monthly period, with automatic annual renewal. Pix: pay now and renew manually; 12 months are granted after payment confirmation, preserving your remaining days.",
     annualCta: "Choose annual in my subscription",
-    annualEntry: "New to LoadPro? Start with the monthly plan's 7-day free trial, then sign in to choose and confirm annual billing before your charge. Without that confirmation, your contracted monthly terms continue. This annual offer applies to the R$49.90 BRL plan.",
+    annualEntry: "New to LoadPro? Start with the monthly plan's 7-day free trial, then sign in to choose and confirm annual billing before your charge. Without that confirmation, your contracted monthly terms continue. Annual offers apply to the corresponding BRL plans. Existing subscriptions in other currencies keep their terms.",
     primaryCta: "Start your 7-day free trial",
     secondaryCta: "Explore LoadPro",
     whatsappCta: "Questions on WhatsApp",
@@ -110,10 +110,11 @@ export function LoadProPromo({
   locale
 }: LoadProPromoProps) {
   const page = copy[locale];
-  const checkoutHref =
-    locale === "pt"
-      ? "/checkout/loadpro-founders"
-      : "/en/checkout/loadpro-founders";
+  const plans = [
+    {code:"loadpro_founders",players:30,monthly:49.9,annual:499,saving:99.8,slug:"loadpro-founders"},
+    {code:"loadpro_founders_50",players:50,monthly:69.9,annual:699,saving:139.8,slug:"loadpro-founders-50"}
+  ];
+  const money = (amount:number) => `${locale === "pt" ? "R$ " : "R$"}${new Intl.NumberFormat(locale === "pt" ? "pt-BR" : "en-GB",{minimumFractionDigits:Number.isInteger(amount)?0:2,maximumFractionDigits:2}).format(amount)}`;
   const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
     page.whatsappMessage
   )}`;
@@ -234,36 +235,36 @@ export function LoadProPromo({
                 />
               </div>
             </div>
-            <div className="border-t border-white/10 pt-8 lg:col-span-2" data-loadpro-pricing>
+            {plans.map(plan => <div key={plan.code} className="border-t border-white/10 pt-8 lg:col-span-2" data-loadpro-pricing={plan.code}>
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-red-300">{page.plan}</h3>
-                <p className="text-sm font-bold text-white/80">{page.limits}</p>
+                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-red-300">{locale === "pt" ? `Fundadores ${plan.players} · Escolha como pagar` : `Founders ${plan.players} · Choose how to pay`}</h3>
+                <p className="text-sm font-bold text-white/80">{locale === "pt" ? `Até 2 equipes · ${plan.players} atletas por equipe` : `Up to 2 teams · ${plan.players} athletes per team`}</p>
               </div>
               <p className="mt-2 text-sm text-white/65">{page.sameFeatures}</p>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div className="flex flex-col rounded-2xl border border-white/15 bg-white/[0.04] p-5 sm:p-6" data-loadpro-monthly>
                   <h4 className="text-lg font-black text-white">{page.monthly}</h4>
-                  <p className="mt-4 text-4xl font-black text-white">{page.price}<span className="ml-1 text-base font-bold text-white/65">{page.month}</span></p>
+                  <p className="mt-4 text-4xl font-black text-white">{money(plan.monthly)}<span className="ml-1 text-base font-bold text-white/65">{page.month}</span></p>
                   <p className="mt-3 font-bold text-white">{page.trial}</p>
                   <p className="mt-3 text-sm leading-6 text-white/70">{page.monthlyTerms}</p>
-                  <Link className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white hover:text-black" href={checkoutHref}>
+                  <Link className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white hover:text-black" href={`${locale === "en" ? "/en" : ""}/checkout/${plan.slug}`}>
                     {page.primaryCta}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </Link>
                 </div>
                 <div className="flex flex-col rounded-2xl border border-red-400/40 bg-red-500/10 p-5 sm:p-6" data-loadpro-annual>
                   <p className="text-sm font-black text-red-300">{page.annualOffer}</p>
                   <h4 className="mt-3 text-lg font-black text-white">{page.annual}</h4>
-                  <p className="mt-3 text-4xl font-black text-white">{page.annualPrice}<span className="ml-1 text-base font-bold text-white/65">{page.year}</span></p>
-                  <p className="mt-3 font-bold text-white">{page.annualSavings}</p>
+                  <p className="mt-3 text-4xl font-black text-white">{money(plan.annual)}<span className="ml-1 text-base font-bold text-white/65">{page.year}</span></p>
+                  <p className="mt-3 font-bold text-white">{locale === "pt" ? `Economize ${money(plan.saving)} por ano` : `Save ${money(plan.saving)} per year`}</p>
                   <p className="mt-2 text-sm font-bold text-white/80">{page.annualPayment}</p>
                   <p className="mt-3 text-sm leading-6 text-white/70">{page.annualTerms}</p>
-                  <a className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-red-500" href={subscriptionHref}>
+                  <a className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-red-500" href={`${subscriptionHref}&subscription=annual`}>
                     {page.annualCta}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </a>
                 </div>
               </div>
               <p className="mt-4 max-w-4xl text-sm leading-6 text-white/65">{page.annualEntry}</p>
-            </div>
+            </div>)}
           </div>
         </div>
       </div>

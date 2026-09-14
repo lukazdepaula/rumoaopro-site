@@ -1,4 +1,4 @@
-import { ANNUAL_CENTS, addCalendarYear } from "./loadpro-annual-policy";
+import { annualPlan, addCalendarYear } from "./loadpro-annual-policy";
 import { stripeSubscriptionPeriod } from "./loadpro-billing-policy";
 
 export async function annualStripe(path: string, params?: URLSearchParams, key?: string) {
@@ -18,25 +18,27 @@ export async function annualStripe(path: string, params?: URLSearchParams, key?:
   return await response.json() as Record<string, any>;
 }
 
-export async function annualCardPrice() {
-  const id = process.env.STRIPE_LOADPRO_ANNUAL_PRICE_ID;
+export async function annualCardPrice(planCode: string) {
+  const plan = annualPlan(planCode);
+  const id = process.env[plan.priceEnv];
   if (!id) throw new Error("Annual Stripe price is not configured");
   const price = await annualStripe(`prices/${encodeURIComponent(id)}`);
-  if (!price.active || price.currency !== "brl" || price.unit_amount !== ANNUAL_CENTS
+  if (!price.active || price.currency !== "brl" || price.unit_amount !== plan.annualCents
     || price.recurring?.interval !== "year" || price.recurring?.interval_count !== 1) {
-    throw new Error("Annual Stripe price must be BRL 499.00 per year");
+    throw new Error("Annual Stripe price does not match this plan");
   }
   return id;
 }
 
-export function validateMonthlySubscription(subscription: Record<string, any>, customer: string | null) {
+export function validateMonthlySubscription(subscription: Record<string, any>, customer: string | null, planCode: string) {
+  const plan = annualPlan(planCode);
   const item = subscription.items?.data?.[0];
   if (subscription.discount || subscription.discounts?.length || subscription.automatic_tax?.enabled || subscription.default_tax_rates?.length || subscription.pause_collection
     || (subscription.status==='active' && subscription.latest_invoice?.status !== 'paid')
     || subscription.customer !== customer || !["active", "trialing"].includes(subscription.status)
     || subscription.cancel_at_period_end || subscription.pending_update
     || subscription.items?.data?.length !== 1 || item?.quantity !== 1
-    || item?.price?.currency !== "brl" || item?.price?.unit_amount !== 4990
+    || item?.price?.currency !== "brl" || item?.price?.unit_amount !== plan.monthlyCents
     || item?.price?.recurring?.interval !== "month" || item?.price?.recurring?.interval_count !== 1
     || !stripeSubscriptionPeriod(subscription).end) throw new Error("Monthly subscription needs review");
   return item;
@@ -44,10 +46,10 @@ export function validateMonthlySubscription(subscription: Record<string, any>, c
 
 // A schedule changes the existing subscription at its boundary; it never creates
 // a second subscription or resets a paid monthly period to today.
-export async function scheduleAnnualCard(id: string, subscriptionId: string, customerId: string | null, boundary: number) {
-  const price = await annualCardPrice();
+export async function scheduleAnnualCard(id: string, subscriptionId: string, customerId: string | null, boundary: number, planCode: string) {
+  const price = await annualCardPrice(planCode);
   const subscription = await annualStripe(`subscriptions/${encodeURIComponent(subscriptionId)}`);
-  const item = validateMonthlySubscription(subscription, customerId);
+  const item = validateMonthlySubscription(subscription, customerId, planCode);
   if (stripeSubscriptionPeriod(subscription).end !== boundary || boundary * 1000 <= Date.now()) {
     throw new Error("Charge date changed; review new terms");
   }
@@ -74,7 +76,7 @@ export async function scheduleAnnualCard(id: string, subscriptionId: string, cus
     "phases[1][start_date]": String(boundary), "phases[1][end_date]": String(Date.parse(addCalendarYear(new Date(boundary*1000).toISOString()))/1000),
     "phases[1][items][0][price]": price, "phases[1][items][0][quantity]": "1",
     "phases[1][billing_cycle_anchor]": "phase_start", "phases[1][proration_behavior]": "none",
-    "phases[1][metadata][plan_code]": "loadpro_founders",
+    "phases[1][metadata][plan_code]": planCode,
     "phases[1][metadata][loadpro_annual_change]": id
   });
   if (subscription.status === "trialing") params.set("phases[0][trial_end]", String(boundary));
@@ -85,10 +87,10 @@ export async function scheduleAnnualCard(id: string, subscriptionId: string, cus
   return updated.id as string;
 }
 
-export async function stopMonthlyForPix(id: string, subscriptionId: string, customerId: string | null, boundary: number) {
+export async function stopMonthlyForPix(id: string, subscriptionId: string, customerId: string | null, boundary: number, planCode: string) {
   const subscription = await annualStripe(`subscriptions/${encodeURIComponent(subscriptionId)}`);
-  if (subscription.metadata?.loadpro_annual_pix === id && subscription.cancel_at_period_end) return;
-  validateMonthlySubscription(subscription, customerId);
+  if (subscription.metadata?.loadpro_annual_pix === id && subscription.cancel_at_period_end && subscription.customer === customerId) return;
+  validateMonthlySubscription(subscription, customerId, planCode);
   if (subscription.schedule || stripeSubscriptionPeriod(subscription).end !== boundary
     || boundary * 1000 <= Date.now()) throw new Error("Monthly renewal needs review");
   const updated = await annualStripe(`subscriptions/${encodeURIComponent(subscriptionId)}`, new URLSearchParams({

@@ -20,6 +20,7 @@ function load(file, mocks = {}, extras = {}) {
   return module.exports;
 }
 const policy = load('lib/checkout/loadpro-billing-policy.ts');
+const annualPolicy = load('lib/checkout/loadpro-annual-policy.ts');
 const product = { id: 'loadpro_founders_50', price_brl: 69.9, base_price_usd: 13.9, type: 'subscription', trial_days: 7, name: 'LoadPro 50', description: 'Test', billing_interval: 'month', players_per_team_limit: 50, team_limit: 2 };
 const products = { getProductById: () => product, isLoadProProductId: id => ['loadpro_founders','loadpro_founders_50'].includes(id) };
 
@@ -69,7 +70,7 @@ test('returning customer checkout has no trial; first checkout preserves trial a
     '@/lib/checkout/checkout-access':{createCheckoutReturnUrl:()=> 'https://merchant.invalid/return'},
     '@/lib/checkout/db':{updateOrderGatewayIds:async()=>{},appendOrderLog:async()=>{}},
     '@/lib/checkout/localization':{getLocalizedProductCopy:()=>product}, '@/lib/checkout/products':products,
-    '@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{process:{env:{STRIPE_SECRET_KEY:'test',STRIPE_WEBHOOK_SECRET:'test'}},fetch:async(url,init)=>{calls.push(init);return Response.json({id:'cs_test',url:'https://checkout.stripe.com/test'});}});
   const order={id:'order',currency:'USD',amount:13.9,customer_country:'US',customer_email:'fixture@example.invalid',metadata:{loadpro_trial_eligible:false,loadpro_checkout_expires_at:2000000000}};
   await payments.createStripeCheckoutSession(order,product);
@@ -82,7 +83,7 @@ test('stale cancellation never writes billing_access or touches club/player data
   const writes=[];
   const loadpro=load('lib/checkout/loadpro.ts',{
     '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>({created_at:'2026-08-01'})},
-    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{fetch:async(url,init)=>{if(init.method && init.method!=='GET')writes.push(url);return Response.json([{id:'access',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',order_id:'order_main'}]);}});
   const result=await loadpro.syncLoadProAccess({id:'duplicate',product_id:'loadpro_founders_50',currency:'USD',customer_email:'fixture@example.invalid',created_at:'2026-09-01',metadata:{},gateway:'stripe'}, {status:'canceled',providerSubscriptionId:'sub_duplicate'});
   assert.equal(result.ignored,true);
@@ -93,7 +94,7 @@ async function syncAccessFixture(input) {
   const writes=[];
   const loadpro=load('lib/checkout/loadpro.ts',{
     '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
-    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{fetch:async(url,init)=>{
     if(init.method && init.method!=='GET') writes.push({url,body:JSON.parse(init.body)});
     return Response.json([{id:'access',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',order_id:'order_main'}]);
@@ -148,7 +149,7 @@ test('quote endpoint is read-only and requires explicit matching currency/amount
     'next/server':{NextResponse:Response}, '@/lib/checkout/db':{getOrderByGatewayPaymentId:async()=>({id:'order',customer_email:'fixture@example.invalid'}),updateOrderGatewayIds:async()=>{writes++;}},
     '@/lib/checkout/loadpro':{resolveLoadProBillingAccess:async()=>({access,identity:{email:'fixture@example.invalid'}}),isLoadProOrder:()=>true,syncLoadProAccess:async()=>{writes++;}},
     '@/lib/checkout/payments':{fetchStripeSubscription:async()=>subscription,getLoadProUpgradePrice:()=>({currency:'USD',priceCents:1390}),changeStripeLoadProPlan:async()=>{writes++;throw Error('must not mutate');}},
-    '@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   });
   const headers={origin:'https://loadpro.rumoaopro.com.br',authorization:'Bearer test','content-type':'application/json'};
   const quote=await route.GET(new Request('https://merchant.invalid/api',{headers}));
@@ -157,4 +158,25 @@ test('quote endpoint is read-only and requires explicit matching currency/amount
     const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers,body:JSON.stringify(body)}));
     assert.equal(response.status,409); assert.equal(writes,0);
   }
+});
+
+test('annual synchronization preserves paid days on refusal and requires the confirmed tier before crediting a year', async()=>{
+ for(const [planCode,plan] of Object.entries(annualPolicy.ANNUAL_PLANS)) {
+  const writes=[];
+  const current={id:'access',status:'active',access_kind:'subscription',plan_code:planCode,currency:'BRL',price_cents:plan.monthlyCents,team_limit:2,players_per_team_limit:plan.players,provider_subscription_id:'sub_main',order_id:'order_main',current_period_end:'2030-10-01T00:00:00.000Z',metadata:{annual_change:{plan_code:planCode,price_cents:plan.annualCents,payment_method:'card'}}};
+  const service=load('lib/checkout/loadpro.ts',{
+   '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
+   '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
+  },{fetch:async(url,init)=>{if(init.method && init.method!=='GET') writes.push(JSON.parse(init.body));return Response.json([current]);}});
+  const order={id:'order_main',product_id:planCode,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'};
+  const input={providerSubscriptionId:'sub_main',planCode,priceCents:plan.annualCents,currency:'BRL',billingInterval:'year',currentPeriodEnd:'2031-10-01T00:00:00.000Z'};
+  for(const status of ['active','past_due','unpaid','canceled']) {
+   await service.syncLoadProAccess(order,{...input,status});assert.equal(writes.at(-1).current_period_end,current.current_period_end);
+  }
+  await service.syncLoadProAccess(order,{...input,status:'active',annualPaymentConfirmed:true});
+  assert.equal(writes.at(-1).current_period_end,input.currentPeriodEnd);assert.equal(writes.at(-1).players_per_team_limit,plan.players);assert.equal(writes.at(-1).plan_code,planCode);
+  const before=writes.length;
+  await assert.rejects(service.syncLoadProAccess(order,{...input,status:'active',annualPaymentConfirmed:true,planCode:plan.players===30?'loadpro_founders_50':'loadpro_founders'}),/matching confirmed plan/);
+  assert.equal(writes.length,before);
+ }
 });

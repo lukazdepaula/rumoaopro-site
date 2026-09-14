@@ -13,9 +13,15 @@ create table if not exists public.loadpro_annual_changes (
   expires_at timestamptz not null,
   confirmed_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check ((quote->>'price_cents')::integer = 49900 and quote->>'currency' = 'BRL')
+  updated_at timestamptz not null default now()
 );
+-- Reapplying upgrades the original preview check without changing subscription rows.
+alter table public.loadpro_annual_changes drop constraint if exists loadpro_annual_changes_check;
+alter table public.loadpro_annual_changes add constraint loadpro_annual_changes_check check (
+    (quote->>'currency' = 'BRL' and quote->>'billing_interval' = 'year'
+      and quote->>'payment_method' = method and quote->>'terms_version' = 'loadpro-annual-v1'
+      and ((quote->>'plan_code' = 'loadpro_founders' and quote->>'price_cents' = '49900')
+        or (quote->>'plan_code' = 'loadpro_founders_50' and quote->>'price_cents' = '69900'))) is true);
 create unique index if not exists loadpro_annual_one_pending on public.loadpro_annual_changes(access_id)
   where state in ('processing','awaiting_payment','scheduled');
 create unique index if not exists loadpro_annual_payment_once on public.loadpro_annual_changes((provider->>'payment_id'))
@@ -48,15 +54,18 @@ $$;
 
 create or replace function public.confirm_loadpro_annual(p_id uuid, p_user_id uuid)
 returns public.loadpro_annual_changes language plpgsql security definer set search_path=public as $$
-declare c public.loadpro_annual_changes; a public.billing_access;
+declare c public.loadpro_annual_changes; a public.billing_access; annual_cents integer; monthly_cents integer;
 begin
   select * into strict c from public.loadpro_annual_changes where id=p_id and user_id=p_user_id for update;
   select * into strict a from public.billing_access where id=c.access_id and user_id=p_user_id for update;
   if c.state <> 'quoted' then return c; end if;
   if c.expires_at <= now() or a.updated_at <> c.access_version then raise exception 'QUOTE_CHANGED'; end if;
-  if a.plan_code <> 'loadpro_founders' or a.currency <> 'BRL' or a.access_kind = 'lifetime' then raise exception 'INELIGIBLE'; end if;
-  if not (a.price_cents=49900 and a.metadata->>'billing_interval'='year' and a.metadata->>'payment_method'='pix' and c.method='pix') then
-    if a.price_cents<>4990 or a.metadata ? 'annual_change' then raise exception 'INELIGIBLE'; end if;
+  annual_cents=case a.plan_code when 'loadpro_founders' then 49900 when 'loadpro_founders_50' then 69900 end;
+  monthly_cents=annual_cents/10;
+  if annual_cents is null or a.currency is distinct from 'BRL' or a.access_kind = 'lifetime'
+    or c.quote->>'plan_code' is distinct from a.plan_code or (c.quote->>'price_cents')::integer is distinct from annual_cents then raise exception 'INELIGIBLE'; end if;
+  if (a.price_cents=annual_cents and a.metadata->>'billing_interval'='year' and a.metadata->>'payment_method'='pix' and c.method='pix') is not true then
+    if a.price_cents is distinct from monthly_cents or a.metadata ? 'annual_change' or a.metadata->>'billing_interval'='year' then raise exception 'INELIGIBLE'; end if;
   end if;
   perform public.lock_loadpro_billing(a.id,c.id);
   update public.loadpro_annual_changes set state='processing',confirmed_at=now(),updated_at=now() where id=c.id returning * into c;
@@ -67,24 +76,24 @@ end $$;
 
 create or replace function public.finish_loadpro_annual(p_id uuid, p_state text, p_provider jsonb)
 returns public.loadpro_annual_changes language plpgsql security definer set search_path=public as $$
-declare c public.loadpro_annual_changes; a public.billing_access; annual_start timestamptz; annual_end timestamptz;
+declare c public.loadpro_annual_changes; a public.billing_access; annual_cents integer; monthly_cents integer; annual_start timestamptz; annual_end timestamptz;
 begin
   select * into strict c from public.loadpro_annual_changes where id=p_id for update;
   select * into strict a from public.billing_access where id=c.access_id for update;
   if c.state='paid' then return c; end if;
   if c.confirmed_at is null or p_state not in ('awaiting_payment','scheduled','paid','failed') then raise exception 'INVALID_STATE'; end if;
   if p_state='paid' and (c.method<>'pix' or p_provider->>'verified' is distinct from 'true' or p_provider->>'payment_id' is null
-    or p_provider->>'amount_cents' is distinct from '49900' or p_provider->>'currency' is distinct from 'BRL' or p_provider->>'approved_at' is null
+    or p_provider->>'amount_cents' is distinct from c.quote->>'price_cents' or p_provider->>'currency' is distinct from 'BRL' or p_provider->>'approved_at' is null
     or (c.provider->>'payment_id' is not null and c.provider->>'payment_id' is distinct from p_provider->>'payment_id')) then raise exception 'PAYMENT_NOT_VERIFIED'; end if;
   if c.state not in ('processing','awaiting_payment','failed') then raise exception 'INVALID_TRANSITION'; end if;
   if c.method='card' and p_state<>'scheduled' then raise exception 'INVALID_CARD_STATE'; end if;
-  if a.access_kind='lifetime' or a.plan_code<>'loadpro_founders' then raise exception 'ACCESS_CHANGED'; end if;
+  if a.access_kind='lifetime' or a.plan_code is distinct from c.quote->>'plan_code' or a.user_id is distinct from c.user_id or a.currency is distinct from 'BRL' then raise exception 'ACCESS_CHANGED'; end if;
   update public.loadpro_annual_changes set state=p_state,provider=provider || p_provider,updated_at=now() where id=c.id returning * into c;
   if p_state='paid' then
     -- Approval time comes from the provider, never the return URL or browser clock.
     annual_start=greatest((c.quote->>'effective_at')::timestamptz,a.current_period_end,(p_provider->>'approved_at')::timestamptz);
     annual_end=((annual_start at time zone 'UTC') + interval '1 year') at time zone 'UTC';
-    update public.billing_access set status='active',price_cents=49900,currency='BRL',
+    update public.billing_access set status='active',price_cents=(c.quote->>'price_cents')::integer,currency='BRL',
       current_period_end=annual_end,billing_provider='mercado_pago',provider_subscription_id='pix:' || (c.provider->>'payment_id'),
       metadata=metadata || jsonb_build_object('billing_interval','year','payment_method','pix','renewal_mode','manual',
         'provider_subscription_status','active','cancel_at_period_end',false,
