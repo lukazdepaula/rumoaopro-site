@@ -57,12 +57,19 @@ export function assertAnnualEligible(access: {
     || (access.price_cents !== plan.monthlyCents && !manualAnnual)) throw new Error("Subscription is not eligible for this offer");
 }
 
-export function assertApprovedAnnualPix(payment: Record<string, unknown>, reference: string, live: boolean, planCode: string) {
+export function assertAnnualPixPayment(payment: Record<string, unknown>, reference: string, live: boolean, planCode: string) {
   const plan = annualPlan(planCode);
-  if (payment.status !== "approved" || payment.payment_method_id !== "pix"
+  if (payment.payment_method_id !== "pix"
     || payment.currency_id !== "BRL" || payment.transaction_amount !== plan.annualCents / 100
     || payment.external_reference !== reference || payment.live_mode !== live
-    || !payment.id || !Number.isFinite(Date.parse(String(payment.date_approved || "")))) {
+    || !payment.id) {
+    throw new Error("Annual Pix does not match the confirmed change");
+  }
+}
+
+export function assertApprovedAnnualPix(payment: Record<string, unknown>, reference: string, live: boolean, planCode: string) {
+  assertAnnualPixPayment(payment, reference, live, planCode);
+  if (payment.status !== "approved" || !Number.isFinite(Date.parse(String(payment.date_approved || "")))) {
     throw new Error("Annual Pix has not been verified");
   }
 }

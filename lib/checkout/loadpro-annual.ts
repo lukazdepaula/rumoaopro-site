@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { requestLoadPro, syncLoadProAccess, type LoadProBillingAccess } from "./loadpro";
 import { getOrderByGatewayPaymentId } from "./db";
-import { annualPlan, annualTerms, assertAnnualEligible, assertApprovedAnnualPix, type AnnualMethod } from "./loadpro-annual-policy";
-import { annualCardPrice, annualStripe, annualMercadoPago, validateMonthlySubscription, scheduleAnnualCard, stopMonthlyForPix } from "./loadpro-annual-provider";
+import { annualPlan, annualTerms, assertAnnualEligible, assertAnnualPixPayment, assertApprovedAnnualPix, type AnnualMethod } from "./loadpro-annual-policy";
+import { annualCardPrice, annualStripe, annualMercadoPago, assertAnnualPixConfigured, validateMonthlySubscription, scheduleAnnualCard, stopMonthlyForPix } from "./loadpro-annual-provider";
 import { stripeSubscriptionPeriod } from "./loadpro-billing-policy";
 
 type Change = {
@@ -34,10 +34,9 @@ export async function quoteAnnual(access: LoadProBillingAccess, userId: string, 
   if (renewal && method!=='pix') throw new Error('Manual renewal uses Pix');
   if (access.user_id !== userId || (access.metadata.annual_change && !renewal)) throw new Error("Subscription change already exists");
   if (method === "card") await annualCardPrice(access.plan_code);
-  if (method === "pix" && (!process.env.MERCADO_PAGO_ACCESS_TOKEN || !process.env.MERCADO_PAGO_WEBHOOK_SECRET
-    || !process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN?.startsWith('https://')
-    || (process.env.VERCEL_ENV !== 'production' && (process.env.LOADPRO_ANNUAL_PIX_SANDBOX !== 'true' || !process.env.MERCADO_PAGO_ACCESS_TOKEN.startsWith('TEST-'))))) {
-    throw new Error("Pix is not configured");
+  if (method === "pix") {
+    assertAnnualPixConfigured();
+    if (!process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN?.match(/^https:\/\/[^/]+$/)) throw new Error("Pix webhook is not configured");
   }
   const subscription = renewal ? null : await currentSubscription(access);
   const end = subscription ? stripeSubscriptionPeriod(subscription).end! : Math.max(Date.now()/1000,Date.parse(access.current_period_end || '')/1000);
@@ -81,13 +80,20 @@ export async function confirmAnnual(id: string, userId: string) {
     // abandoned there is no unexpected monthly debit; existing days remain.
     const origin = process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN;
     if (!origin || !/^https:\/\/[^/]+$/.test(origin)) throw new Error("Annual webhook origin is not configured");
+    assertAnnualPixConfigured();
+    // The persisted confirmation anchors every retry to the same request body.
+    // Once that window ends, reconcile the existing operation; never renew the
+    // expiry with the same key or silently issue a second payment.
+    const expiresAt = Date.parse(change.confirmed_at || "") + 30 * 60 * 1000;
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw new Error("Pix confirmation expired; reconciliation required");
     if (provider.subscription_id) await stopMonthlyForPix(id,provider.subscription_id,provider.customer_id,Date.parse(change.quote.effective_at)/1000, change.quote.plan_code);
     const payment = await annualMercadoPago("payments", {
       transaction_amount:plan.annualCents/100,description:`LoadPro Fundadores ${plan.players} · Anual`,payment_method_id:"pix",
       external_reference:`loadpro-annual:${id}`,notification_url:`${origin}/api/loadpro/billing/annual/webhook`,
-      date_of_expiration:new Date(Date.now()+30*60*1000).toISOString(),
+      date_of_expiration:new Date(expiresAt).toISOString(),
       payer:{email:provider.email}
     },`annual-${id}`);
+    assertAnnualPixPayment(payment, `loadpro-annual:${id}`, provider.live === true, change.quote.plan_code);
     if (!payment.id || !payment.point_of_interaction?.transaction_data?.qr_code) throw new Error("Pix response incomplete");
     change = await finishAnnual(id,"awaiting_payment",{payment_id:String(payment.id),
       pix_code:payment.point_of_interaction.transaction_data.qr_code,pix_expires_at:payment.date_of_expiration});
@@ -99,12 +105,14 @@ export async function finishAnnual(id:string,state:string,provider:Record<string
 }
 export async function reconcileAnnualPix(paymentId:string) {
   const payment = await annualMercadoPago(`payments/${encodeURIComponent(paymentId)}`);
+  if (String(payment.id) !== paymentId) throw new Error("Pix resource mismatch");
   const reference = String(payment.external_reference || "");
   if (!reference.startsWith("loadpro-annual:")) throw new Error("Unrelated payment");
   const change = await getAnnualChange(reference.slice("loadpro-annual:".length));
   if (change.method!=="pix" || !change.confirmed_at || (change.provider.payment_id && change.provider.payment_id!==String(payment.id))) {
     throw new Error("Payment does not belong to confirmed change");
   }
+  assertAnnualPixPayment(payment, reference, change.provider.live === true, change.quote.plan_code);
   if (change.state === "paid") return publicChange(change);
   if (payment.status === "approved") {
     assertApprovedAnnualPix(payment,reference,change.provider.live===true,change.quote.plan_code);

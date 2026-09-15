@@ -99,14 +99,19 @@ export async function stopMonthlyForPix(id: string, subscriptionId: string, cust
   if (!updated.cancel_at_period_end) throw new Error("Monthly renewal was not stopped");
 }
 
-export async function annualMercadoPago(path: string, data?: Record<string, unknown>, key?: string) {
+export function assertAnnualPixConfigured() {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-  if (!token || !process.env.MERCADO_PAGO_WEBHOOK_SECRET) throw new Error("Pix is not configured");
+  if (!token || token === "disabled" || !process.env.MERCADO_PAGO_WEBHOOK_SECRET) throw new Error("Pix is not configured");
   // Payments API preview remains restricted to explicit test configuration.
   // Orders API credentials must not be enabled by relaxing this boundary.
   if (process.env.VERCEL_ENV !== "production" && (process.env.LOADPRO_ANNUAL_PIX_SANDBOX !== "true" || !token.startsWith("TEST-"))) {
     throw new Error("Preview Pix sandbox is not configured");
   }
+}
+
+export async function annualMercadoPago(path: string, data?: Record<string, unknown>, key?: string) {
+  assertAnnualPixConfigured();
+  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
   const response = await fetch(`https://api.mercadopago.com/v1/${path}`, {
     method: data ? "POST" : "GET", cache: "no-store",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json",

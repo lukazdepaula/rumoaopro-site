@@ -2,6 +2,16 @@
 
 Esta branch prepara os anuais em BRL do Fundadores 30 por R$ 499 e do Fundadores 50 por R$ 699, aprovados em 14/09/2026. Os mensais continuam por R$ 49,90 e R$ 69,90, respectivamente, sem alterar seus limites. Recursos e limites da conta são preservados. Nenhuma migração foi aplicada a produção e nenhum envio ou pagamento real foi efetuado nesta tarefa.
 
+## Estado atual — 15/09/2026
+
+Os registros datados abaixo são históricos. O preview desta branch está habilitado com Supabase isolado e Stripe TEST; o Pix continua desabilitado. A conta fictícia autorizada concluiu o teste de sete dias e a fatura anual de R$ 499 com o relógio TEST, na mesma assinatura, com acesso até 21/09/2027. Reenvios assinados e atualizações repetidas não duplicaram o período. O webhook TEST antigo está ativo e a exceção temporária de proteção Vercel foi removida. Produção continua sem alterações; os dois PRs permanecem rascunhos.
+
+Mais nove testes exercitam o serviço anual, adaptador e PostgreSQL reais com todas as chamadas externas interceptadas. Os 54 testes do backend, a verificação TypeScript e o build passam. Foram reproduzidas e corrigidas a mudança do corpo de criação Pix em uma repetição, a interrupção mensal antes de detectar configuração removida e a aceitação de uma notificação anual com IDs conflitantes. A criação repete a mesma chave e expiração ancorada na confirmação persistida; após essa janela, exige reconciliação em vez de gerar outra cobrança. O webhook anual exige segredo mesmo em sandbox e todo estado consultado deve corresponder ao pagamento/plano/moeda/ambiente confirmado. O checkout mensal legado não foi modificado.
+
+Os testes locais cobrem R$ 499/R$ 699, teste grátis e mês pago, resposta perdida, falha ao salvar, Pix pendente/recusado/cancelado/aprovado, repetição e preservação de conta/limites/metadados. Não equivalem a aprovação Pix no provedor. Ainda faltam testes hospedados do Fundadores 50, transição de mensal já pago, falha da fatura anual e regressão completa do app. Nesta retomada, a revisão automática bloqueou o inventário do navegador por incompatibilidade técnica da sessão; nenhum painel ou provedor foi alterado. Não contornar esse bloqueio por outro mecanismo de automação.
+
+Para o Pix, a API Payments atual continua separada da simulação APRO da API Orders. Nenhuma credencial APP_USR foi habilitada e nenhum adaptador Orders não validado foi introduzido. Configuração e teste oficial completo continuam pendentes. Fontes: [idempotência do Pix Payments](https://www.mercadopago.com.br/developers/pt/docs/checkout-bricks/payment-brick/payment-submission/pix) e [simulação Pix Orders](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/integration-test/pix).
+
 ## Fluxos
 
 A escolha ocorre na área autenticada de assinatura. Na página de planos, quem ainda não tem conta começa o teste comercial existente pelo checkout mensal e depois confirma o anual na assinatura. O checkout mensal informa as condições mensais; clicar na oferta anual nunca muda um contrato sozinho.
