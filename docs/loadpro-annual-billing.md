@@ -2,7 +2,26 @@
 
 Esta branch prepara os anuais em BRL do Fundadores 30 por R$ 499 e do Fundadores 50 por R$ 699, aprovados em 14/09/2026. Os mensais continuam por R$ 49,90 e R$ 69,90, respectivamente, sem alterar seus limites. Recursos e limites da conta são preservados. Nenhuma migração foi aplicada a produção e nenhum envio ou pagamento real foi efetuado nesta tarefa.
 
-## Estado atual — 15/09/2026
+## Estado atual — última validação de 15/09/2026
+
+Previews isolados habilitados, três contas fictícias e PRs em rascunho. Produção intacta. Stripe TEST confirmou anual de R$ 499 após teste e após um mês pago. Mercado Pago Orders confirmou Pix de R$ 699, notificação HTTP200, dias grátis preservados, validade até 22/09/2027, renovação manual e mensal interrompido. Configuração Orders concluída somente no Preview desta branch; não repetir cadastro ou solicitar novamente as mesmas credenciais. Payments legado continua separado e desabilitado nesse preview. Os registros históricos abaixo não são novas instruções de configuração.
+
+Na terceira conta fictícia `loadpro.qa.20260915.paidmonth@example.com` (UID `d03db6ed-b0e9-4001-8cc2-5cb5b9a71234`), a mesma assinatura `sub_1UG3WVA6RupMT8Qs8khoyPII` pagou R$ 49,90 pelo mês de 22/09–22/10/2026. Revisão e consentimento explícitos agendaram R$ 499 para 22/10, sem cobrança imediata ou mensal adicional. Schedule `sub_sched_1UG3alA6RupMT8QsSaXOzOFC`, operação `c52d3765-5922-465a-bbc4-26dd0a6b77ba`. A fatura anual `in_1UG3jtA6RupMT8QsQ9e6QOhX` foi paga no relógio TEST e o app preservou o mês pago, mostrando acesso até 22/10/2027.
+
+O teste hospedado identificou e corrigiu duas falhas:
+
+- `8bae83f`: CORS do portal passa a aceitar somente origens HTTPS de preview explicitamente configuradas quando `VERCEL_ENV=preview`. Autenticação, vínculo da assinatura e comportamento de produção preservados. Treze testes afetados, TypeScript e build passaram.
+- `456a741`: o portal podia atualizar o cartão da assinatura, enquanto o schedule anual retinha o anterior e o restaurava na mudança de fase. `syncAnnualSchedulePaymentMethod` lê o estado atual do provedor após `customer.subscription.updated`, valida consentimento, plano, cliente, assinatura e schedule próprios, e sincroniza somente `default_settings.default_payment_method`, com idempotência. Recusa schedules alheios, fontes legadas ou overrides por fase. Repetições assinadas também reconciliam antes do retorno de duplicidade. Não muda preço, período, cobrança ou acesso. Trinta e três testes afetados de anual/billing, TypeScript e build passaram.
+
+A troca de cartão no portal após a correção foi verificada no schedule por consulta ao provedor, sem patch manual do operador. A primeira fatura anual havia sido aprovada no cartão antigo antes da correção; a **renovação anual seguinte** foi então recusada usando o cartão oficial fictício final 0341. Fatura `in_1UG3xpA6RupMT8QsyjPVUDQC`: BRL 499, valor pago 0, uma tentativa, `open`, `livemode=false`; assinatura `past_due`. Não apresentar esse resultado como recusa da primeira fatura anual.
+
+Após webhook e atualização autenticada, o app mostrou “Pagamento pendente”, R$ 499/ano e regularização no portal. Consulta SQL somente leitura confirmou `billing_access.status=past_due` e `current_period_end=2027-10-22 21:04:13+00`, sem conceder o ano de 2028 do período ainda não pago no provedor. Mesmo UID, 1 clube, 1 equipe e 1 atleta preservados. Tela pendente inspecionada em 390/1440px, tema escuro, sem overflow; viewport normal restaurado.
+
+Preview funcional `456a7410a96706cb82433b40b2d656b694e1ab7d` Ready: https://vercel.com/fagotti-10-7408s-projects/rumoaopro-site/BiaouZQVMeSSvt8QSUrNm3jtQdrP. Nenhuma nova migração. Limpeza concluída e verificada: exceção pública do domínio anual removida, Require Log In habilitado e webhook TEST anterior `we_1TrM2mA6RupMT8Qs5lcZOUme` novamente Ativo. Nenhum destino live, campanha, cobrança ou cliente real alterado.
+
+Ainda pendentes: recusa hospedada da primeira fatura anual após teste, cancelamento pelo portal, PDF final e modo privado quando disponível, preferências/deduplicação durável/canal único do lembrete, aprovação comercial do Pix abandonado e configuração/migração/publicação conjunta de produção. O preparador de lembretes continua sem envio; a Stripe já possui aviso de fim de teste ativo.
+
+## Histórico de preparação — 15/09/2026
 
 Os registros datados abaixo são históricos. O preview desta branch está habilitado com Supabase isolado e Stripe TEST. Em 15/09 a aplicação fictícia Orders teve o webhook de teste salvo e oito variáveis próprias guardadas como Secret somente em Preview / codex/loadpro-annual-billing; o adaptador está configurado, mas a aprovação Pix hospedada ainda não foi validada. A conta fictícia autorizada concluiu o teste de sete dias e a fatura anual de R$ 499 com o relógio TEST, na mesma assinatura, com acesso até 21/09/2027. Reenvios assinados e atualizações repetidas não duplicaram o período. O webhook TEST antigo está ativo e a exceção temporária de proteção Vercel foi removida. Produção continua sem alterações; os dois PRs permanecem rascunhos.
 
