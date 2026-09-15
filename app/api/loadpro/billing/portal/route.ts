@@ -10,6 +10,10 @@ const PRODUCTION_APP_ORIGIN = "https://loadpro.rumoaopro.com.br";
 function allowedOrigin(request: Request) {
   const origin = request.headers.get("origin") || "";
   if (origin === PRODUCTION_APP_ORIGIN) return origin;
+  // Hosted QA uses the same explicit app allowlist as annual billing. Never
+  // expand production CORS or trust arbitrary Vercel subdomains.
+  if (process.env.VERCEL_ENV === "preview" && origin.startsWith("https://")
+    && (process.env.LOADPRO_ANNUAL_ALLOWED_ORIGINS || "").split(",").map(value => value.trim()).includes(origin)) return origin;
   if (/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) return origin;
   return "";
 }

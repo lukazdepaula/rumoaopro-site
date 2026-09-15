@@ -190,3 +190,31 @@ test('annual synchronization preserves paid days on refusal and requires the con
   assert.equal(writes.length,before);
  }
 });
+
+test('billing portal accepts only the configured preview app and keeps production origins unchanged', async()=>{
+ const preview='https://annual-app-preview.example.invalid';
+ const headers=origin=>({origin,'content-type':'application/json',authorization:'Bearer fixture'});
+ for(const environment of ['preview','production']) {
+  const calls=[];
+  const route=load('app/api/loadpro/billing/portal/route.ts',{
+   'next/server':{NextResponse:Response},
+   '@/lib/checkout/loadpro':{resolveLoadProBillingAccess:async()=>({access:{access_kind:'subscription',billing_provider:'stripe',provider_customer_id:'cus_fixture'},appUrl:preview})},
+   '@/lib/checkout/payments':{createStripeBillingPortalSession:async(...args)=>{calls.push(args);return 'https://billing.stripe.com/p/session/test_fixture';}}
+  },{process:{env:{VERCEL_ENV:environment,LOADPRO_ANNUAL_ALLOWED_ORIGINS:preview}}});
+  const preflight=await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers(preview)}));
+  assert.equal(preflight.status,environment==='preview'?204:403);
+  const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers:headers(preview),body:'{"locale":"pt"}'}));
+  assert.equal(response.status,environment==='preview'?200:403);
+  assert.equal(calls.length,environment==='preview'?1:0);
+  if(environment==='preview') {
+   assert.equal(response.headers.get('access-control-allow-origin'),preview);
+   assert.deepEqual(calls[0],['cus_fixture',preview+'/?view=setup&settings=security','pt-BR']);
+   const unauthenticated=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers:{origin:preview},body:'{}'}));
+   assert.equal(unauthenticated.status,401);assert.equal(calls.length,1);
+  }
+  for(const origin of ['https://attacker.invalid',preview+'.attacker.invalid','null','']) {
+   assert.equal((await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers(origin)}))).status,403);
+  }
+  assert.equal((await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers('https://loadpro.rumoaopro.com.br')}))).status,204);
+ }
+});
