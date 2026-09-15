@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveLoadProBillingAccess } from "@/lib/checkout/loadpro";
 import { ANNUAL_TERMS } from "@/lib/checkout/loadpro-annual-policy";
-import { annualEnabled, annualStatus, quoteAnnual, confirmAnnual, getAnnualChange, reconcileAnnualPix, reconcileAnnualCard } from "@/lib/checkout/loadpro-annual";
+import { annualEnabled, annualStatus, quoteAnnual, confirmAnnual, getAnnualChange, reconcileAnnualPix, reconcileAnnualCard, reconcileAnnualOrder } from "@/lib/checkout/loadpro-annual";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 function origin(request:Request) {
@@ -34,7 +34,10 @@ async function handle(request:Request) {
     const body=await request.json();
     if (body.action==="refresh" && typeof body.id==="string") {
       const change=await getAnnualChange(body.id,resolved.identity.id);
-      if (change.method==="pix" && change.provider.payment_id) await reconcileAnnualPix(change.provider.payment_id);
+      if (change.method==="pix" && change.provider.payment_id) {
+        if (change.provider.pix_api==='orders') await reconcileAnnualOrder(change.provider.payment_id);
+        else await reconcileAnnualPix(change.provider.payment_id);
+      }
       if (change.method==="card") await reconcileAnnualCard(change.provider.subscription_id);
       const refreshed=await resolveLoadProBillingAccess(token);
       const status=await annualStatus(body.id,resolved.identity.id);

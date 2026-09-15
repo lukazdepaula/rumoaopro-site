@@ -129,6 +129,7 @@ test('annual card reconciliation repairs a verified current invoice, never an ol
  const access={...base,provider_customer_id:'cus_1',metadata:{annual_change:{id:'op_1',plan_code:base.plan_code,price_cents:annualCents,payment_method:'card'}}};
  const subscription={customer:'cus_1',status:'active',current_period_start:2200000000,current_period_end:2231536000,items:{data:[{quantity:1,price:{unit_amount:annualCents,currency:'brl',recurring:{interval:'year',interval_count:1}}}]},latest_invoice:{id:'in_current',status:'paid',amount_paid:annualCents,currency:'brl'}};
  const service=load('lib/checkout/loadpro-annual.ts',{
+  './loadpro-annual-orders':{},
   './loadpro':{requestLoadPro:async()=>Response.json([access]),syncLoadProAccess:async(order,data)=>{writes.push(data);}},
   './db':{getOrderByGatewayPaymentId:async()=>({customer_email:base.email})},
   './loadpro-annual-policy':policy,'./loadpro-billing-policy':billing,

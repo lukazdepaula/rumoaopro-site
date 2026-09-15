@@ -25,7 +25,7 @@ const billing = load('lib/checkout/loadpro-billing-policy.ts');
 
 // Real annual service, provider adapter and SQL; only HTTP is replaced. No test
 // can contact a payment provider, database server, email service or customer.
-async function fixture(t, planCode, status = 'trialing') {
+async function fixture(t, planCode, status = 'trialing', api = 'payments') {
   const db = new PGlite();
   t.after(() => db.close());
   await db.exec(`create role anon; create role authenticated; create role service_role;
@@ -47,6 +47,10 @@ async function fixture(t, planCode, status = 'trialing') {
     MERCADO_PAGO_ACCESS_TOKEN: 'TEST-fixture', MERCADO_PAGO_WEBHOOK_SECRET: 'fixture-only',
     STRIPE_SECRET_KEY: 'sk_test_fixture', LOADPRO_ANNUAL_WEBHOOK_ORIGIN: 'https://preview.example.invalid'};
   const state = {now: Date.now(), loseResponse: false, failSave: false, payment: null, calls: [], requests: new Map()};
+  if (api === 'orders') Object.assign(env, {LOADPRO_ANNUAL_PIX_API:'orders',
+    LOADPRO_ANNUAL_MP_ORDERS_ACCESS_TOKEN:'APP_USR-6020550837096527-fixture-3692348994',
+    LOADPRO_ANNUAL_MP_ORDERS_SELLER_ID:'3692348994',LOADPRO_ANNUAL_MP_ORDERS_APPLICATION_ID:'6020550837096527',
+    LOADPRO_ANNUAL_MP_ORDERS_WEBHOOK_SECRET:'fixture-only'});
   class Clock extends Date { static now() { return state.now; } }
   const subscription = {id: 'sub_fixture', customer: 'cus_fixture', status, current_period_end: end,
     trial_end: status === 'trialing' ? end : null, latest_invoice: {status: 'paid'},
@@ -54,6 +58,22 @@ async function fixture(t, planCode, status = 'trialing') {
       recurring: {interval: 'month', interval_count: 1}}}]}};
   const extras = {Date: Clock, process: {env}, fetch: async (url, init) => {
     state.calls.push({url, method: init.method, body: init.body});
+    if (url === 'https://api.mercadopago.com/users/me') return Response.json({id:3692348994,site_id:'MLB',nickname:'TESTUSER4706885511902062454'});
+    if (url === 'https://api.mercadopago.com/v1/orders' && init.method === 'POST') {
+      const key=init.headers['X-Idempotency-Key'];
+      if (state.requests.has(key)) assert.equal(state.requests.get(key),init.body);
+      else {
+        state.requests.set(key,init.body);
+        const body=JSON.parse(init.body);
+        state.payment={...body,id:'ORD01J49MMW3SSBK5PSV3DFR32959',user_id:'3692348994',integration_data:{application_id:'6020550837096527'},
+          country_code:'BR',status:'action_required',status_detail:'waiting_transfer',created_date:new Date().toISOString(),
+          transactions:{payments:[{...body.transactions.payments[0],id:'PAY01J67CQQH5904WDBVZEM4JMEP3',status:'action_required',status_detail:'waiting_transfer',
+            date_of_expiration:new Date(Date.now()+1800000).toISOString(),payment_method:{id:'pix',type:'bank_transfer',qr_code:'FICTIONAL-NONPAYABLE-QR'}}]}};
+      }
+      if (state.loseResponse) { state.loseResponse=false; throw Error('Simulated lost provider response'); }
+      return Response.json(state.payment);
+    }
+    if (url === 'https://api.mercadopago.com/v1/orders/ORD01J49MMW3SSBK5PSV3DFR32959') return Response.json(state.payment);
     if (url.startsWith('https://api.stripe.com/v1/subscriptions/sub_fixture')) {
       if (init.method === 'POST') {
         subscription.cancel_at_period_end = true;
@@ -84,6 +104,7 @@ async function fixture(t, planCode, status = 'trialing') {
   const readAccess = async () => (await db.query('select * from billing_access')).rows[0];
   const readChange = async () => (await db.query('select * from loadpro_annual_changes')).rows[0];
   const service = load('lib/checkout/loadpro-annual.ts', {
+    './loadpro-annual-orders':load('lib/checkout/loadpro-annual-orders.ts',{'./loadpro-annual-policy':policy},extras),
     './loadpro-annual-policy': policy, './loadpro-billing-policy': billing,
     './loadpro-annual-provider': provider, './db': {},
     './loadpro': {requestLoadPro: async (path, init) => {
@@ -178,6 +199,46 @@ test('Pix retry refuses expired or missing configuration before any monthly/prov
   f.state.now = Date.parse((await f.readChange()).confirmed_at) + 31 * 60000;
   await assert.rejects(f.service.confirmAnnual(f.quote.id, f.userId), /expired/);
   assert.equal(f.state.calls.filter(c => c.method === 'POST').length, 0);
+});
+
+for (const planCode of Object.keys(policy.ANNUAL_PLANS)) {
+  for (const status of ['trialing','active']) test(`Orders ${planCode}/${status}: one payment, preserved days and idempotent verified access`,async t=>{
+    const f=await fixture(t,planCode,status,'orders');
+    f.state.loseResponse=true;
+    await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId),/lost provider/);
+    f.env.LOADPRO_ANNUAL_MP_ORDERS_TEST_APPROVAL='true';
+    f.state.failSave=true;
+    await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId),/storage/);
+    const pending=await f.service.confirmAnnual(f.quote.id,f.userId);
+    assert.equal(pending.state,'awaiting_payment');
+    assert.equal(f.state.requests.size,1);
+    assert.equal(f.state.calls.filter(c=>c.url.startsWith('https://api.stripe.com/') && c.method==='POST').length,1);
+    assert.equal(JSON.parse([...f.state.requests.values()][0]).payer.first_name,undefined,'the quote freezes the sandbox scenario');
+    assert.equal(f.subscription.cancel_at_period_end,true);
+    assert.equal(new Date((await f.readAccess()).current_period_end).getTime(),f.end*1000);
+    const order=f.state.payment, payment=order.transactions.payments[0];
+    order.status='processed'; order.status_detail='accredited'; order.total_paid_amount=order.total_amount;
+    order.last_updated_date=new Date().toISOString();
+    payment.status='processed'; payment.status_detail='accredited'; payment.paid_amount=payment.amount;
+    const paid=await f.service.reconcileAnnualOrder(order.id);
+    assert.equal(paid.state,'paid');
+    const access=await f.readAccess();
+    assert.equal(new Date(access.current_period_end).toISOString(),policy.addCalendarYear(new Date(f.end*1000).toISOString()));
+    assert.equal(access.team_limit,2); assert.equal(access.players_per_team_limit,f.plan.players);
+    assert.equal(access.user_id,f.userId); assert.equal(access.metadata.existing_setting,'preserved');
+    assert.equal(access.metadata.renewal_mode,'manual');
+    await f.service.reconcileAnnualOrder(order.id);
+    assert.equal(new Date((await f.readAccess()).current_period_end).getTime(),new Date(access.current_period_end).getTime());
+  });
+}
+
+test('Orders refuse changed configuration before stopping any monthly renewal',async t=>{
+  const f=await fixture(t,'loadpro_founders','trialing','orders');
+  f.env.LOADPRO_ANNUAL_MP_ORDERS_SELLER_ID='375473814';
+  await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId));
+  assert.equal(f.state.calls.filter(c=>c.method==='POST').length,0);
+  assert.equal(f.subscription.cancel_at_period_end,undefined);
+  assert.equal(new Date((await f.readAccess()).current_period_end).getTime(),f.end*1000);
 });
 
 test('Pix reconciliation rejects mismatched resource, plan, environment and payment method even for failed status', async t => {

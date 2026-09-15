@@ -4,6 +4,7 @@ import { getOrderByGatewayPaymentId } from "./db";
 import { annualPlan, annualTerms, assertAnnualEligible, assertAnnualPixPayment, assertApprovedAnnualPix, type AnnualMethod } from "./loadpro-annual-policy";
 import { annualCardPrice, annualStripe, annualMercadoPago, assertAnnualPixConfigured, validateMonthlySubscription, scheduleAnnualCard, stopMonthlyForPix } from "./loadpro-annual-provider";
 import { stripeSubscriptionPeriod } from "./loadpro-billing-policy";
+import {annualOrdersConfig, verifyAnnualOrdersSeller, createAnnualOrder, fetchAnnualOrder, inspectAnnualOrder, annualChangeFromOrder} from './loadpro-annual-orders';
 
 type Change = {
   id: string; access_id: string; user_id: string; state: string; method: AnnualMethod;
@@ -17,6 +18,19 @@ export async function annualDb(path: string, init?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 export function annualEnabled() { return process.env.LOADPRO_ANNUAL_ENABLED === "true"; }
+
+function configuredPixApi() {
+  const api = process.env.LOADPRO_ANNUAL_PIX_API || 'payments';
+  if (!['payments','orders'].includes(api)) throw new Error('Unsupported annual Pix API');
+  return api;
+}
+async function validatePixConfiguration(api: string) {
+  if (api !== configuredPixApi()) throw new Error('Pix configuration changed; reconciliation required');
+  if (api === 'orders') {
+    annualOrdersConfig();
+    await verifyAnnualOrdersSeller();
+  } else assertAnnualPixConfigured();
+}
 
 async function currentSubscription(access: LoadProBillingAccess) {
   if (access.billing_provider !== "stripe" || !access.provider_subscription_id || !access.provider_customer_id) {
@@ -35,7 +49,7 @@ export async function quoteAnnual(access: LoadProBillingAccess, userId: string, 
   if (access.user_id !== userId || (access.metadata.annual_change && !renewal)) throw new Error("Subscription change already exists");
   if (method === "card") await annualCardPrice(access.plan_code);
   if (method === "pix") {
-    assertAnnualPixConfigured();
+    await validatePixConfiguration(configuredPixApi());
     if (!process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN?.match(/^https:\/\/[^/]+$/)) throw new Error("Pix webhook is not configured");
   }
   const subscription = renewal ? null : await currentSubscription(access);
@@ -46,10 +60,14 @@ export async function quoteAnnual(access: LoadProBillingAccess, userId: string, 
   if (renewal) quote.monthly_renewal="none";
   const id = randomUUID();
   const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const orders = method === 'pix' && configuredPixApi() === 'orders' ? annualOrdersConfig() : null;
   await annualDb("loadpro_annual_changes", { method: "POST", body: JSON.stringify({
     id, access_id: access.id, user_id: userId, method, access_version: access.updated_at,
     quote, expires_at, provider: { subscription_id: renewal ? null : access.provider_subscription_id, customer_id: access.provider_customer_id,
-      email: access.email, live: process.env.VERCEL_ENV === "production" }
+      email: access.email, live: process.env.VERCEL_ENV === "production",
+      ...(method === 'pix' ? {pix_api:configuredPixApi()} : {}),
+      ...(orders ? {pix_seller_id:orders.sellerId,pix_application_id:orders.applicationId,
+        pix_test_approval:!orders.live && process.env.LOADPRO_ANNUAL_MP_ORDERS_TEST_APPROVAL === 'true'} : {}) }
   }) });
   return { ...quote, id, expires_at, team_limit: access.team_limit, players_per_team_limit: access.players_per_team_limit };
 }
@@ -64,7 +82,9 @@ function publicChange(change: Change) {
   return { id: change.id, state: change.state, quote: change.quote,
     pix_code: change.provider.pix_code || null, pix_expires_at: change.provider.pix_expires_at || null };
 }
-export async function annualStatus(id: string, userId: string) { return publicChange(await getAnnualChange(id,userId)); }
+export async function annualStatus(id: string, userId: string) {
+  return publicChange(await getAnnualChange(id,userId));
+}
 
 export async function confirmAnnual(id: string, userId: string) {
   let change: Change = await annualDb("rpc/confirm_loadpro_annual", { method: "POST", body: JSON.stringify({ p_id:id,p_user_id:userId }) });
@@ -80,13 +100,22 @@ export async function confirmAnnual(id: string, userId: string) {
     // abandoned there is no unexpected monthly debit; existing days remain.
     const origin = process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN;
     if (!origin || !/^https:\/\/[^/]+$/.test(origin)) throw new Error("Annual webhook origin is not configured");
-    assertAnnualPixConfigured();
+    const api = provider.pix_api || 'payments';
+    await validatePixConfiguration(api);
+    if (api === 'orders') {
+      const config = annualOrdersConfig();
+      if (provider.pix_seller_id !== config.sellerId || provider.pix_application_id !== config.applicationId) throw new Error('Quoted Pix seller changed');
+    }
     // The persisted confirmation anchors every retry to the same request body.
     // Once that window ends, reconcile the existing operation; never renew the
     // expiry with the same key or silently issue a second payment.
     const expiresAt = Date.parse(change.confirmed_at || "") + 30 * 60 * 1000;
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw new Error("Pix confirmation expired; reconciliation required");
     if (provider.subscription_id) await stopMonthlyForPix(id,provider.subscription_id,provider.customer_id,Date.parse(change.quote.effective_at)/1000, change.quote.plan_code);
+    if (api === 'orders') {
+      const order = await createAnnualOrder(id, change.quote.plan_code, provider.email, provider.pix_test_approval === true);
+      return applyAnnualOrder(change, order);
+    }
     const payment = await annualMercadoPago("payments", {
       transaction_amount:plan.annualCents/100,description:`LoadPro Fundadores ${plan.players} · Anual`,payment_method_id:"pix",
       external_reference:`loadpro-annual:${id}`,notification_url:`${origin}/api/loadpro/billing/annual/webhook`,
@@ -102,6 +131,26 @@ export async function confirmAnnual(id: string, userId: string) {
 }
 export async function finishAnnual(id:string,state:string,provider:Record<string,unknown>):Promise<Change> {
   return annualDb("rpc/finish_loadpro_annual",{method:"POST",body:JSON.stringify({p_id:id,p_state:state,p_provider:provider})});
+}
+async function applyAnnualOrder(change: Change, order: Record<string, any>) {
+  if (change.method !== 'pix' || change.provider.pix_api !== 'orders' || !change.confirmed_at
+    || String(order.user_id) !== change.provider.pix_seller_id || String(order.integration_data?.application_id) !== change.provider.pix_application_id
+    || (change.provider.payment_id && change.provider.payment_id !== order.id)) throw new Error('Order does not belong to confirmed change');
+  const result = inspectAnnualOrder(order, change.id, change.quote.plan_code, change.provider.live === true);
+  if (!Number.isFinite(Date.parse(order.created_date || '')) || Date.parse(order.created_date) < Date.parse(change.confirmed_at)-60000) {
+    throw new Error('Order predates confirmation');
+  }
+  if (change.state === 'paid') return publicChange(change);
+  if (result.paid) return publicChange(await finishAnnual(change.id,'paid',{
+    ...result.provider, verified:true, amount_cents:annualPlan(change.quote.plan_code).annualCents,
+    currency:'BRL', approved_at:result.approvedAt
+  }));
+  return publicChange(await finishAnnual(change.id,result.failed ? 'failed':'awaiting_payment',result.provider));
+}
+export async function reconcileAnnualOrder(orderId: string) {
+  const order = await fetchAnnualOrder(orderId);
+  const change = await getAnnualChange(annualChangeFromOrder(order));
+  return applyAnnualOrder(change, order);
 }
 export async function reconcileAnnualPix(paymentId:string) {
   const payment = await annualMercadoPago(`payments/${encodeURIComponent(paymentId)}`);
