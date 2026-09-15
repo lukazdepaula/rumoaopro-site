@@ -1,5 +1,5 @@
 import { isAnnualAmount, matchesAnnualPayment } from "@/lib/checkout/loadpro-annual-policy";
-import { reconcileAnnualCard } from "@/lib/checkout/loadpro-annual";
+import { reconcileAnnualCard, syncAnnualSchedulePaymentMethod } from "@/lib/checkout/loadpro-annual";
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import {
@@ -209,7 +209,8 @@ export async function POST(request: Request) {
     const eventId = event.id || randomUUID();
     const firstDelivery = await recordWebhookEvent("stripe", eventId, event);
     const annualInvoiceRetry=event.type === "invoice.paid" && isAnnualAmount(event.data?.object?.amount_paid) && event.data?.object?.currency === "brl";
-    if (!firstDelivery && !annualInvoiceRetry) {
+    const annualScheduleRefresh=event.type === "customer.subscription.updated";
+    if (!firstDelivery && !annualInvoiceRetry && !annualScheduleRefresh) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -245,6 +246,9 @@ export async function POST(request: Request) {
 
     if (annualInvoiceRetry && subscriptionId && isLoadProOrder(order)) {
       await reconcileAnnualCard(subscriptionId,objectId);
+    }
+    if (annualScheduleRefresh && subscriptionId && isLoadProOrder(order)) {
+      await syncAnnualSchedulePaymentMethod(subscriptionId,eventId);
     }
     if (!firstDelivery) return NextResponse.json({received:true,duplicate:true,reconciled:true});
     const environmentData = { provider_livemode: event.livemode };

@@ -174,6 +174,36 @@ export async function reconcileAnnualPix(paymentId:string) {
   return publicChange(change);
 }
 
+// The portal can clear the subscription-specific card to use the customer's
+// new default. A schedule copied from that subscription otherwise restores the
+// old card at its next phase. Synchronize only schedules owned by this consent.
+export async function syncAnnualSchedulePaymentMethod(subscriptionId: string, eventId: string) {
+  const rows=await annualDb('billing_access?provider_subscription_id=eq.'+encodeURIComponent(subscriptionId)+'&billing_provider=eq.stripe&limit=1');
+  const access=rows?.[0] as LoadProBillingAccess | undefined;
+  const accepted=access?.metadata.annual_change as Record<string, unknown> | undefined;
+  if (!access || !accepted || accepted.payment_method!=='card' || accepted.plan_code!==access.plan_code
+    || accepted.price_cents!==annualPlan(access.plan_code).annualCents || typeof accepted.id!=='string') return false;
+  const subscription=await annualStripe('subscriptions/'+encodeURIComponent(subscriptionId));
+  if (subscription.id!==subscriptionId || subscription.customer!==access.provider_customer_id || !subscription.schedule
+    || !['active','trialing','past_due'].includes(subscription.status)) return false;
+  const schedule=await annualStripe('subscription_schedules/'+encodeURIComponent(subscription.schedule));
+  if (schedule.subscription!==subscriptionId || schedule.customer!==access.provider_customer_id || schedule.status!=='active'
+    || schedule.metadata?.loadpro_annual_change!==accepted.id) return false;
+  // Phase overrides and legacy card sources need assisted reconciliation.
+  if (subscription.default_source || schedule.default_settings?.default_source
+    || schedule.phases?.some((phase:Record<string,any>)=>phase.default_payment_method)) throw new Error('Scheduled payment method needs review');
+  const method=subscription.default_payment_method || null;
+  if (method!==null && typeof method!=='string') throw new Error('Invalid subscription payment method');
+  if ((schedule.default_settings?.default_payment_method || null)===method) return true;
+  const updated=await annualStripe('subscription_schedules/'+encodeURIComponent(schedule.id),new URLSearchParams({
+    'default_settings[default_payment_method]':method || ''
+  }),`annual:${accepted.id}:payment-method:${eventId}`);
+  if (updated.subscription!==subscriptionId || (updated.default_settings?.default_payment_method || null)!==method) {
+    throw new Error('Scheduled payment method needs reconciliation');
+  }
+  return true;
+}
+
 // Reconcile verified card invoices before the legacy webhook deduplication
 // shortcut. Replays can repair a database failure without replaying sales mail.
 export async function reconcileAnnualCard(subscriptionId:string, invoiceId?:string) {

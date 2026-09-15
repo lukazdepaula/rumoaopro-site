@@ -170,3 +170,43 @@ test('annual invoice amounts cannot be swapped between tiers',()=>{
   assert.equal(policy.matchesAnnualPayment(code,plan.annualCents,plan.annualCents,'USD'),false);
  }
 });
+
+test('portal payment changes cannot be overwritten by an owned annual schedule',async()=>{
+ for (const [code,plan] of Object.entries(policy.ANNUAL_PLANS)) {
+  const access={...baseTemplate,plan_code:code,provider_customer_id:'cus_1',metadata:{annual_change:{id:'op_1',state:'scheduled',plan_code:code,price_cents:plan.annualCents,payment_method:'card'}}};
+  const sub={id:'sub_1',customer:'cus_1',status:'active',schedule:'sched_1',default_payment_method:null};
+  const schedule={id:'sched_1',customer:'cus_1',subscription:'sub_1',status:'active',metadata:{loadpro_annual_change:'op_1'},default_settings:{default_payment_method:'pm_old'},phases:[{default_payment_method:null},{default_payment_method:null}]};
+  const writes=[];let loseResponse=false;
+  const service=load('lib/checkout/loadpro-annual.ts',{
+   './loadpro-annual-orders':{},'./db':{},'./loadpro-annual-policy':policy,'./loadpro-billing-policy':billing,
+   './loadpro':{requestLoadPro:async path=>{assert.match(path,/provider_subscription_id=eq.sub_1&billing_provider=eq.stripe/);return Response.json([access]);}},
+   './loadpro-annual-provider':{annualStripe:async(path,params,key)=>{
+    if(!params)return path==='subscriptions/sub_1'?sub:schedule;
+    writes.push({path,body:Object.fromEntries(params),key});
+    schedule.default_settings.default_payment_method=params.get('default_settings[default_payment_method]') || null;
+    if(loseResponse)throw Error('Lost response after successful update');
+    return schedule;
+   }}
+  });
+  await service.syncAnnualSchedulePaymentMethod('sub_1','evt_portal');
+  assert.equal(writes.length,1);
+  assert.deepEqual(writes[0],{path:'subscription_schedules/sched_1',body:{'default_settings[default_payment_method]':''},key:'annual:op_1:payment-method:evt_portal'});
+  await service.syncAnnualSchedulePaymentMethod('sub_1','evt_portal');assert.equal(writes.length,1);
+  // Reconciliation also works after the first annual payment, without changing
+  // dates, prices, access or creating another subscription/payment.
+  access.metadata.annual_change.state='paid';sub.default_payment_method='pm_new';loseResponse=true;
+  await assert.rejects(service.syncAnnualSchedulePaymentMethod('sub_1','evt_new'),/Lost response/);
+  loseResponse=false;await service.syncAnnualSchedulePaymentMethod('sub_1','evt_new');assert.equal(writes.length,2);
+  sub.default_payment_method='pm_other';
+  for(const patch of [{customer:'cus_other'},{subscription:'sub_other'},{status:'released'},{metadata:{loadpro_annual_change:'other'}}]) {
+   const before={...schedule};Object.assign(schedule,patch);
+   assert.equal(await service.syncAnnualSchedulePaymentMethod('sub_1','evt_denied'),false);Object.assign(schedule,before);
+  }
+  schedule.phases[1].default_payment_method='pm_manual';
+  await assert.rejects(service.syncAnnualSchedulePaymentMethod('sub_1','evt_override'),/review/);
+  schedule.phases[1].default_payment_method=null;
+  sub.customer='cus_other';assert.equal(await service.syncAnnualSchedulePaymentMethod('sub_1','evt_owner'),false);
+  sub.customer='cus_1';access.metadata.annual_change.payment_method='pix';
+  assert.equal(await service.syncAnnualSchedulePaymentMethod('sub_1','evt_pix'),false);assert.equal(writes.length,2);
+ }
+});
