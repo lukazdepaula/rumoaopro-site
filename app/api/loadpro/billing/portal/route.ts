@@ -51,7 +51,9 @@ export async function POST(request: Request) {
 
   try {
     const resolved = await resolveLoadProBillingAccess(accessToken);
-    if (!resolved) return json(request, { error: "Billing account not found" }, 404);
+    // Resolution also fails for an expired identity token. The app retries a
+    // 401 once with its refreshed session; a 404 stranded the recovery screen.
+    if (!resolved) return json(request, { error: "Authentication required" }, 401);
     const { access, appUrl } = resolved;
     if (
       access.access_kind === "lifetime" ||

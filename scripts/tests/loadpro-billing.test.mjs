@@ -191,6 +191,25 @@ test('annual synchronization preserves paid days on refusal and requires the con
  }
 });
 
+test('expired portal identity returns a refreshable 401 without creating a portal session', async()=>{
+ let identityCalls=0, portalCalls=0;
+ const resolver=load('lib/checkout/loadpro.ts',{
+  '@/lib/checkout/db':{}, '@/lib/checkout/email':{}, '@/lib/checkout/products':products,
+  '@/lib/checkout/loadpro-annual-policy':annualPolicy, '@/lib/checkout/loadpro-billing-policy':policy
+ },{fetch:async url=>{
+  assert.match(url,/\/auth\/v1\/user$/); identityCalls++;
+  return Response.json({message:'JWT expired'},{status:401});
+ }});
+ const route=load('app/api/loadpro/billing/portal/route.ts',{
+  'next/server':{NextResponse:Response}, '@/lib/checkout/loadpro':resolver,
+  '@/lib/checkout/payments':{createStripeBillingPortalSession:async()=>{portalCalls++;}}
+ });
+ const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',
+  headers:{origin:'https://loadpro.rumoaopro.com.br',authorization:'Bearer expired-fixture'},body:'{}'}));
+ assert.equal(response.status,401); assert.equal(identityCalls,1); assert.equal(portalCalls,0);
+ assert.equal(response.headers.get('access-control-allow-origin'),'https://loadpro.rumoaopro.com.br');
+});
+
 test('billing portal accepts only the configured preview app and keeps production origins unchanged', async()=>{
  const preview='https://annual-app-preview.example.invalid';
  const headers=origin=>({origin,'content-type':'application/json',authorization:'Bearer fixture'});
