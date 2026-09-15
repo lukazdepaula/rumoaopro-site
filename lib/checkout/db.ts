@@ -1,3 +1,4 @@
+import { assertPreviewDatabase } from "@/lib/preview-safety";
 import fs from "node:fs";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -621,6 +622,7 @@ function useSupabaseDriver() {
 }
 
 function supabaseConfig() {
+  assertPreviewDatabase(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL, "checkout");
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SECRET_KEY?.trim() ||

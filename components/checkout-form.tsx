@@ -1069,7 +1069,7 @@ export function CheckoutForm({ product, locale = "pt", initialDiscountCode = "" 
         ) : null}
         {loadProAccountRequired ? (
           <a className="focus-ring rounded-md border border-current px-4 py-3 text-center font-semibold"
-            href="https://loadpro.rumoaopro.com.br/?view=login">
+            href={process.env.NEXT_PUBLIC_LOADPRO_APP_URL ? `${process.env.NEXT_PUBLIC_LOADPRO_APP_URL}?view=login` : "#"}>
             {isEnglish ? "Sign in to manage my LoadPro plan" : "Entrar para gerenciar meu plano LoadPro"}
           </a>
         ) : null}

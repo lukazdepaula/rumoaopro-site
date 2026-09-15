@@ -1,3 +1,4 @@
+import { assertPreviewDatabase } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 import type { Order } from "@/lib/checkout/types";
 
@@ -76,6 +77,7 @@ export function isRaptorProProgramOrder(order: Order) {
 
 function config() {
   const url = process.env.RAPTORPRO_SUPABASE_URL;
+  assertPreviewDatabase(url, "raptorpro");
   const serviceRoleKey = process.env.RAPTORPRO_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey) return null;
   return {

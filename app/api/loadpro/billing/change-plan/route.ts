@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { requestLoadPro } from "@/lib/checkout/loadpro";
 import { NextResponse } from "next/server";
 import {
   getOrderByGatewayPaymentId,
@@ -94,6 +96,7 @@ async function handle(request: Request, quoteOnly: boolean) {
     return json(request, { error: "Unsupported plan change" }, 400);
   }
 
+  let mutationId: string | null = null;
   try {
     const resolved = await resolveLoadProBillingAccess(accessToken);
     if (!resolved) return json(request, { error: "Billing account not found" }, 404);
@@ -101,6 +104,8 @@ async function handle(request: Request, quoteOnly: boolean) {
 
     if (access.plan_code === TARGET_PLAN) return json(request, { access, unchanged: true });
     if (
+      access.metadata?.annual_change ||
+      access.metadata?.billing_interval === "year" ||
       access.access_kind === "lifetime" ||
       access.plan_code !== "loadpro_founders" ||
       access.billing_provider !== "stripe" ||
@@ -157,6 +162,13 @@ async function handle(request: Request, quoteOnly: boolean) {
       return json(request, { error: "Refresh and confirm the current upgrade price", code: "QUOTE_CHANGED" }, 409);
     }
 
+    if (process.env.LOADPRO_ANNUAL_ENABLED === 'true') {
+      mutationId = randomUUID();
+      const lock = await requestLoadPro('/rest/v1/rpc/lock_loadpro_billing', {method:'POST',body:JSON.stringify({p_access_id:access.id,p_operation_id:mutationId})});
+      if (!lock.ok) { mutationId=null; return json(request,{error:'Another billing operation is processing'},409); }
+      const latest=await resolveLoadProBillingAccess(accessToken);
+      if (latest?.access.metadata?.annual_change) return json(request,{error:'Annual change already exists'},409);
+    }
     const updated = await changeStripeLoadProPlan({
       subscriptionId: access.provider_subscription_id,
       subscriptionItemId: itemId,
@@ -205,5 +217,7 @@ async function handle(request: Request, quoteOnly: boolean) {
   } catch (error) {
     console.error("[loadpro.billing.change-plan]", error);
     return json(request, { error: "Unable to change subscription plan" }, 502);
+  } finally {
+    if (mutationId) await requestLoadPro("/rest/v1/rpc/unlock_loadpro_billing", {method:"POST",body:JSON.stringify({p_operation_id:mutationId})});
   }
 }

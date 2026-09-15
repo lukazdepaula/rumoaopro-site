@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { assertPreviewIntegration, isPreviewEnvironment } from "@/lib/preview-safety";
 
 export const CHECKOUT_ACCESS_COOKIE_NAME = "rap_checkout_access";
 
@@ -6,6 +7,14 @@ const CHECKOUT_ACCESS_TTL_SECONDS = 60 * 60 * 24;
 const CHECKOUT_ACCESS_PURPOSE = "checkout-access:v1";
 
 function checkoutAccessSecret() {
+  // A preview must not reuse the inherited production return-link signing key.
+  // Derive a purpose-specific key from its already validated Stripe test secret.
+  if (isPreviewEnvironment()) {
+    assertPreviewIntegration();
+    return crypto.createHmac("sha256", process.env.STRIPE_SECRET_KEY!)
+      .update(`loadpro-preview-checkout-access:v1:${process.env.CHECKOUT_TEST_SUPABASE_PROJECT_REF}:${process.env.NEXT_PUBLIC_SITE_URL}`)
+      .digest("hex");
+  }
   const configured = process.env.CHECKOUT_ACCESS_SECRET?.trim();
   if (configured) return configured;
 
