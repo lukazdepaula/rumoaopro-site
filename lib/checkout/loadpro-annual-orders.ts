@@ -4,7 +4,11 @@ import {annualPlan} from './loadpro-annual-policy';
 // Non-secret IDs of the seller/application created by the owner for this QA.
 // APP_USR also names live credentials: the prefix alone never permits preview.
 export const ANNUAL_PIX_QA = {sellerId:'3692348994', applicationId:'6020550837096527'};
-export const annualOrderId = (id: unknown): id is string => typeof id === 'string' && /^ORD[A-Z0-9]{26}$/.test(id);
+// Mercado Pago prefixes sandbox Orders with ORDTST (verified in hosted QA).
+// Keep that namespace forbidden in production, including before any API read.
+export const annualOrderId = (id: unknown): id is string => typeof id === 'string'
+  && (/^ORD[A-Z0-9]{26}$/.test(id)
+    || (process.env.VERCEL_ENV !== 'production' && /^ORDTST[A-Z0-9]{26}$/.test(id)));
 export function annualOrdersConfig() {
   const env = process.env;
   const token = env.LOADPRO_ANNUAL_MP_ORDERS_ACCESS_TOKEN;

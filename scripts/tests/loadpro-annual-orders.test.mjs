@@ -16,7 +16,7 @@ function load(file,mocks={},extras={}) {
 }
 const policy=load('lib/checkout/loadpro-annual-policy.ts');
 const changeId='20000000-0000-4000-8000-000000000001';
-const orderId='ORD01J49MMW3SSBK5PSV3DFR32959';
+const orderId='ORDTST01M2K04H97BM62G7P1F3V79JWR';
 function fixture() {
   const env={VERCEL_ENV:'preview',LOADPRO_ANNUAL_PIX_API:'orders',LOADPRO_ANNUAL_PIX_SANDBOX:'true',
     LOADPRO_ANNUAL_MP_ORDERS_ACCESS_TOKEN:'APP_USR-6020550837096527-fixture-3692348994',
@@ -41,6 +41,21 @@ test('Orders credentials require the exact fictitious seller/application and nev
     {LOADPRO_ANNUAL_MP_ORDERS_WEBHOOK_SECRET:''},{VERCEL_ENV:'production',LOADPRO_ANNUAL_MP_ORDERS_LIVE:'true'}]) {
     const f=fixture();Object.assign(f.env,patch);assert.throws(()=>f.adapter.annualOrdersConfig());assert.equal(f.calls.length,0);
   }
+});
+test('hosted sandbox Order IDs can be reconciled but never accepted in production',async()=>{
+  const f=fixture();
+  assert.equal(f.adapter.annualOrderId(orderId),true);
+  assert.equal(f.adapter.annualOrderId('ORD01J49MMW3SSBK5PSV3DFR32959'),true);
+  for(const id of [orderId.toLowerCase(),orderId+'X',orderId.slice(0,-1),'ORDTST/../../users',null]) {
+    assert.equal(f.adapter.annualOrderId(id),false);
+  }
+  await f.adapter.fetchAnnualOrder(orderId);
+  assert.equal(f.calls.length,1);
+  f.env.VERCEL_ENV='production';
+  assert.equal(f.adapter.annualOrderId(orderId),false);
+  assert.equal(f.adapter.annualOrderId('ORD01J49MMW3SSBK5PSV3DFR32959'),true);
+  await assert.rejects(f.adapter.fetchAnnualOrder(orderId),/Invalid annual order ID/);
+  assert.equal(f.calls.length,1,'reject test IDs before calling the production provider');
 });
 test('Orders reject cross-account, wrong-currency/amount, extra transactions, partial payment and invalid dates',()=>{
   const f=fixture();const inspect=value=>f.adapter.inspectAnnualOrder(value,changeId,'loadpro_founders',false);
