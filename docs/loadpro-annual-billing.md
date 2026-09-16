@@ -1,5 +1,15 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Estado atual — entrega de lembretes preparada e configuração auditada (16/09/2026)
+
+O serviço interno de lembretes está implementado e desligado. Consulta consentimento e descadastro/supressão do Resend, revalida a assinatura na Stripe e o acesso imediatamente antes da tentativa única de envio, e reconcilia respostas incertas somente por leitura. Nenhum remetente novo, cron, rota de disparo, campanha ou e-mail foi ativado. Preview e teste bloqueiam envio. O aviso existente da Stripe continua ativo. As credenciais existentes podem ser reutilizadas sem nova chave, sujeitas à conferência de permissões.
+
+Validação: 121 testes backend aprovados (120 na rodada completa e 23 afetados após a última correção, incluindo um novo caso); todos os provedores interceptados nos testes. Migração loadpro-reminder-delivery.sql aplicada somente no sandbox xxibnkscktibljtrqmxy: colunas, RLS e execução exclusiva pelo serviço confirmadas. Não há teste de entrega real no Resend. Detalhes e limites em docs/loadpro-trial-reminder-delivery.md no backend.
+
+Auditoria Vercel somente leitura: variáveis ANNUAL ausentes de Production tanto em Project quanto Shared; configurações anuais existentes restritas ao Preview da branch. RESEND_API_KEY, EMAIL_FROM e EMAIL_PROVIDER já cadastrados; valores não revelados. Nenhuma configuração de produção, assinatura, cobrança ou comunicação de cliente foi alterada.
+
+Próxima etapa é preparar a publicação conjunta usando docs/loadpro-annual-release-review.md: migrações e parâmetros LIVE revisados e autorização final antes de publicar. Recomendação é manter o aviso Stripe atual na primeira liberação; a nova oferta por e-mail permanece desligada até conferir permissões reais, executor e substituto dos avisos para quem não aceita ofertas. Não repetir contas, senhas nem pagamentos fictícios já concluídos. Os registros abaixo são históricos; pendências antigas de implementação de supressão/entrega estão substituídas por este estado.
+
 ## Validação hospedada concluída em 16/09 — Pix v2 após mensal pago
 
 O usuário autorizou a pausa temporária do destino Stripe TEST antigo. A simulação foi concluída e a limpeza verificada: destino rumoaopro-site-test novamente Ativo, exceção do domínio exato removida, Require Log In habilitado, viewport normal e somente a aba original do LoadPro aberta. Nenhum destino LIVE, cliente real, campanha ou produção foi alterado. Não há pedido pendente de login, senha ou autorização de isolamento.
