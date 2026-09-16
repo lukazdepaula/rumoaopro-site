@@ -1,5 +1,15 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Retomada de 16/09 — recontratação corrigida; teste hospedado aguardando isolamento
+
+O usuário autorizou continuar a validação. A quarta conta fictícia continua autenticada e a Stripe TEST confirmou que sua assinatura anterior está cancelada, sem nova cobrança. Não criar outro usuário ou solicitar outra senha.
+
+Preparar uma nova contratação fictícia revelou que syncLoadProAccess carregava annual_change e billing_interval da assinatura cancelada. Corrigido em cbfd75200232bebf12242da954f6505d83ca9b45: após a validação já existente de assinatura substituta e pedido mais recente, remove somente esses metadados de consentimento do contrato antigo. Mantém a mesma conta, demais metadados e histórico durável de operações. Eventos mensais da mesma assinatura preservam a escolha anual pendente; eventos atrasados da assinatura antiga são ignorados antes de aplicar consentimento anual. Duas regressões reproduziram o problema antes da correção; três testes novos passaram. Total backend97/97, TypeScript e build aprovados. Preview Ready AvTpSoWgV1Dy2csZxSGXJknjJfJG; PR18 continua rascunho. Sem mudança no app nesta rodada.
+
+A revisão automática bloqueou a pausa do destino Stripe TEST antigo rumoaopro-site-test por não identificar autorização específica. O destino permanece Ativo. Pergunta pendente solicita pausar somente esse destino durante a simulação e reativá-lo ao terminar; nenhum destino LIVE será alterado. Não contornar a rejeição nem iniciar pagamentos fictícios antes de resolver o isolamento. O checkout do preview foi apenas aberto e fechado: nenhum formulário enviado, nova assinatura, cobrança, usuário ou e-mail. A exceção temporária do domínio exato foi restaurada ao aguardar; confirmar estado na evidência de limpeza antes de retomar. Produção intacta.
+
+Após a resposta: usar a quarta conta fictícia já conectada para uma nova mensal TEST paga (sem novo teste grátis), verificar sincronização e preservação de clube/equipe/atleta, escolher Pix anual v2 e conferir cancelamento mensal somente após aprovação. Provar período pago +1 ano, idempotência e entrega assinada. Não repetir testes concluídos nem confundir o Pix hospedado v1 anterior com v2.
+
 ## Estado atual — Pix mantém o mensal até aprovação verificada (16/09/2026)
 
 Esta seção substitui a proposta anterior de interromper o mensal antes de pagar o Pix. Após a recomendação de manter o mensal até confirmação real do pagamento, o usuário autorizou: “entao mete marcha”. Essa regra comercial está aprovada para implementação e testes; publicação em produção continua separada. As seções posteriores são registros históricos, não novas pendências ou instruções para repetir cadastros/configuração.
