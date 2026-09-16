@@ -1,5 +1,24 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Estado atual — Pix mantém o mensal até aprovação verificada (16/09/2026)
+
+Esta seção substitui a proposta anterior de interromper o mensal antes de pagar o Pix. Após a recomendação de manter o mensal até confirmação real do pagamento, o usuário autorizou: “entao mete marcha”. Essa regra comercial está aprovada para implementação e testes; publicação em produção continua separada. As seções posteriores são registros históricos, não novas pendências ou instruções para repetir cadastros/configuração.
+
+- Fundadores 30: R$ 49,90/mês ou R$ 499/ano à vista, 2 equipes/30 atletas por equipe. Fundadores 50: R$ 69,90/mês ou R$ 699/ano à vista, 2 equipes/50 atletas por equipe. Mesmos recursos, contas e dados; sem conversão automática.
+- Pix v2: escolha e consentimento autenticados geram a cobrança sem interromper o mensal. Pix pendente, recusado, cancelado ou abandonado não muda a assinatura mensal. Depois de aprovação verificada, o backend interrompe a renovação mensal e confere o resultado no provedor antes de liberar o ano. Renovação Pix continua manual.
+- Se uma mensalidade vencer enquanto chega a confirmação, faturas efetivamente pagas preservam seus dias. Faturas abertas elegíveis têm cobrança automática interrompida e são anuladas; rascunhos ficam congelados, sem avanço automático. Se o pagamento mensal vencer a corrida com a anulação, seu período pago também é preservado. Uma fatura ainda não visível ou em situação incerta bloqueia a concessão anual até reconciliação. Nenhuma tentativa faz estorno ou cria nova cobrança mensal.
+- O banco exige prova da interrupção mensal antes do crédito. O ano começa após o maior entre dias protegidos, fim mensal realmente pago e aprovação Pix. Um período futuro apenas informado pela assinatura, mas não pago, não vira crédito. Repetições recuperam a mesma operação/pagamento; confirmação Pix verificada esconde o QR e informa que a troca está em conclusão, sem pedir outro pagamento ou mostrar anual ativo cedo.
+- Termos novos: loadpro-annual-v2 / stop_after_payment. Cotações v1 ainda não confirmadas exigem nova revisão/consentimento. Operações históricas e dados já existentes são preservados. Cartão continua na mesma assinatura e cobra o anual no fim do teste/mês pago, com renovação automática.
+- Commits funcionais: app ce1b003724529aa0c0f385cadba65c0883702fce e backend 309d9cbf52471fb7dae56f94bae40b26fb851f33. Ambos tiveram preview Vercel Ready. Página de vendas PT/EN e revisão do app PT/EN/ES explicam a regra nova.
+- Validação: 94 testes backend aprovados (rodada completa de 92, mais 2 novos; 8 afetados novamente após ajuste dos horários simulados), 19 testes app, TypeScript/build, sintaxe e QA. Adaptadores reais e PostgreSQL isolado com HTTP dos provedores interceptado: ambos os planos/APIs, dias grátis/pagos, pagamento pendente/recusado/aprovado, falhas/retentativas e corrida com fatura mensal. Zero novas transações hospedadas nesta rodada.
+- UI local com o código real: diálogo PT escuro/EN claro em 1440px e 390px, consentimento, mensal pendente e pagamento confirmado aguardando reconciliação, sem overflow horizontal. Vitrine real compilada PT/EN em 1440px e 390px, preços, limites e regra Pix legíveis, sem overflow. A cópia ES foi alinhada, mas não houve nova inspeção visual ES nesta rodada.
+- Migração aditiva de termos/funções aplicada somente ao sandbox xxibnkscktibljtrqmxy. Consulta de metadados confirmou termos v2, exigência de prova mensal, RLS, execução por service_role e ausência de execução por authenticated. Nenhum registro de cliente/assinatura foi alterado pela instalação. Não reaplicar o instalador de banco vazio.
+- Produção, preços reais, assinaturas existentes, credenciais, webhooks e proteção Vercel não foram alterados nesta rodada. A exceção temporária anterior continua removida. Quatro contas fictícias existentes preservadas; zero campanhas, cobranças reais ou novos usuários. Servidores locais encerrados, viewport normal restaurado e somente a aba original do LoadPro mantida.
+
+Antes de publicar: validar a nova ordem Pix v2 também de ponta a ponta com provedores de teste (o Pix hospedado anteriormente aprovado usava v1); concluir ou registrar os limites da recusa da primeira anual e cancelamento durante mês pago, PDF nativo e janela privada; revisar migrações/configuração LIVE e aprovar publicação conjunta app/backend/vitrine. Os lembretes estão preparados e desligados: faltam adaptador de supressão global, entrega/reconciliação e decisão de canal único. A Stripe mantém o aviso existente. Não pedir novamente aprovação da regra comercial Pix v2, senhas ou criação das mesmas contas.
+
+## Histórico e referência de configuração
+
 ## Estado mais recente — preferências e preparação dos lembretes em 16/09/2026
 
 Esta seção prevalece sobre as pendências históricas abaixo. A oferta e os fluxos de pagamento/cancelamento já validados permanecem no preview. Produção intacta; quatro contas fictícias preservadas; nenhum novo cadastro, pagamento real, campanha ou alteração de assinatura nesta rodada.
@@ -85,7 +104,7 @@ A vitrine do site em `/apps` e `/links`, incluindo as versões em inglês, apres
 
 Cartão: cronograma na mesma assinatura Stripe, fase mensal/teste até o limite atual e fase anual a partir dele. Sem rateio e sem nova assinatura. O ano pago só é liberado após `invoice.paid` da fatura atual, no valor exato do plano confirmado: R$ 499 ou R$ 699 em BRL. A fatura, o preço atual e a confirmação devem corresponder ao mesmo plano; valor do outro plano é recusado. Atualizações de assinatura e retorno do checkout não comprovam pagamento. O período informado para o anual agendado é condicionado ao pagamento.
 
-Pix: a revisão informa pagamento agora e interrupção da renovação mensal ao confirmar a escolha. O cancelamento da próxima mensal é confirmado antes de criar/exibir o Pix. Se o Pix não for pago, restam somente os dias atuais. Quando o provedor confirma, o início anual é o maior entre o fim do período protegido e a aprovação; acrescenta-se um ano de calendário, preservando anos bissextos e dias pagos. Renovação anual por Pix é manual e usa nova confirmação autenticada.
+Pix v2: a revisão informa pagamento agora, mantendo o mensal até a confirmação real. Gerar, não pagar ou abandonar o QR não altera a mensal. Após verificar a aprovação, o serviço interrompe a renovação mensal, reconcilia possíveis faturas no limite do período e exige prova antes do crédito anual. O início é o maior entre dias protegidos, fim mensal efetivamente pago e aprovação; acrescenta-se um ano de calendário, preservando anos bissextos e dias pagos. Renovação Pix é manual e usa nova confirmação autenticada. Termos v1 não confirmados exigem nova cotação e consentimento; operações antigas continuam reconciliáveis.
 
 Erros após mutação no provedor deixam uma operação persistente para retomar pelo mesmo ID. Nunca se declara que nada mudou após um timeout. Operações travadas exigem reconciliação; não libere travas nem crie outra cobrança sem conferir o provedor. Pix recusado não reativa o mensal automaticamente.
 
@@ -108,7 +127,7 @@ Auditados: ativação de teste, conta existente, recuperação de senha e pagame
 
 ## Limitações a aprovar
 
-Assinaturas legadas no Mercado Pago, moedas diferentes de BRL, preço mensal diferente de R$ 49,90/R$ 69,90 no respectivo plano ou cronogramas externos exigem análise assistida. A oferta nunca converte essas contas automaticamente. Renovação ou fatura já em processamento (menos de 15 minutos até o vencimento) exige reconciliação antes de nova cotação. Para Pix recusado/abandonado após parar a mensal, o suporte deve revisar uma nova tentativa; não reiniciar cobrança automática silenciosamente.
+Assinaturas legadas no Mercado Pago, moedas diferentes de BRL, preço mensal diferente de R$ 49,90/R$ 69,90 no respectivo plano ou cronogramas externos exigem análise assistida. A oferta nunca converte essas contas automaticamente. Renovação ou fatura já em processamento (menos de 15 minutos até o vencimento) exige reconciliação antes de nova cotação. Pix v2 recusado/abandonado mantém o mensal. Operações históricas v1 que já interromperam o mensal exigem reconciliação assistida; nunca reiniciar cobrança automática silenciosamente.
 
 Documentação dos provedores: https://docs.stripe.com/billing/subscriptions/subscription-schedules e https://www.mercadopago.com.br/developers/pt/docs/checkout-bricks/payment-brick/payment-submission/pix.
 
