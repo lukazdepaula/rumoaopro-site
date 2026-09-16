@@ -1,5 +1,20 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Validação concluída em 16/09/2026 — cancelamento antes da primeira cobrança
+
+Esta seção prevalece sobre as pendências históricas abaixo. Quatro contas fictícias, produção intacta, nenhum pagamento real ou campanha.
+
+- Quarta conta criada e autenticada pelo usuário: loadpro.qa.20260916.cancel@example.com (UID 10fdebe5-bbe9-4d25-8874-b957d3739039). Senha permanece somente com o usuário. Checkout Stripe TEST Fundadores 50: R$0 hoje, R$69,90 após sete dias. Pedido bc9d20e5-5a9e-42ee-b4b3-88a30c426c12; assinatura sub_1UGDYaA6RupMT8QsqpksJJxZ; cliente cus_VGl4HcbAeOQBnx.
+- Revisão anual exibiu R$699 à vista, cobrança em 23/09/2026, período condicionado até 23/09/2027 e renovação automática, consentimento desmarcado. Confirmação no app criou schedule sub_sched_1UGDfoA6RupMT8QsiW9wWbZA na MESMA assinatura, sem cobrança hoje.
+- Cancelamento pelo novo fluxo do app validado: consentimento separado, anual removido, mensal não renovado, dias grátis preservados até 23/09/2026 09:47 (hora exibida no app). Após recarga: Sem cobrança futura, mesmos limites, oferta anual escondida. Stripe confirmou cancelamento no fim do teste e nenhuma próxima fatura.
+- Relógio Stripe TEST avançado até 23/09/2026 04:59 BRT: assinatura Cancelada às04:47, somente fatura inicial de R$0 (in_1UGDYZA6RupMT8QsSd8KN2WU), sem fatura mensal/anual adicional. Webhook refletido no app: cancelada com acesso até23/09. O relógio real do app ainda era16/09; não confundir simulação do provedor com passagem real da data local. Clube QA Cancelamento — Ficticio, equipe Sub-20 QA Cancelamento e Atleta QA Cancelamento preservados e visíveis após recarga. Não usar Finish simulation, pois apaga os objetos.
+- Corrigida indicação visual Lifetime em conta nova sem entitlement: fallback agora Inactive; contrato vitalício explícito e estado legacy existente preservados. Commit575bb66, regressão reproduzida antes/depois, 13 testes do app, build/sintaxe/QA aprovados e preview Ready.
+- Corrigido link Voltar do checkout LoadPro para respeitar o destino isolado de preview usando publicLoadProAppUrl; outros produtos mantêm destino original. 14 testes de isolamento/preview, TypeScript e build aprovados.
+- Limpeza verificada: exceção do domínio anual removida e Require Log In marcado; webhook antigo Stripe TEST we_1TrM2mA6RupMT8Qs5lcZOUme reativado (Ativo). Nenhum webhook live, chave de produção ou assinatura real alterado.
+
+Pendências reais antes da liberação: primeira fatura anual recusada tem cobertura automatizada, mas a recusa hospedada foi da renovação; cancelamento durante mês pago tem cobertura automatizada, e durante teste foi validado no provedor. Incognito e PDF final nativo continuam sem validação disponível nesta ferramenta. Lembrete preparado e desligado: decidir canal único junto ao aviso Stripe existente, fonte de consentimento e reserva durável de envio. Aprovar comercialmente a interrupção mensal antes do Pix (abandonar o QR não reativa a mensal). Revisar migração/configuração de produção e aprovar publicação conjunta dos dois PRs rascunho. Não criar mais contas por padrão nem repetir credenciais já configuradas.
+
+
 Esta branch prepara os anuais em BRL do Fundadores 30 por R$ 499 e do Fundadores 50 por R$ 699, aprovados em 14/09/2026. Os mensais continuam por R$ 49,90 e R$ 69,90, respectivamente, sem alterar seus limites. Recursos e limites da conta são preservados. Nenhuma migração foi aplicada a produção e nenhum envio ou pagamento real foi efetuado nesta tarefa.
 
 
