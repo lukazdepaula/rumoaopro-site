@@ -85,6 +85,9 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
       } else if (init.method==='POST') {invoice.auto_advance=false;invoice.metadata={loadpro_annual_pix:init.body.get('metadata[loadpro_annual_pix]')};}
       return Response.json(invoice);
     }
+    if (url.startsWith('https://api.stripe.com/v1/subscriptions/sub_retired') && init.method === 'GET') {
+      return Response.json(state.retiredSubscription);
+    }
     if (url.startsWith('https://api.stripe.com/v1/subscriptions/sub_fixture')) {
       if (init.method === 'POST') {
         if (state.failStop) return new Response(null,{status:503});
@@ -139,7 +142,21 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
         return Response.json(result.rows[0].value);
       }
       if (path.startsWith('/rest/v1/loadpro_annual_changes?')) {
-        const id = new URL('https://db.invalid' + path).searchParams.get('id').slice(3);
+        const params = new URL('https://db.invalid' + path).searchParams;
+        if (params.has('access_id')) {
+          assert.equal(params.get('method'),'eq.card');
+          assert.equal(params.get('state'),'eq.scheduled');
+          const values = [params.get('access_id').slice(3),params.get('user_id').slice(3)];
+          if (init?.method === 'PATCH') {
+            values.push(params.get('id').slice(3),JSON.stringify(body.provider),body.updated_at);
+            assert.equal(body.state,'failed');
+            return Response.json((await db.query(`update loadpro_annual_changes set state='failed',provider=$4,updated_at=$5
+              where access_id=$1 and user_id=$2 and id=$3 and method='card' and state='scheduled' returning *`,values)).rows);
+          }
+          return Response.json((await db.query(`select * from loadpro_annual_changes
+            where access_id=$1 and user_id=$2 and method='card' and state='scheduled'`,values)).rows);
+        }
+        const id = params.get('id').slice(3);
         return Response.json((await db.query('select * from loadpro_annual_changes where id=$1', [id])).rows);
       }
       throw Error('Unexpected database operation: ' + path);
@@ -147,6 +164,50 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
   }, extras);
   const quote = await service.quoteAnnual(await readAccess(), userId, 'pix');
   return {db, env, state, plan, subscription, service, quote, userId, end, readAccess, readChange};
+}
+
+async function oldCardChange(f, overrides={}) {
+  const access=await f.readAccess();
+  const id='30000000-0000-4000-8000-000000000001';
+  const quote={...f.quote,payment_method:'card',terms_version:'loadpro-annual-v1'};
+  const provider={subscription_id:'sub_retired',customer_id:'cus_retired',live:false,schedule_id:'sub_sched_retired',...overrides};
+  f.state.retiredSubscription={id:'sub_retired',customer:'cus_retired',status:'canceled',livemode:false};
+  await f.db.query(`insert into loadpro_annual_changes(id,access_id,user_id,state,method,access_version,quote,provider,expires_at,confirmed_at)
+    values($1,$2,$3,'scheduled','card',$4,$5,$6,now(),now())`,
+    [id,access.id,f.userId,access.updated_at,JSON.stringify(quote),JSON.stringify(provider)]);
+  return id;
+}
+
+test('a returning monthly customer can choose Pix after provider-confirmed cancellation of their old card schedule',async t=>{
+  const f=await fixture(t,'loadpro_founders_50','active');
+  const id=await oldCardChange(f),before=await f.readAccess();
+  await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId),/loadpro_annual_one_pending/);
+  const quote=await f.service.quoteAnnual(await f.readAccess(),f.userId,'pix');
+  const old=(await f.db.query('select * from loadpro_annual_changes where id=$1',[id])).rows[0];
+  assert.equal(old.state,'failed');
+  assert.equal(old.provider.retired_reason,'subscription_replaced');
+  assert.equal(old.provider.retired_subscription_status,'canceled');
+  assert.equal(old.provider.schedule_id,'sub_sched_retired');
+  assert.deepEqual(await f.readAccess(),before,'retiring history cannot alter current access');
+  assert.equal((await f.service.confirmAnnual(id,f.userId)).state,'failed','old confirmation cannot restart the schedule');
+  assert.equal((await f.service.confirmAnnual(quote.id,f.userId)).state,'awaiting_payment');
+  assert.equal(f.state.calls.filter(c=>c.url.includes('api.stripe.com')&&c.method==='POST').length,0);
+  assert.equal(f.state.requests.size,1);
+});
+
+for (const invalid of ['active','customer','livemode','identity','same-subscription']) {
+  test(`old scheduled card remains blocking when cancellation proof is unsafe: ${invalid}`,async t=>{
+    const f=await fixture(t,'loadpro_founders','active');
+    const id=await oldCardChange(f,invalid==='same-subscription'?{subscription_id:'sub_fixture'}:{});
+    if(invalid==='active') f.state.retiredSubscription.status='active';
+    if(invalid==='customer') f.state.retiredSubscription.customer='cus_someone_else';
+    if(invalid==='livemode') f.state.retiredSubscription.livemode=true;
+    if(invalid==='identity') f.state.retiredSubscription.id='sub_someone_else';
+    await assert.rejects(f.service.quoteAnnual(await f.readAccess(),f.userId,'pix'),/scheduled|reconciliation/);
+    assert.equal((await f.db.query('select state from loadpro_annual_changes where id=$1',[id])).rows[0].state,'scheduled');
+    await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId),/loadpro_annual_one_pending/);
+    assert.equal(f.state.calls.filter(c=>c.method==='POST').length,0);
+  });
 }
 
 for (const planCode of Object.keys(policy.ANNUAL_PLANS)) {

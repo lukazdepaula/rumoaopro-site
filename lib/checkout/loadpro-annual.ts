@@ -42,6 +42,30 @@ async function currentSubscription(access: LoadProBillingAccess) {
   return subscription;
 }
 
+// A returning customer keeps the same access row. Retain old consent for audit,
+// but release its pending slot only after Stripe proves that contract ended.
+// Never retire an unpaid Pix or an operation still being processed.
+async function retireReplacedCardChange(access: LoadProBillingAccess, userId: string) {
+  const scope=`access_id=eq.${encodeURIComponent(access.id)}&user_id=eq.${encodeURIComponent(userId)}&method=eq.card&state=eq.scheduled`;
+  const rows: Change[] = await annualDb(`loadpro_annual_changes?${scope}&limit=1`);
+  for (const change of rows || []) {
+    const prior=change.provider;
+    if (change.access_id!==access.id || change.user_id!==userId || change.method!=='card' || change.state!=='scheduled'
+      || typeof prior.subscription_id!=='string' || !prior.subscription_id || !prior.customer_id
+      || prior.subscription_id===access.provider_subscription_id) throw new Error('Another subscription change is scheduled');
+    const subscription=await annualStripe('subscriptions/'+encodeURIComponent(prior.subscription_id));
+    if (subscription.id!==prior.subscription_id || subscription.customer!==prior.customer_id || subscription.status!=='canceled'
+      || typeof prior.live!=='boolean' || prior.live!==(process.env.VERCEL_ENV==='production') || subscription.livemode!==prior.live) {
+      throw new Error('Previous subscription needs reconciliation');
+    }
+    const retiredAt=new Date().toISOString();
+    await annualDb(`loadpro_annual_changes?id=eq.${encodeURIComponent(change.id)}&${scope}`,{
+      method:'PATCH',body:JSON.stringify({state:'failed',updated_at:retiredAt,provider:{...prior,
+        retired_reason:'subscription_replaced',retired_at:retiredAt,retired_subscription_status:'canceled'}})
+    });
+  }
+}
+
 export async function quoteAnnual(access: LoadProBillingAccess, userId: string, method: AnnualMethod) {
   assertAnnualEligible(access);
   const renewal=access.metadata.billing_interval==='year' && access.metadata.payment_method==='pix';
@@ -56,6 +80,7 @@ export async function quoteAnnual(access: LoadProBillingAccess, userId: string, 
   const end = subscription ? stripeSubscriptionPeriod(subscription).end! : Math.max(Date.now()/1000,Date.parse(access.current_period_end || '')/1000);
   // Avoid scheduling or stopping a renewal while an invoice may already be issuing.
   if (!renewal && end * 1000 - Date.now() < 15 * 60 * 1000) throw new Error("Renewal is processing; refresh after payment reconciliation");
+  if (!renewal) await retireReplacedCardChange(access,userId);
   const quote = annualTerms({ planCode: access.plan_code, method, periodEnd: new Date(end * 1000).toISOString() });
   if (renewal) quote.monthly_renewal="none";
   const id = randomUUID();
