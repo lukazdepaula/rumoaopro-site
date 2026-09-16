@@ -110,6 +110,9 @@ export function LoadProPromo({
   locale
 }: LoadProPromoProps) {
   const page = copy[locale];
+  // Match the server's opt-in: deploying the backend must not advertise an
+  // annual checkout before its production configuration is ready.
+  const annualAvailable = process.env.LOADPRO_ANNUAL_ENABLED === "true";
   const plans = [
     {code:"loadpro_founders",players:30,monthly:49.9,annual:499,saving:99.8,slug:"loadpro-founders"},
     {code:"loadpro_founders_50",players:50,monthly:69.9,annual:699,saving:139.8,slug:"loadpro-founders-50"}
@@ -237,11 +240,11 @@ export function LoadProPromo({
             </div>
             {plans.map(plan => <div key={plan.code} className="border-t border-white/10 pt-8 lg:col-span-2" data-loadpro-pricing={plan.code}>
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-red-300">{locale === "pt" ? `Fundadores ${plan.players} · Escolha como pagar` : `Founders ${plan.players} · Choose how to pay`}</h3>
+                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-red-300">{locale === "pt" ? `Fundadores ${plan.players}${annualAvailable ? ' · Escolha como pagar' : ''}` : `Founders ${plan.players}${annualAvailable ? ' · Choose how to pay' : ''}`}</h3>
                 <p className="text-sm font-bold text-white/80">{locale === "pt" ? `Até 2 equipes · ${plan.players} atletas por equipe` : `Up to 2 teams · ${plan.players} athletes per team`}</p>
               </div>
-              <p className="mt-2 text-sm text-white/65">{page.sameFeatures}</p>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {annualAvailable && <p className="mt-2 text-sm text-white/65">{page.sameFeatures}</p>}
+              <div className={`mt-5 grid gap-4${annualAvailable ? ' md:grid-cols-2' : ''}`}>
                 <div className="flex flex-col rounded-2xl border border-white/15 bg-white/[0.04] p-5 sm:p-6" data-loadpro-monthly>
                   <h4 className="text-lg font-black text-white">{page.monthly}</h4>
                   <p className="mt-4 text-4xl font-black text-white">{money(plan.monthly)}<span className="ml-1 text-base font-bold text-white/65">{page.month}</span></p>
@@ -251,7 +254,7 @@ export function LoadProPromo({
                     {page.primaryCta}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </Link>
                 </div>
-                <div className="flex flex-col rounded-2xl border border-red-400/40 bg-red-500/10 p-5 sm:p-6" data-loadpro-annual>
+                {annualAvailable && <div className="flex flex-col rounded-2xl border border-red-400/40 bg-red-500/10 p-5 sm:p-6" data-loadpro-annual>
                   <p className="text-sm font-black text-red-300">{page.annualOffer}</p>
                   <h4 className="mt-3 text-lg font-black text-white">{page.annual}</h4>
                   <p className="mt-3 text-4xl font-black text-white">{money(plan.annual)}<span className="ml-1 text-base font-bold text-white/65">{page.year}</span></p>
@@ -261,9 +264,9 @@ export function LoadProPromo({
                   <a className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-red-500" href={subscriptionHref}>
                     {page.annualCta}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </a>
-                </div>
+                </div>}
               </div>
-              <p className="mt-4 max-w-4xl text-sm leading-6 text-white/65">{page.annualEntry}</p>
+              {annualAvailable && <p className="mt-4 max-w-4xl text-sm leading-6 text-white/65">{page.annualEntry}</p>}
             </div>)}
           </div>
         </div>

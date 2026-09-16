@@ -1,5 +1,20 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Preparação LIVE em 16/09 — preços criados, oferta ainda não publicada
+
+O usuário confirmou explicitamente: “Sim, criar os dois preços anuais reais”. Após a revisão automática exigir essa autorização específica, foram criados somente os seguintes preços novos na conta Stripe RumoAoPro CNPJ, acct_1S4eOzA6RupMT8Qs:
+
+| Plano | Novo preço anual LIVE | Produto | Mensal preservado |
+|---|---|---|---|
+| Fundadores 30 | price_1UGO63A6RupMT8QsIqFwXMxQ — BRL49900/year | prod_V0LNftZrAMMVWg | price_1U0KgdA6RupMT8QsKQd4rj5z — R$49,90/mês |
+| Fundadores 50 | price_1UGO6bA6RupMT8QszaRjXI3g — BRL69900/year | prod_V6nFLUcjxcBi5Z | price_1U6Zf3A6RupMT8Qsyzy4rdPa — R$69,90/mês |
+
+Ambos apareceram no catálogo com zero assinaturas ativas; os mensais permaneceram padrão. O preço USD13,90/mês do Fundadores50 também foi preservado. Não houve cobrança, migração de cliente, alteração do site público ou de banco de produção. Não criar novamente esses preços. A descrição antiga do produto30 na Stripe ainda menciona25 atletas; ela não foi editada nem usada para mudar limites. O aplicativo e o backend existentes determinam30 por equipe.
+
+A revisão de origem confirmou main app1ecb24f e backendb6fc646 como ancestrais das branches anuais, sem mudanças divergentes. Foi preparado controle da vitrine pelo mesmo LOADPRO_ANNUAL_ENABLED: quando falso/ausente, preserva os dois checkouts mensais e oculta preço, link e texto anual em PT/EN. Quatro testes de renderização aprovados e build com TypeScript aprovado. O preview anual continuará habilitado; produção pode receber o backend ainda desabilitado sem anunciar uma opção indisponível.
+
+A entrada oficial do Mercado Pago foi concluída, conta RP COMERCIO E SERVICOS LTDA / vendedor375473814. A aplicação existente8899432396009304 usa API Pagamentos e permanece intacta. Não há aplicação Orders real existente: o formulário separado LoadPro Anual Pix foi preenchido com Checkout Transparente / API de Orders. O usuário autorizou explicitamente guardar suas credenciais somente no servidor Vercel de produção e configurar https://rumoaopro.com/api/loadpro/billing/annual/orders/webhook, respondendo “Sim, autorizar essa configuração”. Não pedir essa autorização novamente. O aceite dos termos e a criação da aplicação pelo usuário ainda estão pendentes. Nenhuma configuração MP foi alterada. Ainda faltam validar a integração Orders LIVE, parâmetros/migrações reais e publicação conjunta. E-mails anuais continuam desligados; o aviso Stripe existente não mudou. Vitrine com oferta desligada conferida localmente em PT/EN, quadros de390/1440px; página temporária removida e servidor encerrado.
+
 ## Estado atual — entrega de lembretes preparada e configuração auditada (16/09/2026)
 
 O serviço interno de lembretes está implementado e desligado. Consulta consentimento e descadastro/supressão do Resend, revalida a assinatura na Stripe e o acesso imediatamente antes da tentativa única de envio, e reconcilia respostas incertas somente por leitura. Nenhum remetente novo, cron, rota de disparo, campanha ou e-mail foi ativado. Preview e teste bloqueiam envio. O aviso existente da Stripe continua ativo. As credenciais existentes podem ser reutilizadas sem nova chave, sujeitas à conferência de permissões.
