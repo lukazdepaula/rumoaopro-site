@@ -91,7 +91,7 @@ function subscriptionFields(
       typeof object.trial_start === "number" ? object.trial_start : undefined,
     trial_end:
       typeof object.trial_end === "number" ? object.trial_end : undefined,
-    cancel_at_period_end: object.cancel_at_period_end === true,
+    cancel_at_period_end: object.cancel_at_period_end === true || (typeof object.cancel_at === 'number' && object.cancel_at > 0),
     canceled_at:
       typeof object.canceled_at === "number" ? object.canceled_at : undefined,
     plan_code: textValue(metadata.plan_code),
