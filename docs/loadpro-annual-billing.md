@@ -1,5 +1,19 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Estado mais recente — preferências e preparação dos lembretes em 16/09/2026
+
+Esta seção prevalece sobre as pendências históricas abaixo. A oferta e os fluxos de pagamento/cancelamento já validados permanecem no preview. Produção intacta; quatro contas fictícias preservadas; nenhum novo cadastro, pagamento real, campanha ou alteração de assinatura nesta rodada.
+
+- App d37dd10: preferência específica em Configurações > Notificações, desligada por padrão. Marcar a caixa apenas edita a escolha; Salvar exige confirmação autenticada do servidor. Falha não mostra sucesso; troca de conta descarta respostas da conta anterior. PT/EN/ES alinhados.
+- Backend ec45d9f: API de preferência vinculada ao UID autenticado, sem aceitar UID do corpo. Migração aditiva loadpro-annual-reminders.sql com RLS e funções exclusivas de serviço; aplicada somente ao projeto isolado xxibnkscktibljtrqmxy. Sem alterar tabelas de assinatura ou clientes existentes.
+- Reserva durável única por conta/fim do teste, com versões de preferência/acesso e consulta atual à Stripe. Exige teste real de sete dias nas últimas 48 horas, mensal elegível, consentimento explícito e estado de supressão recente e permitido. Anual escolhido, cancelamento, dados obsoletos e repetição bloqueados; retirar consentimento invalida reservas. Nenhum remetente, cron ou envio novo foi criado.
+- Canal padrão continua Stripe: LOADPRO_TRIAL_REMINDER_OWNER=stripe e LOADPRO_STRIPE_TRIAL_REMINDER_DISABLED=false. O preparador só funciona após decisão explícita de canal único. Ainda faltam, para ativar entrega real, adaptador do descadastro/supressão global Resend, entrega idempotente/reconciliação de resposta incerta e revalidação imediatamente antes do envio. Não desativar avisos necessários de cobrança sem substituto verificado.
+- Validação: 81 testes backend e 16 testes app passaram, além de TypeScript/build, sintaxe e QA. SQL testado em PostgreSQL isolado com concorrência, versões, opt-out e permissões. No preview, a conta fictícia existente salvou opt-in, manteve a escolha após recarga e depois salvou opt-out. Estado final desligado, com confirmação do servidor. Desktop 1440px e celular 390px (1425/375 úteis), PT claro/escuro e EN móvel legíveis; ES conferido no DOM. Sem overflow. Viewport normal e PT/escuro restaurados.
+- Proteção do preview restaurada e verificada: domínio anual ausente das exceções, Require Log In marcado. Webhook Stripe TEST anterior permaneceu ativo, sem edição nesta rodada. Nenhuma chave live, configuração de produção, contato Resend ou mensagem alterado. Somente a aba original do app foi mantida.
+
+A revisão para produção está em docs/loadpro-annual-release-review.md no backend. Dependem de aprovação a regra comercial Pix (interromper mensal ao confirmar, sem retomada se abandonar o QR) e a publicação conjunta app/backend/vitrine com migrações e configuração LIVE próprias. A pergunta comercial foi apresentada ao usuário; sem resposta não há aprovação. Recusa da primeira anual e cancelamento durante mês pago têm testes automatizados, enquanto o provedor hospedado cobriu recusa da renovação e cancelamento durante teste. PDF nativo final e janela privada continuam sem validação disponível. Não repetir contas, credenciais ou pagamentos já concluídos.
+
+
 ## Validação concluída em 16/09/2026 — cancelamento antes da primeira cobrança
 
 Esta seção prevalece sobre as pendências históricas abaixo. Quatro contas fictícias, produção intacta, nenhum pagamento real ou campanha.
