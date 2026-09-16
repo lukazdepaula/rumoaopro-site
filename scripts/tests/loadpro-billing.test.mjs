@@ -237,3 +237,55 @@ test('billing portal accepts only the configured preview app and keeps productio
   assert.equal((await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers('https://loadpro.rumoaopro.com.br')}))).status,204);
  }
 });
+
+function reactivationFixture(current) {
+ const writes=[];
+ const service=load('lib/checkout/loadpro.ts',{
+  '@/lib/checkout/db':{appendOrderLog:async()=>{},getOrderById:async()=>({created_at:'2026-08-01'})},
+  '@/lib/checkout/email':{},'@/lib/checkout/products':products,
+  '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
+ },{fetch:async(url,init)=>{
+  assert.match(url,/\/rest\/v1\/billing_access\?/);
+  if(init.method==='PATCH') {const body=JSON.parse(init.body);writes.push(body);Object.assign(current,body);}
+  return Response.json([current]);
+ }});
+ return {service,writes};
+}
+
+test('returning monthly customer can choose annual again without inheriting consent from a canceled subscription', async()=>{
+ for(const interval of ['month','year']) {
+  const current={id:'access',user_id:'same_coach',status:'canceled',access_kind:'subscription',plan_code:product.id,
+   provider_subscription_id:'sub_old',order_id:'order_old',updated_at:'2026-08-01',metadata:{
+    billing_interval:interval,annual_change:{id:'old_change',state:'canceled',plan_code:product.id,price_cents:69900,payment_method:'card'},
+    communication_preferences:{trial_reminder:false},custom_note:'preserve'}};
+  const {service,writes}=reactivationFixture(current);
+  const order={id:'order_new',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-09-01',metadata:{},gateway:'stripe'};
+  const input={status:'active',providerSubscriptionId:'sub_new',priceCents:6990,currentPeriodEnd:'2026-10-01T00:00:00.000Z'};
+  await service.syncLoadProAccess(order,input);
+  assert.equal(writes.length,1);
+  assert.equal(Object.hasOwn(writes[0].metadata,'annual_change'),false);
+  assert.equal(writes[0].metadata.billing_interval,'month');
+  assert.equal(writes[0].metadata.communication_preferences.trial_reminder,false);
+  assert.equal(writes[0].metadata.custom_note,'preserve');
+  assert.equal(writes[0].user_id,undefined);assert.equal(current.user_id,'same_coach');
+  await service.syncLoadProAccess(order,{...input,billingInterval:'month'});
+  assert.equal(Object.hasOwn(writes[1].metadata,'annual_change'),false);
+ }
+});
+
+test('same-subscription monthly events preserve pending annual consent', async()=>{
+ const annualChange={id:'accepted',state:'awaiting_payment',plan_code:product.id,price_cents:69900,payment_method:'pix'};
+ const current={id:'access',status:'active',access_kind:'subscription',plan_code:product.id,provider_subscription_id:'sub_current',order_id:'order_current',metadata:{billing_interval:'month',annual_change:annualChange}};
+ const {service,writes}=reactivationFixture(current);
+ await service.syncLoadProAccess({id:'order_current',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'},
+  {status:'active',providerSubscriptionId:'sub_current',billingInterval:'month',priceCents:6990,currentPeriodEnd:'2026-10-01T00:00:00.000Z'});
+ assert.deepEqual(writes[0].metadata.annual_change,annualChange);
+});
+
+test('late annual event from replaced subscription is ignored before applying old annual consent', async()=>{
+ const current={id:'access',status:'active',access_kind:'subscription',plan_code:product.id,provider_subscription_id:'sub_new',order_id:'order_new',metadata:{billing_interval:'month'}};
+ const {service,writes}=reactivationFixture(current);
+ const result=await service.syncLoadProAccess({id:'order_old',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-07-01',metadata:{},gateway:'stripe'},
+  {status:'canceled',providerSubscriptionId:'sub_old',billingInterval:'year',priceCents:69900,currentPeriodEnd:'2027-10-01T00:00:00.000Z'});
+ assert.equal(result.ignored,true);assert.equal(writes.length,0);
+});

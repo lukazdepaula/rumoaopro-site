@@ -386,23 +386,6 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
       : input.currentPeriodEnd
         ? periodEnd(input.currentPeriodEnd)
         : null;
-  const currentMetadata = current?.metadata && typeof current.metadata === 'object' ? current.metadata as Record<string, unknown> : {};
-  const annual = input.billingInterval === 'year' || (input.billingInterval == null && currentMetadata.billing_interval === 'year');
-  if (annual) {
-    const plan=annualPlan(planCode);
-    const accepted=currentMetadata.annual_change as Record<string, unknown> | undefined;
-    if (!current || current.plan_code !== planCode || currency !== 'BRL' || priceCents !== plan.annualCents
-      || !accepted || accepted.plan_code !== planCode || accepted.price_cents !== plan.annualCents || accepted.payment_method !== 'card') {
-      throw new Error('Annual access requires the matching confirmed plan');
-    }
-  }
-  if (annual && !input.annualPaymentConfirmed) {
-    // A schedule/return/subscription update is not evidence of a paid year.
-    currentPeriodEnd = typeof current?.current_period_end === 'string' ? current.current_period_end : null;
-  }
-  if (annual && input.status === 'canceled' && typeof current?.current_period_end === 'string') {
-    currentPeriodEnd = current.current_period_end;
-  }
   const providerSubscriptionId =
     input.providerSubscriptionId ||
     (typeof order.metadata.mercado_pago_subscription_id === "string"
@@ -422,6 +405,32 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
     await appendOrderLog(order.id, "loadpro.access.other_subscription_ignored",
       "Evento de outra assinatura ignorado; acesso principal preservado.", { providerSubscriptionId, currentSubscription });
     return { handled: true, configured: true, ignored: true };
+  }
+
+  const replacingSubscription = Boolean(currentSubscription && currentSubscription !== providerSubscriptionId);
+  const currentMetadata: Record<string, unknown> = current?.metadata && typeof current.metadata === 'object'
+    ? { ...current.metadata as Record<string, unknown> } : {};
+  if (replacingSubscription) {
+    // Consent belongs to the replaced subscription, not to a returning coach's
+    // new monthly contract. Its durable operation/history remains in the database.
+    delete currentMetadata.annual_change;
+    delete currentMetadata.billing_interval;
+  }
+  const annual = input.billingInterval === 'year' || (input.billingInterval == null && currentMetadata.billing_interval === 'year');
+  if (annual) {
+    const plan=annualPlan(planCode);
+    const accepted=currentMetadata.annual_change as Record<string, unknown> | undefined;
+    if (!current || current.plan_code !== planCode || currency !== 'BRL' || priceCents !== plan.annualCents
+      || !accepted || accepted.plan_code !== planCode || accepted.price_cents !== plan.annualCents || accepted.payment_method !== 'card') {
+      throw new Error('Annual access requires the matching confirmed plan');
+    }
+  }
+  if (annual && !input.annualPaymentConfirmed) {
+    // A schedule/return/subscription update is not evidence of a paid year.
+    currentPeriodEnd = typeof current?.current_period_end === 'string' ? current.current_period_end : null;
+  }
+  if (annual && input.status === 'canceled' && typeof current?.current_period_end === 'string') {
+    currentPeriodEnd = current.current_period_end;
   }
 
   const response = await requestLoadPro(
