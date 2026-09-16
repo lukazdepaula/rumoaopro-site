@@ -16,7 +16,7 @@ export function matchesAnnualPayment(planCode: unknown, priceCents: unknown, amo
   const plan=annualPlan(planCode);
   return priceCents===plan.annualCents && amountPaid===plan.annualCents && currency==='BRL';
 }
-export const ANNUAL_TERMS = "loadpro-annual-v1";
+export const ANNUAL_TERMS = "loadpro-annual-v2";
 export type AnnualMethod = "card" | "pix";
 
 export function addCalendarYear(value: string) {
@@ -42,7 +42,7 @@ export function annualTerms(input: {
     charge_at: input.method === "pix" ? new Date(now).toISOString() : start,
     effective_at: start, access_until: addCalendarYear(start),
     protected_until: input.periodEnd,
-    monthly_renewal: input.method === "pix" ? "stop_on_confirmation" : "replace_at_period_end"
+    monthly_renewal: input.method === "pix" ? "stop_after_payment" : "replace_at_period_end"
   };
 }
 

@@ -19,7 +19,7 @@ create table if not exists public.loadpro_annual_changes (
 alter table public.loadpro_annual_changes drop constraint if exists loadpro_annual_changes_check;
 alter table public.loadpro_annual_changes add constraint loadpro_annual_changes_check check (
     (quote->>'currency' = 'BRL' and quote->>'billing_interval' = 'year'
-      and quote->>'payment_method' = method and quote->>'terms_version' = 'loadpro-annual-v1'
+      and quote->>'payment_method' = method and quote->>'terms_version' in ('loadpro-annual-v1','loadpro-annual-v2')
       and ((quote->>'plan_code' = 'loadpro_founders' and quote->>'price_cents' = '49900')
         or (quote->>'plan_code' = 'loadpro_founders_50' and quote->>'price_cents' = '69900'))) is true);
 create unique index if not exists loadpro_annual_one_pending on public.loadpro_annual_changes(access_id)
@@ -59,6 +59,7 @@ begin
   select * into strict c from public.loadpro_annual_changes where id=p_id and user_id=p_user_id for update;
   select * into strict a from public.billing_access where id=c.access_id and user_id=p_user_id for update;
   if c.state <> 'quoted' then return c; end if;
+  if c.quote->>'terms_version' is distinct from 'loadpro-annual-v2' then raise exception 'QUOTE_CHANGED'; end if;
   if c.expires_at <= now() or a.updated_at <> c.access_version then raise exception 'QUOTE_CHANGED'; end if;
   annual_cents=case a.plan_code when 'loadpro_founders' then 49900 when 'loadpro_founders_50' then 69900 end;
   monthly_cents=annual_cents/10;
@@ -85,13 +86,25 @@ begin
   if p_state='paid' and (c.method<>'pix' or p_provider->>'verified' is distinct from 'true' or p_provider->>'payment_id' is null
     or p_provider->>'amount_cents' is distinct from c.quote->>'price_cents' or p_provider->>'currency' is distinct from 'BRL' or p_provider->>'approved_at' is null
     or (c.provider->>'payment_id' is not null and c.provider->>'payment_id' is distinct from p_provider->>'payment_id')) then raise exception 'PAYMENT_NOT_VERIFIED'; end if;
+  if p_state='paid' and c.quote->>'monthly_renewal'='stop_after_payment' and c.provider->>'subscription_id' is null then raise exception 'MONTHLY_NOT_RECONCILED'; end if;
+  if p_state='paid' and c.provider->>'subscription_id' is not null and
+    (p_provider->>'monthly_renewal_stopped' is distinct from 'true'
+      or p_provider->>'monthly_subscription_id' is distinct from c.provider->>'subscription_id'
+      or p_provider->>'monthly_paid_until' is null) then raise exception 'MONTHLY_NOT_RECONCILED'; end if;
+  if c.provider->>'verified'='true' and p_state<>'paid' then
+    -- A stale pending/failed notification cannot erase verified approval.
+    p_state='awaiting_payment';
+    p_provider=p_provider || jsonb_build_object('verified',true);
+  end if;
   if c.state not in ('processing','awaiting_payment','failed') then raise exception 'INVALID_TRANSITION'; end if;
   if c.method='card' and p_state<>'scheduled' then raise exception 'INVALID_CARD_STATE'; end if;
   if a.access_kind='lifetime' or a.plan_code is distinct from c.quote->>'plan_code' or a.user_id is distinct from c.user_id or a.currency is distinct from 'BRL' then raise exception 'ACCESS_CHANGED'; end if;
   update public.loadpro_annual_changes set state=p_state,provider=provider || p_provider,updated_at=now() where id=c.id returning * into c;
   if p_state='paid' then
     -- Approval time comes from the provider, never the return URL or browser clock.
-    annual_start=greatest((c.quote->>'effective_at')::timestamptz,a.current_period_end,(p_provider->>'approved_at')::timestamptz);
+    annual_start=greatest((c.quote->>'effective_at')::timestamptz,
+      case when c.provider->>'subscription_id' is not null then (p_provider->>'monthly_paid_until')::timestamptz else a.current_period_end end,
+      (p_provider->>'approved_at')::timestamptz);
     annual_end=((annual_start at time zone 'UTC') + interval '1 year') at time zone 'UTC';
     update public.billing_access set status='active',price_cents=(c.quote->>'price_cents')::integer,currency='BRL',
       current_period_end=annual_end,billing_provider='mercado_pago',provider_subscription_id='pix:' || (c.provider->>'payment_id'),
@@ -101,8 +114,9 @@ begin
       updated_at=now() where id=a.id;
   else
     update public.billing_access set metadata=metadata || jsonb_build_object('annual_change',
-      c.quote || jsonb_build_object('id',c.id,'state',p_state),
-      'cancel_at_period_end',case when c.method='pix' then true else coalesce((metadata->>'cancel_at_period_end')::boolean,false) end),
+      c.quote || jsonb_build_object('id',c.id,'state',p_state,
+        'payment_verified',coalesce((c.provider->>'verified')::boolean,false)),
+      'cancel_at_period_end',coalesce((metadata->>'cancel_at_period_end')::boolean,false)),
       updated_at=now() where id=a.id;
   end if;
   perform public.unlock_loadpro_billing(c.id);

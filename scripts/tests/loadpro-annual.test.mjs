@@ -91,6 +91,7 @@ test('real PostgreSQL migration: RLS, quote freshness, concurrency, pending acce
  await assert.rejects(db.query('select confirm_loadpro_annual($1,$2)',[op,base.user_id]),/INELIGIBLE/);
  await assert.rejects(db.query('update loadpro_annual_changes set quote=$2 where id=$1',[op,JSON.stringify({...quote,price_cents:null})]),/check constraint/);
  await db.query('update loadpro_annual_changes set quote=$2 where id=$1',[op,JSON.stringify(quote)]);
+ await db.query("update loadpro_annual_changes set provider=provider || jsonb_build_object('subscription_id','sub_1') where id=$1",[op]);
  await db.query('select confirm_loadpro_annual($1,$2)',[op,base.user_id]);
  await db.query('select confirm_loadpro_annual($1,$2)',[op,base.user_id]);
  await assert.rejects(db.query('select lock_loadpro_billing($1,$2)',[base.id,'30000000-0000-4000-8000-000000000002']),/BILLING_BUSY/);
@@ -100,7 +101,8 @@ test('real PostgreSQL migration: RLS, quote freshness, concurrency, pending acce
  await assert.rejects(db.query(`select finish_loadpro_annual($1,'paid',$2)`,[op,JSON.stringify({verified:false,payment_id:'pix_1'})]),/PAYMENT_NOT_VERIFIED/);
  await assert.rejects(db.query(`select finish_loadpro_annual($1,'paid',$2)`,[op,JSON.stringify({payment_id:'pix_1',amount_cents:annualCents,currency:'BRL',approved_at:'2030-01-03Z'})]),/PAYMENT_NOT_VERIFIED/);
  await assert.rejects(db.query(`select finish_loadpro_annual($1,'paid',$2)`,[op,JSON.stringify({verified:true,payment_id:'pix_1',amount_cents:annualCents===49900?69900:49900,currency:'BRL',approved_at:'2030-01-03Z'})]),/PAYMENT_NOT_VERIFIED/);
- const payment={verified:true,payment_id:'pix_1',amount_cents:annualCents,currency:'BRL',approved_at:'2030-01-03Z'};
+ const payment={verified:true,payment_id:'pix_1',amount_cents:annualCents,currency:'BRL',approved_at:'2030-01-03Z',monthly_renewal_stopped:true,monthly_subscription_id:'sub_1',monthly_paid_until:'2030-02-01Z'};
+ await assert.rejects(db.query("select finish_loadpro_annual($1,'paid',$2)",[op,JSON.stringify({...payment,monthly_renewal_stopped:false})]),/MONTHLY_NOT_RECONCILED/);
  await db.query(`select finish_loadpro_annual($1,'paid',$2)`,[op,JSON.stringify(payment)]);
  await db.query(`select finish_loadpro_annual($1,'paid',$2)`,[op,JSON.stringify(payment)]);
  const access=await read();assert.equal(new Date(access.current_period_end).toISOString(),'2031-02-01T00:00:00.000Z');

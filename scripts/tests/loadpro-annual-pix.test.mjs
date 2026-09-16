@@ -46,7 +46,7 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
   const env = {VERCEL_ENV: 'preview', LOADPRO_ANNUAL_PIX_SANDBOX: 'true',
     MERCADO_PAGO_ACCESS_TOKEN: 'TEST-fixture', MERCADO_PAGO_WEBHOOK_SECRET: 'fixture-only',
     STRIPE_SECRET_KEY: 'sk_test_fixture', LOADPRO_ANNUAL_WEBHOOK_ORIGIN: 'https://preview.example.invalid'};
-  const state = {now: Date.now(), loseResponse: false, failSave: false, payment: null, calls: [], requests: new Map()};
+  const state = {now: Date.now(), loseResponse: false, failSave: false, payment: null, calls: [], invoices: [], failGrant:false, failStop:false, loseStop:false, voidFails:false, payDuringVoid:false, requests: new Map()};
   if (api === 'orders') Object.assign(env, {LOADPRO_ANNUAL_PIX_API:'orders',
     LOADPRO_ANNUAL_MP_ORDERS_ACCESS_TOKEN:'APP_USR-6020550837096527-fixture-3692348994',
     LOADPRO_ANNUAL_MP_ORDERS_SELLER_ID:'3692348994',LOADPRO_ANNUAL_MP_ORDERS_APPLICATION_ID:'6020550837096527',
@@ -74,10 +74,23 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
       return Response.json(state.payment);
     }
     if (url === 'https://api.mercadopago.com/v1/orders/ORD01J49MMW3SSBK5PSV3DFR32959') return Response.json(state.payment);
+    if (url.startsWith('https://api.stripe.com/v1/invoices?')) return Response.json({data:state.invoices,has_more:false});
+    if (url.startsWith('https://api.stripe.com/v1/invoices/')) {
+      const id=new URL(url).pathname.split('/')[3];const invoice=state.invoices.find(x=>x.id===id);
+      if (!invoice) throw Error('Unknown invoice');
+      if (init.method==='POST' && url.endsWith('/void')) {
+        if (state.payDuringVoid) {invoice.status='paid';invoice.amount_paid=plan.monthlyCents;invoice.amount_remaining=0;return new Response(null,{status:409});}
+        if (state.voidFails) return new Response(null,{status:409});
+        invoice.status='void';invoice.amount_remaining=0;
+      } else if (init.method==='POST') {invoice.auto_advance=false;invoice.metadata={loadpro_annual_pix:init.body.get('metadata[loadpro_annual_pix]')};}
+      return Response.json(invoice);
+    }
     if (url.startsWith('https://api.stripe.com/v1/subscriptions/sub_fixture')) {
       if (init.method === 'POST') {
+        if (state.failStop) return new Response(null,{status:503});
         subscription.cancel_at_period_end = true;
         subscription.metadata = {loadpro_annual_pix: init.body.get('metadata[loadpro_annual_pix]')};
+        if (state.loseStop) {state.loseStop=false;throw Error('Lost stop response');}
       }
       return Response.json(subscription);
     }
@@ -120,6 +133,7 @@ async function fixture(t, planCode, status = 'trialing', api = 'payments') {
         return Response.json(result.rows[0].value);
       }
       if (path === '/rest/v1/rpc/finish_loadpro_annual') {
+        if (body.p_state==='paid' && state.failGrant) {state.failGrant=false;return new Response(null,{status:503});}
         if (state.failSave) { state.failSave = false; return new Response(null, {status: 503}); }
         const result = await db.query('select to_jsonb(finish_loadpro_annual($1,$2,$3)) as value', [body.p_id, body.p_state, JSON.stringify(body.p_provider)]);
         return Response.json(result.rows[0].value);
@@ -150,7 +164,7 @@ for (const planCode of Object.keys(policy.ANNUAL_PLANS)) {
     const requests = f.state.calls.filter(c => c.url.endsWith('/payments') && c.method === 'POST');
     assert.equal(requests.length, 3);
     assert.ok(requests.every(c => c.body === requests[0].body));
-    assert.equal(f.state.calls.filter(c => c.url.includes('api.stripe.com') && c.method === 'POST').length, 1);
+    assert.equal(f.state.calls.filter(c => c.url.includes('api.stripe.com') && c.method === 'POST').length, 0);
     const change = await f.readChange();
     assert.equal(Date.parse(JSON.parse(requests[0].body).date_of_expiration), new Date(change.confirmed_at).getTime() + 30 * 60000);
     assert.equal((await f.readAccess()).price_cents, f.plan.monthlyCents);
@@ -169,6 +183,8 @@ for (const planCode of Object.keys(policy.ANNUAL_PLANS)) {
         assert.equal(new Date(access.current_period_end).getTime(), new Date(before.current_period_end).getTime());
         assert.equal(access.price_cents, before.price_cents);
         assert.equal(access.provider_subscription_id, 'sub_fixture');
+        assert.notEqual(f.subscription.cancel_at_period_end,true);
+        assert.equal(access.metadata.cancel_at_period_end,false);
       }
       f.state.payment.status = 'approved';
       f.state.payment.date_approved = new Date().toISOString();
@@ -212,9 +228,9 @@ for (const planCode of Object.keys(policy.ANNUAL_PLANS)) {
     const pending=await f.service.confirmAnnual(f.quote.id,f.userId);
     assert.equal(pending.state,'awaiting_payment');
     assert.equal(f.state.requests.size,1);
-    assert.equal(f.state.calls.filter(c=>c.url.startsWith('https://api.stripe.com/') && c.method==='POST').length,1);
+    assert.equal(f.state.calls.filter(c=>c.url.startsWith('https://api.stripe.com/') && c.method==='POST').length,0);
     assert.equal(JSON.parse([...f.state.requests.values()][0]).payer.first_name,undefined,'the quote freezes the sandbox scenario');
-    assert.equal(f.subscription.cancel_at_period_end,true);
+    assert.equal(f.subscription.cancel_at_period_end,undefined);
     assert.equal(new Date((await f.readAccess()).current_period_end).getTime(),f.end*1000);
     const order=f.state.payment, payment=order.transactions.payments[0];
     order.status='processed'; order.status_detail='accredited'; order.total_paid_amount=order.total_amount;
@@ -283,4 +299,86 @@ test('annual Pix webhook requires a configured secret and matching signed resour
   env.MERCADO_PAGO_WEBHOOK_SECRET = 'fixture-only';
   fail = true;
   assert.equal((await route.POST(request())).status, 503, 'provider failure must request redelivery');
+});
+
+function approve(f) {f.state.payment.status='approved';f.state.payment.date_approved=new Date(f.state.now).toISOString();}
+function renewalInvoice(f,status='paid') {
+  const end=f.end+30*86400;
+  f.subscription.status=status==='paid'?'active':'past_due';
+  f.subscription.current_period_start=f.end;f.subscription.current_period_end=end;
+  f.subscription.latest_invoice={status};
+  const invoice={id:'in_renewal',subscription:'sub_fixture',customer:'cus_fixture',currency:'brl',billing_reason:'subscription_cycle',status,
+    amount_paid:status==='paid'?f.plan.monthlyCents:0,amount_remaining:status==='paid'?0:f.plan.monthlyCents,auto_advance:true,
+    lines:{has_more:false,data:[{subscription:'sub_fixture',proration:false,quantity:1,amount:f.plan.monthlyCents,
+      price:{currency:'brl',unit_amount:f.plan.monthlyCents,recurring:{interval:'month',interval_count:1}},period:{start:f.end,end}}]}};
+  f.state.invoices=[invoice];return invoice;
+}
+for(const code of Object.keys(policy.ANNUAL_PLANS)) {
+  test('Pix '+code+': approval stops renewal only once; lost cancellation and final save recover the same payment',async t=>{
+    const f=await fixture(t,code);await f.service.confirmAnnual(f.quote.id,f.userId);
+    assert.equal(f.quote.monthly_renewal,'stop_after_payment');
+    assert.equal(f.state.calls.filter(c=>c.url.includes('stripe.com') && c.method==='POST').length,0);
+    approve(f);f.state.loseStop=true;
+    await assert.rejects(f.service.reconcileAnnualPix('123456789'),/Lost stop/);
+    assert.equal((await f.service.annualStatus(f.quote.id,f.userId)).payment_verified,true);
+    assert.equal((await f.service.annualStatus(f.quote.id,f.userId)).pix_code,null);
+    assert.equal((await f.readAccess()).price_cents,f.plan.monthlyCents);
+    f.state.failGrant=true;await assert.rejects(f.service.reconcileAnnualPix('123456789'),/storage/);
+    const result=await f.service.reconcileAnnualPix('123456789');assert.equal(result.state,'paid');
+    assert.equal(f.state.requests.size,1);
+    assert.equal(f.state.calls.filter(c=>c.url.includes('stripe.com') && c.method==='POST').length,1);
+    await f.service.reconcileAnnualPix('123456789');
+    assert.equal(new Date((await f.readAccess()).current_period_end).toISOString(),policy.addCalendarYear(new Date(f.end*1000).toISOString()));
+  });
+  for(const status of ['paid','open','draft']) test('Pix '+code+': delayed approval reconciles a '+status+' monthly renewal before access',async t=>{
+    const f=await fixture(t,code);await f.service.confirmAnnual(f.quote.id,f.userId);
+    const invoice=renewalInvoice(f,status);approve(f);f.state.now=(f.end+10)*1000;
+    // A legacy subscription update may contain the future, still unpaid period.
+    await f.db.query('update billing_access set current_period_end=to_timestamp($1)',[f.subscription.current_period_end]);
+    await f.service.reconcileAnnualPix('123456789');
+    const protectedEnd=status==='paid'?f.subscription.current_period_end:f.end;
+    assert.equal(new Date((await f.readAccess()).current_period_end).toISOString(),policy.addCalendarYear(new Date(protectedEnd*1000).toISOString()));
+    assert.equal(f.subscription.cancel_at_period_end,true);
+    if(status==='open')assert.equal(invoice.status,'void');
+    if(status==='draft')assert.equal(invoice.auto_advance,false);
+    if(status==='paid')assert.equal(f.state.calls.filter(c=>c.url.includes('/invoices/') && c.method==='POST').length,0);
+    const access=await f.readAccess();await f.service.reconcileAnnualPix('123456789');assert.deepEqual(await f.readAccess(),access);
+  });
+}
+test('Pix: pending monthly collection cannot grant the annual year until its final state is verified',async t=>{
+  const f=await fixture(t,'loadpro_founders');await f.service.confirmAnnual(f.quote.id,f.userId);
+  renewalInvoice(f,'open');approve(f);f.state.now=(f.end+10)*1000;f.state.voidFails=true;
+  await assert.rejects(f.service.reconcileAnnualPix('123456789'),/still processing/);
+  assert.equal((await f.readAccess()).price_cents,f.plan.monthlyCents);assert.equal(f.subscription.cancel_at_period_end,true);
+  // A payment already in flight wins the void race; preserve that paid month.
+  f.state.payDuringVoid=true;await f.service.reconcileAnnualPix('123456789');
+  assert.equal(new Date((await f.readAccess()).current_period_end).toISOString(),policy.addCalendarYear(new Date(f.subscription.current_period_end*1000).toISOString()));
+});
+test('Pix: failure to stop monthly renewal cannot grant annual access and a retry needs no new payment',async t=>{
+  const f=await fixture(t,'loadpro_founders_50');await f.service.confirmAnnual(f.quote.id,f.userId);approve(f);f.state.failStop=true;
+  await assert.rejects(f.service.reconcileAnnualPix('123456789'),/Stripe reconciliation/);
+  assert.equal((await f.readAccess()).price_cents,f.plan.monthlyCents);assert.equal((await f.readChange()).provider.verified,true);
+  f.state.failStop=false;await f.service.reconcileAnnualPix('123456789');assert.equal((await f.readChange()).state,'paid');assert.equal(f.state.requests.size,1);
+});
+test('Pix: wrong customer or unrelated schedule never cancels a monthly subscription after approval',async t=>{
+  const f=await fixture(t,'loadpro_founders');await f.service.confirmAnnual(f.quote.id,f.userId);approve(f);
+  f.subscription.customer='other_customer';await assert.rejects(f.service.reconcileAnnualPix('123456789'));
+  f.subscription.customer='cus_fixture';f.subscription.schedule='external_schedule';await assert.rejects(f.service.reconcileAnnualPix('123456789'));
+  assert.equal(f.state.calls.filter(c=>c.url.includes('stripe.com') && c.method==='POST').length,0);
+});
+
+test('Pix: an old quoted transition needs fresh consent; no monthly mutation or QR is created',async t=>{
+ const f=await fixture(t,'loadpro_founders');
+ await f.db.query("update loadpro_annual_changes set quote=quote || '{\"terms_version\":\"loadpro-annual-v1\",\"monthly_renewal\":\"stop_on_confirmation\"}'::jsonb where id=$1",[f.quote.id]);
+ await assert.rejects(f.service.confirmAnnual(f.quote.id,f.userId),/QUOTE_CHANGED/);
+ assert.equal(f.state.calls.filter(c=>c.method==='POST').length,0);
+ assert.equal((await f.readChange()).state,'quoted');
+});
+test('Pix: a not-yet-visible renewal invoice holds annual access until reconciliation can see it',async t=>{
+ const f=await fixture(t,'loadpro_founders');await f.service.confirmAnnual(f.quote.id,f.userId);const invoice=renewalInvoice(f,'paid');
+ f.state.invoices=[];approve(f);f.state.now=(f.end+10)*1000;
+ await assert.rejects(f.service.reconcileAnnualPix('123456789'),/still being created/);
+ assert.equal((await f.readAccess()).price_cents,f.plan.monthlyCents);
+ f.state.invoices=[invoice];await f.service.reconcileAnnualPix('123456789');
+ assert.equal(new Date((await f.readAccess()).current_period_end).toISOString(),policy.addCalendarYear(new Date(f.subscription.current_period_end*1000).toISOString()));
 });

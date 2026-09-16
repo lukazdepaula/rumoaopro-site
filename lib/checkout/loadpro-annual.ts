@@ -80,7 +80,7 @@ export async function getAnnualChange(id: string, userId?: string): Promise<Chan
 }
 function publicChange(change: Change) {
   return { id: change.id, state: change.state, quote: change.quote,
-    pix_code: change.provider.pix_code || null, pix_expires_at: change.provider.pix_expires_at || null };
+    payment_verified: change.provider.verified === true, pix_code: change.provider.verified ? null : change.provider.pix_code || null, pix_expires_at: change.provider.pix_expires_at || null };
 }
 export async function annualStatus(id: string, userId: string) {
   return publicChange(await getAnnualChange(id,userId));
@@ -96,8 +96,7 @@ export async function confirmAnnual(id: string, userId: string) {
     const scheduleId = await scheduleAnnualCard(id, provider.subscription_id, provider.customer_id, Date.parse(change.quote.effective_at)/1000, change.quote.plan_code);
     change = await finishAnnual(id,"scheduled",{ schedule_id:scheduleId });
   } else {
-    // An accepted Pix quote explicitly stops monthly renewal. Even if Pix is
-    // abandoned there is no unexpected monthly debit; existing days remain.
+    // Creating a Pix never changes the existing monthly subscription.
     const origin = process.env.LOADPRO_ANNUAL_WEBHOOK_ORIGIN;
     if (!origin || !/^https:\/\/[^/]+$/.test(origin)) throw new Error("Annual webhook origin is not configured");
     const api = provider.pix_api || 'payments';
@@ -111,7 +110,6 @@ export async function confirmAnnual(id: string, userId: string) {
     // expiry with the same key or silently issue a second payment.
     const expiresAt = Date.parse(change.confirmed_at || "") + 30 * 60 * 1000;
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw new Error("Pix confirmation expired; reconciliation required");
-    if (provider.subscription_id) await stopMonthlyForPix(id,provider.subscription_id,provider.customer_id,Date.parse(change.quote.effective_at)/1000, change.quote.plan_code);
     if (api === 'orders') {
       const order = await createAnnualOrder(id, change.quote.plan_code, provider.email, provider.pix_test_approval === true);
       return applyAnnualOrder(change, order);
@@ -132,6 +130,16 @@ export async function confirmAnnual(id: string, userId: string) {
 export async function finishAnnual(id:string,state:string,provider:Record<string,unknown>):Promise<Change> {
   return annualDb("rpc/finish_loadpro_annual",{method:"POST",body:JSON.stringify({p_id:id,p_state:state,p_provider:provider})});
 }
+async function activatePaidPix(change: Change, payment: Record<string,unknown>) {
+  // Persist verified payment identity before touching Stripe. A lost response or
+  // provider outage leaves a recoverable operation, never a second QR/payment.
+  await finishAnnual(change.id,'awaiting_payment',payment);
+  const monthly=change.provider.subscription_id
+    ? await stopMonthlyForPix(change.id,change.provider.subscription_id,change.provider.customer_id,
+        Date.parse(change.quote.effective_at)/1000,change.quote.plan_code)
+    : {};
+  return publicChange(await finishAnnual(change.id,'paid',{...payment,...monthly}));
+}
 async function applyAnnualOrder(change: Change, order: Record<string, any>) {
   if (change.method !== 'pix' || change.provider.pix_api !== 'orders' || !change.confirmed_at
     || String(order.user_id) !== change.provider.pix_seller_id || String(order.integration_data?.application_id) !== change.provider.pix_application_id
@@ -141,10 +149,10 @@ async function applyAnnualOrder(change: Change, order: Record<string, any>) {
     throw new Error('Order predates confirmation');
   }
   if (change.state === 'paid') return publicChange(change);
-  if (result.paid) return publicChange(await finishAnnual(change.id,'paid',{
+  if (result.paid) return activatePaidPix(change,{
     ...result.provider, verified:true, amount_cents:annualPlan(change.quote.plan_code).annualCents,
     currency:'BRL', approved_at:result.approvedAt
-  }));
+  });
   return publicChange(await finishAnnual(change.id,result.failed ? 'failed':'awaiting_payment',result.provider));
 }
 export async function reconcileAnnualOrder(orderId: string) {
@@ -165,8 +173,8 @@ export async function reconcileAnnualPix(paymentId:string) {
   if (change.state === "paid") return publicChange(change);
   if (payment.status === "approved") {
     assertApprovedAnnualPix(payment,reference,change.provider.live===true,change.quote.plan_code);
-    return publicChange(await finishAnnual(change.id,"paid",{payment_id:String(payment.id),verified:true,
-      amount_cents:annualPlan(change.quote.plan_code).annualCents,currency:"BRL",approved_at:payment.date_approved}));
+    return activatePaidPix(change,{payment_id:String(payment.id),verified:true,
+      amount_cents:annualPlan(change.quote.plan_code).annualCents,currency:"BRL",approved_at:payment.date_approved});
   }
   if (["rejected","cancelled"].includes(payment.status)) {
     return publicChange(await finishAnnual(change.id,"failed",{payment_id:String(payment.id),payment_status:payment.status}));

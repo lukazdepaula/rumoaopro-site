@@ -87,16 +87,81 @@ export async function scheduleAnnualCard(id: string, subscriptionId: string, cus
   return updated.id as string;
 }
 
+// Called only after a fresh, verified Pix approval. Never from QR creation.
+// The same subscription is retained until its current boundary. If the Stripe
+// period advanced while the Pix notification was delayed, reconcile its invoices
+// before granting the year: preserve a paid month, stop an unpaid duplicate.
 export async function stopMonthlyForPix(id: string, subscriptionId: string, customerId: string | null, boundary: number, planCode: string) {
-  const subscription = await annualStripe(`subscriptions/${encodeURIComponent(subscriptionId)}`);
-  if (subscription.metadata?.loadpro_annual_pix === id && subscription.cancel_at_period_end && subscription.customer === customerId) return;
-  validateMonthlySubscription(subscription, customerId, planCode);
-  if (subscription.schedule || stripeSubscriptionPeriod(subscription).end !== boundary
-    || boundary * 1000 <= Date.now()) throw new Error("Monthly renewal needs review");
-  const updated = await annualStripe(`subscriptions/${encodeURIComponent(subscriptionId)}`, new URLSearchParams({
-    cancel_at_period_end: "true", "metadata[loadpro_annual_pix]": id
-  }), `annual:${id}:stop-monthly`);
-  if (!updated.cancel_at_period_end) throw new Error("Monthly renewal was not stopped");
+  const path = 'subscriptions/'+encodeURIComponent(subscriptionId);
+  const plan = annualPlan(planCode);
+  const validate = (sub: Record<string,any>) => {
+    if (sub.id!==subscriptionId || !['active','trialing','past_due','unpaid','canceled'].includes(sub.status)
+      || sub.schedule || (sub.metadata?.loadpro_annual_pix && sub.metadata.loadpro_annual_pix!==id)) throw new Error('Monthly renewal needs review');
+    // Cancellation and an invoice in flight are expected here. Still validate
+    // identity, exact monthly product/amount and every unsupported override.
+    const end=stripeSubscriptionPeriod(sub.status==='trialing'?sub:{...sub,status:'active'}).end!;
+    validateMonthlySubscription({...sub,status:'trialing',trial_end:end,cancel_at_period_end:false},customerId,planCode);
+    if (!Number.isFinite(boundary) || end<boundary) throw new Error('Protected monthly period changed');
+    return end;
+  };
+  let sub=await annualStripe(path);
+  validate(sub);
+  if (!sub.cancel_at_period_end && sub.status!=='canceled') {
+    await annualStripe(path,new URLSearchParams({cancel_at_period_end:'true','metadata[loadpro_annual_pix]':id}),
+      'annual:'+id+':stop-monthly-after-payment');
+  }
+  // A lost POST response is recovered by reading Stripe, never by trusting a
+  // local flag or assuming that a cancellation request succeeded.
+  sub=await annualStripe(path);
+  const end=validate(sub);
+  if (!sub.cancel_at_period_end && sub.status!=='canceled') throw new Error('Monthly renewal was not stopped');
+  let paidUntil=boundary;
+  const reconciled: Record<string,unknown>[]=[];
+  if (end>boundary) {
+    const invoices=await annualStripe('invoices?subscription='+encodeURIComponent(subscriptionId)+'&limit=100&created[gte]='+Math.floor(boundary-3600));
+    if (!Array.isArray(invoices.data) || invoices.has_more!==false) throw new Error('Monthly invoice history needs reconciliation');
+    let currentFound=false;
+    for (const entry of invoices.data) {
+      const invoicePath='invoices/'+encodeURIComponent(entry.id);
+      let invoice=await annualStripe(invoicePath);
+      const line=invoice.lines?.data?.[0];
+      if (invoice.subscription!==subscriptionId || invoice.customer!==customerId || invoice.currency!=='brl'
+        || invoice.billing_reason!=='subscription_cycle' || invoice.lines?.has_more!==false || invoice.lines?.data?.length!==1
+        || line?.subscription!==subscriptionId || line?.proration!==false || line?.quantity!==1
+        || line?.price?.unit_amount!==plan.monthlyCents || line?.price?.currency!=='brl'
+        || line?.price?.recurring?.interval!=='month' || line?.price?.recurring?.interval_count!==1
+        || line?.amount!==plan.monthlyCents || !Number.isFinite(line?.period?.start) || !Number.isFinite(line?.period?.end)
+        || line.period.start<boundary || line.period.end> end || line.period.end<=line.period.start) {
+        throw new Error('Monthly invoice does not match the protected subscription');
+      }
+      if (line.period.end===end) currentFound=true;
+      if (['draft','open'].includes(invoice.status)) {
+        // Stop collection first. Never finalize a draft or initiate a payment.
+        // Open invoices are voided; a draft stays frozen with an audit marker.
+        await annualStripe(invoicePath,new URLSearchParams({auto_advance:'false','metadata[loadpro_annual_pix]':id}),
+          'annual:'+id+':freeze:'+invoice.id);
+        invoice=await annualStripe(invoicePath);
+        if (invoice.status==='open') {
+          try { await annualStripe(invoicePath+'/void',new URLSearchParams(),'annual:'+id+':void:'+invoice.id); }
+          catch { /* A concurrent payment may have won. Verify its final state. */ }
+          invoice=await annualStripe(invoicePath);
+        }
+      }
+      if (invoice.status==='paid' && invoice.amount_paid===plan.monthlyCents && invoice.amount_remaining===0) {
+        paidUntil=Math.max(paidUntil,line.period.end);
+      } else if (!(invoice.status==='void' && invoice.amount_paid===0)
+        && !(invoice.status==='draft' && invoice.auto_advance===false && invoice.amount_paid===0
+          && invoice.metadata?.loadpro_annual_pix===id)) {
+        throw new Error('Monthly invoice is still processing; retry reconciliation');
+      }
+      reconciled.push({id:invoice.id,status:invoice.status,period_end:line.period.end});
+    }
+    if (!currentFound) throw new Error('Renewal invoice is still being created; retry reconciliation');
+    const latest=await annualStripe(path);
+    if (validate(latest)!==end || (!latest.cancel_at_period_end && latest.status!=='canceled')) throw new Error('Monthly period changed during reconciliation');
+  }
+  return {monthly_renewal_stopped:true,monthly_subscription_id:subscriptionId,
+    monthly_paid_until:new Date(paidUntil*1000).toISOString(),monthly_invoices:reconciled};
 }
 
 export function assertAnnualPixConfigured() {
