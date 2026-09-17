@@ -1,3 +1,4 @@
+import { assertPreviewProvider } from "@/lib/preview-safety";
 import crypto from "node:crypto";
 import { createCheckoutReturnUrl } from "@/lib/checkout/checkout-access";
 import type { CheckoutProduct, Order, OrderStatus } from "@/lib/checkout/types";
@@ -38,6 +39,7 @@ function requireEnv(key: string) {
       `Configure a variável de ambiente ${key}.`
     );
   }
+  assertPreviewProvider(key, value);
   return value;
 }
 

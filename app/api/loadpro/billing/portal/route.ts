@@ -10,6 +10,10 @@ const PRODUCTION_APP_ORIGIN = "https://loadpro.rumoaopro.com.br";
 function allowedOrigin(request: Request) {
   const origin = request.headers.get("origin") || "";
   if (origin === PRODUCTION_APP_ORIGIN) return origin;
+  // Hosted QA uses the same explicit app allowlist as annual billing. Never
+  // expand production CORS or trust arbitrary Vercel subdomains.
+  if (process.env.VERCEL_ENV === "preview" && origin.startsWith("https://")
+    && (process.env.LOADPRO_ANNUAL_ALLOWED_ORIGINS || "").split(",").map(value => value.trim()).includes(origin)) return origin;
   if (/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) return origin;
   return "";
 }
@@ -47,7 +51,9 @@ export async function POST(request: Request) {
 
   try {
     const resolved = await resolveLoadProBillingAccess(accessToken);
-    if (!resolved) return json(request, { error: "Billing account not found" }, 404);
+    // Resolution also fails for an expired identity token. The app retries a
+    // 401 once with its refreshed session; a 404 stranded the recovery screen.
+    if (!resolved) return json(request, { error: "Authentication required" }, 401);
     const { access, appUrl } = resolved;
     if (
       access.access_kind === "lifetime" ||

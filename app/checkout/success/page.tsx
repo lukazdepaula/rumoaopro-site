@@ -18,6 +18,7 @@ import {
   isRaptorProProgramOrder
 } from "@/lib/checkout/raptorpro";
 import { nav } from "@/lib/content";
+import { publicLoadProAppUrl } from "@/lib/preview-safety";
 
 export const dynamic = "force-dynamic";
 
@@ -66,9 +67,8 @@ export default async function CheckoutSuccessPage({
     order?.gateway === "mock" &&
     order.status === "pending";
   const trialDays = Number(order?.metadata.trial_days || 0);
-  const isLoadProTrial =
-    isLoadProProductId(order?.product_id) &&
-    trialDays > 0;
+  const isLoadPro = isLoadProProductId(order?.product_id);
+  const isLoadProTrial = isLoadPro && trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
   const raptorProgram = order ? getRaptorProProgramConfig(order) : null;
   const raptorProgramName = raptorProgram?.programTitle || order?.product_name || "programa";
@@ -107,8 +107,8 @@ export default async function CheckoutSuccessPage({
         : isEnglish ? "Processing" : "Em processamento";
   const accessHref = isCoachingSubscription
     ? isEnglish ? "/en/coaching" : "/assessoria"
-    : isLoadProTrial
-    ? process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br"
+    : isLoadPro
+    ? publicLoadProAppUrl() || (isEnglish ? '/en/apps#loadpro' : '/apps#loadpro')
     : isRaptorProProgram
       ? getRaptorProProgramUrl(order!)
     : order?.status === "paid" && product
@@ -151,6 +151,10 @@ export default async function CheckoutSuccessPage({
         : isEnglish
           ? "Your payment is confirmed. Keep this page saved while we finish creating and emailing your access."
           : "Seu pagamento está confirmado. Mantenha esta página salva enquanto terminamos de criar e enviar seu acesso."
+    : isLoadPro && order?.status === "paid"
+    ? isEnglish
+      ? "Payment approved. Open LoadPro with your existing account to check your subscription."
+      : "Pagamento aprovado. Abra o LoadPro com sua conta existente para conferir sua assinatura."
     : order?.status === "paid"
     ? isEnglish
       ? "Payment approved. Your program access is ready and a confirmation email will be sent automatically."
@@ -343,6 +347,8 @@ export default async function CheckoutSuccessPage({
             >
               {isLoadProTrial
                 ? isEnglish ? "I created my password — open LoadPro" : "Já criei minha senha — abrir LoadPro"
+                : isLoadPro
+                  ? isEnglish ? "Open LoadPro" : "Abrir LoadPro"
                 : isCoachingSubscription
                   ? isEnglish ? "Back to online coaching" : "Voltar para a assessoria"
                 : isRaptorProProgram

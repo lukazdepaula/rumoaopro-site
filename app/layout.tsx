@@ -1,3 +1,4 @@
+import { isPreviewEnvironment } from "@/lib/preview-safety";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
@@ -53,11 +54,11 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         {children}
-        <ConversionTracker />
+        {!isPreviewEnvironment() && <ConversionTracker />}
         <PrivacyConsent />
         <WhatsAppFloat />
-        <SocialProofToast />
-        <Analytics />
+        {!isPreviewEnvironment() && <SocialProofToast />}
+        {!isPreviewEnvironment() && <Analytics />}
       </body>
     </html>
   );

@@ -10,6 +10,7 @@ import { assets, nav } from "@/lib/content";
 import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import { getLocalizedProductCopy } from "@/lib/checkout/localization";
 import { normalizeCouponCode } from "@/lib/checkout/discounts";
+import { publicLoadProAppUrl } from "@/lib/preview-safety";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
 
   const productCopy = getLocalizedProductCopy(product, locale);
   const isLoadProSubscription = isLoadProProductId(product.id);
+  const salesPagePath = isLoadProSubscription
+    ? publicLoadProAppUrl() || (isEnglish ? "/en/apps#loadpro" : "/apps#loadpro")
+    : productCopy.salesPagePath;
   const isCoachingSubscription = product.id === "online_coaching_monthly";
   const isBrazilOnlyProgram =
     product.type !== "subscription" && product.checkout_country_lock === "BR";
@@ -115,7 +119,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link
             className="focus-ring inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white"
-            href={productCopy.salesPagePath}
+            href={salesPagePath}
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             {isEnglish ? `Back to ${productCopy.name}` : `Voltar para ${productCopy.name}`}

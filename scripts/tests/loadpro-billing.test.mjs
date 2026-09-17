@@ -13,6 +13,7 @@ function load(file, mocks = {}, extras = {}) {
   }).outputText;
   vm.runInNewContext(code, { module, exports: module.exports, require: id => {
     if (id in mocks) return mocks[id];
+    if (id === '@/lib/preview-safety') return load('lib/preview-safety.ts', {}, extras);
     if (id.startsWith('node:')) return require(id);
     throw new Error(`Unmocked dependency ${id}`);
   }, process: { env: { STRIPE_SECRET_KEY: 'sk_test_fixture', STRIPE_LOADPRO_FOUNDERS_50_PRICE_ID: 'price_brl', LOADPRO_SUPABASE_URL: 'https://loadpro.invalid', LOADPRO_SUPABASE_SERVICE_ROLE_KEY: 'test-only' } },
@@ -20,6 +21,7 @@ function load(file, mocks = {}, extras = {}) {
   return module.exports;
 }
 const policy = load('lib/checkout/loadpro-billing-policy.ts');
+const annualPolicy = load('lib/checkout/loadpro-annual-policy.ts');
 const product = { id: 'loadpro_founders_50', price_brl: 69.9, base_price_usd: 13.9, type: 'subscription', trial_days: 7, name: 'LoadPro 50', description: 'Test', billing_interval: 'month', players_per_team_limit: 50, team_limit: 2 };
 const products = { getProductById: () => product, isLoadProProductId: id => ['loadpro_founders','loadpro_founders_50'].includes(id) };
 
@@ -69,7 +71,7 @@ test('returning customer checkout has no trial; first checkout preserves trial a
     '@/lib/checkout/checkout-access':{createCheckoutReturnUrl:()=> 'https://merchant.invalid/return'},
     '@/lib/checkout/db':{updateOrderGatewayIds:async()=>{},appendOrderLog:async()=>{}},
     '@/lib/checkout/localization':{getLocalizedProductCopy:()=>product}, '@/lib/checkout/products':products,
-    '@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{process:{env:{STRIPE_SECRET_KEY:'test',STRIPE_WEBHOOK_SECRET:'test'}},fetch:async(url,init)=>{calls.push(init);return Response.json({id:'cs_test',url:'https://checkout.stripe.com/test'});}});
   const order={id:'order',currency:'USD',amount:13.9,customer_country:'US',customer_email:'fixture@example.invalid',metadata:{loadpro_trial_eligible:false,loadpro_checkout_expires_at:2000000000}};
   await payments.createStripeCheckoutSession(order,product);
@@ -82,7 +84,7 @@ test('stale cancellation never writes billing_access or touches club/player data
   const writes=[];
   const loadpro=load('lib/checkout/loadpro.ts',{
     '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>({created_at:'2026-08-01'})},
-    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{fetch:async(url,init)=>{if(init.method && init.method!=='GET')writes.push(url);return Response.json([{id:'access',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',order_id:'order_main'}]);}});
   const result=await loadpro.syncLoadProAccess({id:'duplicate',product_id:'loadpro_founders_50',currency:'USD',customer_email:'fixture@example.invalid',created_at:'2026-09-01',metadata:{},gateway:'stripe'}, {status:'canceled',providerSubscriptionId:'sub_duplicate'});
   assert.equal(result.ignored,true);
@@ -93,7 +95,7 @@ async function syncAccessFixture(input) {
   const writes=[];
   const loadpro=load('lib/checkout/loadpro.ts',{
     '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
-    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   },{fetch:async(url,init)=>{
     if(init.method && init.method!=='GET') writes.push({url,body:JSON.parse(init.body)});
     return Response.json([{id:'access',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',order_id:'order_main'}]);
@@ -148,7 +150,7 @@ test('quote endpoint is read-only and requires explicit matching currency/amount
     'next/server':{NextResponse:Response}, '@/lib/checkout/db':{getOrderByGatewayPaymentId:async()=>({id:'order',customer_email:'fixture@example.invalid'}),updateOrderGatewayIds:async()=>{writes++;}},
     '@/lib/checkout/loadpro':{resolveLoadProBillingAccess:async()=>({access,identity:{email:'fixture@example.invalid'}}),isLoadProOrder:()=>true,syncLoadProAccess:async()=>{writes++;}},
     '@/lib/checkout/payments':{fetchStripeSubscription:async()=>subscription,getLoadProUpgradePrice:()=>({currency:'USD',priceCents:1390}),changeStripeLoadProPlan:async()=>{writes++;throw Error('must not mutate');}},
-    '@/lib/checkout/loadpro-billing-policy':policy
+    '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
   });
   const headers={origin:'https://loadpro.rumoaopro.com.br',authorization:'Bearer test','content-type':'application/json'};
   const quote=await route.GET(new Request('https://merchant.invalid/api',{headers}));
@@ -157,4 +159,133 @@ test('quote endpoint is read-only and requires explicit matching currency/amount
     const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers,body:JSON.stringify(body)}));
     assert.equal(response.status,409); assert.equal(writes,0);
   }
+});
+
+test('annual synchronization preserves paid days on refusal and requires the confirmed tier before crediting a year', async()=>{
+ for(const [planCode,plan] of Object.entries(annualPolicy.ANNUAL_PLANS)) {
+  const writes=[];
+  const current={id:'access',status:'active',access_kind:'subscription',plan_code:planCode,currency:'BRL',price_cents:plan.monthlyCents,team_limit:2,players_per_team_limit:plan.players,provider_subscription_id:'sub_main',order_id:'order_main',current_period_end:'2030-10-01T00:00:00.000Z',metadata:{annual_change:{plan_code:planCode,price_cents:plan.annualCents,payment_method:'card'}}};
+  const service=load('lib/checkout/loadpro.ts',{
+   '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
+   '@/lib/checkout/email':{},'@/lib/checkout/products':products,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
+  },{fetch:async(url,init)=>{
+   if(init.method && init.method!=='GET') {
+    writes.push(JSON.parse(init.body));
+    return Response.json([current]);
+   }
+   // PostgREST returns only the selected columns. Returning the entire fixture
+   // masked a missing plan_code projection in the real annual reconciliation.
+   const select=new URL(url).searchParams.get('select');
+   return Response.json([select ? Object.fromEntries(select.split(',').map(key=>[key,current[key]])) : current]);
+  }});
+  const order={id:'order_main',product_id:planCode,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'};
+  const input={providerSubscriptionId:'sub_main',planCode,priceCents:plan.annualCents,currency:'BRL',billingInterval:'year',currentPeriodEnd:'2031-10-01T00:00:00.000Z'};
+  for(const status of ['active','past_due','unpaid','canceled']) {
+   await service.syncLoadProAccess(order,{...input,status});assert.equal(writes.at(-1).current_period_end,current.current_period_end);
+  }
+  await service.syncLoadProAccess(order,{...input,status:'active',annualPaymentConfirmed:true});
+  assert.equal(writes.at(-1).current_period_end,input.currentPeriodEnd);assert.equal(writes.at(-1).players_per_team_limit,plan.players);assert.equal(writes.at(-1).plan_code,planCode);
+  const before=writes.length;
+  await assert.rejects(service.syncLoadProAccess(order,{...input,status:'active',annualPaymentConfirmed:true,planCode:plan.players===30?'loadpro_founders_50':'loadpro_founders'}),/matching confirmed plan/);
+  assert.equal(writes.length,before);
+ }
+});
+
+test('expired portal identity returns a refreshable 401 without creating a portal session', async()=>{
+ let identityCalls=0, portalCalls=0;
+ const resolver=load('lib/checkout/loadpro.ts',{
+  '@/lib/checkout/db':{}, '@/lib/checkout/email':{}, '@/lib/checkout/products':products,
+  '@/lib/checkout/loadpro-annual-policy':annualPolicy, '@/lib/checkout/loadpro-billing-policy':policy
+ },{fetch:async url=>{
+  assert.match(url,/\/auth\/v1\/user$/); identityCalls++;
+  return Response.json({message:'JWT expired'},{status:401});
+ }});
+ const route=load('app/api/loadpro/billing/portal/route.ts',{
+  'next/server':{NextResponse:Response}, '@/lib/checkout/loadpro':resolver,
+  '@/lib/checkout/payments':{createStripeBillingPortalSession:async()=>{portalCalls++;}}
+ });
+ const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',
+  headers:{origin:'https://loadpro.rumoaopro.com.br',authorization:'Bearer expired-fixture'},body:'{}'}));
+ assert.equal(response.status,401); assert.equal(identityCalls,1); assert.equal(portalCalls,0);
+ assert.equal(response.headers.get('access-control-allow-origin'),'https://loadpro.rumoaopro.com.br');
+});
+
+test('billing portal accepts only the configured preview app and keeps production origins unchanged', async()=>{
+ const preview='https://annual-app-preview.example.invalid';
+ const headers=origin=>({origin,'content-type':'application/json',authorization:'Bearer fixture'});
+ for(const environment of ['preview','production']) {
+  const calls=[];
+  const route=load('app/api/loadpro/billing/portal/route.ts',{
+   'next/server':{NextResponse:Response},
+   '@/lib/checkout/loadpro':{resolveLoadProBillingAccess:async()=>({access:{access_kind:'subscription',billing_provider:'stripe',provider_customer_id:'cus_fixture'},appUrl:preview})},
+   '@/lib/checkout/payments':{createStripeBillingPortalSession:async(...args)=>{calls.push(args);return 'https://billing.stripe.com/p/session/test_fixture';}}
+  },{process:{env:{VERCEL_ENV:environment,LOADPRO_ANNUAL_ALLOWED_ORIGINS:preview}}});
+  const preflight=await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers(preview)}));
+  assert.equal(preflight.status,environment==='preview'?204:403);
+  const response=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers:headers(preview),body:'{"locale":"pt"}'}));
+  assert.equal(response.status,environment==='preview'?200:403);
+  assert.equal(calls.length,environment==='preview'?1:0);
+  if(environment==='preview') {
+   assert.equal(response.headers.get('access-control-allow-origin'),preview);
+   assert.deepEqual(calls[0],['cus_fixture',preview+'/?view=setup&settings=security','pt-BR']);
+   const unauthenticated=await route.POST(new Request('https://merchant.invalid/api',{method:'POST',headers:{origin:preview},body:'{}'}));
+   assert.equal(unauthenticated.status,401);assert.equal(calls.length,1);
+  }
+  for(const origin of ['https://attacker.invalid',preview+'.attacker.invalid','null','']) {
+   assert.equal((await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers(origin)}))).status,403);
+  }
+  assert.equal((await route.OPTIONS(new Request('https://merchant.invalid/api',{method:'OPTIONS',headers:headers('https://loadpro.rumoaopro.com.br')}))).status,204);
+ }
+});
+
+function reactivationFixture(current) {
+ const writes=[];
+ const service=load('lib/checkout/loadpro.ts',{
+  '@/lib/checkout/db':{appendOrderLog:async()=>{},getOrderById:async()=>({created_at:'2026-08-01'})},
+  '@/lib/checkout/email':{},'@/lib/checkout/products':products,
+  '@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
+ },{fetch:async(url,init)=>{
+  assert.match(url,/\/rest\/v1\/billing_access\?/);
+  if(init.method==='PATCH') {const body=JSON.parse(init.body);writes.push(body);Object.assign(current,body);}
+  return Response.json([current]);
+ }});
+ return {service,writes};
+}
+
+test('returning monthly customer can choose annual again without inheriting consent from a canceled subscription', async()=>{
+ for(const interval of ['month','year']) {
+  const current={id:'access',user_id:'same_coach',status:'canceled',access_kind:'subscription',plan_code:product.id,
+   provider_subscription_id:'sub_old',order_id:'order_old',updated_at:'2026-08-01',metadata:{
+    billing_interval:interval,annual_change:{id:'old_change',state:'canceled',plan_code:product.id,price_cents:69900,payment_method:'card'},
+    communication_preferences:{trial_reminder:false},custom_note:'preserve'}};
+  const {service,writes}=reactivationFixture(current);
+  const order={id:'order_new',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-09-01',metadata:{},gateway:'stripe'};
+  const input={status:'active',providerSubscriptionId:'sub_new',priceCents:6990,currentPeriodEnd:'2026-10-01T00:00:00.000Z'};
+  await service.syncLoadProAccess(order,input);
+  assert.equal(writes.length,1);
+  assert.equal(Object.hasOwn(writes[0].metadata,'annual_change'),false);
+  assert.equal(writes[0].metadata.billing_interval,'month');
+  assert.equal(writes[0].metadata.communication_preferences.trial_reminder,false);
+  assert.equal(writes[0].metadata.custom_note,'preserve');
+  assert.equal(writes[0].user_id,undefined);assert.equal(current.user_id,'same_coach');
+  await service.syncLoadProAccess(order,{...input,billingInterval:'month'});
+  assert.equal(Object.hasOwn(writes[1].metadata,'annual_change'),false);
+ }
+});
+
+test('same-subscription monthly events preserve pending annual consent', async()=>{
+ const annualChange={id:'accepted',state:'awaiting_payment',plan_code:product.id,price_cents:69900,payment_method:'pix'};
+ const current={id:'access',status:'active',access_kind:'subscription',plan_code:product.id,provider_subscription_id:'sub_current',order_id:'order_current',metadata:{billing_interval:'month',annual_change:annualChange}};
+ const {service,writes}=reactivationFixture(current);
+ await service.syncLoadProAccess({id:'order_current',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'},
+  {status:'active',providerSubscriptionId:'sub_current',billingInterval:'month',priceCents:6990,currentPeriodEnd:'2026-10-01T00:00:00.000Z'});
+ assert.deepEqual(writes[0].metadata.annual_change,annualChange);
+});
+
+test('late annual event from replaced subscription is ignored before applying old annual consent', async()=>{
+ const current={id:'access',status:'active',access_kind:'subscription',plan_code:product.id,provider_subscription_id:'sub_new',order_id:'order_new',metadata:{billing_interval:'month'}};
+ const {service,writes}=reactivationFixture(current);
+ const result=await service.syncLoadProAccess({id:'order_old',product_id:product.id,currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-07-01',metadata:{},gateway:'stripe'},
+  {status:'canceled',providerSubscriptionId:'sub_old',billingInterval:'year',priceCents:69900,currentPeriodEnd:'2027-10-01T00:00:00.000Z'});
+ assert.equal(result.ignored,true);assert.equal(writes.length,0);
 });
