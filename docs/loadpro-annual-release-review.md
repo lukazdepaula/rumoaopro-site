@@ -2,6 +2,20 @@
 
 Documento de preparação. Não autoriza migração, alteração de credenciais, envio ou publicação em produção. Os dois PRs permanecem rascunho.
 
+## Revisão final concluída em 17/09
+
+main foi atualizada e continua ancestral das duas branches anuais; previews aprovados, sem mudança funcional posterior aos testes registrados. No Supabase de produção LoadPro iqkzqdoyvxblnsgnsfbz, consultas somente de metadados confirmaram colunas, tipos, PK/referências, roles e gerador UUID; RLS ativo nos dados de cobrança e clubes/equipes/atletas/staff. Novas tabelas/funções anuais ainda ausentes, sem colisão. As restrições e funções atuais de propagação aceitam preço/prazo anual e preservam plano, limites e conta. Nenhum dado de cliente foi lido ou alterado. Banco Healthy; backup mostrado há 12 horas.
+
+Stripe LIVE: destino we_1TuDM4A6RupMT8QsjkIHgUWg ativo em https://rumoaopro.com/api/webhooks/stripe, versão 2025-08-27.basil, com os 11 eventos necessários existentes. Painel Esta semana: 61 entregas e 0 falhas. Nenhuma configuração foi alterada. Flags de teste/preview ausentes de Production nos projetos aplicáveis, incluindo Shared. Chaves reais não foram reveladas. O anual permanece desligado.
+
+Proposta concreta para liberação: (1) aplicar annual-billing, annual-reminders e reminder-delivery em ordem no banco LoadPro e conferir permissões; (2) integrar PR18 com oferta desligada e verificar backend/checkout atuais; (3) integrar PR132 e ativar/recompilar a oferta no backend/vitrine; (4) conferir preços, navegação e leitura autenticada em desktop/celular sem compra real. Preservar os avisos Stripe e manter os novos e-mails OFF. Não alterar assinaturas existentes para testes. A aprovação final é para essas migrações e publicação; cadastros de preços/credenciais já estão autorizados e concluídos.
+
+## Configuração preparada em 17/09 — oferta ainda desligada
+
+As autorizações específicas posteriores permitiram criar os dois preços Stripe LIVE e configurar a aplicação real LoadPro Anual Pix 2987567593319086, vendedor375473814. Os preços estão vinculados às duas variáveis anuais de Production. O webhook Orders real foi salvo no endereço previsto, somente evento Order (Mercado Pago). O titular renovou a chave; a comparação integral antes/depois confirmou a substituição e o vínculo com aplicação/vendedor. Somente a chave nova e a assinatura do webhook foram guardadas como Secret em Production no servidor RumoAoPro. Nenhum segredo consta nos arquivos.
+
+Total preparado na Vercel: 10 Config e 2 Secret exclusivos Production, incluindo LOADPRO_ANNUAL_ENABLED=false. Nenhum Redeploy, migração de produção, merge, cobrança real ou campanha foi realizado. A integração antiga e as assinaturas existentes foram preservadas. Cadastro de configuração não comprova transação LIVE nem entrega ao endpoint ainda não publicado. Renovação e transferência de credenciais estão concluídas; não repetir essa etapa. Restam a conferência final das branches, preflight de produção somente leitura, migrações revisadas e autorização da publicação coordenada. Os novos lembretes permanecem desligados.
+
 ## Oferta e transição aprovadas para preparação
 
 | Plano | Mensal preservado | Anual à vista | Limites |

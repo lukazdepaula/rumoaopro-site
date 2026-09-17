@@ -1,5 +1,86 @@
 # Plano anual LoadPro — preparação e configuração
 
+## Revisão final de produção concluída — aguardando liberação (17/09/2026)
+
+Conferência SOMENTE LEITURA concluída após autorização do usuário para continuar. Produção ainda sem migração, publicação ou ativação anual.
+
+- GitHub atualizado: main continua ancestral das duas branches anuais (0 commits divergentes). App PR132/a4d121b: preview Vercel aprovado; backend PR18/bcc5c94: preview aprovado e integração sem conflito. Nenhum código funcional novo nesta conferência.
+- Supabase LoadPro App iqkzqdoyvxblnsgnsfbz: Healthy, backup exibido há 12 horas. Consulta apenas de metadados confirmou 20 colunas esperadas de billing_access, PK UUID, referências existentes, roles anon/authenticated/service_role e gen_random_uuid(). RLS ativo em billing_access, subscriptions, clubs, teams, players e staff_profiles.
+- As quatro novas tabelas anuais/preferências e as oito funções novas ainda NÃO existem em produção. Não há colisão com instalação anterior. Restrições de billing_access/subscriptions não limitam os valores aos preços mensais; nenhum reset ou alteração de tabela de cliente é necessário.
+- Funções existentes propagate_loadpro_billing_access, apply_billing_access_to_club, normalize_loadpro_founders_roster_limit e loadpro_club_access_is_active foram lidas. Propagação preserva clube, plano e limites e aceita preço/prazo anual. As migrações não substituem essas funções nem suas políticas. A carência atual de 24 horas do status active permanece como já existente.
+- Stripe LIVE acct_1S4eOzA6RupMT8Qs: destino rumoaopro-site-live/we_1TuDM4A6RupMT8QsjkIHgUWg ativo, URL https://rumoaopro.com/api/webhooks/stripe, API 2025-08-27.basil. Painel Esta semana: 61 entregas, 0 falhas. Os 11 eventos incluem invoice.paid, invoice.payment_failed, invoice.payment_action_required e customer.subscription.created/updated/deleted. Nenhum evento, segredo ou destino foi alterado.
+- Vercel: ausência de LOADPRO_TEST_MODE e de configurações PREVIEW em Production do backend, nas abas Project/Shared. Ausência de PREVIEW em Production do app, Project/Shared. Chaves reais/valores secretos não foram revelados nesta auditoria. Configuração anual existente permanece com LOADPRO_ANNUAL_ENABLED=false.
+- Nenhum dado individual de cliente foi consultado/alterado, nenhum pagamento ou e-mail disparado. Abas temporárias fechadas; somente LoadPro original preservado.
+
+Próxima ação proposta para aprovação FINAL: aplicar em ordem as três migrações aditivas revisadas no banco LoadPro (annual-billing, annual-reminders, reminder-delivery), conferir RLS/privilégios/estruturas, integrar PR18 com anual desligado e verificar produção; integrar PR132, ativar a oferta por configuração/rebuild do backend/vitrine e conferir navegação/preços em desktop/celular sem compra real. Mensais 49,90/69,90 permanecem; anuais 499/699 são opt-in. Lembretes novos continuam OFF, mantendo o aviso Stripe atual. Interromper novas escolhas se uma verificação falhar. Não alterar contratos existentes para testar.
+
+A auditoria confirma compatibilidade e configuração; NÃO comprova uma compra anual LIVE nem substitui os limites de QA já documentados (primeira anual recusada e cancelamento durante mês pago somente automatizados; PDF nativo/janela privada indisponíveis). Nenhuma nova conta, senha, rotação ou simulação hospedada é necessária para repetir as verificações concluídas.
+
+## Estado mais recente — renovação confirmada e configuração LIVE preparada (17/09/2026)
+
+O usuário inicialmente não lembrava o resultado da tentativa no Chrome. Após preparar as configurações independentes, o diálogo foi reaberto e o usuário confirmou “renovado”. A comparação integral em memória entre a credencial imediatamente anterior e a posterior confirmou valores DIFERENTES, com prefixo da aplicação 2987567593319086 e sufixo do vendedor375473814 corretos. Renovação agora COMPROVADA; não pedir novamente login, renovação ou relato da mensagem anterior.
+
+Trabalho independente concluído com a autorização de configuração já concedida:
+- Na aplicação REAL LoadPro Anual Pix 2987567593319086, foi salva a URL de produção https://rumoaopro.com/api/loadpro/billing/annual/orders/webhook, somente evento Order (Mercado Pago). Modo de teste ficou sem URL/eventos próprios. Não foi enviada simulação nem feito pagamento.
+- A confirmação Salvar configurações de notificações foi concluída; a assinatura secreta foi gerada, e os controles Simular notificação/Redefinir ficaram disponíveis.
+- A assinatura foi transferida diretamente em memória para LOADPRO_ANNUAL_MP_ORDERS_WEBHOOK_SECRET, tipo Secret, exclusivamente Production no projeto Vercel rumoaopro-site. Toast de sucesso e listagem confirmados. Campo novamente ocultado no Mercado Pago, variável temporária de transferência esvaziada. Nenhum segredo foi impresso ou gravado em arquivo.
+- Foram ADICIONADOS como Config em Production STRIPE_LOADPRO_ANNUAL_PRICE_ID=price_1UGO63A6RupMT8QsIqFwXMxQ e STRIPE_LOADPRO_FOUNDERS_50_ANNUAL_PRICE_ID=price_1UGO6bA6RupMT8QszaRjXI3g. Toast de sucesso e ambos os nomes listados confirmados. Não foram criados novos preços nem alterados os mensais.
+- A NOVA chave foi transferida diretamente em memória para LOADPRO_ANNUAL_MP_ORDERS_ACCESS_TOKEN, tipo Secret, exclusivamente Production no projeto rumoaopro-site. Ausência anterior, toast de sucesso e nova listagem Secret/Production confirmados. A referência anterior e o token de transferência foram esvaziados após comparação/salvamento; nenhum valor foi impresso ou persistido em arquivo. A chave exposta não foi reutilizada.
+- As oito configurações anteriores continuam preservadas, incluindo LOADPRO_ANNUAL_ENABLED=false. Total preparado: 10 Config e 2 Secret exclusivos Production. NÃO houve Redeploy, merge, migração de produção ou publicação. Webhook cadastrado e chaves guardadas ainda NÃO comprovam uma transação LIVE: a conferência final do ambiente, migrações e publicação coordenada continuam pendentes.
+
+O bloqueio de renovação/transferência está resolvido. annualRotationBaseline, annualRenewedLiveToken e annualLiveWebhookSecret foram esvaziados. Não armazenar/ler o novo segredo para repetir comprovação já concluída. O provedor informou no diálogo que a chave anterior deixa de funcionar após 12 horas; não houve consulta posterior para comprovar revogação.
+
+Abas temporárias43/44 da Vercel e MP41 fechadas após campos ocultos e salvamento confirmado; a aba original do LoadPro foi preservada. A conta/aplicação antiga, vendas atuais e assinaturas de clientes não foram alteradas. Oferta anual e novos e-mails continuam desligados. Não houve cobrança, simulação LIVE ou campanha. Próxima etapa: revisão final das branches, preflight somente leitura do banco LoadPro iqkzqdoyvxblnsgnsfbz/webhook Stripe e proposta concreta de publicação para aprovação. Não pedir novas contas, pagamentos fictícios ou logins já concluídos.
+
+## Estado mais recente — parâmetros de produção salvos; chave pendente (17/09/2026)
+
+Na retomada após o usuário responder “feito” à orientação de renovar no Chrome, o painel pediu novo QR. O usuário concluiu a verificação durante o trabalho; a página de credenciais voltou a ficar acessível. NÃO pedir QR novamente sem verificar a sessão atual. A aba41 permanece no painel da aplicação real.
+
+Foram conferidos os filtros ANNUAL + Production nas abas Project e Shared da Vercel rumoaopro-site: nenhum parâmetro anual prévio. Foram ADICIONADAS e confirmadas por toast de sucesso somente estas oito variáveis Config, exclusivamente em Production:
+- LOADPRO_ANNUAL_ENABLED=false
+- LOADPRO_ANNUAL_PIX_API=orders
+- LOADPRO_ANNUAL_MP_ORDERS_APPLICATION_ID=2987567593319086
+- LOADPRO_ANNUAL_MP_ORDERS_SELLER_ID=375473814
+- LOADPRO_ANNUAL_MP_ORDERS_TEST_APPROVAL=false
+- LOADPRO_ANNUAL_MP_ORDERS_LIVE=true
+- LOADPRO_ANNUAL_PIX_SANDBOX=false
+- LOADPRO_ANNUAL_WEBHOOK_ORIGIN=https://rumoaopro.com
+A Vercel confirmou que um novo deploy é necessário para aplicar essas variáveis. NÃO foi clicado Redeploy. Nenhuma variável Preview, chave mensal/legada, preço mensal, assinatura ou site público foi alterado. A aba temporária42 da Vercel foi fechada.
+
+Renovação da chave continua SEM CONFIRMAÇÃO. A leitura protegida do campo atual confirmou app/vendedor corretos, mas o prefixo de emissão e uma referência curta coincidem com o token anterior; essas referências não são prova suficiente de substituição. Nenhuma chave foi transferida/salva. Pergunta enviada ao usuário para esclarecer o resultado efetivo no Chrome: sucesso, erro “Não foi possível renovar” ou apenas abertura da confirmação. Aguardar essa resposta antes de usar a chave. Não pedir novamente autorização técnica ou de rotação já concedidas.
+
+A ferramenta de locators getByRole(textbox).nth(0).evaluate passou a expirar. Read-only DOM evaluate funcionou para os dois inputs visíveis; o campo do Access Token é identificado por e.type===text, e.readOnly e getClientRects().length>0 após alternar o botão de visibilidade. Não assumir que propriedades type/readOnly correspondam a atributos CSS, pois input[type=text][readonly] não encontrou o campo. Toda saída de DOM deve passar por annualRedactUi ANTES de filtros; preferir booleanos. Nunca imprimir a chave, mesmo em diagnósticos. Não armazenar esse segredo em arquivo ou Git.
+
+Ainda pendentes: confirmação da renovação, gravação da NOVA chave e segredo webhook como Secret somente Production, webhook real Orders, configuração de preços Stripe LIVE no servidor, migrações de produção revisadas e publicação coordenada. Preços LIVE já criados não devem ser duplicados. Oferta anual desligada. Zero cobranças reais, campanhas ou mudanças em clientes.
+
+
+## Estado atual — credenciais ativadas, renovação necessária (17/09/2026)
+
+A ativação feita pelo usuário no Chrome foi CONFIRMADA no painel oficial após nova verificação QR. App real LoadPro Anual Pix 2987567593319086, vendedor375473814, empresa RP COMERCIO E SERVICOS LTDA. Não repetir criação, ativação, termos ou diagnóstico anterior.
+
+A primeira leitura do campo retornou vazia; a revisão automática bloqueou a transferência por vínculos não confirmados. Uma conferência posterior somente de booleanos confirmou a chave preenchida e prefixo/sufixo corretos para aplicação/vendedor; a leitura em memória foi então permitida. Porém, um filtro de saída do agente incluiu por engano a linha do Access Token em UM resultado técnico do navegador. Nenhum segredo foi salvo em arquivo, Git, Vercel ou webhook. Não reproduzir o valor do resultado. O token preparado foi descartado da variável de transferência. Por segurança, NÃO usar a credencial exposta: precisa renovar o par Public Key/Access Token somente desta aplicação NOVA antes de continuar. A integração antiga não usa essa chave e não foi alterada.
+
+O usuário autorizou explicitamente a renovação ao responder “pode, se manter a seguranca e tudo”. Depois dessa autorização, o clique Renovar foi permitido e abriu o diálogo “Você terá um novo Access Token pronto para usar” na aba41. NÃO houve confirmação final. O diálogo informa que a chave atual deixa de funcionar 12 horas após ativar a nova. Foi solicitado ao usuário clicar Renovar agora porque a política da ferramenta exige handoff na troca de credenciais. Não pedir novamente autorização para a rotação; aguardar somente a ação final e conferir seu sucesso. A integração antiga permanece intacta. Após confirmação, conferir de forma segura a renovação e transferir a nova chave exclusivamente ao servidor Vercel Production já autorizado. Redigir TODA saída de DOM antes de qualquer filtro: primeiro remover padrões de credenciais, depois selecionar linhas. Não imprimir nenhum campo, botão, URL ou texto contendo segredo; preferir retornar somente booleanos/identificadores públicos. Cópia por clipboard retornou conteúdo não correspondente; leitura inicial do textbox veio vazia até alternar o botão de visibilidade. Não persistir credenciais em arquivos, handoffs ou logs.
+
+Configuração de webhook Orders LIVE, credenciais/variáveis Vercel Production e migrações/publicação continuam pendentes. Nenhuma cobrança real, alteração de assinatura, campanha ou publicação de produção foi feita. Dois preços Stripe LIVE existentes preservados. Autorização para armazenar a credencial renovada da MESMA aplicação no servidor de produção e configurar a URL anual permanece válida.
+
+
+## Retomada e diagnóstico da ativação — 17/09/2026
+
+A pausa foi encerrada pelo usuário. A página foi atualizada a pedido e a nova verificação QR foi concluída. O usuário relata erro genérico recorrente ao clicar em Ativar credenciais de produção da aplicação 2987567593319086. Inspeção somente leitura confirmou Setor Serviços de TI, site https://rumoaopro.com com validação HTML válida, termos marcados e CAPTCHA marcado. A mensagem transitória do erro não estava mais presente (nenhum role=alert); o coletor de console retornou zero erros/avisos. Isso NÃO identifica a causa ou o status HTTP da ativação.
+
+Documentação oficial de credenciais confirma que os passos/campos usados estão corretos. Status oficial consultado: All Systems Operational, sem incidente ativo que explique a ativação. Isso não exclui falha localizada no painel ou na conta. Não houve reprodução pelo agente, modificação de credenciais antigas, nova aplicação, transferência de segredo ou publicação. O usuário foi solicitado a tentar a MESMA URL limpa de credenciais da aplicação já criada no Chrome/Edge comum para distinguir uma falha da sessão/navegador incorporado. É hipótese de diagnóstico, não causa confirmada. Se persistir, preparar evidência para suporte Mercado Pago; não enviar contato sem autorização específica. Site/checkout atuais não dependem dessa ativação nova. Autorizações técnicas anteriores permanecem válidas.
+
+Fontes: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/credentials e https://status.mercadopago.com/.
+
+
+## Pausa solicitada pelo usuário — 16/09/2026
+
+O usuário informou que ocorreu um erro ao tentar ativar as credenciais de produção e pediu para continuar amanhã. Trabalho pausado; não houve investigação nem nova tentativa após esse pedido. A causa e o estado final da ativação ainda não foram conferidos. Na retomada, inspecionar primeiro a tela atual de Credenciais de produção da aplicação REAL LoadPro Anual Pix 2987567593319086; não criar outra aplicação e não repetir o aceite ou login se já concluídos.
+
+A criação da aplicação e as verificações de identidade foram confirmadas antes da tentativa de ativação. Setor Serviços de TI e site https://rumoaopro.com estavam preenchidos. A autorização explícita para guardar as credenciais somente no servidor de produção Vercel do RumoAoPro e configurar https://rumoaopro.com/api/loadpro/billing/annual/orders/webhook permanece válida. Nenhuma chave LIVE dessa aplicação foi transferida à Vercel e nenhum webhook LIVE anual foi salvo. Os preços Stripe LIVE de R$499 e R$699 já foram criados: não duplicar. A oferta anual ainda não foi publicada, nem houve cobrança real ou alteração de assinatura de cliente. Nenhuma retomada automática foi agendada.
+
+
 ## Preparação LIVE em 16/09 — preços criados, oferta ainda não publicada
 
 O usuário confirmou explicitamente: “Sim, criar os dois preços anuais reais”. Após a revisão automática exigir essa autorização específica, foram criados somente os seguintes preços novos na conta Stripe RumoAoPro CNPJ, acct_1S4eOzA6RupMT8Qs:
@@ -13,7 +94,7 @@ Ambos apareceram no catálogo com zero assinaturas ativas; os mensais permanecer
 
 A revisão de origem confirmou main app1ecb24f e backendb6fc646 como ancestrais das branches anuais, sem mudanças divergentes. Foi preparado controle da vitrine pelo mesmo LOADPRO_ANNUAL_ENABLED: quando falso/ausente, preserva os dois checkouts mensais e oculta preço, link e texto anual em PT/EN. Quatro testes de renderização aprovados e build com TypeScript aprovado. O preview anual continuará habilitado; produção pode receber o backend ainda desabilitado sem anunciar uma opção indisponível.
 
-A entrada oficial do Mercado Pago foi concluída, conta RP COMERCIO E SERVICOS LTDA / vendedor375473814. A aplicação existente8899432396009304 usa API Pagamentos e permanece intacta. Não há aplicação Orders real existente: o formulário separado LoadPro Anual Pix foi preenchido com Checkout Transparente / API de Orders. O usuário autorizou explicitamente guardar suas credenciais somente no servidor Vercel de produção e configurar https://rumoaopro.com/api/loadpro/billing/annual/orders/webhook, respondendo “Sim, autorizar essa configuração”. Não pedir essa autorização novamente. O aceite dos termos e a criação da aplicação pelo usuário ainda estão pendentes. Nenhuma configuração MP foi alterada. Ainda faltam validar a integração Orders LIVE, parâmetros/migrações reais e publicação conjunta. E-mails anuais continuam desligados; o aviso Stripe existente não mudou. Vitrine com oferta desligada conferida localmente em PT/EN, quadros de390/1440px; página temporária removida e servidor encerrado.
+A entrada oficial do Mercado Pago foi concluída, conta RP COMERCIO E SERVICOS LTDA / vendedor375473814. A aplicação existente8899432396009304 usa API Pagamentos e permanece intacta. Aplicação real LoadPro Anual Pix criada pelo usuário: 2987567593319086, Checkout Transparente via Orders, na conta oficial RP COMERCIO E SERVICOS LTDA. Não criar novamente. O usuário autorizou explicitamente guardar suas credenciais somente no servidor Vercel de produção e configurar https://rumoaopro.com/api/loadpro/billing/annual/orders/webhook, respondendo “Sim, autorizar essa configuração”. Não pedir essa autorização novamente. O aceite/criação foi concluído pelo usuário após reautenticação. A segunda verificação de identidade foi concluída. A tela Credenciais de produção exige ativação com Setor, Site, novo aceite dos termos e CAPTCHA. Foram preparados Serviços de TI e https://rumoaopro.com; o usuário foi solicitado a revisar, aceitar, concluir o CAPTCHA e ativar. Não repetir a criação da aplicação nem pedir de novo a autorização técnica já concedida. Ainda não foram salvas credenciais de produção na Vercel nem configurado o webhook real. A aplicação antiga foi preservada. Ainda faltam validar a integração Orders LIVE, parâmetros/migrações reais e publicação conjunta. E-mails anuais continuam desligados; o aviso Stripe existente não mudou. Vitrine com oferta desligada conferida localmente em PT/EN, quadros de390/1440px; página temporária removida e servidor encerrado.
 
 ## Estado atual — entrega de lembretes preparada e configuração auditada (16/09/2026)
 
