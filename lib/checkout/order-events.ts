@@ -1,5 +1,6 @@
 import {
   appendOrderLog,
+  findOtherPaidOrderForProducts,
   getOrderById,
   revokeProductAccessByOrder,
   updateOrderGatewayIds,
@@ -131,6 +132,33 @@ async function syncRaptorProSafely(
     return;
   }
   try {
+    if (status === "revoked") {
+      // An abandoned checkout never owned the customer's lifetime program access.
+      if (!order.paid_at && order.metadata.raptorpro_access_status !== "granted") {
+        await appendOrderLog(
+          order.id,
+          "raptorpro.access.revocation_skipped",
+          "Tentativa sem pagamento/liberação anterior: acesso ao programa preservado.",
+          { reason: "order_never_granted", programId: program.programId }
+        );
+        return;
+      }
+
+      const paidOrder = await findOtherPaidOrderForProducts(
+        order.customer_email,
+        program.productIds,
+        order.id
+      );
+      if (paidOrder) {
+        await appendOrderLog(
+          order.id,
+          "raptorpro.access.revocation_skipped",
+          "Acesso ao programa preservado: existe outra compra paga para este cliente.",
+          { reason: "another_paid_order", paidOrderId: paidOrder.id, programId: program.programId }
+        );
+        return;
+      }
+    }
     const result = await syncRaptorProProgramAccess(order, status);
     if (!result.handled) return;
     let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true;

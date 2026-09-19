@@ -2913,6 +2913,56 @@ export async function listPaidOrders() {
   return listOrders({ status: "paid" });
 }
 
+/** Exact customer/program lookup: the admin's latest-500 list is not an access check. */
+export async function findOtherPaidOrderForProducts(
+  email: string,
+  productIds: string[],
+  excludedOrderId: string
+) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail || productIds.length === 0) return null;
+  const eligible = (order: Order) =>
+    order.id !== excludedOrderId &&
+    order.status === "paid" &&
+    order.customer_email.trim().toLowerCase() === normalizedEmail &&
+    productIds.includes(order.product_id) &&
+    order.gateway !== "mock" &&
+    order.metadata.checkout_gateway_mode !== "sandbox" &&
+    !isAdminDeletedOrder(order);
+
+  if (useSupabaseDriver()) {
+    // Escape LIKE wildcards: addresses containing '_' must still match exactly.
+    const pattern = normalizedEmail.replace(/[\\%_*]/g, "\\$&");
+    const pageSize = 100;
+    for (let offset = 0; ; offset += pageSize) {
+      const rows = await supabaseRequest<Record<string, unknown>[]>("orders", {
+        query: selectQuery([
+          eq("status", "paid"),
+          `customer_email=ilike.${encodeURIComponent(pattern)}`,
+          `product_id=in.${encodeURIComponent(`(${productIds.map((id) => JSON.stringify(id)).join(",")})`)}`,
+          `id=neq.${encodeURIComponent(excludedOrderId)}`,
+          "order=created_at.desc,id.asc",
+          `limit=${pageSize}`,
+          `offset=${offset}`
+        ])
+      });
+      const match = rows.map(normalizeOrder).find(eligible);
+      if (match) return match;
+      if (rows.length < pageSize) return null;
+    }
+  }
+
+  const placeholders = productIds.map(() => "?").join(",");
+  const rows = getDatabase()
+    .prepare(
+      `SELECT * FROM orders WHERE status = 'paid'
+       AND LOWER(TRIM(customer_email)) = ? AND product_id IN (${placeholders})
+       AND id <> ? ORDER BY created_at DESC, id ASC`
+    )
+    .all(normalizedEmail, ...productIds, excludedOrderId);
+  return rows.map(normalizeOrder).find(eligible) || null;
+}
+
 export async function listOrderLogs(orderId: string) {
   if (useSupabaseDriver()) {
     return (
