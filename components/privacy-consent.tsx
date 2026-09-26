@@ -11,8 +11,12 @@ export const MARKETING_CONSENT_EVENT = "rap:marketing-consent";
 
 export function readMarketingConsent(): MarketingConsent {
   if (typeof window === "undefined") return null;
-  const value = window.localStorage.getItem(MARKETING_CONSENT_KEY);
-  return value === "granted" || value === "denied" ? value : null;
+  try {
+    const value = window.localStorage.getItem(MARKETING_CONSENT_KEY);
+    return value === "granted" || value === "denied" ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 function persistMarketingConsent(value: Exclude<MarketingConsent, null>) {

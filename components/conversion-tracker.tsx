@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { attributionId, marketingLandingUrl } from "@/lib/marketing/attribution";
 import {
   MARKETING_CONSENT_EVENT,
   readMarketingConsent
@@ -34,6 +35,8 @@ export type MarketingAttribution = {
   fbclid?: string;
   fbp?: string;
   fbc?: string;
+  sessionId?: string;
+  landingAttributionId?: string;
 };
 
 type MetaEventName =
@@ -50,6 +53,7 @@ type MetaWindow = Window & {
 };
 
 const ATTRIBUTION_KEY = "rap_marketing_attribution_v1";
+let fallbackSessionId: string | undefined;
 
 const productPaths: Record<string, string> = {
   "/programas/offseason-30-days": "offseason-30-days",
@@ -68,12 +72,16 @@ const productPaths: Record<string, string> = {
 
 function getSessionId() {
   const key = "rap_analytics_session";
-  const current = window.sessionStorage.getItem(key);
-  if (current) return current;
-
-  const created = crypto.randomUUID();
-  window.sessionStorage.setItem(key, created);
-  return created;
+  try {
+    const current = window.sessionStorage.getItem(key);
+    if (current) return current;
+    const created = fallbackSessionId || crypto.randomUUID();
+    window.sessionStorage.setItem(key, created);
+    return created;
+  } catch {
+    fallbackSessionId ||= crypto.randomUUID();
+    return fallbackSessionId;
+  }
 }
 
 function getPresenceSessionId() {
@@ -130,11 +138,15 @@ async function sendPresence(path: string) {
 
 function readCookie(name: string) {
   const prefix = `${name}=`;
-  return document.cookie
-    .split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(prefix))
-    ?.slice(prefix.length);
+  try {
+    return document.cookie
+      .split(";")
+      .map((value) => value.trim())
+      .find((value) => value.startsWith(prefix))
+      ?.slice(prefix.length);
+  } catch {
+    return undefined;
+  }
 }
 
 function cleanParam(value: string | null, maxLength = 180) {
@@ -143,17 +155,24 @@ function cleanParam(value: string | null, maxLength = 180) {
 
 function captureAttribution(): MarketingAttribution {
   const consent = readMarketingConsent() === "granted" ? "granted" : "denied";
-  if (consent !== "granted") return { consent };
+  if (consent !== "granted") {
+    try { window.localStorage.removeItem(ATTRIBUTION_KEY); } catch { /* Storage can be disabled. */ }
+    return { consent };
+  }
 
   let current: Partial<MarketingAttribution> = {};
   try {
-    current = JSON.parse(window.localStorage.getItem(ATTRIBUTION_KEY) || "{}") as Partial<MarketingAttribution>;
+    const stored: unknown = JSON.parse(window.localStorage.getItem(ATTRIBUTION_KEY) || "{}");
+    current = stored && typeof stored === "object" && !Array.isArray(stored)
+      ? stored as Partial<MarketingAttribution>
+      : {};
   } catch {
     current = {};
   }
 
   const params = new URLSearchParams(window.location.search);
   const fbclid = cleanParam(params.get("fbclid"));
+  const landingAttributionId = attributionId(params.get("lp_attribution_id"));
   const incomingUtms = {
     utmSource: cleanParam(params.get("utm_source")),
     utmMedium: cleanParam(params.get("utm_medium")),
@@ -161,19 +180,21 @@ function captureAttribution(): MarketingAttribution {
     utmContent: cleanParam(params.get("utm_content")),
     utmTerm: cleanParam(params.get("utm_term"))
   };
-  const hasIncomingTouch = Boolean(fbclid || Object.values(incomingUtms).some(Boolean));
+  const hasIncomingTouch = Boolean(fbclid || landingAttributionId || Object.values(incomingUtms).some(Boolean));
   const currentFbc = readCookie("_fbc");
   if (fbclid && !currentFbc?.endsWith(`.${fbclid}`)) {
-    document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; Path=/; Max-Age=7776000; SameSite=Lax${
-      window.location.protocol === "https:" ? "; Secure" : ""
-    }`;
+    try {
+      document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; Path=/; Max-Age=7776000; SameSite=Lax${
+        window.location.protocol === "https:" ? "; Secure" : ""
+      }`;
+    } catch { /* Optional cookies must not block checkout. */ }
   }
 
   const attribution: MarketingAttribution = {
     consent,
     landingUrl: hasIncomingTouch
-      ? window.location.href.slice(0, 500)
-      : current.landingUrl || window.location.href.slice(0, 500),
+      ? marketingLandingUrl(window.location.href)
+      : marketingLandingUrl(current.landingUrl) || marketingLandingUrl(window.location.href),
     utmSource: hasIncomingTouch ? incomingUtms.utmSource : current.utmSource,
     utmMedium: hasIncomingTouch ? incomingUtms.utmMedium : current.utmMedium,
     utmCampaign: hasIncomingTouch ? incomingUtms.utmCampaign : current.utmCampaign,
@@ -181,9 +202,11 @@ function captureAttribution(): MarketingAttribution {
     utmTerm: hasIncomingTouch ? incomingUtms.utmTerm : current.utmTerm,
     fbclid: hasIncomingTouch ? fbclid : current.fbclid,
     fbp: readCookie("_fbp") || current.fbp,
-    fbc: readCookie("_fbc") || current.fbc
+    fbc: readCookie("_fbc") || current.fbc,
+    sessionId: getSessionId(),
+    landingAttributionId: hasIncomingTouch ? landingAttributionId : attributionId(current.landingAttributionId)
   };
-  window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
+  try { window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch { /* Attribution must not block checkout. */ }
   return attribution;
 }
 
@@ -277,13 +300,16 @@ export function trackMetaOutcome(
   currency: string
 ) {
   if (typeof window === "undefined") return;
+  // LoadPro payments (including renewals) are confirmed by signed webhooks.
+  // A success-page visit cannot share the invoice ID and would double-count.
+  if (eventName === "Purchase" && isLoadProSlug(productSlug)) return;
   const pixelId = initMetaPixel(productSlug);
   if (!pixelId) return;
   (window as MetaWindow).fbq?.(
     "trackSingle",
     pixelId,
     eventName,
-    { content_name: contentName, content_ids: [productSlug], content_type: "product", value, currency },
+    { content_name: contentName, content_ids: [productSlug], content_type: "product", value: eventName === "StartTrial" ? 0 : value, currency },
     { eventID: eventId }
   );
 }
@@ -312,7 +338,7 @@ async function sendEvent(
   });
   const storageKey = `rap_event:${type}:${productSlug}:${locale}:${path}:${attribution.consent}`;
 
-  if (window.sessionStorage.getItem(storageKey)) return;
+  try { if (window.sessionStorage.getItem(storageKey)) return; } catch { /* Server event IDs still deduplicate. */ }
 
   const metaEvent = metaEventFor(type);
   if (metaEvent && attribution.consent === "granted") {
@@ -397,8 +423,8 @@ export function ConversionTracker() {
 
   useEffect(() => {
     const consentChanged = () => {
-      if (readMarketingConsent() !== "granted") return;
       captureAttribution();
+      if (readMarketingConsent() !== "granted") return;
       void sendEvent("page_view", "site", window.location.pathname);
 
       const salesProduct = productPaths[window.location.pathname];

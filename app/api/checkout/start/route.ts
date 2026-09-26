@@ -229,6 +229,8 @@ export async function POST(request: Request) {
         } : {}),
         base_price_usd: localizedPrice.basePriceUsd,
         marketing_consent: marketingConsent ? "granted" : "denied",
+        marketing_session_id: input.marketing.sessionId || null,
+        marketing_landing_attribution_id: input.marketing.landingAttributionId || null,
         marketing_landing_url: input.marketing.landingUrl || null,
         marketing_utm_source: input.marketing.utmSource || null,
         marketing_utm_medium: input.marketing.utmMedium || null,

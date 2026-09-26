@@ -22,6 +22,7 @@ import {
   trackMetaPurchase,
   trackMetaStartTrial
 } from "@/lib/marketing/order-events";
+import { recordLoadProOutcome } from "@/lib/marketing/loadpro-outcomes";
 import { isLoadProOrder, isCurrentLoadProSubscription } from "@/lib/checkout/loadpro";
 import { stripeSubscriptionPeriod } from "@/lib/checkout/loadpro-billing-policy";
 import { sendLoadProPaymentFailedEmail } from "@/lib/checkout/email";
@@ -293,7 +294,10 @@ export async function POST(request: Request) {
           },
           { invite: true }
         );
-        await trackMetaStartTrial(order);
+        await trackMetaStartTrial(order, {
+          subscriptionId,
+          occurredAt: typeof subscription?.trial_start === "number" ? subscription.trial_start : undefined
+        });
       } else if (paid) {
         await markOrderAsPaid(order.id, {
           ...environmentData,
@@ -318,6 +322,22 @@ export async function POST(request: Request) {
     }
 
     if (event.type === "invoice.paid" && subscriptionId) {
+      const amountPaid = typeof object.amount_paid === "number" ? object.amount_paid : null;
+      const paidAt = recordOf(object.status_transitions).paid_at;
+      const paymentEventId = isLoadProOrder(order)
+        ? `purchase:stripe:${objectId || eventId}`
+        : `purchase:${eventId}`;
+      // Record the confirmed payment even if later access reconciliation fails
+      // or the subscription has already been canceled. It is not an access grant.
+      if (amountPaid !== null && amountPaid > 0) {
+        await recordLoadProOutcome(order, {
+          type: "payment_received",
+          reference: paymentEventId,
+          amount: amountPaid / 100,
+          currency: textValue(object.currency)?.toUpperCase() || order.currency,
+          occurredAt: typeof paidAt === "number" ? paidAt : undefined
+        });
+      }
       // Invoice metadata may describe the original plan and may arrive late.
       // The current subscription owns the plan, currency and access period.
       const liveSubscription = isLoadProOrder(order) ? await fetchStripeSubscription(subscriptionId) : null;
@@ -335,8 +355,6 @@ export async function POST(request: Request) {
       const annualInvoiceConfirmed=object.paid===true && currentFields.billing_interval==='year'
         && matchesAnnualPayment(currentFields.plan_code,currentFields.price_cents,object.amount_paid,String(object.currency).toUpperCase())
         && object.id === (typeof liveSubscription?.latest_invoice === 'string' ? liveSubscription.latest_invoice : recordOf(liveSubscription?.latest_invoice).id);
-      const amountPaid =
-        typeof object.amount_paid === "number" ? object.amount_paid : null;
       const zeroValueTrialInvoice =
         isLoadProOrder(order) &&
         amountPaid === 0 &&
@@ -355,7 +373,10 @@ export async function POST(request: Request) {
           },
           { invite: true }
         );
-        await trackMetaStartTrial(order);
+        await trackMetaStartTrial(order, {
+          subscriptionId,
+          occurredAt: typeof liveSubscription?.trial_start === "number" ? liveSubscription.trial_start : undefined
+        });
       } else if (order.status !== "paid") {
         await markOrderAsPaid(order.id, {
           ...environmentData,
@@ -378,9 +399,11 @@ export async function POST(request: Request) {
 
       if (amountPaid && amountPaid > 0) {
         await trackMetaPurchase(order, {
-          eventId: `purchase:${eventId}`,
+          // Distinct Stripe events may refer to the same paid invoice.
+          eventId: paymentEventId,
           amount: amountPaid / 100,
-          currency: textValue(object.currency)?.toUpperCase() || order.currency
+          currency: textValue(object.currency)?.toUpperCase() || order.currency,
+          occurredAt: typeof paidAt === "number" ? paidAt : undefined
         });
       }
     }

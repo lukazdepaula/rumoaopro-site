@@ -4,6 +4,7 @@ import type {
   CustomerDocumentType,
   MarketingAttributionInput
 } from "@/lib/checkout/types";
+import { normalizeMarketingAttribution } from "@/lib/marketing/attribution";
 import {
   getCountries,
   parsePhoneNumberFromString,
@@ -38,23 +39,6 @@ export type ValidCheckoutInput = {
 
 const normalizeText = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
-
-const normalizeMarketing = (value: unknown): MarketingAttributionInput => {
-  const data = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const clean = (field: string, maxLength: number) => normalizeText(data[field]).slice(0, maxLength) || undefined;
-  return {
-    consent: data.consent === "granted" ? "granted" : "denied",
-    landingUrl: clean("landingUrl", 500),
-    utmSource: clean("utmSource", 180),
-    utmMedium: clean("utmMedium", 180),
-    utmCampaign: clean("utmCampaign", 180),
-    utmContent: clean("utmContent", 180),
-    utmTerm: clean("utmTerm", 180),
-    fbclid: clean("fbclid", 240),
-    fbp: clean("fbp", 240),
-    fbc: clean("fbc", 240)
-  };
-};
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -106,7 +90,7 @@ export function validateCheckoutInput(input: unknown): ValidCheckoutInput {
   const discountCode = normalizeDiscountCode(data.discountCode);
   const requestedPaymentMethod = normalizeText(data.paymentMethod);
   const locale = data.locale === "en" ? "en" : "pt";
-  const marketing = normalizeMarketing(data.marketing);
+  const marketing = normalizeMarketingAttribution(data.marketing);
 
   if (!productSlug) {
     throw new CheckoutValidationError("Produto inválido.", "productSlug");

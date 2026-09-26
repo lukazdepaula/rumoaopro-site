@@ -1,6 +1,7 @@
 import type { Order } from "@/lib/checkout/types";
 import { getProductById, isLoadProProductId } from "@/lib/checkout/products";
 import { appendOrderLog } from "@/lib/checkout/db";
+import { recordLoadProOutcome } from "@/lib/marketing/loadpro-outcomes";
 import {
   marketingConsentGranted,
   sendMetaEvent,
@@ -75,8 +76,23 @@ function eventSourceUrl() {
   return `${siteUrl()}/checkout/success`;
 }
 
-export async function trackMetaStartTrial(order: Order) {
+export async function trackMetaStartTrial(
+  order: Order,
+  options: { subscriptionId?: string; occurredAt?: number } = {}
+) {
   if (!isLoadProProductId(order.product_id)) return;
+  if (order.metadata.checkout_gateway_mode === "sandbox" || order.metadata.checkout_gateway_mode === "mock") return;
+  // A Stripe subscription verified as trialing is stronger than order.pending.
+  // Legacy MP authorization alone does not prove that a free trial was granted.
+  if (order.gateway === "stripe" && options.subscriptionId) {
+    await recordLoadProOutcome(order, {
+      type: "trial_started",
+      reference: options.subscriptionId,
+      amount: 0,
+      currency: order.currency,
+      occurredAt: options.occurredAt
+    });
+  }
   if (!marketingConsentGranted(order.metadata.marketing_consent)) return;
 
   const eventId = `start_trial:${order.id}`;
@@ -91,7 +107,7 @@ export async function trackMetaStartTrial(order: Order) {
       content_ids: [productSlug(order)],
       content_type: "product",
       currency: order.currency,
-      value: order.amount
+      value: 0
     }
   });
   await recordMetaResult(order, "StartTrial", eventId, result);
@@ -103,14 +119,23 @@ export async function trackMetaPurchase(
     eventId?: string;
     amount?: number;
     currency?: string;
+    occurredAt?: number;
   } = {}
 ) {
   const amount = options.amount ?? order.amount;
-  if (amount <= 0) return;
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  if (order.metadata.checkout_gateway_mode === "sandbox" || order.metadata.checkout_gateway_mode === "mock") return;
+  const eventId = options.eventId || `purchase:${order.id}`;
+  await recordLoadProOutcome(order, {
+    type: "payment_received",
+    reference: eventId,
+    amount,
+    currency: options.currency || order.currency,
+    occurredAt: options.occurredAt
+  });
   if (!marketingConsentGranted(order.metadata.marketing_consent)) return;
 
   const slug = productSlug(order);
-  const eventId = options.eventId || `purchase:${order.id}`;
   const result = await sendMetaEvent({
     dataset: datasetForOrder(order),
     eventName: "Purchase",

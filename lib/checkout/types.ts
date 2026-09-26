@@ -34,6 +34,8 @@ export type MarketingAttributionInput = {
   fbclid?: string;
   fbp?: string;
   fbc?: string;
+  sessionId?: string;
+  landingAttributionId?: string;
 };
 
 export type AnalyticsEvent = {

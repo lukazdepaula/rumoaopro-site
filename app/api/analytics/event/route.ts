@@ -4,6 +4,7 @@ import { recordWebhookEvent } from "@/lib/checkout/db";
 import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import type { AnalyticsEventType } from "@/lib/checkout/types";
 import { marketingConsentGranted, sendMetaEvent, type MetaEventName } from "@/lib/marketing/meta";
+import { attributionStatus, normalizeMarketingAttribution } from "@/lib/marketing/attribution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,9 +59,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>;
-    const marketing = body.marketing && typeof body.marketing === "object"
-      ? body.marketing as Record<string, unknown>
-      : {};
+    const marketing = normalizeMarketingAttribution(body.marketing);
     const type = cleanText(body.type, 32) as AnalyticsEventType;
     const sessionId = cleanText(body.sessionId, 80);
     const productSlug = cleanText(body.productSlug, 100);
@@ -93,7 +92,9 @@ export async function POST(request: Request) {
       utm_term: cleanText(marketing.utmTerm, 180) || null,
       fbclid: cleanText(marketing.fbclid, 240) || null,
       fbp: cleanText(marketing.fbp, 240) || null,
-      fbc: cleanText(marketing.fbc, 240) || null
+      fbc: cleanText(marketing.fbc, 240) || null,
+      landing_attribution_id: marketing.landingAttributionId || null,
+      status: attributionStatus(marketing)
     };
     let recorded = false;
     try {
