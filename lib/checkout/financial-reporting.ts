@@ -277,6 +277,9 @@ function resourceMatchesSite(
 }
 
 function stripeReferencePath(id: string) {
+  // Stripe client_secret values start with pi_ too, but are not resource IDs.
+  // Never put a client secret (or another arbitrary value) in a lookup URL.
+  if (!/^(?:ch|in|pi|re|dp|sub)_[a-zA-Z0-9]+$/.test(id)) return null;
   if (id.startsWith("ch_")) return `charges/${encodeURIComponent(id)}`;
   if (id.startsWith("in_")) return `invoices/${encodeURIComponent(id)}`;
   if (id.startsWith("pi_")) return `payment_intents/${encodeURIComponent(id)}`;

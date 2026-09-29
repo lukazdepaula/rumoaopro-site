@@ -100,6 +100,23 @@ test('Stripe limits concurrent resource lookups to four and reuses shared refere
   assert.ok(peak <= 4 && peak > 1);
 });
 
+test('Stripe never treats a PaymentIntent client secret as a resource reference', async () => {
+  const paths = [];
+  const api = finance(async url => {
+    paths.push(url.pathname);
+    if (url.pathname.endsWith('/balance_transactions')) return json({ data: [
+      transaction('txn_external', { id: 'ch_external', payment_intent: 'pi_external' })
+    ], has_more: false });
+    assert.equal(url.pathname, '/v1/payment_intents/pi_external');
+    return json({ id: 'pi_external', client_secret: 'pi_external_secret_fixture', metadata: {}, latest_charge: 'ch_external' });
+  });
+  const result = await stripeSource(api);
+  assert.equal(result.state, 'ready');
+  assert.equal(result.excludedTransactionCount, 1);
+  assert.equal(paths.length, 2);
+  assert.ok(paths.every(path => !path.includes('_secret_')));
+});
+
 const subscription = (id, amount = 4990, discount) => ({
   id, customer: `cus_${id}`, livemode: true, metadata: { product_id: product.id },
   discount, items: { data: [{ quantity: 1, price: { id: 'price_fixture', currency: 'brl',
