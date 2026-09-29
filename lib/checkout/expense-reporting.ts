@@ -4,7 +4,7 @@ export type ExpenseSourceState = "ready" | "estimate" | "missing" | "error";
 export type ExpenseCategory = "Marketing" | "Infraestrutura" | "Ferramentas";
 
 export type MonthlyExpenseSource = {
-  id: "meta_ads" | "supabase" | "github" | "chatgpt";
+  id: "meta_ads" | "supabase" | "github" | "chatgpt" | "vercel" | "manychat";
   name: string;
   category: ExpenseCategory;
   state: ExpenseSourceState;
@@ -355,7 +355,11 @@ async function loadMonthlyExpenseMetrics(period: string): Promise<MonthlyExpense
     loadMetaAdsExpense(period),
     loadGithubExpense(period)
   ]);
-  const sources = [metaAds, loadSupabaseExpense(period), github, loadChatGptExpense()];
+  const sources = [
+    metaAds, loadSupabaseExpense(period), github, loadChatGptExpense(),
+    missingSource("vercel", "Vercel", "Infraestrutura", "fixed", "Custo do mês ainda não conciliado com a fatura; não foi considerado zero."),
+    missingSource("manychat", "ManyChat", "Ferramentas", "fixed", "Custo do mês ainda não conciliado com a fatura; não foi considerado zero.")
+  ];
   const convertedSources = sources.filter(
     (source) =>
       (source.state === "ready" || source.state === "estimate") &&

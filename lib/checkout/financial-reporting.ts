@@ -503,11 +503,11 @@ async function requestJson<T>(url: URL, headers: HeadersInit) {
     cache: "no-store",
     signal: AbortSignal.timeout(15000)
   });
-  const payload = (await response.json().catch(() => ({}))) as T;
   if (!response.ok) {
     throw new Error(`Financial provider returned HTTP ${response.status}`);
   }
-  return payload;
+  // A malformed response must not be presented as a successful empty report.
+  return (await response.json()) as T;
 }
 
 function kiwifyCredentials() {
@@ -790,17 +790,20 @@ async function stripeTransactionMatchesSite(
     if (!request) {
       request = requestJson<StripeResource>(new URL(`https://api.stripe.com/v1/${path}`), {
         Authorization: `Bearer ${secretKey}`
-      }).catch(() => null);
+      });
       resourceRequests.set(id, request);
     }
     const resource = await request;
-    if (!resource) continue;
+    if (!resource || resource.id !== id) throw new Error("Stripe returned an invalid resource");
     if (resourceMatchesSite(resource, index.stripeIdentifiers, index)) return true;
     for (const reference of collectStripeReferences(resource)) {
       if (!checked.has(reference)) pending.push(reference);
     }
   }
 
+  if (pending.some((id) => !checked.has(id))) {
+    throw new Error("Stripe resource classification exceeded the safety limit");
+  }
   return false;
 }
 
@@ -824,7 +827,8 @@ async function loadStripeSource(
     const payload = await requestJson<StripeBalanceResponse>(url, {
       Authorization: `Bearer ${secretKey}`
     });
-    const pageData = Array.isArray(payload.data) ? payload.data : [];
+    if (!Array.isArray(payload.data)) throw new Error("Stripe returned an invalid transaction list");
+    const pageData = payload.data;
     transactions.push(...pageData);
     if (!payload.has_more || pageData.length === 0) break;
     startingAfter = pageData.at(-1)?.id || null;
@@ -848,14 +852,22 @@ async function loadStripeSource(
     const source = recordValue(transaction.source) as StripeResource | null;
     if (source?.id) resourceRequests.set(source.id, Promise.resolve(source));
   }
-  const siteMatches = new Map(
-    await Promise.all(
-      uniqueTransactions.map(async (transaction) => [
+  const reportableTransactions = uniqueTransactions.filter((transaction) =>
+    ["charge", "payment", "refund", "payment_refund", "dispute", "payment_dispute", "dispute_reversal"]
+      .includes(transaction.reporting_category || transaction.type || "")
+  );
+  const siteMatches = new Map<string, boolean>();
+  // Limit provider lookups; an unavailable lookup must trigger the explicit
+  // partial/local fallback, never silently classify a payment as external.
+  for (let offset = 0; offset < reportableTransactions.length; offset += 4) {
+    const matches = await Promise.all(
+      reportableTransactions.slice(offset, offset + 4).map(async (transaction) => [
         transaction.id,
         await stripeTransactionMatchesSite(transaction, secretKey, index, resourceRequests)
       ] as const)
-    )
-  );
+    );
+    for (const [id, matchesSite] of matches) siteMatches.set(id, matchesSite);
+  }
 
   for (const transaction of uniqueTransactions) {
     const category = transaction.reporting_category || transaction.type || "";

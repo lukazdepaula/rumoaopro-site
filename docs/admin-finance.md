@@ -2,9 +2,9 @@
 
 O painel financeiro separa três métricas que respondem a perguntas diferentes:
 
-- **MRR atual:** fotografia das assinaturas ativas e em atraso na Stripe, normalizada para um mês. Descontos recorrentes ativos são subtraídos por padrão.
+- **MRR atual:** fotografia somente das assinaturas ativas na Stripe, normalizada para um mês. Atrasos e testes aparecem separadamente e não entram no MRR nem no contador de assinaturas ativas. Descontos recorrentes ativos são subtraídos por padrão.
 - **Faturamento por período:** vendas do site aprovadas entre as datas selecionadas. Inclui compras iniciais, renovações conciliadas, Preparador PRO na Kiwify e vendas do Shopify registradas na migração.
-- **Faturamento mensal combinado:** MRR atual após descontos mais as vendas avulsas de produtos do tipo `training_program` acumuladas no mês atual. Cobranças de assinatura não entram novamente na parcela de programas, evitando duplicidade.
+- **Indicador mensal combinado:** MRR atual após descontos mais as vendas avulsas de produtos do tipo `training_program` acumuladas no mês atual. Não representa faturamento recebido nem lucro. Fica indisponível quando as fontes estão parciais ou há moedas sem conversão.
 
 ## Fontes
 
@@ -14,7 +14,7 @@ A Kiwify é consultada exclusivamente para o produto **Preparador PRO**. O paine
 
 O histórico do Shopify permanece vindo dos pedidos migrados. Para esses registros, o painel usa `shopify_purchase_date` e `shopify_amount_paid`, preservando a data e o valor da venda original mesmo quando o acesso foi migrado depois.
 
-Se uma consulta oficial falhar ou não estiver configurada, o painel usa os pedidos locais daquele gateway e marca o resultado como **fallback**. Esse valor é parcial porque uma renovação pode não criar um novo pedido local.
+Se uma consulta oficial falhar ou não estiver configurada, o painel usa os pedidos locais daquele gateway e marca o resultado como **fallback**. Esse valor é parcial porque uma renovação pode não criar um novo pedido local. Falhas ao identificar recursos da Stripe também disparam esse fallback, em vez de excluir silenciosamente pagamentos como externos. Consultas de identificação são limitadas a quatro movimentações por lote.
 
 As credenciais são lidas somente no servidor. As respostas financeiras ficam em cache por 60 segundos; o botão **Atualizar** ignora esse cache.
 
@@ -43,7 +43,9 @@ Depois de salvar, faça um novo deploy e use **Atualizar** no admin. Nunca expon
 - **Pagamentos aprovados:** quantidade de cobranças vinculadas ao site, inclusive renovações.
 - **Ticket médio:** faturamento bruto dividido pelos pagamentos aprovados.
 
-O faturamento mensal combinado é um indicador gerencial, não uma conciliação de caixa: o MRR representa a fotografia recorrente atual, enquanto as vendas de programas representam pagamentos já confirmados no mês. Em filtros diferentes de **Mês atual**, o painel mantém o indicador indisponível para não misturar períodos.
+O indicador mensal combinado não é uma conciliação de caixa: o MRR representa a fotografia recorrente atual, enquanto as vendas de programas representam pagamentos já confirmados no mês. Em filtros diferentes de **Mês atual**, o painel mantém o indicador indisponível para não misturar períodos.
+
+**Saldo após custos informados:** usa receitas líquidas confirmadas do mês atual menos custos informados, nunca MRR ou projeção de receita. Não é lucro líquido contábil nem saldo bancário disponível e não inclui impostos. Fontes de custo pendentes, falhas, moedas sem conversão ou receitas parciais impedem o cálculo. Vercel e ManyChat aparecem explicitamente como pendências até a conciliação das respectivas faturas; custos desconhecidos nunca são considerados zero. A conciliação da Kiwify (juros do comprador versus valor líquido do produtor) ainda exige validação com vendas reais antes de tratar o fechamento como definitivo.
 
 O filtro abre no mês atual e aceita hoje, últimos 7 ou 30 dias, mês anterior, ano atual e uma faixa personalizada de até 366 dias. A pesquisa do Mercado Pago está limitada aos últimos 12 meses pela API do provedor.
 

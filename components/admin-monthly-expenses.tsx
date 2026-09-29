@@ -69,10 +69,10 @@ function sourceValue(source: MonthlyExpenseSource) {
 
 export function AdminMonthlyExpenses({
   initialData,
-  projectedRevenueBrl
+  confirmedNetRevenueBrl
 }: {
   initialData: MonthlyExpenseMetrics;
-  projectedRevenueBrl: number | null;
+  confirmedNetRevenueBrl: number | null;
 }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,12 +109,10 @@ export function AdminMonthlyExpenses({
   ).length;
   const hasEstimatedSource = data.sources.some((source) => source.state === "estimate");
   const missingSourceCount = data.sources.length - configuredSources;
-  const estimatedProfitBrl = projectedRevenueBrl === null
+  const estimatedBalanceBrl = confirmedNetRevenueBrl === null || missingSourceCount > 0 ||
+    data.hasUnconvertedCurrencies || !data.hasSpendData || !reachable
     ? null
-    : projectedRevenueBrl - data.projectedBrlEstimate;
-  const estimatedProfitMargin = projectedRevenueBrl !== null && projectedRevenueBrl > 0 && estimatedProfitBrl !== null
-    ? (estimatedProfitBrl / projectedRevenueBrl) * 100
-    : null;
+    : confirmedNetRevenueBrl - data.totalBrlEstimate;
 
   return (
     <section className="mb-5 overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm">
@@ -180,26 +178,22 @@ export function AdminMonthlyExpenses({
         <div className="p-5">
           <div className="flex items-center gap-2 text-graphite/50">
             <CircleDollarSign className="h-4 w-4" />
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Lucro estimado</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Saldo após custos informados</p>
           </div>
           <p className={`mt-2 text-3xl font-black ${
-            estimatedProfitBrl !== null && estimatedProfitBrl < 0 ? "text-rose-600" : "text-ink"
+            estimatedBalanceBrl !== null && estimatedBalanceBrl < 0 ? "text-rose-600" : "text-ink"
           }`}>
-            {data.hasSpendData && estimatedProfitBrl !== null ? formatMoney(estimatedProfitBrl) : "—"}
+            {estimatedBalanceBrl !== null ? formatMoney(estimatedBalanceBrl) : "—"}
           </p>
-          {projectedRevenueBrl === null ? (
-            <p className="mt-3 text-xs text-graphite/55">A projeção de lucro aparece ao selecionar o mês atual.</p>
-          ) : !data.hasSpendData ? (
-            <p className="mt-3 text-xs text-graphite/55">Conecte pelo menos uma despesa para iniciar a estimativa.</p>
-          ) : missingSourceCount > 0 ? (
+          {missingSourceCount > 0 ? (
             <p className="mt-3 text-xs text-amber-700">
-              Resultado parcial: ainda falta {missingSourceCount} fonte{missingSourceCount === 1 ? "" : "s"} de custo.
+              Saldo indisponível: ainda falta {missingSourceCount} fonte{missingSourceCount === 1 ? "" : "s"} de custo.
             </p>
+          ) : estimatedBalanceBrl === null ? (
+            <p className="mt-3 text-xs text-amber-700">Selecione o mês atual e concilie receitas, custos e moedas antes de calcular o saldo.</p>
           ) : (
             <p className="mt-3 text-xs text-graphite/55">
-              {estimatedProfitMargin === null
-                ? "Sem faturamento projetado para calcular a margem."
-                : `Margem operacional estimada de ${formatPercent(estimatedProfitMargin)}%.`}
+              Receitas líquidas confirmadas menos custos informados. Não é lucro líquido.
             </p>
           )}
         </div>
@@ -240,7 +234,7 @@ export function AdminMonthlyExpenses({
       </div>
 
       <p className="border-t border-ink/10 px-5 py-3 text-[11px] leading-relaxed text-graphite/50">
-        Lucro estimado = faturamento projetado menos as despesas monitoradas; não inclui impostos nem fontes pendentes.
+        Saldo = receitas após taxas dos gateways menos custos informados do mês, sem misturar MRR ou projeções. Não inclui impostos. Fontes pendentes impedem o cálculo.
         {data.budgetBrl === null
           ? " Orçamento mensal ainda não definido."
           : ` Orçamento consumido: ${formatPercent(data.budgetUsedPercent || 0)}% de ${formatMoney(data.budgetBrl)}.`}
