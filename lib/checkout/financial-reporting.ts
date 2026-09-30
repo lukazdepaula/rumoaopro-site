@@ -500,6 +500,98 @@ function stripeMajorAmount(amount: number, currency: string) {
   return amount / (ZERO_DECIMAL_CURRENCIES.has(currency.toUpperCase()) ? 1 : 100);
 }
 
+// Temporary, explicit projection for the authenticated diagnostic endpoint.
+// Never return raw provider objects, customer fields, credentials or errors.
+export async function getFinancialReconciliationSample(
+  source: "kiwify" | "mercado_pago" | "stripe",
+  period: FinancialPeriod
+) {
+  if (period.days > 31) throw new Error("Diagnostic range exceeds 31 days");
+  const numeric = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+  const code = (value: unknown) => typeof value === "string" && /^[A-Za-z0-9_.:-]{1,100}$/.test(value) ? value : null;
+  const date = (value: unknown) => typeof value === "string" && Number.isFinite(Date.parse(value))
+    ? new Date(value).toISOString() : null;
+  if (source === "kiwify") {
+    const credentials = kiwifyCredentials();
+    if (!credentials) throw new Error("Provider unavailable");
+    const token = await kiwifyAccessToken(credentials.clientId, credentials.clientSecret);
+    const products = await resolveKiwifyProductIds(token, credentials.accountId);
+    const rows = [];
+    for (const productId of products) {
+      const url = new URL("https://public-api.kiwify.com/v1/sales");
+      for (const [key, value] of Object.entries({
+        start_date: period.start.toISOString(), end_date: new Date(period.end.getTime() - 1).toISOString(),
+        product_id: productId, view_full_sale_details: "true", page_size: "100", page_number: "1"
+      })) url.searchParams.set(key, value);
+      const payload = await requestJson<KiwifyListResponse<Record<string, unknown>>>(url, {
+        Authorization: "Bearer " + token, "x-kiwify-account-id": credentials.accountId
+      });
+      if (!Array.isArray(payload.data) || payload.data.length >= 100) throw new Error("Sample incomplete");
+      for (const sale of payload.data) {
+        const payment = recordValue(sale.payment) || {};
+        rows.push({
+          reference: code(sale.id), status: code(sale.status), approvedAt: date(sale.approved_date),
+          currency: code(sale.currency), netAmount: numeric(sale.net_amount),
+          chargeAmount: numeric(payment.charge_amount), chargeCurrency: code(payment.charge_currency),
+          paymentNetAmount: numeric(payment.net_amount), settlementAmount: numeric(payment.settlement_amount),
+          settlementCurrency: code(payment.settlement_currency), productBasePrice: numeric(payment.product_base_price),
+          productBaseCurrency: code(payment.product_base_currency), fee: numeric(payment.fee), feeCurrency: code(payment.fee_currency),
+          saleTaxAmount: numeric(payment.sale_tax_amount),
+          ownShares: (Array.isArray(sale.revenue_partners) ? sale.revenue_partners : [])
+            .map(recordValue).filter((p) => p?.account_id === credentials.accountId)
+            .map((p) => ({ netAmount: numeric(p?.net_amount_split), chargeAmount: numeric(p?.charge_amount_split), percentage: numeric(p?.percentage) }))
+        });
+      }
+    }
+    return { rows, units: "Provider minor currency units", scope: "Configured Preparador PRO products; at most 99 sales per product" };
+  }
+  if (source === "mercado_pago") {
+    const token = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
+    if (!token) throw new Error("Provider unavailable");
+    const url = new URL("https://api.mercadopago.com/v1/payments/search");
+    for (const [key, value] of Object.entries({ sort: "date_approved", criteria: "asc", range: "date_approved",
+      begin_date: period.start.toISOString(), end_date: new Date(period.end.getTime() - 1).toISOString(), limit: "100", offset: "0"
+    })) url.searchParams.set(key, value);
+    const payload = await requestJson<{ results?: Array<Record<string, unknown>>; paging?: { total?: number } }>(url, { Authorization: "Bearer " + token });
+    if (!Array.isArray(payload.results) || (payload.paging?.total || 0) > 100 || payload.results.length >= 100) throw new Error("Sample incomplete");
+    return { units: "Provider major currency units", scope: "Account payments; classifications are not inferred", rows: payload.results.map((payment) => ({
+      reference: code(String(payment.id || "")), status: code(payment.status), approvedAt: date(payment.date_approved),
+      currency: code(payment.currency_id), amount: numeric(payment.transaction_amount), refunded: numeric(payment.transaction_amount_refunded),
+      netReceived: numeric(recordValue(payment.transaction_details)?.net_received_amount),
+      fees: (Array.isArray(payment.fee_details) ? payment.fee_details : []).map(recordValue)
+        .map((fee) => ({ type: code(fee?.type), amount: numeric(fee?.amount) })),
+      charges: (Array.isArray(payment.charges_details) ? payment.charges_details : []).map(recordValue)
+        .map((charge) => ({ name: code(charge?.name), type: code(charge?.type),
+          original: numeric(recordValue(charge?.amounts)?.original), refunded: numeric(recordValue(charge?.amounts)?.refunded) }))
+    })) };
+  }
+  const secret = process.env.STRIPE_SECRET_KEY?.trim();
+  if (!secret) throw new Error("Provider unavailable");
+  const url = new URL("https://api.stripe.com/v1/subscriptions");
+  url.searchParams.set("status", "all"); url.searchParams.set("limit", "100");
+  url.searchParams.append("expand[]", "data.items.data.price");
+  const payload = await requestJson<{ data?: Array<Record<string, unknown>>; has_more?: boolean }>(url, { Authorization: "Bearer " + secret });
+  if (!Array.isArray(payload.data) || payload.has_more) throw new Error("Sample incomplete");
+  const groups = new Map<string, { priceId: string; productId: string | null; siteProductId: string | null; currency: string | null; amount: number | null; statuses: Record<string, number> }>();
+  for (const sub of payload.data) {
+    const items = recordValue(sub.items)?.data;
+    for (const item of Array.isArray(items) ? items : []) {
+      const price = recordValue(recordValue(item)?.price);
+      const priceId = code(price?.id);
+      if (!priceId) continue;
+      const product = recordValue(price?.product);
+      const metadataProduct = code(recordValue(sub.metadata)?.product_id) || code(recordValue(price?.metadata)?.product_id) || code(recordValue(product?.metadata)?.product_id);
+      const group = groups.get(priceId) || { priceId, productId: code(product?.id) || code(price?.product), siteProductId: metadataProduct,
+        currency: code(price?.currency), amount: numeric(price?.unit_amount), statuses: {} as Record<string, number> };
+      const knownStatuses = ["active", "canceled", "incomplete", "incomplete_expired", "past_due", "paused", "trialing", "unpaid"];
+      const status = typeof sub.status === "string" && knownStatuses.includes(sub.status) ? sub.status : "unknown";
+      group.statuses[status] = (group.statuses[status] || 0) + 1;
+      groups.set(priceId, group);
+    }
+  }
+  return { rows: Array.from(groups.values()), units: "Provider minor currency units", scope: "Current subscription price groups, not revenue for the requested period" };
+}
+
 async function requestJson<T>(url: URL, headers: HeadersInit) {
   const response = await fetch(url, {
     headers,

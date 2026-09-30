@@ -7,14 +7,14 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 const product = { id: 'loadpro_founders', name: 'LoadPro', type: 'subscription' };
-function load(file, fetch, env = {}, mocks = {}) {
+function load(file, fetch, env = {}, mocks = {}, globals = {}) {
   const module = { exports: {} };
   const code = ts.transpileModule(readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX }
   }).outputText;
   vm.runInNewContext(code, {
     module, exports: module.exports, URL, URLSearchParams, AbortSignal, fetch,
-    console: { error() {} }, process: { env },
+    console: { error() {} }, process: { env }, ...globals,
     require(id) {
       if (id in mocks) return mocks[id];
       if (id === 'server-only') return {};
@@ -184,4 +184,133 @@ test('Missing costs, unconverted currencies or unavailable receipts suppress the
     assert.match(html, /—/);
     assert.doesNotMatch(html, /900,00/);
   }
+});
+
+test('Temporary reconciliation rejects unauthenticated callers before any provider query', async () => {
+  let queries = 0;
+  const route = load('app/api/admin/finance/reconciliation/route.ts', undefined, {}, {
+    'next/server': { NextResponse: { json: (data, init) => new Response(JSON.stringify(data), init) } },
+    '@/lib/checkout/admin-auth': { isAdminRequest: async () => false },
+    '@/lib/checkout/financial-reporting': {
+      getFinancialReconciliationSample: async () => { queries++; },
+      resolveFinancialPeriod: () => { throw Error('Must authenticate first'); }
+    }
+  });
+  const response = await route.GET(new Request('https://site.test/api/admin/finance/reconciliation?source=stripe&from=2026-09-01&to=2026-09-20'));
+  assert.equal(response.status, 401);
+  assert.match(response.headers.get('cache-control'), /private, no-store/);
+  assert.equal(queries, 0);
+});
+
+test('Temporary reconciliation validates range and source and does not serialize provider errors', async () => {
+  const metrics = finance(() => { throw Error('No query expected'); });
+  let queries = 0;
+  const route = load('app/api/admin/finance/reconciliation/route.ts', undefined, {}, {
+    'next/server': { NextResponse: { json: (data, init) => new Response(JSON.stringify(data), init) } },
+    '@/lib/checkout/admin-auth': { isAdminRequest: async () => true },
+    '@/lib/checkout/financial-reporting': {
+      resolveFinancialPeriod: metrics.resolveFinancialPeriod,
+      getFinancialReconciliationSample: async () => { queries++; throw Error('fixture_private_provider_body'); }
+    }
+  });
+  for (const query of [
+    'source=unknown&from=2026-09-01&to=2026-09-20',
+    'source=stripe&from=2026-01-01&to=2026-09-20',
+    'source=stripe&from=2026-02-31&to=2026-03-02',
+    'source=stripe&from=2030-09-01&to=2030-09-20',
+    'source=stripe&from=2026-09-20&to=2026-09-01'
+  ]) assert.equal((await route.GET(new Request('https://site.test/?'+query))).status, 400);
+  assert.equal(queries, 0);
+  const response = await route.GET(new Request('https://site.test/?source=stripe&from=2026-09-01&to=2026-09-20'));
+  assert.equal(response.status, 502);
+  assert.doesNotMatch(await response.text(), /fixture_private|provider_body/);
+});
+
+test('Kiwify diagnostic projects money only and never returns customer, partner or credential fields', async () => {
+  const api = load('lib/checkout/financial-reporting.ts', async url => {
+    if (String(url).endsWith('/oauth/token')) return json({ access_token: 'fixture_access_secret' });
+    assert.equal(url.pathname, '/v1/sales');
+    return json({ data: [{
+      id: 'sale_fixture', status: 'paid', currency: 'BRL', net_amount: 31595,
+      customer: { name: 'fixture_customer', email: 'fixture_private_contact' },
+      client_secret: 'fixture_secret', payment: {
+        charge_amount: 39386, charge_currency: 'BRL', net_amount: 31595,
+        settlement_amount: 39386, settlement_currency: 'BRL', product_base_price: 34990,
+        product_base_currency: 'BRL', fee: 3395, fee_currency: 'BRL', private_field: 'fixture_private'
+      }, revenue_partners: [
+        { account_id: 'fixture_account', net_amount_split: 31595, percentage: 100, legal_name: 'fixture_legal_name' },
+        { account_id: 'another', net_amount_split: 999, legal_name: 'fixture_other_name' }
+      ]
+    }] });
+  }, { KIWIFY_CLIENT_ID: 'fixture_client', KIWIFY_CLIENT_SECRET: 'fixture_secret',
+    KIWIFY_ACCOUNT_ID: 'fixture_account', KIWIFY_PREPARADOR_PRO_PRODUCT_ID: 'fixture_product' });
+  const result = await api.getFinancialReconciliationSample('kiwify', period);
+  assert.equal(result.rows[0].netAmount, 31595);
+  assert.equal(result.rows[0].settlementAmount, 39386);
+  assert.equal(result.rows[0].ownShares.length, 1);
+  assert.doesNotMatch(JSON.stringify(result), /fixture_(customer|private|secret|account|legal|other|access|client)/);
+});
+
+test('Mercado Pago diagnostic projects refund/fee amounts and rejects incomplete samples', async () => {
+  let incomplete = false;
+  const api = load('lib/checkout/financial-reporting.ts', async () => json({
+    paging: { total: incomplete ? 101 : 1 }, results: [{
+      id: 12345, status: 'refunded', currency_id: 'BRL', transaction_amount: 199,
+      transaction_amount_refunded: 199, payer: { email: 'fixture_private_contact' },
+      transaction_details: { net_received_amount: 197.03, private_field: 'fixture_private' },
+      fee_details: [{ type: 'mercadopago_fee', amount: 1.97 }],
+      charges_details: [{ name: 'mercadopago_fee', type: 'fee', amounts: { original: 1.97, refunded: 1.97, private_field: 'fixture_private' } }]
+    }]
+  }), { MERCADO_PAGO_ACCESS_TOKEN: 'fixture_secret' });
+  const result = await api.getFinancialReconciliationSample('mercado_pago', period);
+  assert.equal(result.rows[0].netReceived, 197.03);
+  assert.equal(result.rows[0].charges[0].refunded, 1.97);
+  assert.doesNotMatch(JSON.stringify(result), /private|payer|secret/);
+  incomplete = true;
+  await assert.rejects(api.getFinancialReconciliationSample('mercado_pago', period), /incomplete/);
+});
+
+test('Stripe diagnostic returns price groups only, constrains statuses and rejects incomplete samples', async () => {
+  let incomplete = false;
+  const subscription = status => ({
+    id: 'fixture_private_subscription', status,
+    customer: { name: 'fixture_private_name', email: 'fixture_private_contact' },
+    metadata: { product_id: 'loadpro_founders', secret: 'fixture_private_metadata' },
+    items: { data: [{ price: {
+      id: 'price_fixture', unit_amount: 4990, currency: 'brl',
+      product: { id: 'prod_fixture', name: 'fixture_private_product_name' }
+    } }] }
+  });
+  const api = finance(async url => {
+    assert.equal(url.pathname, '/v1/subscriptions');
+    assert.equal(url.searchParams.get('expand[]'), 'data.items.data.price');
+    return json({ data: [subscription('active'), subscription('active'), subscription('__proto__')], has_more: incomplete });
+  });
+  const result = await api.getFinancialReconciliationSample('stripe', period);
+  assert.equal(result.rows.length, 1);
+  assert.equal(result.rows[0].priceId, 'price_fixture');
+  assert.equal(result.rows[0].productId, 'prod_fixture');
+  assert.equal(result.rows[0].siteProductId, 'loadpro_founders');
+  assert.equal(result.rows[0].statuses.active, 2);
+  assert.equal(result.rows[0].statuses.unknown, 1);
+  assert.doesNotMatch(JSON.stringify(result), /fixture_private|__proto__/);
+  assert.match(result.scope, /not revenue/);
+  incomplete = true;
+  await assert.rejects(api.getFinancialReconciliationSample('stripe', period), /incomplete/);
+});
+
+test('Temporary diagnostic expires automatically without querying providers', async () => {
+  let queries = 0;
+  const route = load('app/api/admin/finance/reconciliation/route.ts', undefined, {}, {
+    'next/server': { NextResponse: { json: (data, init) => new Response(JSON.stringify(data), init) } },
+    '@/lib/checkout/admin-auth': { isAdminRequest: async () => true },
+    '@/lib/checkout/financial-reporting': {
+      getFinancialReconciliationSample: async () => { queries++; },
+      resolveFinancialPeriod: () => { throw Error('Must expire before resolving dates'); }
+    }
+  }, { Date: class extends Date { static now() { return Date.parse('2026-10-03T03:00:00Z'); } } });
+  const response = await route.GET(new Request('https://site.test/?source=stripe&from=2026-09-01&to=2026-09-20'));
+  assert.equal(response.status, 410);
+  assert.equal(queries, 0);
+  assert.match(response.headers.get('cache-control'), /no-store/);
 });
