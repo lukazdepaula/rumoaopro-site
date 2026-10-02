@@ -451,7 +451,11 @@ export async function POST(request: Request) {
         ...subscriptionFields(failedSubscription || object, "past_due")
       });
       if (event.type === "invoice.payment_failed" && failedStatus === "past_due") {
-        await sendLoadProPaymentFailureOnce({ order, invoice: object, eventId });
+        const failedPlanCode = failedSubscription ? metadataOf(failedSubscription).plan_code : null;
+        await sendLoadProPaymentFailureOnce({
+          order: failedPlanCode === 'loadpro_club_150' ? { ...order, product_name: 'LoadPro · Clube 150' } : order,
+          invoice: object, eventId
+        });
       }
     } else if (
       event.type === "checkout.session.async_payment_failed" ||

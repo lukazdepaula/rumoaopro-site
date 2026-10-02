@@ -122,6 +122,31 @@ export const checkoutProducts: CheckoutProduct[] = [
     updated_at: now
   },
   {
+    // Private pilot: resolvable for existing subscriptions, never public checkout.
+    id: "loadpro_club_150",
+    name: "LoadPro · Clube 150",
+    slug: "loadpro-club-150",
+    description: "Um clube, até cinco categorias e 150 atletas ativos no total.",
+    language: "Portuguese",
+    type: "subscription",
+    ...fixedBrlProductPrice(0, 129.9),
+    active: false,
+    sales_page_path: "https://loadpro.rumoaopro.com.br/",
+    cover_image: "/assets/brand/rumoaopro-logo.svg",
+    delivery_type: "manual",
+    file_id: null,
+    billing_interval: "month",
+    checkout_country_lock: "BR",
+    checkout_payment_methods: ["stripe"],
+    trial_days: 0,
+    team_limit: 5,
+    players_per_team_limit: 150,
+    total_player_limit: 150,
+    founding_price_lock: true,
+    created_at: now,
+    updated_at: now
+  },
+  {
     id: "offseason_30_days",
     name: "Offseason 30 Days",
     slug: "offseason-30-days",
@@ -365,8 +390,8 @@ export function getProductById(id: string) {
   return checkoutProducts.find((product) => product.id === id);
 }
 
-export function isLoadProProductId(value: unknown): value is "loadpro_founders" | "loadpro_founders_50" {
-  return value === "loadpro_founders" || value === "loadpro_founders_50";
+export function isLoadProProductId(value: unknown): value is "loadpro_founders" | "loadpro_founders_50" | "loadpro_club_150" {
+  return value === "loadpro_founders" || value === "loadpro_founders_50" || value === "loadpro_club_150";
 }
 
 export function isLoadProProductSlug(value: unknown) {

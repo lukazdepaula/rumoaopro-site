@@ -110,6 +110,7 @@ export type CheckoutProduct = {
   trial_days?: number;
   team_limit?: number;
   players_per_team_limit?: number;
+  total_player_limit?: number;
   founding_price_lock?: boolean;
   aliases?: string[];
   created_at: string;
