@@ -25,6 +25,46 @@ const annualPolicy = load('lib/checkout/loadpro-annual-policy.ts');
 const product = { id: 'loadpro_founders_50', price_brl: 69.9, base_price_usd: 13.9, type: 'subscription', trial_days: 7, name: 'LoadPro 50', description: 'Test', billing_interval: 'month', players_per_team_limit: 50, team_limit: 2 };
 const products = { getProductById: () => product, isLoadProProductId: id => ['loadpro_founders','loadpro_founders_50'].includes(id) };
 
+test('Club 150 is recognized for reconciliation but cannot be purchased from the public catalogue',()=>{
+  const catalog=load('lib/checkout/products.ts');
+  assert.equal(catalog.isLoadProProductId('loadpro_club_150'),true);
+  assert.equal(catalog.getProductBySlug('loadpro-club-150'),undefined);
+  assert.equal(catalog.getActiveProducts().some(p=>p.id==='loadpro_club_150'),false);
+  const club=catalog.getProductById('loadpro_club_150');
+  assert.equal(club.team_limit,5);assert.equal(club.total_player_limit,150);
+  assert.equal(club.trial_days,0);
+  assert.throws(()=>annualPolicy.annualPlan(club.id),/Unsupported annual plan/);
+});
+
+test('private club reconciliation preserves the actual social price, trial and existing club across events',async()=>{
+  const catalog=load('lib/checkout/products.ts');const writes=[];
+  const current={id:'access',club_id:'club_fixture',plan_code:'loadpro_club_150',status:'active',access_kind:'subscription',provider_subscription_id:'sub_main',updated_at:'2030-01-01Z',metadata:{club_pilot:{price_guaranteed_until:'2031-01-01Z'}}};
+  const service=load('lib/checkout/loadpro.ts',{
+    '@/lib/checkout/db':{appendOrderLog:async()=>{},updateOrderGatewayIds:async()=>{},getOrderById:async()=>null},
+    '@/lib/checkout/email':{},'@/lib/checkout/products':catalog,'@/lib/checkout/loadpro-annual-policy':annualPolicy,'@/lib/checkout/loadpro-billing-policy':policy
+  },{fetch:async(url,init)=>{
+    if(init.method==='PATCH'){writes.push({url,body:JSON.parse(init.body)});return Response.json([current]);}
+    const select=new URL(url).searchParams.get('select');
+    return Response.json([Object.fromEntries(select.split(',').map(k=>[k,current[k]]))]);
+  }});
+  const order={id:'original_order',product_id:'loadpro_founders_50',currency:'BRL',customer_email:'fixture@example.invalid',created_at:'2026-08-01',metadata:{},gateway:'stripe'};
+  const input={planCode:'loadpro_club_150',providerSubscriptionId:'sub_main',providerCustomerId:'cus_main',priceCents:9990,currency:'BRL',billingInterval:'month',currentPeriodEnd:'2030-01-05T21:15:54Z',trialEnd:'2030-01-05T21:15:54Z'};
+  for(const [status,providerSubscriptionStatus] of [['active','trialing'],['active','active'],['past_due','past_due'],['canceled','canceled']]) {
+    await service.syncLoadProAccess(order,{...input,status,providerSubscriptionStatus});
+    const {body,url}=writes.at(-1);assert.match(url,/billing_access\?/);
+    assert.equal(body.total_player_limit,150);assert.equal(body.team_limit,5);assert.equal(body.price_cents,9990);
+    assert.equal(body.current_period_end,'2030-01-05T21:15:54.000Z');assert.equal(body.status,status);
+    assert.equal(body.provider_subscription_id,'sub_main');assert.equal(body.order_id,'original_order');
+    assert.equal(body.metadata.club_pilot.price_guaranteed_until,'2031-01-01Z');
+    assert.equal(body.club_id,undefined); // does not move or recreate the club
+  }
+  const before=writes.length;
+  for(const patch of [{priceCents:null},{currency:'USD'},{billingInterval:'year'}]) {
+    await assert.rejects(service.syncLoadProAccess(order,{...input,status:'active',...patch}),/verified monthly Stripe price/);
+  }
+  assert.equal(writes.length,before);
+});
+
 test('upgrade price preserves BRL and USD; unsupported currencies fail closed', () => {
   assert.equal(policy.loadProUpgradePrice('usd',69.9,13.9).priceCents,1390);
   assert.equal(policy.loadProUpgradePrice('BRL',69.9,13.9).priceCents,6990);

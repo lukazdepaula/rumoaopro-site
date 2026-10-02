@@ -42,6 +42,7 @@ export type LoadProBillingAccess = {
   id: string;
   email: string;
   user_id: string | null;
+  club_id?: string | null;
   status: string;
   access_kind: string;
   plan_code: string;
@@ -51,6 +52,7 @@ export type LoadProBillingAccess = {
   provider_subscription_id: string | null;
   team_limit: number | null;
   players_per_team_limit: number | null;
+  total_player_limit?: number | null;
   price_cents: number | null;
   currency: string | null;
   price_locked: boolean;
@@ -128,7 +130,7 @@ export async function resolveLoadProBillingAccess(accessToken: string) {
   if (!userId || !email) return null;
 
   const select = encodeURIComponent(
-    "id,email,user_id,status,access_kind,plan_code,current_period_end,billing_provider,provider_customer_id,provider_subscription_id,team_limit,players_per_team_limit,price_cents,currency,price_locked,metadata,created_at,updated_at"
+    "id,email,user_id,club_id,status,access_kind,plan_code,current_period_end,billing_provider,provider_customer_id,provider_subscription_id,team_limit,players_per_team_limit,total_player_limit,price_cents,currency,price_locked,metadata,created_at,updated_at"
   );
   let response = await requestLoadPro(
     `/rest/v1/billing_access?select=${select}&user_id=eq.${encodeURIComponent(userId)}&limit=1`
@@ -170,7 +172,7 @@ export async function assertLoadProProvisioningReady() {
 
 async function existingAccess(email: string) {
   const response = await requestLoadPro(
-    `/rest/v1/billing_access?select=id,access_kind,status,plan_code,provider_subscription_id,order_id,metadata,current_period_end,updated_at,team_limit,players_per_team_limit&email=eq.${encodeURIComponent(email)}&limit=1`
+    `/rest/v1/billing_access?select=id,club_id,access_kind,status,plan_code,provider_subscription_id,order_id,metadata,current_period_end,updated_at,team_limit,players_per_team_limit,total_player_limit,price_cents,currency&email=eq.${encodeURIComponent(email)}&limit=1`
   );
   if (!response.ok) throw new Error("Unable to verify existing LoadPro billing access.");
   const rows = (await response.json()) as Array<Record<string, unknown>>;
@@ -378,6 +380,15 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
   const priceCents = typeof input.priceCents === "number" && Number.isFinite(input.priceCents)
     ? input.priceCents
     : Math.round(configuredPrice * 100);
+  // Private plans are migrated onto an existing, club-bound subscription.
+  // Never fall back to the catalogue amount: the pilot's agreed recurring price
+  // must come from Stripe, including during failure/cancellation reconciliation.
+  if (planCode === "loadpro_club_150" && (
+    !current?.club_id || order.gateway !== "stripe" || currency !== "BRL"
+    || input.billingInterval !== "month" || !Number.isSafeInteger(input.priceCents)
+    || priceCents <= 0 || !input.providerSubscriptionId
+    || current.provider_subscription_id !== input.providerSubscriptionId
+  )) throw new Error("Private club plan requires an existing club and verified monthly Stripe price");
   let currentPeriodEnd =
     input.status === "canceled"
       ? periodEnd(input.currentPeriodEnd, "now")
@@ -452,6 +463,7 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
         order_id: order.id,
         team_limit: annual && current?.team_limit ? current.team_limit : product?.team_limit || 2,
         players_per_team_limit: annual && current?.players_per_team_limit ? current.players_per_team_limit : product.players_per_team_limit || 30,
+        total_player_limit: product.total_player_limit || null,
         price_cents: priceCents,
         currency,
         price_locked: product?.founding_price_lock === true,
@@ -484,6 +496,15 @@ export async function syncLoadProAccess(order: Order, input: SyncInput) {
   }
   const written = await response.json() as Array<Record<string, unknown>>;
   if (!written.length) throw new Error("LoadPro billing changed concurrently; reconciliation required.");
+
+  if (planCode === "loadpro_club_150") {
+    // Keep the original order as history; current-plan communications use these
+    // verified subscription fields instead of the original trial's amount/tier.
+    await updateOrderGatewayIds(order.id, { metadata: {
+      subscription_plan_code: planCode, subscription_price_cents: priceCents,
+      subscription_currency: currency
+    } });
+  }
 
   await appendOrderLog(
     order.id,

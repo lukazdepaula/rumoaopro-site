@@ -106,15 +106,21 @@ export async function deliverOrder(orderId: string) {
       });
       return;
     }
+    const privateClub = order.metadata.subscription_plan_code === 'loadpro_club_150'
+      ? getProductById('loadpro_club_150') : null;
+    const currentProduct = privateClub || product;
+    const currentAmount = privateClub && typeof order.metadata.subscription_price_cents === 'number'
+      ? order.metadata.subscription_price_cents / 100 : order.amount;
     const emailSent = await sendLoadProAccessEmail({
       orderId: order.id,
       to: order.customer_email,
       name: order.customer_name,
       appUrl: process.env.LOADPRO_APP_URL || "https://loadpro.rumoaopro.com.br",
-      productName: product.name,
-      teamLimit: product.team_limit || 2,
-      playersPerTeamLimit: product.players_per_team_limit || 30,
-      amount: order.amount,
+      productName: currentProduct.name,
+      teamLimit: currentProduct.team_limit || 2,
+      playersPerTeamLimit: currentProduct.players_per_team_limit || 30,
+      totalPlayerLimit: currentProduct.total_player_limit,
+      amount: currentAmount,
       currency: order.currency
     });
     if (!emailSent) {
