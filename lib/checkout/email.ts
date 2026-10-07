@@ -336,17 +336,21 @@ export async function sendLoadProAccessEmail(input: {
   productName: string;
   teamLimit: number;
   playersPerTeamLimit: number;
+  totalPlayerLimit?: number;
   amount: number;
   currency: string;
 }) {
   const appUrl = escapeHtml(input.appUrl.replace(/\/$/, ""));
   const planName = escapeHtml(input.productName);
   const price = formatEmailMoney(input.amount, input.currency, "pt");
+  const playerScope = input.totalPlayerLimit
+    ? `até ${input.totalPlayerLimit} atletas ativos no total do clube`
+    : `até ${input.playersPerTeamLimit} atletas por equipe`;
   return sendEmail({
     to: input.to,
     subject: "Seu acesso ao LoadPro está liberado",
     orderId: input.orderId,
-    text: `Fala, ${input.name}. Seu ${input.productName} foi confirmado. O plano inclui até ${input.teamLimit} equipes, com até ${input.playersPerTeamLimit} atletas por equipe, por ${price}/mês. Acesse: ${input.appUrl.replace(/\/$/, "")}.`,
+    text: `Fala, ${input.name}. Seu ${input.productName} foi confirmado. O plano inclui até ${input.teamLimit} equipes, com ${playerScope}, por ${price}/mês. Acesse: ${input.appUrl.replace(/\/$/, "")}.`,
     html: loadProEmailShell({
       preheader: "Sua assinatura do LoadPro foi confirmada.",
       eyebrow: "Pagamento confirmado",
@@ -356,7 +360,7 @@ export async function sendLoadProAccessEmail(input: {
         <p style="margin:0;color:#4f5663;font-size:15px;line-height:1.65">Seu <strong>${planName}</strong> foi confirmado e o workspace está disponível.</p>
         ${loadProEmailSummary([
           ["Equipes", `Até ${input.teamLimit}`],
-          ["Atletas por equipe", `Até ${input.playersPerTeamLimit}`],
+          [input.totalPlayerLimit ? "Atletas ativos no clube" : "Atletas por equipe", `Até ${input.totalPlayerLimit || input.playersPerTeamLimit}`],
           ["Valor", `${price} / mês`]
         ])}
         ${loadProEmailButton(appUrl, "Abrir o LoadPro")}

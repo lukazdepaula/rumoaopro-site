@@ -177,13 +177,15 @@ export default async function AdminDashboardPage({
     : 0;
   const programSalesBrl = localProgramSalesBrl + kiwifyProgramSalesBrl;
   const combinedMonthlyRevenueBrl =
-    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready"
+    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready" &&
+    financialMetrics.state === "ready" && ordersData.available &&
+    !financialMetrics.hasUnconvertedCurrencies && !recurringMetrics.hasUnconvertedCurrencies
       ? recurringMetrics.mrrBrlEstimate + programSalesBrl
       : null;
-  const projectedMonthRevenue =
-    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready"
-      ? recurringMetrics.mrrBrlEstimate +
-        (programSalesBrl / expenseMetrics.elapsedDays) * expenseMetrics.daysInMonth
+  const confirmedMonthNetRevenueBrl =
+    financialPeriod.isCurrentMonth && financialMetrics.state === "ready" &&
+    !financialMetrics.hasUnconvertedCurrencies && ordersData.available
+      ? financialMetrics.netRevenueBrl
       : null;
   const dailySeries = financialMetrics.daily.map((day) => ({
     key: day.key,
@@ -310,7 +312,7 @@ export default async function AdminDashboardPage({
                 <CircleDollarSign className="h-4 w-4 text-turf" />
                 <h2 className="text-sm font-bold text-ink">MRR atual</h2>
               </div>
-              <p className="mt-1 text-xs text-graphite/55">Assinaturas ativas e em atraso consultadas na Stripe</p>
+              <p className="mt-1 text-xs text-graphite/55">Assinaturas ativas; atrasos e testes separados</p>
             </div>
             <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${
               recurringMetrics.state === "ready"
@@ -393,7 +395,7 @@ export default async function AdminDashboardPage({
 
           {recurringMetrics.state === "ready" ? (
             <p className="border-t border-ink/10 px-5 py-3 text-[11px] leading-relaxed text-graphite/50">
-              MRR normalizado com descontos recorrentes ativos; impostos e uso medido ficam fora. Valores em USD são estimados a R$ {recurringMetrics.usdBrlRate.toFixed(2).replace(".", ",")}.
+              MRR normalizado com descontos recorrentes ativos; atrasos, testes, impostos e uso medido ficam fora. Não representa dinheiro recebido. Valores em USD são estimados a R$ {recurringMetrics.usdBrlRate.toFixed(2).replace(".", ",")}.
               {recurringMetrics.hasUnconvertedCurrencies ? " Outras moedas permanecem fora do total estimado em BRL." : ""}
               {` Atualizado às ${new Date(recurringMetrics.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })} (Brasília).`}
             </p>
@@ -435,7 +437,7 @@ export default async function AdminDashboardPage({
         <div className="grid gap-5 p-5 lg:grid-cols-[1.15fr_1fr] lg:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-              Faturamento mensal combinado
+              Indicador mensal combinado
             </p>
             <p className="mt-2 text-3xl font-black sm:text-4xl">
               {combinedMonthlyRevenueBrl === null
@@ -443,7 +445,7 @@ export default async function AdminDashboardPage({
                 : formatBrl(combinedMonthlyRevenueBrl)}
             </p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-              MRR atual mais as vendas avulsas de programas acumuladas no mês, sem contar renovações duas vezes.
+              MRR atual mais vendas avulsas de programas no mês. Indicador gerencial, não faturamento recebido nem lucro.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -521,7 +523,7 @@ export default async function AdminDashboardPage({
       <div className="mt-5">
         <AdminMonthlyExpenses
           initialData={expenseMetrics}
-          projectedRevenueBrl={projectedMonthRevenue}
+          confirmedNetRevenueBrl={confirmedMonthNetRevenueBrl}
         />
       </div>
 

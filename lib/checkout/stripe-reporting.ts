@@ -253,13 +253,12 @@ async function listStripeSubscriptions(secretKey: string, status: string) {
       cache: "no-store",
       signal: AbortSignal.timeout(10000)
     });
-    const payload = (await response.json().catch(() => ({}))) as StripeListResponse;
-
     if (!response.ok) {
       throw new Error(`Stripe subscriptions request failed with ${response.status}`);
     }
-
-    const pageData = Array.isArray(payload.data) ? payload.data : [];
+    const payload = (await response.json()) as StripeListResponse;
+    if (!Array.isArray(payload.data)) throw new Error("Stripe returned an invalid subscription list");
+    const pageData = payload.data;
     subscriptions.push(...pageData);
 
     if (!payload.has_more || pageData.length === 0) return subscriptions;
@@ -437,7 +436,8 @@ async function loadStripeRecurringMetrics(secretKey: string) {
     listStripeSubscriptions(secretKey, "past_due"),
     listStripeSubscriptions(secretKey, "trialing")
   ]);
-  const includedSubscriptions = [...active, ...pastDue];
+  // Past-due subscriptions remain visible in health metrics, not in active MRR.
+  const includedSubscriptions = active;
   await hydrateSubscriptionDiscounts(secretKey, includedSubscriptions);
   const totalAmounts = new Map<string, number>();
   const grossTotalAmounts = new Map<string, number>();
