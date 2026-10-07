@@ -1,4 +1,4 @@
-import { assertPreviewDatabase } from "@/lib/preview-safety";
+import { assertPreviewDatabase, publicRaptorProAppUrl } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 import type { Order } from "@/lib/checkout/types";
 
@@ -159,8 +159,9 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
 }
 
 export function getRaptorProProgramUrl(orderOrProductId: Pick<Order, "product_id"> | string = RAPTORPRO_OFFSEASON_PRODUCT_ID) {
-  const environment = config();
-  const appUrl = environment?.appUrl || "https://app.rumoaopro.com.br";
+  const appUrl = publicRaptorProAppUrl();
+  // An unconfigured preview stays on the site's public catalog, never production.
+  if (!appUrl) return "/apps";
   const program = getRaptorProProgramConfig(orderOrProductId);
   const slug = program?.programSlug || RAPTORPRO_OFFSEASON_PROGRAM_SLUG;
   return `${appUrl}/programs/${slug}/access`;

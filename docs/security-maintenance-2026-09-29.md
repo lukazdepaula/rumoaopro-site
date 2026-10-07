@@ -90,3 +90,26 @@ CSP do Load Pro em modo de bloqueio e demais pendências do check-up mensal.
 
 Os avisos dependem dos recursos e do ambiente utilizados; não foi demonstrada exploração do
 site publicado nem afirmado que um incidente tenha ocorrido.
+
+## Correção do retorno de checkout na Preview — 07/10/2026
+
+Na QA isolada, a confirmação Stripe TEST foi aceita, mas `/checkout/success` falhou ao
+montar um link público do Speed Pro. `getRaptorProProgramUrl` chamava a configuração
+privilegiada do Raptor, cuja conexão de banco foi deliberadamente desabilitada nesta prévia.
+
+- A montagem da URL pública agora é independente das credenciais de provisionamento.
+- Preview/development/modo de teste aceitam apenas uma origem separada válida. Sem ela,
+  o link aponta ao catálogo local `/apps`, nunca ao aplicativo real por fallback.
+- A guarda de banco das operações de concessão/revogação de acesso e geração de links
+  pessoais permanece intacta. Nenhum provisionamento real foi habilitado.
+- Seis testes novos cobrem os produtos/aliases, URLs inválidas/produtivas, ausência de
+  credenciais, bloqueio de operações privilegiadas e renderização do retorno pago.
+  Retorno sem autorização continua sem consultar ou exibir o pedido.
+- `node --test scripts/tests/*.test.mjs`: 161 aprovados, zero falhas/ignorados.
+- `pnpm check` com a versão 9.15.4: aprovado. `pnpm build` foi tentado, mas o compilador
+  nativo foi bloqueado pelo Windows Application Control; execução encerrada. Nenhuma
+  proteção do Windows foi desativada. Build hospedado e QA desta correção ainda pendentes.
+
+Escopo: branch de segurança/Preview e PR 19. Nenhum merge em main ou deploy de produção.
+A main avançou para `e4bc59d3ac4d09baece4df0fc6ef28a4ead33ea7`; não foi rebaseada nem
+alterada por esta correção. Antes de uma promoção futura, reconciliar/revisar a base atual.

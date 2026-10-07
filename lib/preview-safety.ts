@@ -62,3 +62,11 @@ export function publicLoadProAppUrl() {
   catch { return ''; }
   return process.env.LOADPRO_APP_URL!.replace(/\/$/, '') + '/';
 }
+
+/** Reading a public app URL must not require database/provisioning credentials. */
+export function publicRaptorProAppUrl() {
+  if (!isPreviewEnvironment()) return (process.env.RAPTORPRO_APP_URL || 'https://app.rumoaopro.com.br').replace(/\/$/, '');
+  try { assertPreviewOrigin(process.env.RAPTORPRO_APP_URL); }
+  catch { return ''; }
+  return process.env.RAPTORPRO_APP_URL!.replace(/\/$/, '');
+}
