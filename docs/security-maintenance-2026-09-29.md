@@ -113,3 +113,38 @@ privilegiada do Raptor, cuja conexão de banco foi deliberadamente desabilitada 
 Escopo: branch de segurança/Preview e PR 19. Nenhum merge em main ou deploy de produção.
 A main avançou para `e4bc59d3ac4d09baece4df0fc6ef28a4ead33ea7`; não foi rebaseada nem
 alterada por esta correção. Antes de uma promoção futura, reconciliar/revisar a base atual.
+
+## Próxima fase: entrega privada e fronteira de provisionamento — 07/10/2026
+
+A main `e4bc59d` foi revisada e integrada somente à branch de segurança, preservando as
+mudanças recentes do painel financeiro e Clube 150. Não houve publicação em produção.
+
+Foi reproduzida localmente, com serviços inteiramente simulados, uma falha adicional:
+`syncRaptorProProgramAccess` não recusava pedidos sandbox/mock por si só. A orquestração
+de webhook os ignorava, mas o botão de acesso direto e ações administrativas chamavam
+a função sem essa barreira. Assim, se um pedido fictício pago existisse em produção,
+um retorno autorizado poderia tentar provisionar acesso real. Não foi verificada a
+existência de pedidos afetados na produção nem demonstrado uso indevido por terceiros.
+
+A função comum agora rejeita sandbox/mock antes de configurar ou chamar o provedor,
+inclusive para concessão, revogação e geração de link pessoal. Compras reais e migrações
+históricas mantêm o comportamento existente nos testes. A reprodução teve três falhas
+antes da correção; os sete testes da fronteira passaram depois dela.
+
+Outros sete testes, com bytes públicos fictícios em memória, verificam assinatura de
+download, pedido pago, correspondência de arquivo, ausência de login, direito do cliente
+ao produto, cache privado, confirmação de provisionamento e falha de envio de e-mail.
+Nenhum arquivo privado, destinatário real ou serviço remoto foi usado nesses testes.
+
+Um teste financeiro incorporado da main dependia da data atual e passou a receber 410
+após a expiração intencional do diagnóstico. Somente o relógio desse teste foi fixado
+para o período de validade. A rota real continua expirada em 03/10/2026, sem prorrogação.
+
+Os testes simulados não substituem entrega real por e-mail nem provisionamento em um
+Raptor isolado. Essas integrações continuam desligadas nesta Preview. A validação
+hospedada deve conferir a recusa do pedido fictício já existente, sem criar outra compra.
+
+Validação local da base integrada: `pnpm check` passou e a suíte completa terminou
+com 192 testes aprovados, sem falhas ou testes ignorados. O build desta nova revisão
+ainda precisa ser confirmado na Vercel; o compilador nativo local permanece bloqueado
+pela política de controle de aplicativos do Windows, que não foi alterada.

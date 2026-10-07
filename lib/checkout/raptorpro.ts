@@ -170,6 +170,11 @@ export function getRaptorProProgramUrl(orderOrProductId: Pick<Order, "product_id
 export async function syncRaptorProProgramAccess(order: Order, status: PaidAccessStatus) {
   const program = getRaptorProProgramConfig(order);
   if (!program) return { handled: false as const };
+  // Enforce this at the provider boundary, not only in webhook orchestration:
+  // direct checkout links and admin retries also call this function.
+  if (order.gateway === "mock" || order.metadata.checkout_gateway_mode === "sandbox") {
+    throw new Error("A test order cannot change RaptorPro access.");
+  }
   if (!config()) {
     await appendOrderLog(
       order.id,

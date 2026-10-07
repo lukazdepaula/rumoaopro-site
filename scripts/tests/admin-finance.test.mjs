@@ -203,7 +203,12 @@ test('Temporary reconciliation rejects unauthenticated callers before any provid
 });
 
 test('Temporary reconciliation validates range and source and does not serialize provider errors', async () => {
-  const metrics = finance(() => { throw Error('No query expected'); });
+  // Exercise the active diagnostic before its fixed expiry, independently of today.
+  const clock = { Date: class extends Date {
+    constructor(...args) { super(...(args.length ? args : ['2026-10-02T12:00:00Z'])); }
+    static now() { return Date.parse('2026-10-02T12:00:00Z'); }
+  } };
+  const metrics = load('lib/checkout/financial-reporting.ts', () => { throw Error('No query expected'); }, {}, {}, clock);
   let queries = 0;
   const route = load('app/api/admin/finance/reconciliation/route.ts', undefined, {}, {
     'next/server': { NextResponse: { json: (data, init) => new Response(JSON.stringify(data), init) } },
@@ -212,7 +217,7 @@ test('Temporary reconciliation validates range and source and does not serialize
       resolveFinancialPeriod: metrics.resolveFinancialPeriod,
       getFinancialReconciliationSample: async () => { queries++; throw Error('fixture_private_provider_body'); }
     }
-  });
+  }, clock);
   for (const query of [
     'source=unknown&from=2026-09-01&to=2026-09-20',
     'source=stripe&from=2026-01-01&to=2026-09-20',
