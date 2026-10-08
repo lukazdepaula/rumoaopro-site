@@ -148,3 +148,50 @@ Validação local da base integrada: `pnpm check` passou e a suíte completa ter
 com 192 testes aprovados, sem falhas ou testes ignorados. O build desta nova revisão
 ainda precisa ser confirmado na Vercel; o compilador nativo local permanece bloqueado
 pela política de controle de aplicativos do Windows, que não foi alterada.
+
+## Ponte de QA explicitamente limitada ao Raptor de staging — 08/10/2026
+
+Preparado um opt-in temporário, desligado por padrão, para validar entrega de acesso
+sem usar o Raptor público. A reativação e as consultas somente de leitura do projeto
+de staging foram autorizadas separadamente; nenhum seed ou catálogo foi reaplicado.
+
+A ponte exige simultaneamente a branch de segurança, Vercel Preview, Stripe TEST,
+checkout sandbox, origem exata da Preview, banco isolado do checkout e banco isolado
+do Raptor. Exige ainda um único UUID de pedido e um único destinatário configurados
+no servidor. Apenas `project_36` é aceito e seu acesso é mapeado exclusivamente ao
+fixture já existente `speed-pro-qa-20260913`, nunca ao programa comercial real.
+
+Concessões exigem pedido pago. Mock, outros produtos, pedidos, e-mails, branches,
+bancos ou origens são recusados antes de chamar o provedor. Em produção, a recusa
+de pedidos sandbox/mock continua incondicional. O botão público de acesso direto
+continua recusando pedidos sandbox; o teste de integração será pela orquestração
+de confirmação/reprocessamento autenticado, não por uma exceção nessa rota.
+
+O retorno de Auth é limitado a um caminho exato em `http://127.0.0.1:3022`, onde a
+prévia local e descartável do Raptor deve ser conferida antes de qualquer envio.
+Links devolvidos pelo provedor fora do staging/retorno aprovado são recusados.
+Requisições privilegiadas da QA não seguem redirects HTTP e erros do Raptor nessa
+prévia não incluem o corpo bruto retornado pelo provedor.
+
+E-mails genéricos, marketing, entrega de material e notificações de produção
+continuam bloqueados. Apenas o template de acesso, rotulado TESTE SEM COBRANÇA,
+pode ser enviado ao destinatário e pedido permitidos, com opt-in separado e chave
+de envio exclusiva de QA. Nunca há fallback para `RESEND_API_KEY` da produção.
+Não guardar o e-mail autorizado nem as credenciais neste documento ou no Git.
+
+Validação: nove novos testes inteiramente simulados cobrem também conta nova,
+convite, revogação, falha dos provedores e reprocessamento sequencial sem reenvio.
+A suíte completa passou com **201/201**, zero falhas/ignorados; `pnpm check` passou.
+Nesta execução, `pnpm build` local também terminou com exit code 0, compilação
+bem-sucedida e 40/40 páginas geradas, sem alterar a proteção do Windows.
+O template foi inspecionado no navegador em quadros de 640 e 375 px, sem corte ou
+overflow horizontal na largura menor. Isso não comprova entrega nem renderização
+em todos os clientes de e-mail e não valida o aplicativo Raptor em dispositivos.
+
+Configuração real permanece desligada. Ainda faltam: retorno Auth cadastrado no
+staging, credenciais dedicadas inseridas privadamente, aplicação local conferida,
+novo pedido Stripe TEST do destinatário autorizado e teste ponta a ponta. O pedido
+fictício anterior não deve ter seu e-mail trocado nem ser reutilizado como esse teste.
+Ao concluir a QA, desligar os opt-ins e remover/revogar credenciais temporárias e
+o retorno temporário mediante autorização; não promover a ponte temporária por
+acidente. Esta preparação não é aprovação para merge/publicação em produção.

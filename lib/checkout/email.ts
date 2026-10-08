@@ -1,4 +1,4 @@
-import { isPreviewEnvironment } from "@/lib/preview-safety";
+import { isPreviewEnvironment, canSendRaptorProPreviewEmail, isRaptorProPreviewActionUrl } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 
 type EmailInput = {
@@ -7,10 +7,12 @@ type EmailInput = {
   html: string;
   text?: string;
   orderId?: string;
+  // Internal marker, set only by the Raptor access template. Generic preview mail stays off.
+  raptorPreviewActionUrl?: string;
 };
 
-export function isEmailDeliveryConfigured() {
-  if (isPreviewEnvironment()) return false;
+export function isEmailDeliveryConfigured(qa?: { raptorPreviewTo: string; orderId: string }) {
+  if (isPreviewEnvironment()) return Boolean(qa && canSendRaptorProPreviewEmail(qa.raptorPreviewTo, qa.orderId));
   if (process.env.NODE_ENV !== "production") return true;
   return (
     process.env.EMAIL_PROVIDER?.trim().toLowerCase() === "resend" &&
@@ -88,25 +90,29 @@ function loadProEmailSummary(rows: Array<[string, string]>) {
 }
 
 export async function sendEmail(input: EmailInput) {
-  if (isPreviewEnvironment()) return false;
-  const provider = (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
+  const preview = isPreviewEnvironment();
+  if (preview && (typeof input.to !== "string" || !input.orderId || !input.raptorPreviewActionUrl
+    || !canSendRaptorProPreviewEmail(input.to, input.orderId)
+    || !isRaptorProPreviewActionUrl(input.raptorPreviewActionUrl))) return false;
+  const provider = preview ? "resend" : (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
 
   try {
     if (provider === "resend") {
-      const apiKey = process.env.RESEND_API_KEY?.trim();
+      const apiKey = (preview ? process.env.RAPTORPRO_PREVIEW_RESEND_API_KEY : process.env.RESEND_API_KEY)?.trim();
       if (!apiKey) {
         throw new Error("RESEND_API_KEY ausente.");
       }
 
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
+        ...(preview ? { redirect: "error" as const } : {}),
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           from:
-            process.env.EMAIL_FROM || "RumoAoPro <no-reply@rumoaopro.com>",
+            preview ? process.env.RAPTORPRO_PREVIEW_EMAIL_FROM : process.env.EMAIL_FROM || "RumoAoPro <no-reply@rumoaopro.com>",
           to: input.to,
           subject: input.subject,
           html: input.html,
@@ -419,17 +425,20 @@ export async function sendRaptorProProgramAccessEmail(input: {
   programName: string;
   locale: "pt" | "en";
 }) {
+  const preview = isPreviewEnvironment();
   const actionUrl = escapeHtml(input.actionUrl);
   const programName = escapeHtml(input.programName);
   const isEnglish = input.locale === "en";
   return sendEmail({
     to: input.to,
-    subject: isEnglish
+    raptorPreviewActionUrl: input.actionUrl,
+    subject: preview ? "[TESTE SEM COBRANÇA] Acesso ao programa fictício do Raptor" : isEnglish
       ? `${input.programName} is ready in RaptorPro`
       : `Seu ${input.programName} está liberado no RaptorPro`,
     orderId: input.orderId,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#17191d">
+        ${preview ? '<p><strong>AMBIENTE DE TESTES — compra fictícia, sem cobrança. Este acesso não altera sua conta no Raptor oficial.</strong></p>' : ''}
         <div style="background:#08090b;color:#fff;padding:24px;border-bottom:4px solid #ed1b2f">
           <p style="margin:0 0 8px;color:#ff5362;font-size:12px;font-weight:700;text-transform:uppercase">RaptorPro Coach</p>
           <h1 style="margin:0;font-size:26px">${isEnglish ? "Program unlocked" : "Programa liberado"}</h1>
@@ -441,7 +450,7 @@ export async function sendRaptorProProgramAccessEmail(input: {
             ? isEnglish ? "Use the button below to create your password and open your first session." : "Use o botão abaixo para criar sua senha e abrir o primeiro treino."
             : isEnglish ? "Use the button below to sign in securely and open your program." : "Use o botão abaixo para entrar com segurança e abrir seu programa."}</p>
           <p style="margin:24px 0"><a href="${actionUrl}" style="display:inline-block;background:#ed1b2f;color:#fff;padding:14px 20px;text-decoration:none;font-weight:700">${input.accountCreated ? (isEnglish ? "Create password and access" : "Criar senha e acessar") : (isEnglish ? "Open my program" : "Abrir meu programa")}</a></p>
-          <p style="color:#68707d;font-size:13px">${isEnglish ? "This personal link expires for security. After your first access, sign in at app.rumoaopro.com.br with the email used for the purchase." : "O link é pessoal e expira por segurança. Depois do primeiro acesso, entre em app.rumoaopro.com.br com o e-mail usado na compra."}</p>
+          <p style="color:#68707d;font-size:13px">${preview ? "Link pessoal e temporário. Abra no computador onde o aplicativo de testes está rodando. Não use este acesso no Raptor oficial." : isEnglish ? "This personal link expires for security. After your first access, sign in at app.rumoaopro.com.br with the email used for the purchase." : "O link é pessoal e expira por segurança. Depois do primeiro acesso, entre em app.rumoaopro.com.br com o e-mail usado na compra."}</p>
         </div>
       </div>
     `
