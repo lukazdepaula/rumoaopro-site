@@ -1,4 +1,5 @@
-import { assertPreviewDatabase } from "@/lib/preview-safety";
+import { assertPreviewDatabase, publicRaptorProAppUrl, isPreviewEnvironment,
+  canProvisionRaptorProSandbox, raptorProPreviewProgramId, isRaptorProPreviewActionUrl } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 import type { Order } from "@/lib/checkout/types";
 
@@ -75,6 +76,14 @@ export function isRaptorProProgramOrder(order: Order) {
   return Boolean(getRaptorProProgramConfig(order));
 }
 
+function provisioningProgram(order: Order) {
+  const program = getRaptorProProgramConfig(order);
+  if (program && canProvisionRaptorProSandbox(order)) {
+    return { ...program, programId: raptorProPreviewProgramId()!, programTitle: `${program.programTitle} (TESTE)` };
+  }
+  return program;
+}
+
 function config() {
   const url = process.env.RAPTORPRO_SUPABASE_URL;
   assertPreviewDatabase(url, "raptorpro");
@@ -105,11 +114,14 @@ async function requestRaptorPro(path: string, init: RequestInit = {}) {
   } else {
     headers.delete("Authorization");
   }
-  return fetch(`${environment.url}${path}`, { ...init, headers, cache: "no-store" });
+  return fetch(`${environment.url}${path}`, {
+    ...init, headers, cache: "no-store",
+    ...(isPreviewEnvironment() ? { redirect: "error" as const } : {})
+  });
 }
 
 async function setPaidAccess(order: Order, status: PaidAccessStatus) {
-  const program = getRaptorProProgramConfig(order);
+  const program = provisioningProgram(order);
   if (!program) throw new Error("Order is not a RaptorPro program purchase.");
   return requestRaptorPro("/rest/v1/rpc/set_commercial_program_paid_access", {
     method: "POST",
@@ -129,7 +141,7 @@ function isMissingAuthUser(message: string) {
 async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   const environment = config();
   if (!environment) throw new Error("RaptorPro provisioning environment is not configured.");
-  const program = getRaptorProProgramConfig(order);
+  const program = provisioningProgram(order);
   if (!program) throw new Error("Order is not a RaptorPro program purchase.");
   const redirectTo = `${environment.appUrl}/programs/${program.programSlug}/access`;
   const response = await requestRaptorPro("/auth/v1/admin/generate_link", {
@@ -151,24 +163,37 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   });
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(`RaptorPro ${type} link failed: ${response.status} ${message}`);
+    throw new Error(`RaptorPro ${type} link failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
   }
   const result = (await response.json()) as GeneratedLink;
   if (!result.action_link) throw new Error(`RaptorPro ${type} link was not generated.`);
+  if (isPreviewEnvironment() && !isRaptorProPreviewActionUrl(result.action_link)) {
+    throw new Error("RaptorPro preview returned an unapproved sign-in destination.");
+  }
   return { actionUrl: result.action_link, userId: result.user?.id || null, type };
 }
 
 export function getRaptorProProgramUrl(orderOrProductId: Pick<Order, "product_id"> | string = RAPTORPRO_OFFSEASON_PRODUCT_ID) {
-  const environment = config();
-  const appUrl = environment?.appUrl || "https://app.rumoaopro.com.br";
+  const appUrl = publicRaptorProAppUrl();
+  // An unconfigured preview stays on the site's public catalog, never production.
+  if (!appUrl) return "/apps";
   const program = getRaptorProProgramConfig(orderOrProductId);
   const slug = program?.programSlug || RAPTORPRO_OFFSEASON_PROGRAM_SLUG;
   return `${appUrl}/programs/${slug}/access`;
 }
 
 export async function syncRaptorProProgramAccess(order: Order, status: PaidAccessStatus) {
-  const program = getRaptorProProgramConfig(order);
+  const program = provisioningProgram(order);
   if (!program) return { handled: false as const };
+  // Enforce this at the provider boundary, not only in webhook orchestration:
+  // direct checkout links and admin retries also call this function.
+  if (isPreviewEnvironment()) {
+    if (!canProvisionRaptorProSandbox(order) || (status === "granted" && order.status !== "paid")) {
+      throw new Error("Preview requires the explicitly pinned isolated database and approved test order.");
+    }
+  } else if (order.gateway === "mock" || order.metadata.checkout_gateway_mode === "sandbox") {
+    throw new Error("A test order cannot change RaptorPro access.");
+  }
   if (!config()) {
     await appendOrderLog(
       order.id,
@@ -185,7 +210,7 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
   if (!response.ok && status === "granted") {
     const message = await response.text().catch(() => "");
     if (!isMissingAuthUser(message)) {
-      throw new Error(`RaptorPro access sync failed: ${response.status} ${message}`);
+      throw new Error(`RaptorPro access sync failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
     }
     const invite = await generateActionLink(order, "invite");
     actionUrl = invite.actionUrl;
@@ -195,7 +220,7 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(`RaptorPro access sync failed: ${response.status} ${message}`);
+    throw new Error(`RaptorPro access sync failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
   }
 
   if (status === "granted" && !actionUrl && order.metadata.raptorpro_welcome_email_sent !== true) {

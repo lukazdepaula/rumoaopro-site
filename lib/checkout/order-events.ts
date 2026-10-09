@@ -17,7 +17,7 @@ import {
 import { isLoadProOrder, syncLoadProAccess } from "@/lib/checkout/loadpro";
 import { getRaptorProProgramConfig, isRaptorProProgramOrder, syncRaptorProProgramAccess } from "@/lib/checkout/raptorpro";
 import type { Order } from "@/lib/checkout/types";
-import { canProvisionLoadProSandbox } from "@/lib/preview-safety";
+import { canProvisionLoadProSandbox, canProvisionRaptorProSandbox } from "@/lib/preview-safety";
 
 async function assertOrder(orderId: string): Promise<Order> {
   const order = await getOrderById(orderId);
@@ -120,7 +120,7 @@ async function syncRaptorProSafely(
   if (!isRaptorProProgramOrder(order)) return;
   const program = getRaptorProProgramConfig(order);
   if (!program) return;
-  if (order.metadata.checkout_gateway_mode === "sandbox") {
+  if (order.metadata.checkout_gateway_mode === "sandbox" && !canProvisionRaptorProSandbox(order)) {
     await updateOrderGatewayIds(order.id, {
       metadata: { raptorpro_provisioning_status: "sandbox_skipped" }
     });
@@ -170,7 +170,7 @@ async function syncRaptorProSafely(
           : "pending";
 
     if (status === "granted" && result.configured !== false && result.actionUrl && !welcomeEmailSent) {
-      if (isEmailDeliveryConfigured()) {
+      if (isEmailDeliveryConfigured({ raptorPreviewTo: order.customer_email, orderId: order.id })) {
         welcomeEmailSent = await sendRaptorProProgramAccessEmail({
           orderId: order.id,
           to: order.customer_email,
@@ -200,7 +200,7 @@ async function syncRaptorProSafely(
         raptorpro_welcome_email_sent: welcomeEmailSent,
         raptorpro_welcome_email_status: welcomeEmailStatus,
         raptorpro_account_created: result.accountCreated,
-        raptorpro_program_id: program.programId
+        raptorpro_program_id: result.configured !== false ? result.programId || program.programId : program.programId
       }
     });
   } catch (error) {
@@ -308,7 +308,7 @@ export async function markOrderAsPaid(
       await appendOrderLog(
         paidOrder.id,
         "order.sandbox.delivery_skipped",
-        "Pedido sandbox confirmado sem e-mail, convite ou entrega real."
+        "Pedido sandbox confirmado sem entrega ou notificações de produção."
       );
     }
   }

@@ -62,3 +62,80 @@ export function publicLoadProAppUrl() {
   catch { return ''; }
   return process.env.LOADPRO_APP_URL!.replace(/\/$/, '') + '/';
 }
+
+/** Reading a public app URL must not require database/provisioning credentials. */
+export function publicRaptorProAppUrl() {
+  if (!isPreviewEnvironment()) return (process.env.RAPTORPRO_APP_URL || 'https://app.rumoaopro.com.br').replace(/\/$/, '');
+  // The reviewed QA app is loopback-only, never a publicly deployed Raptor copy.
+  if (process.env.VERCEL_ENV === 'preview'
+    && process.env.VERCEL_GIT_COMMIT_REF === RAPTOR_QA_BRANCH
+    && process.env.RAPTORPRO_PREVIEW_PROVISIONING_ENABLED === 'true'
+    && process.env.RAPTORPRO_APP_URL === RAPTOR_QA_APP) return RAPTOR_QA_APP;
+  try { assertPreviewOrigin(process.env.RAPTORPRO_APP_URL); }
+  catch { return ''; }
+  return process.env.RAPTORPRO_APP_URL!.replace(/\/$/, '');
+}
+
+const RAPTOR_QA_BRANCH = 'codex/site-security-dependencies-2026-09-29';
+const RAPTOR_QA_DATABASE = 'https://nawortzzryivahnutdqe.supabase.co';
+const CHECKOUT_QA_DATABASE = 'https://xxibnkscktibljtrqmxy.supabase.co';
+const RAPTOR_QA_APP = 'http://127.0.0.1:3022';
+const RAPTOR_QA_ACCESS_PATH = '/programs/project-36-speed-acceleration/access';
+
+/** Temporary opt-in for one reviewed checkout, recipient and existing synthetic program. */
+function raptorPreviewScope() {
+  if (process.env.VERCEL_ENV !== 'preview'
+    || process.env.VERCEL_GIT_COMMIT_REF !== RAPTOR_QA_BRANCH
+    || process.env.LOADPRO_PREVIEW_INTEGRATION_ENABLED !== 'true'
+    || process.env.RAPTORPRO_PREVIEW_PROVISIONING_ENABLED !== 'true'
+    || process.env.CHECKOUT_GATEWAY_MODE !== 'sandbox'
+    || !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
+    || !['postgres', 'supabase'].includes(process.env.CHECKOUT_DB_DRIVER || '')
+    || process.env.NEXT_PUBLIC_SITE_URL !== 'https://rumoaopro-site-git-codex-site-61f7c9-fagotti-10-7408s-projects.vercel.app'
+    || process.env.CHECKOUT_TEST_SUPABASE_PROJECT_REF !== 'xxibnkscktibljtrqmxy'
+    || (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) !== CHECKOUT_QA_DATABASE
+    || (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== CHECKOUT_QA_DATABASE)
+    || process.env.RAPTORPRO_TEST_SUPABASE_PROJECT_REF !== 'nawortzzryivahnutdqe'
+    || process.env.RAPTORPRO_SUPABASE_URL !== RAPTOR_QA_DATABASE
+    || process.env.RAPTORPRO_APP_URL !== RAPTOR_QA_APP) return null;
+  const email = process.env.RAPTORPRO_PREVIEW_ALLOWED_EMAIL?.trim().toLowerCase() || '';
+  const orderId = process.env.RAPTORPRO_PREVIEW_ORDER_ID || '';
+  if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(email)
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) return null;
+  return { email, orderId, programId: 'speed-pro-qa-20260913', appUrl: RAPTOR_QA_APP };
+}
+
+export function canProvisionRaptorProSandbox(order: {
+  id: string; product_id: string; gateway: string; customer_email: string;
+  metadata: Record<string, unknown>;
+}) {
+  const scope = raptorPreviewScope();
+  return Boolean(scope && order.id === scope.orderId && order.product_id === 'project_36'
+    && order.gateway === 'stripe' && order.metadata.checkout_gateway_mode === 'sandbox'
+    && order.customer_email.trim().toLowerCase() === scope.email);
+}
+
+export function raptorProPreviewProgramId() {
+  return raptorPreviewScope()?.programId || null;
+}
+
+/** Never email a production sign-in link, or a provider fallback to an unreviewed redirect. */
+export function isRaptorProPreviewActionUrl(value: string) {
+  if (!raptorPreviewScope()) return false;
+  try {
+    const url = new URL(value);
+    return url.origin === RAPTOR_QA_DATABASE && url.pathname === '/auth/v1/verify'
+      && !url.username && !url.password && !url.hash
+      && ['invite', 'magiclink'].includes(url.searchParams.get('type') || '')
+      && Boolean(url.searchParams.get('token') || url.searchParams.get('token_hash'))
+      && url.searchParams.get('redirect_to') === `${RAPTOR_QA_APP}${RAPTOR_QA_ACCESS_PATH}`;
+  } catch { return false; }
+}
+
+export function canSendRaptorProPreviewEmail(to: string, orderId: string) {
+  const scope = raptorPreviewScope();
+  return Boolean(scope && scope.email === to.trim().toLowerCase() && scope.orderId === orderId
+    && process.env.RAPTORPRO_PREVIEW_EMAIL_ENABLED === 'true'
+    && process.env.RAPTORPRO_PREVIEW_RESEND_API_KEY?.trim()
+    && process.env.RAPTORPRO_PREVIEW_EMAIL_FROM?.trim());
+}
