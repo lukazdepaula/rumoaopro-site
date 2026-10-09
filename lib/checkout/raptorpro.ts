@@ -1,5 +1,5 @@
 import { assertPreviewDatabase, publicRaptorProAppUrl, isPreviewEnvironment,
-  canProvisionRaptorProSandbox, raptorProPreviewProgramId, isRaptorProPreviewActionUrl } from "@/lib/preview-safety";
+  canProvisionRaptorProSandbox, canInspectRaptorProSandbox, raptorProPreviewProgramId, isRaptorProPreviewActionUrl } from "@/lib/preview-safety";
 import { appendOrderLog } from "@/lib/checkout/db";
 import type { Order } from "@/lib/checkout/types";
 
@@ -87,12 +87,52 @@ function provisioningProgram(order: Order) {
 function config() {
   const url = process.env.RAPTORPRO_SUPABASE_URL;
   assertPreviewDatabase(url, "raptorpro");
-  const serviceRoleKey = process.env.RAPTORPRO_SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env.RAPTORPRO_SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !serviceRoleKey) return null;
   return {
     url: url.replace(/\/$/, ""),
     serviceRoleKey,
     appUrl: (process.env.RAPTORPRO_APP_URL || "https://app.rumoaopro.com.br").replace(/\/$/, "")
+  };
+}
+
+function credentialType(key: string | undefined) {
+  if (!key) return "missing";
+  if (key.startsWith("sb_secret_")) return "secret";
+  if (key.startsWith("sb_publishable_")) return "publishable";
+  try {
+    const parts = key.split(".");
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+      if (payload.role === "service_role") return "legacy_service_role";
+      if (payload.role === "anon") return "legacy_anon";
+    }
+  } catch { /* Report only the shape, never the key or decoded claims. */ }
+  return "unrecognized";
+}
+
+/** Admin-only caller: inspect the isolated API schema, never users or grants. */
+export async function inspectRaptorProPreviewConnection(order: Order) {
+  if (!canInspectRaptorProSandbox(order) || order.status !== "paid") {
+    throw new Error("Isolated preview diagnostic is not available for this order.");
+  }
+  const environment = config();
+  const type = credentialType(environment?.serviceRoleKey);
+  if (!environment || !["secret", "legacy_service_role"].includes(type)) {
+    return { credentialType: type, apiStatus: null, provisioningFunctionVisible: false };
+  }
+  // No RPC is executed. The schema advertises functions available to this role.
+  const response = await requestRaptorPro("/rest/v1/", {
+    method: "GET", signal: AbortSignal.timeout(10_000)
+  });
+  if (!response.ok) {
+    await response.body?.cancel();
+    return { credentialType: type, apiStatus: response.status, provisioningFunctionVisible: false };
+  }
+  const schema = await response.json() as { paths?: Record<string, unknown> };
+  return {
+    credentialType: type, apiStatus: response.status,
+    provisioningFunctionVisible: Boolean(schema.paths?.["/rpc/set_commercial_program_paid_access"])
   };
 }
 

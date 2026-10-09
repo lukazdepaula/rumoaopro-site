@@ -83,11 +83,11 @@ const RAPTOR_QA_APP = 'http://127.0.0.1:3022';
 const RAPTOR_QA_ACCESS_PATH = '/programs/project-36-speed-acceleration/access';
 
 /** Temporary opt-in for one reviewed checkout, recipient and existing synthetic program. */
-function raptorPreviewScope() {
+function raptorPreviewScope(requireProvisioning = true) {
   if (process.env.VERCEL_ENV !== 'preview'
     || process.env.VERCEL_GIT_COMMIT_REF !== RAPTOR_QA_BRANCH
     || process.env.LOADPRO_PREVIEW_INTEGRATION_ENABLED !== 'true'
-    || process.env.RAPTORPRO_PREVIEW_PROVISIONING_ENABLED !== 'true'
+    || (requireProvisioning && process.env.RAPTORPRO_PREVIEW_PROVISIONING_ENABLED !== 'true')
     || process.env.CHECKOUT_GATEWAY_MODE !== 'sandbox'
     || !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
     || !['postgres', 'supabase'].includes(process.env.CHECKOUT_DB_DRIVER || '')
@@ -109,7 +109,21 @@ export function canProvisionRaptorProSandbox(order: {
   id: string; product_id: string; gateway: string; customer_email: string;
   metadata: Record<string, unknown>;
 }) {
-  const scope = raptorPreviewScope();
+  return matchesRaptorPreviewOrder(order, raptorPreviewScope());
+}
+
+/** Read-only admin diagnostics may run while provisioning and mail remain disabled. */
+export function canInspectRaptorProSandbox(order: {
+  id: string; product_id: string; gateway: string; customer_email: string;
+  metadata: Record<string, unknown>;
+}) {
+  return matchesRaptorPreviewOrder(order, raptorPreviewScope(false));
+}
+
+function matchesRaptorPreviewOrder(order: {
+  id: string; product_id: string; gateway: string; customer_email: string;
+  metadata: Record<string, unknown>;
+}, scope: ReturnType<typeof raptorPreviewScope>) {
   return Boolean(scope && order.id === scope.orderId && order.product_id === 'project_36'
     && order.gateway === 'stripe' && order.metadata.checkout_gateway_mode === 'sandbox'
     && order.customer_email.trim().toLowerCase() === scope.email);
