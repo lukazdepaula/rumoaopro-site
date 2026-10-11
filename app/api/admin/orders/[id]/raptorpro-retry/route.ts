@@ -21,6 +21,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const headers = { "Cache-Control": "no-store" };
@@ -67,6 +68,14 @@ export async function POST(
   try {
     const isolatedPreview = canProvisionRaptorProSandbox(order);
     if (isPreviewEnvironment() && !isolatedPreview) return redirect("error");
+    const { stripeRetrySafetyEnabled } = await import('@/lib/checkout/retry-storage');
+    if (stripeRetrySafetyEnabled()) {
+      // Share serialization and the saved email with automatic delivery; never create
+      // another invitation while the provider may have accepted the previous one.
+      const { markOrderAsPaid } = await import('@/lib/checkout/order-events');
+      await markOrderAsPaid(order.id, {}, { retrySafe: true });
+      return redirect('sent');
+    }
     // A retry must not create an account/link if its approved mail channel is off.
     if (isolatedPreview) {
       if (order.metadata.raptorpro_welcome_email_sent === true) return redirect("sent");

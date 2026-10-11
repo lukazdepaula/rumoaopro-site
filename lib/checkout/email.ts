@@ -9,6 +9,7 @@ type EmailInput = {
   orderId?: string;
   // Internal marker, set only by the Raptor access template. Generic preview mail stays off.
   raptorPreviewActionUrl?: string;
+  retrySafeRaptorWelcome?: boolean;
 };
 
 export function isEmailDeliveryConfigured(qa?: { raptorPreviewTo: string; orderId: string }) {
@@ -91,7 +92,7 @@ function loadProEmailSummary(rows: Array<[string, string]>) {
 
 export async function sendEmail(input: EmailInput) {
   const preview = isPreviewEnvironment();
-  if (preview && (typeof input.to !== "string" || !input.orderId || !input.raptorPreviewActionUrl
+  if (preview && !input.retrySafeRaptorWelcome && (typeof input.to !== "string" || !input.orderId || !input.raptorPreviewActionUrl
     || !canSendRaptorProPreviewEmail(input.to, input.orderId)
     || !isRaptorProPreviewActionUrl(input.raptorPreviewActionUrl))) return false;
   const provider = preview ? "resend" : (process.env.EMAIL_PROVIDER || "mock").trim().toLowerCase();
@@ -101,6 +102,28 @@ export async function sendEmail(input: EmailInput) {
       const apiKey = (preview ? process.env.RAPTORPRO_PREVIEW_RESEND_API_KEY : process.env.RESEND_API_KEY)?.trim();
       if (!apiKey) {
         throw new Error("RESEND_API_KEY ausente.");
+      }
+
+      if (input.retrySafeRaptorWelcome) {
+        if (!input.orderId || typeof input.to !== 'string') throw Error('Invalid retry-safe recipient');
+        const { sendRetrySafeRaptorEmail } = await import('./retry-email');
+        const sent = await sendRetrySafeRaptorEmail(input.orderId, {
+          body: { from: (preview ? process.env.RAPTORPRO_PREVIEW_EMAIL_FROM : process.env.EMAIL_FROM) || '',
+            to: input.to, subject: input.subject, html: input.html, ...(input.text ? { text: input.text } : {}) },
+          actionUrl: input.raptorPreviewActionUrl || '', createdAt: Date.now()
+        }, saved => Boolean(saved.body.from && saved.body.to && saved.actionUrl && (!preview ||
+          (canSendRaptorProPreviewEmail(saved.body.to,input.orderId!) && isRaptorProPreviewActionUrl(saved.actionUrl)))),
+        async (body, idempotencyKey) => {
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10_000),
+            headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+            body: JSON.stringify(body)
+          });
+          await response.body?.cancel();
+          return response.ok;
+        });
+        if (sent) await appendOrderLog(input.orderId,'email.sent','E-mail confirmado.',{ provider }).catch(() => undefined);
+        return sent;
       }
 
       const response = await fetch("https://api.resend.com/emails", {
@@ -424,6 +447,7 @@ export async function sendRaptorProProgramAccessEmail(input: {
   accountCreated: boolean;
   programName: string;
   locale: "pt" | "en";
+  retrySafe?: boolean;
 }) {
   const preview = isPreviewEnvironment();
   const actionUrl = escapeHtml(input.actionUrl);
@@ -432,6 +456,7 @@ export async function sendRaptorProProgramAccessEmail(input: {
   return sendEmail({
     to: input.to,
     raptorPreviewActionUrl: input.actionUrl,
+    retrySafeRaptorWelcome: input.retrySafe,
     subject: preview ? "[TESTE SEM COBRANÇA] Acesso ao programa fictício do Raptor" : isEnglish
       ? `${input.programName} is ready in RaptorPro`
       : `Seu ${input.programName} está liberado no RaptorPro`,

@@ -115,7 +115,8 @@ async function syncLoadProSafely(
 
 async function syncRaptorProSafely(
   order: Order,
-  status: "granted" | "revoked"
+  status: "granted" | "revoked",
+  retrySafe = false
 ) {
   if (!isRaptorProProgramOrder(order)) return;
   const program = getRaptorProProgramConfig(order);
@@ -159,26 +160,36 @@ async function syncRaptorProSafely(
         return;
       }
     }
-    const result = await syncRaptorProProgramAccess(order, status);
+    const savedEmail = retrySafe ? await (await import('./retry-email')).existingRaptorWelcome(order.id) : null;
+    if (retrySafe && !savedEmail?.sent_at && order.metadata.raptorpro_welcome_email_sent !== true) {
+      (await import('./retry-email')).assertRetryEmailConfigured();
+      if (!isEmailDeliveryConfigured({ raptorPreviewTo: order.customer_email, orderId: order.id })) {
+        throw Error('Retry-safe email channel is not configured');
+      }
+    }
+    // Do not generate another magic link while a durable email contains the original.
+    const result = await syncRaptorProProgramAccess(savedEmail
+      ? { ...order, metadata: { ...order.metadata, raptorpro_welcome_email_sent: true } } : order, status);
     if (!result.handled) return;
-    let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true;
+    let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true || Boolean(savedEmail?.sent_at);
     let welcomeEmailStatus =
-      typeof order.metadata.raptorpro_welcome_email_status === "string"
+      welcomeEmailSent ? "sent" : typeof order.metadata.raptorpro_welcome_email_status === "string"
         ? order.metadata.raptorpro_welcome_email_status
         : welcomeEmailSent
           ? "sent"
           : "pending";
 
-    if (status === "granted" && result.configured !== false && result.actionUrl && !welcomeEmailSent) {
+    if (status === "granted" && result.configured !== false && (result.actionUrl || savedEmail) && !welcomeEmailSent) {
       if (isEmailDeliveryConfigured({ raptorPreviewTo: order.customer_email, orderId: order.id })) {
         welcomeEmailSent = await sendRaptorProProgramAccessEmail({
           orderId: order.id,
           to: order.customer_email,
           name: order.customer_name,
-          actionUrl: result.actionUrl,
+          actionUrl: result.actionUrl || '',
           accountCreated: result.accountCreated,
           programName: program.programTitle,
-          locale: order.metadata.locale === "en" ? "en" : "pt"
+          locale: order.metadata.locale === "en" ? "en" : "pt",
+          retrySafe
         });
         welcomeEmailStatus = welcomeEmailSent ? "sent" : "failed";
       } else {
@@ -203,6 +214,9 @@ async function syncRaptorProSafely(
         raptorpro_program_id: result.configured !== false ? result.programId || program.programId : program.programId
       }
     });
+    if (retrySafe && (result.configured === false || !welcomeEmailSent)) {
+      throw Error('Raptor fulfillment incomplete; retry required');
+    }
   } catch (error) {
     await updateOrderGatewayIds(order.id, {
       metadata: { raptorpro_provisioning_status: "error" }
@@ -213,6 +227,7 @@ async function syncRaptorProSafely(
       "O pagamento foi preservado, mas o acesso automático ao RaptorPro precisa ser reprocessado.",
       { error: error instanceof Error ? error.message : String(error), status }
     );
+    if (retrySafe) throw Error('Raptor fulfillment incomplete; retry required');
   }
 }
 
@@ -258,7 +273,30 @@ export async function triggerDelivery(orderId: string) {
 
 export async function markOrderAsPaid(
   orderId: string,
-  gatewayData: Record<string, unknown> = {}
+  gatewayData: Record<string, unknown> = {},
+  options: { retrySafe?: boolean } = {}
+) {
+  if (!options.retrySafe) return markOrderAsPaidInternal(orderId,gatewayData);
+  const order = await assertOrder(orderId);
+  if (!isRaptorProProgramOrder(order)) return markOrderAsPaidInternal(orderId,gatewayData);
+  const { claimRetryWork, finishRetryWork } = await import('./retry-storage');
+  const key = `raptor-order:${orderId}`;
+  const claim = await claimRetryWork(key);
+  if (claim.state !== 'claimed') throw Error('Raptor order is already processing');
+  try {
+    const current = await assertOrder(orderId);
+    if (['refunded','cancelled'].includes(current.status)) throw Error('Closed order requires manual review');
+    return await markOrderAsPaidInternal(orderId,gatewayData,true);
+  } finally {
+    // Order lock is reusable; only the event and email have durable completed states.
+    await finishRetryWork(key,claim.token!,false);
+  }
+}
+
+async function markOrderAsPaidInternal(
+  orderId: string,
+  gatewayData: Record<string, unknown>,
+  retrySafe = false
 ) {
   const order = await assertOrder(orderId);
   const firstConfirmation = order.status !== "paid";
@@ -275,9 +313,11 @@ export async function markOrderAsPaid(
 
   const paidOrder = await getOrderById(orderId);
   const sandboxOrder = paidOrder?.metadata.checkout_gateway_mode === "sandbox";
+  let raptorFailure: unknown = null;
   if (paidOrder) {
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
-    await syncRaptorProSafely(paidOrder, "granted");
+    try { await syncRaptorProSafely(paidOrder, "granted", retrySafe); }
+    catch (error) { if (!retrySafe) throw error; raptorFailure = error; }
     if (
       !isLoadProOrder(paidOrder) &&
       paidOrder.product_id !== "online_coaching_monthly"
@@ -337,6 +377,7 @@ export async function markOrderAsPaid(
       }
     }
   }
+  if (raptorFailure) throw raptorFailure;
   return getOrderById(orderId);
 }
 

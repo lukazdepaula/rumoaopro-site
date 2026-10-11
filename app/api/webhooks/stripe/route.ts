@@ -27,9 +27,12 @@ import { isLoadProOrder, isCurrentLoadProSubscription } from "@/lib/checkout/loa
 import { stripeSubscriptionPeriod } from "@/lib/checkout/loadpro-billing-policy";
 import { sendLoadProPaymentFailedEmail } from "@/lib/checkout/email";
 import type { Order } from "@/lib/checkout/types";
+import { claimRetryWork, finishRetryWork, stripeRetrySafetyEnabled } from "@/lib/checkout/retry-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// The 5-minute processing lease outlives the maximum hosted invocation.
+export const maxDuration = 60;
 
 type StripeEvent = {
   id?: string;
@@ -193,6 +196,15 @@ async function sendLoadProPaymentFailureOnce(input: {
 export async function POST(request: Request) {
   const payload = await request.text();
   const signature = request.headers.get("stripe-signature");
+  const retrySafe = stripeRetrySafetyEnabled();
+  let claim: { key: string; token: string } | null = null;
+  async function respond(body: Record<string, unknown>, status = 200) {
+    if (claim) {
+      await finishRetryWork(claim.key, claim.token, status >= 200 && status < 300);
+      claim = null;
+    }
+    return NextResponse.json(body, { status });
+  }
 
   try {
     if (!verifyStripeWebhookSignature(payload, signature)) {
@@ -208,11 +220,25 @@ export async function POST(request: Request) {
       );
     }
     const eventId = event.id || randomUUID();
-    const firstDelivery = await recordWebhookEvent("stripe", eventId, event);
+    if (retrySafe && (!event.id || !/^[a-zA-Z0-9_-]{1,200}$/.test(event.id))) {
+      return await respond({ error: "Invalid event ID" }, 400);
+    }
+    let firstDelivery: boolean;
+    if (retrySafe) {
+      const key = `stripe-event:${eventId}`;
+      const result = await claimRetryWork(key, eventId);
+      if (result.state === 'busy') return await respond({ error: "Event processing in progress" }, 503);
+      firstDelivery = result.state === 'claimed';
+      if (firstDelivery) {
+        claim = { key, token: result.token! };
+        // Audit receipt only; retry state, not this historical row, owns completion.
+        await recordWebhookEvent("stripe", eventId, event);
+      }
+    } else firstDelivery = await recordWebhookEvent("stripe", eventId, event);
     const annualInvoiceRetry=event.type === "invoice.paid" && isAnnualAmount(event.data?.object?.amount_paid) && event.data?.object?.currency === "brl";
     const annualScheduleRefresh=event.type === "customer.subscription.updated";
     if (!firstDelivery && !annualInvoiceRetry && !annualScheduleRefresh) {
-      return NextResponse.json({ received: true, duplicate: true });
+      return await respond({ received: true, duplicate: true });
     }
 
     const object = event.data?.object || {};
@@ -231,7 +257,7 @@ export async function POST(request: Request) {
       order = await getOrderByGatewayCheckoutId("stripe", sessionId);
     }
     if (!order) {
-      return NextResponse.json({ received: true, order: "not_found" });
+      return await respond({ received: true, order: "not_found" }, retrySafe && orderId ? 503 : 200);
     }
 
     const orderMode = order.metadata.checkout_gateway_mode;
@@ -239,10 +265,7 @@ export async function POST(request: Request) {
       (event.livemode === false && orderMode !== "sandbox") ||
       (event.livemode === true && orderMode === "sandbox")
     ) {
-      return NextResponse.json(
-        { error: "Stripe order environment mismatch" },
-        { status: 409 }
-      );
+      return await respond({ error: "Stripe order environment mismatch" }, 409);
     }
 
     if (annualInvoiceRetry && subscriptionId && isLoadProOrder(order)) {
@@ -251,7 +274,7 @@ export async function POST(request: Request) {
     if (annualScheduleRefresh && subscriptionId && isLoadProOrder(order)) {
       await syncAnnualSchedulePaymentMethod(subscriptionId,eventId);
     }
-    if (!firstDelivery) return NextResponse.json({received:true,duplicate:true,reconciled:true});
+    if (!firstDelivery) return await respond({received:true,duplicate:true,reconciled:true});
     const environmentData = { provider_livemode: event.livemode };
 
     if (
@@ -259,7 +282,7 @@ export async function POST(request: Request) {
       event.type === "checkout.session.async_payment_succeeded"
     ) {
       const paymentStatus = object.payment_status;
-      const paid = paymentStatus === "paid" || event.type.includes("succeeded");
+      const paid = paymentStatus === "paid";
       const subscription = subscriptionId
         ? await fetchStripeSubscription(subscriptionId)
         : null;
@@ -307,7 +330,7 @@ export async function POST(request: Request) {
           provider_customer_id: textValue(object.customer),
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(subscription || {}, subscriptionStatus)
-        });
+        }, { retrySafe });
         if (!isLoadProOrder(order)) {
           await trackMetaPurchase(order, {
             eventId: `purchase:${order.id}`,
@@ -349,7 +372,7 @@ export async function POST(request: Request) {
           provider_customer_id: textValue(liveSubscription.customer), provider_subscription_id: subscriptionId,
           ...subscriptionFields(liveSubscription)
         });
-        return NextResponse.json({ received: true, reconciled: true });
+        return await respond({ received: true, reconciled: true });
       }
       const currentFields=subscriptionFields(invoiceSubscription, 'active');
       const annualInvoiceConfirmed=object.paid===true && currentFields.billing_interval==='year'
@@ -385,7 +408,7 @@ export async function POST(request: Request) {
           provider_subscription_id: subscriptionId,
           ...subscriptionFields(invoiceSubscription, "active"),
           annual_payment_confirmed: annualInvoiceConfirmed
-        });
+        }, { retrySafe });
       } else {
         await syncOrderSubscription(order.id, "active", {
           ...environmentData,
@@ -467,9 +490,11 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ received: true });
+    return await respond({ received: true });
   } catch (error) {
-    console.error("[webhook.stripe]", error);
+    if (claim) await finishRetryWork(claim.key, claim.token, false).catch(() => undefined);
+    // No provider body, customer data, credentials or personal access link in logs.
+    console.error("[webhook.stripe] processing failed; retry required");
     return NextResponse.json({ error: "Webhook error" }, { status: 500 });
   }
 }

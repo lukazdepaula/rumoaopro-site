@@ -156,6 +156,8 @@ async function requestRaptorPro(path: string, init: RequestInit = {}) {
   }
   return fetch(`${environment.url}${path}`, {
     ...init, headers, cache: "no-store",
+    ...(process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true' && !init.signal
+      ? { signal: AbortSignal.timeout(10_000) } : {}),
     ...(isPreviewEnvironment() ? { redirect: "error" as const } : {})
   });
 }

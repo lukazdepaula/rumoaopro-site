@@ -238,6 +238,7 @@ function stripeFixture(status = 'trialing', signatureValid = true) {
   const order = fixtureOrder();
   const paid = []; const seen = new Set();
   const route = load('app/api/webhooks/stripe/route.ts', {
+    '@/lib/checkout/retry-storage': { stripeRetrySafetyEnabled: () => false },
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status || 200 }) } },
     '@/lib/checkout/loadpro-annual-policy': { isAnnualAmount: () => false, matchesAnnualPayment: () => false },
     '@/lib/checkout/loadpro-annual': { reconcileAnnualCard: async () => {}, syncAnnualSchedulePaymentMethod: async () => {} },

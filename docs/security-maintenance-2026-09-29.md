@@ -195,3 +195,110 @@ fictício anterior não deve ter seu e-mail trocado nem ser reutilizado como ess
 Ao concluir a QA, desligar os opt-ins e remover/revogar credenciais temporárias e
 o retorno temporário mediante autorização; não promover a ponte temporária por
 acidente. Esta preparação não é aprovação para merge/publicação em produção.
+
+## Preparação local de recuperação de entrega — 11/10/2026
+
+Escopo autorizado: preparar correções na cópia isolada, sem push, deploy, cobranças,
+e-mails reais, mudanças nas configurações remotas ou aplicação de SQL remoto.
+O responsável confirmou anteriormente recebimento do convite e abertura do programa
+fictício após **reprocessamento manual**. Isso não comprova uma nova compra com
+entrega automática completa. O pedido já concluído não deve ser reenviado.
+
+### Dependências
+
+- Next/SWC: 15.5.24 → 15.5.27; sharp: 0.35.4 → 0.35.5.
+- source-map-js: 1.2.1 → 1.2.2; postcss-selector-parser: 6.1.4 → 7.1.6.
+- `@swc/helpers` 0.5.15, já requerido pelo Next, declarado diretamente para resolver
+  os helpers do `next.config.ts` no caminho WebAssembly de inicialização local.
+- Overrides mantidos no package.json (pnpm 9) e pnpm-workspace.yaml (runtime novo).
+- Auditoria após atualização: **1 alto, 0 moderados, 0 críticos**, contra 3 altos e
+  3 moderados antes. Não houve silenciamento de avisos.
+- Residual: `braces` 3.0.3, indireto do Tailwind/glob, sem release corrigido indicado
+  pelo aviso. Uso observado na construção a partir dos arquivos confiáveis do
+  projeto, não em uma API que recebe padrões do visitante. Não equivale a prova
+  de ausência de exposição em qualquer configuração futura.
+
+Fontes: [sharp](https://github.com/advisories/GHSA-wq5f-xc86-pv6w),
+[Next 1](https://github.com/advisories/GHSA-4jqv-mc3x-m676),
+[Next 2](https://github.com/advisories/GHSA-mcj8-r9mp-w47p),
+[source-map-js](https://github.com/advisories/GHSA-68fv-2mgg-jv7q),
+[selector parser](https://github.com/advisories/GHSA-rj75-hqrm-r3gf),
+[braces residual](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+
+### Correção preparada, desligada por padrão
+
+`STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED` só liga o novo caminho com valor `true`.
+Nenhuma configuração remota recebeu esse valor nesta preparação.
+
+1. Após assinatura e ambiente válidos, uma reserva durável distingue processamento,
+   conclusão e falha. Concorrência no mesmo evento recebe resposta temporária 503.
+   Falhas recebem resposta não-2xx e liberam a reserva para nova tentativa da Stripe.
+2. Eventos já registrados pelo código anterior são considerados históricos: não
+   são automaticamente repetidos, pois não sabemos quais efeitos já ocorreram.
+3. Há reserva separada por pedido do Raptor, inclusive para eventos diferentes e
+   o botão administrativo. Eventos tardios não reabrem pedidos reembolsados/cancelados.
+4. Falha de provisionamento/e-mail mantém o pagamento e as notificações originais,
+   mas não marca o evento como concluído. LoadPro conserva seu sincronizador atual;
+   esta implementação **não resolve todos os cenários de retry dos outros produtos**.
+5. O convite usa corpo imutável e chave de idempotência por pedido no Resend. A cópia
+   temporária do corpo/link é criptografada com AES-256-GCM e vinculada ao pedido.
+   O marcador de envio é persistido antes de logs opcionais; ao confirmar, o corpo
+   criptografado é removido. A tentativa seguinte não gera um novo magic link se
+   já existe um convite preparado.
+6. Em caso de confirmação de envio incerta, a repetição automática limita-se a
+   **15 minutos desde a preparação**. Depois disso, recusa novo envio e requer
+   revisão manual. Não se afirma entrega exatamente uma vez sob falhas ilimitadas;
+   a política conservadora evita reenvio fora da janela e de links possivelmente usados.
+7. Claims expiram em cinco minutos; token impede conclusão por um executor antigo.
+   Rotas hospedadas de webhook/retry ficam limitadas a 60 segundos, e chamadas
+   Raptor/Resend desse caminho têm timeout de 10 segundos. Validar a latência das
+   integrações existentes antes de qualquer promoção.
+
+Referências: [fulfillment Stripe](https://docs.stripe.com/checkout/fulfillment) e
+[idempotência Resend](https://resend.com/changelog/idempotency-keys). O guia de boas
+práticas Stripe orientou assinatura, separação de ambiente e processamento no servidor.
+
+### Banco e ativação futura — não executados em ambientes remotos
+
+- Migração aditiva: `supabase/checkout-retry-safety.sql`, **banco do checkout**, não
+  banco do LoadPro nem do Raptor. Duas tabelas privadas e uma função service-only;
+  RLS ativo, sem acesso de anon/authenticated, sem alteração de pedidos existentes.
+- Requer `CHECKOUT_DELIVERY_ENCRYPTION_KEY`: segredo aleatório independente de pelo
+  menos 32 caracteres, server-only e Sensitive. Não colocar valor no Git/chat.
+  Não rotacionar enquanto houver mensagens preparadas sem plano de recuperação.
+- Primeiro aplicar/validar no staging, configurar o segredo privado e só então
+  ativar o flag na branch isolada. Sem migração, retorna erro; não há fallback inseguro.
+- Usar novo pedido fictício, destinatário autorizado e os mesmos bloqueios QA
+  específicos de banco/produto/retorno. Janela pública, webhooks TEST, e-mail real
+  de teste e deploy continuam exigindo autorização própria. Não iniciar aqui.
+- Repetir login/MFA/refresh, checkout, e-mail e programa, mais regressões de cobrança
+  LoadPro, antes de considerar produção. Não habilitar recuperação histórica em massa.
+
+### Recuo e limitações
+
+Se for necessário recuar após uma ativação futura, desligar o flag e publicar a
+configuração anterior autorizada. Não apagar tabelas, marcadores ou pedidos: podem
+ser necessários para conciliação. Eventos recebidos durante a janela podem exigir
+revisão individual ao voltar ao caminho antigo. Nunca usar replay em massa como rollback.
+Nenhuma restauração de banco foi necessária ou efetuada nesta preparação.
+
+Testes novos usam SQLite/PGlite em memória e serviços simulados: falha de consulta,
+provisionamento, e-mail, resposta perdida após aceite do e-mail, gravação de metadados,
+gravação de conclusão do evento, concorrência, expiração, criptografia, RLS, assinatura,
+ambiente incorreto, pagamento pendente, histórico e pedidos encerrados. Não substituem
+um teste hospedado com Stripe TEST. A compilação nativa Windows foi bloqueada pela
+política do sistema; a alternativa WebAssembly do projeto compilou 40/40 páginas,
+sem alteração das proteções do Windows.
+
+### Validação final desta preparação
+
+- `pnpm check`: aprovado; `pnpm build`: aprovado pelo caminho WebAssembly, 40/40 páginas.
+- Suíte completa: **225 testes, 225 aprovados, zero falhas ou testes ignorados**.
+- Auditoria final: um alerta alto residual (`braces`), nenhum moderado/crítico.
+- Página Speed Pro e formulário do checkout conferidos no navegador local em
+  1440×1000 e 390×844; sem falha visual observada nas áreas inspecionadas,
+  imagens da página carregadas e sem erros de console capturados.
+- O servidor de QA usou SQLite temporário, usuário fictício e nenhum segredo de
+  provedor. Nenhuma compra foi enviada. Servidor encerrado após a conferência.
+- Diff local conferido, sem erro de whitespace. Alterações ainda não commitadas,
+  enviadas ou publicadas. O teste hospedado e a ativação continuam pendentes.

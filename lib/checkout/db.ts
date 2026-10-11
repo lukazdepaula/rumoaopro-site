@@ -286,6 +286,15 @@ function migrate(db: SqliteDatabase) {
       metadata TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS checkout_retry_work (
+      work_key TEXT PRIMARY KEY, state TEXT NOT NULL, token TEXT,
+      lease_until TEXT, attempts INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS checkout_retry_email (
+      email_key TEXT PRIMARY KEY, encrypted_payload TEXT,
+      first_attempt_at TEXT, sent_at TEXT
+    );
   `);
 
   ensureColumn(db, "products", "language", "language TEXT NOT NULL DEFAULT 'English'");
@@ -720,6 +729,15 @@ async function supabaseRequest<T>(
 
 function eq(column: string, value: string) {
   return `${column}=eq.${encodeURIComponent(value)}`;
+}
+
+// Narrow internal bridge for retry state. No production schema changes at runtime.
+export function checkoutRetryLocalDatabase() {
+  return useSupabaseDriver() ? null : getDatabase();
+}
+
+export async function checkoutRetryRpc<T>(body: Record<string, unknown>) {
+  return supabaseRequest<T>("rpc/checkout_retry_operation", { method: "POST", body });
 }
 
 function selectQuery(parts: string[] = []) {

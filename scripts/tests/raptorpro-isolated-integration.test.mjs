@@ -277,6 +277,7 @@ function adminFixture({ settings = env, current = order(), authorized = true, op
   const f = fixture(settings, action, options);
   const effects = { reads: 0, delivered: 0, updates: 0 };
   const route = load('app/api/admin/orders/[id]/raptorpro-retry/route.ts', settings, {
+    '@/lib/checkout/retry-storage': { stripeRetrySafetyEnabled: () => false },
     'next/server': { NextResponse: {
       json: (body, init = {}) => ({ body, status: init.status || 200, headers: init.headers }),
       redirect: (url, status) => ({ url: String(url), status })
