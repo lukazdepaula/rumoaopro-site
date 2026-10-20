@@ -10,6 +10,7 @@ type SiteHeaderProps = {
   ctaLabel?: string;
   ctaHref?: string;
   languageHref?: string;
+  showMobileCta?: boolean;
 };
 
 const isLanguageItem = (label: string) =>
@@ -25,7 +26,8 @@ export function SiteHeader({
   navItems,
   ctaLabel = "Aplicar",
   ctaHref = "/assessoria#aplicacao",
-  languageHref
+  languageHref,
+  showMobileCta = false
 }: SiteHeaderProps) {
   const pathname = usePathname();
   const english = pathname === "/en" || pathname.startsWith("/en/");
@@ -76,9 +78,11 @@ export function SiteHeader({
             );
           })}
         </nav>
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className={showMobileCta
+          ? "ml-auto mr-3 flex items-center gap-2 lg:ml-0 lg:mr-0"
+          : "hidden items-center gap-2 lg:flex"}>
           <Link
-            className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 text-sm font-bold text-ink transition hover:bg-steel"
+            className={`focus-ring inline-flex ${showMobileCta ? "min-h-11" : "min-h-10"} items-center justify-center rounded-md bg-white px-4 text-sm font-bold text-ink transition hover:bg-steel`}
             href={ctaHref}
           >
             {ctaLabel}

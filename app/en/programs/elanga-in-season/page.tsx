@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ElangaRaptorSalesPage } from "@/components/elanga-raptor-sales-page";
+import { InSeasonEditorialPage } from "@/components/in-season-editorial-page";
 
 export const metadata: Metadata = {
   title: "In-Season Football Performance Program | In-Season Pro",
@@ -23,5 +23,5 @@ export const metadata: Metadata = {
 };
 
 export default function ElangaInSeasonEnglishPage() {
-  return <ElangaRaptorSalesPage locale="en" />;
+  return <InSeasonEditorialPage locale="en" />;
 }
