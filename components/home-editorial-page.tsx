@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, Smartphone } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Smartphone } from "lucide-react";
+import { HomeMotionHero } from "@/components/home-motion-hero";
+import { HomeLoadProDemo } from "@/components/home-loadpro-demo";
 import { ProgramGoalFinder } from "@/components/program-goal-finder";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteHeader } from "@/components/site-header";
@@ -48,11 +50,17 @@ const copy = {
     courseTitle: "Preparador PRO",
     courseBody: "Da teoria à rotina do campo: preparação física, avaliações e planejamento para o futebol.",
     courseCta: "Explorar o curso",
+    courseAlt: "Lukaz de Paula orientando atletas na academia",
     coachEyebrow: "Por trás da RumoAoPro",
     coachTitle: "Quem vive o jogo\nentende o treino.",
-    coachBody: "Sou Lukaz de Paula, preparador físico com licença CBF A e jogador. A RumoAoPro conecta minha experiência no campo, na academia e na preparação de atletas.",
-    credentials: ["Preparador físico · CBF A", "Experiência como treinador e jogador"],
-    coachAlt: "Lukaz de Paula orientando atletas na academia",
+    coachBody: "Sou Lukaz de Paula, preparador físico com formação CBF A e UEFA C. A RumoAoPro conecta minha experiência como treinador e jogador ao trabalho no campo, na academia e na preparação de atletas.",
+    educationTitle: "Formação",
+    careerTitle: "Minha trajetória",
+    coachingRole: "Como treinador",
+    playingRole: "Como jogador",
+    cbfRole: "Preparação física",
+    uefaRole: "Treinador de futebol",
+    coachAlt: "Retrato de Lukaz de Paula de camisa preta no campo",
     reviewsEyebrow: "Experiências da assessoria",
     reviewsTitle: "O trabalho, na voz de quem treina.",
     finalTitle: "Seu próximo treino\npode ter mais direção.",
@@ -99,11 +107,17 @@ const copy = {
     courseTitle: "Preparador PRO",
     courseBody: "From theory to the pitch: physical preparation, assessments and planning for football.",
     courseCta: "Explore the course",
+    courseAlt: "Lukaz de Paula coaching players in the gym",
     coachEyebrow: "Behind RumoAoPro",
     coachTitle: "Know the game.\nUnderstand the training.",
-    coachBody: "I'm Lukaz de Paula, a CBF A licensed physical coach and player. RumoAoPro brings together my experience on the pitch, in the gym and coaching athletes.",
-    credentials: ["Physical coach · CBF A", "Experience as a coach and a player"],
-    coachAlt: "Lukaz de Paula coaching players in the gym",
+    coachBody: "I'm Lukaz de Paula, a physical performance coach with CBF A and UEFA C qualifications. RumoAoPro brings my experience as a coach and player to the pitch, the gym and athlete preparation.",
+    educationTitle: "Qualifications",
+    careerTitle: "My journey",
+    coachingRole: "As a coach",
+    playingRole: "As a player",
+    cbfRole: "Strength & conditioning",
+    uefaRole: "Football coaching",
+    coachAlt: "Portrait of Lukaz de Paula in a black training shirt on the pitch",
     reviewsEyebrow: "Coaching experiences",
     reviewsTitle: "The work, in the players' words.",
     finalTitle: "Give your next session\na clear direction.",
@@ -113,27 +127,22 @@ const copy = {
   }
 } as const;
 
+const coachingJourney = [
+  { name: "Lindsey Wilson", image: assets.logoLindseyWilson },
+  { name: "FC Málaga City", image: assets.logoMalagaCity },
+  { name: "CD Almuñécar City", image: assets.logoAlmunecar }
+];
+const playingJourney = [
+  { name: "Vasalunds IF", image: assets.logoVasalundsTransparent },
+  { name: "Desportivo Brasil", image: assets.logoDesportivoBrasil }
+];
+
 export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
   const page = copy[locale];
   return (
     <main className={styles.page}>
       <SiteHeader navItems={nav[locale]} ctaHref="#programas" ctaLabel={page.finalCta} languageHref={page.language} showMobileCta />
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}><span />{page.eyebrow}</p>
-          <h1>{page.title}<span>{page.titleAccent}</span></h1>
-          <p className={styles.intro}>{page.intro}</p>
-          <div className={styles.actions}>
-            <Link className={`${styles.primary} focus-ring`} href="#programas">{page.primary}<ArrowRight aria-hidden="true" size={19} /></Link>
-            <Link className={`${styles.textLink} focus-ring`} href={page.coaching}>{page.secondary}<ArrowUpRight aria-hidden="true" size={18} /></Link>
-          </div>
-          <a className={`${styles.explore} focus-ring`} href="#entradas">{page.explore}<ArrowDown aria-hidden="true" size={16} /></a>
-        </div>
-        <figure className={styles.heroPhoto}>
-          <Image src={assets.sprintSide} alt={locale === "pt" ? "Lukaz de Paula em um treino de aceleração no campo" : "Lukaz de Paula accelerating during a field training session"} fill priority sizes="(min-width: 1024px) 56vw, 100vw" />
-          <figcaption><strong>{page.caption}</strong><span>{page.captionNote}</span></figcaption>
-        </figure>
-      </section>
+      <HomeMotionHero locale={locale} />
       <nav aria-label={page.explore} className={styles.paths} id="entradas">
         {page.paths.map(([label, title, href], index) => <Link className="focus-ring" href={href} key={title}>
           <span className={styles.pathNumber}>0{index + 1}</span><span><small>{label}</small><strong>{title}</strong></span><ArrowUpRight aria-hidden="true" size={23} />
@@ -141,10 +150,10 @@ export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
       </nav>
 
       <section className={`${styles.section} ${styles.programFinder}`} id="programas">
-        <ProgramGoalFinder locale={locale} />
+        <ProgramGoalFinder locale={locale} showClassicLink={false} />
       </section>
 
-      <section className={styles.appSection}>
+      <section className={styles.appSection} id="por-dentro">
         <div className={`${styles.section} ${styles.appGrid}`}>
           <div>
             <p className={styles.eyebrow}><Smartphone aria-hidden="true" size={16} />{page.appEyebrow}</p>
@@ -169,18 +178,33 @@ export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
         <div className={styles.toolsGrid}>
           <article className={styles.loadPro}>
             <div className={styles.toolCopy}><p className={styles.eyebrow}>{page.loadLabel}</p><Image src="/assets/loadpro/loadpro-logo-white-red-transparent.png" alt="LoadPro" width={340} height={72} className={styles.loadLogo} /><h3>{page.loadTitle}</h3><p>{page.loadBody}</p><Link className={`${styles.textLink} focus-ring`} href={page.apps}>{page.loadCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
-            <figure><Image src="/assets/loadpro/product-dashboard-monitoring-v2.png" alt={locale === "pt" ? "Painel de demonstração do LoadPro com monitoramento de atletas" : "LoadPro demo dashboard for athlete monitoring"} width={1265} height={712} sizes="(min-width: 1024px) 65vw, 100vw" /><figcaption>{page.loadCaption}</figcaption></figure>
+            <HomeLoadProDemo locale={locale} />
           </article>
           <article className={styles.course} id={locale === "pt" ? "cursos" : "courses"}>
-            <div className={styles.coursePhoto}><Image src={assets.programsGymBriefing} alt={page.coachAlt} fill sizes="(min-width: 1024px) 35vw, 100vw" /></div>
+            <div className={styles.coursePhoto}><Image src={assets.programsGymBriefing} alt={page.courseAlt} fill sizes="(min-width: 1024px) 35vw, 100vw" /></div>
             <div className={styles.toolCopy}><p className={styles.eyebrow}>{page.courseLabel}</p><h3>{page.courseTitle}</h3><p>{page.courseBody}</p><Link className={`${styles.textLink} focus-ring`} href={page.courses}>{page.courseCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
           </article>
         </div>
       </section>
 
       <section className={`${styles.section} ${styles.founder}`}>
-        <Image src="/assets/photos/lukaz-trainer-hero.jpg" alt={page.coachAlt} width={600} height={800} sizes="(min-width: 768px) 350px, 100vw" />
-        <div><p className={styles.eyebrow}>{page.coachEyebrow}</p><h2>{page.coachTitle}</h2><p className={styles.body}>{page.coachBody}</p><ul className={styles.credentials}>{page.credentials.map(item => <li key={item}>{item}</li>)}</ul><p className={styles.signature}>Lukaz de Paula<span>RumoAoPro</span></p></div>
+        <Image src={assets.coachPortrait} alt={page.coachAlt} width={840} height={560} sizes="(min-width: 768px) 350px, 100vw" />
+        <div>
+          <p className={styles.eyebrow}>{page.coachEyebrow}</p><h2>{page.coachTitle}</h2><p className={styles.body}>{page.coachBody}</p>
+          <div className={styles.qualifications}>
+            <h3>{page.educationTitle}</h3>
+            <ul>
+              <li><Image src={assets.logoCbf} alt="CBF" width={52} height={52} /><span><strong>CBF A</strong><small>{page.cbfRole}</small></span></li>
+              {/* Identifies education, not a partnership. Official asset: https://img.uefa.com/imgml/uefaorg/new/logo.png */}
+              <li><Image src="/assets/logos/uefa-official.png" alt="UEFA" width={52} height={52} /><span><strong>UEFA C</strong><small>{page.uefaRole}</small></span></li>
+            </ul>
+          </div>
+          <div className={styles.journey}>
+            <h3>{page.careerTitle}</h3>
+            {[{ label: page.coachingRole, items: coachingJourney }, { label: page.playingRole, items: playingJourney }].map(group => <div className={styles.journeyGroup} key={group.label}><h4>{group.label}</h4><ul>{group.items.map(item => <li key={item.name}><Image src={item.image} alt="" width={36} height={36} /><span>{item.name}</span></li>)}</ul></div>)}
+          </div>
+          <p className={styles.signature}>Lukaz de Paula<span>RumoAoPro</span></p>
+        </div>
       </section>
       <div className={styles.reviews}><ReviewsSection groupKey="coaching" locale={locale} eyebrow={page.reviewsEyebrow} title={page.reviewsTitle} /></div>
       <section className={styles.final}><h2>{page.finalTitle}</h2><div className={styles.actions}><Link href={page.programs} className={`${styles.primary} focus-ring`}>{page.finalCta}<ArrowRight aria-hidden="true" size={19} /></Link><Link href={page.coaching} className={`${styles.textLink} focus-ring`}>{page.finalSecondary}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></section>

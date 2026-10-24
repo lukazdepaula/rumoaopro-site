@@ -18,7 +18,7 @@
   src: url("/assets/fonts/raptor/BarlowCondensed-Bold.ttf") format("truetype");
   font-style: normal; font-weight: 400 900; font-display: swap;
 }
-.page { --accent: #f5a35d; --paper: #f5f4ef; --dark: #111617; background: var(--paper); color: var(--dark); font-family: "Home Barlow", Arial, sans-serif; }
+.page { --accent: #f5a35d; --paper: #ffffff; --dark: #111617; background: var(--paper); color: var(--dark); font-family: "Home Barlow", Arial, sans-serif; }
 .page h1, .page h2 { font-family: "Home Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; letter-spacing: -.025em; line-height: 1; text-transform: none; white-space: pre-line; }
 .page h2 { font-size: clamp(2.6rem, 4.1vw, 4rem); }
 .page figure { margin: 0; }
@@ -50,13 +50,13 @@
 .paths a { display: flex; gap: 1.2rem; align-items: center; padding: 2rem 1.7rem; border-right: 1px solid #17221b26; transition: background 160ms; }
 .paths a:first-child { padding-left: 0; }
 .paths a:last-child { border: 0; padding-right: 0; }
-.paths a:hover { background: #ecece5; }
+.paths a:hover { background: #f4f6f8; }
 .pathNumber { font-size: .7rem; color: #68736e; }
 .paths small { display: block; font-size: .76rem; color: #64706b; margin-bottom: .3rem; }
 .paths strong { display: block; font-weight: 600; font-size: 1.25rem; }
 .paths svg { margin-left: auto; flex-shrink: 0; }
 .section { max-width: 1280px; padding: 5.5rem 2.5rem; margin: auto; }
-.programFinder { scroll-margin-top: 50px; }
+.programFinder { scroll-margin-top: 90px; }
 .programFinder > div > div:first-child { max-width: 780px; }
 .programFinder h2 { font-size: clamp(2.6rem, 4.1vw, 4rem); }
 .programFinder > div > div:first-child > p:last-child { max-width: 62ch; color: #58635e; font-size: 1rem; }
@@ -65,17 +65,17 @@
 .programFinder button[aria-pressed] > span { text-transform: none; letter-spacing: 0; }
 .programFinder button[aria-pressed] > span:first-of-type { font-size: .82rem; opacity: .8; margin-top: .6rem; }
 .programFinder button[aria-pressed] > span:last-child { font-size: .93rem; font-weight: 600; }
-.programFinder button[aria-pressed="true"] { background: #e7e9df; color: #131c15; box-shadow: inset 0 -3px #294937; }
-.programFinder button[aria-pressed="true"] svg { color: #294937; }
+.programFinder button[aria-pressed="true"] { background: #edf1f4; color: #111617; box-shadow: inset 0 -3px #263b48; }
+.programFinder button[aria-pressed="true"] svg { color: #263b48; }
 .programFinder button[aria-pressed="false"] svg { color: #727c75; }
-.programFinder button[aria-pressed="false"]:hover { background: #edeee6; }
-.programFinder > div > article { border: none; border-radius: 0; box-shadow: none; margin-top: 2rem; background: #eaece4; }
+.programFinder button[aria-pressed="false"]:hover { background: #f5f7f9; }
+.programFinder > div > article { border: none; border-radius: 0; box-shadow: none; margin-top: 2rem; background: #f4f6f8; }
 .programFinder > div > article h3 { font-family: "Home Barlow Condensed", sans-serif; font-size: 2.4rem; font-weight: 700; }
-.programFinder > div > article a { border-radius: 5px; background: #19251d; }
-.programFinder > div > article a:hover { background: #314837; }
+.programFinder > div > article a { border-radius: 5px; background: #111617; }
+.programFinder > div > article a:hover { background: #293b47; }
 .programFinder > div > div:last-child a { min-height: 44px; display: inline-flex; align-items: center; }
 .body { margin-top: 1.4rem; font-size: 1.08rem; line-height: 1.7; max-width: 47ch; color: #58635e; }
-.appSection { background: #e7eae2; border-top: 1px solid #cbd1c5; }
+.appSection { background: #f3f5f7; border-top: 1px solid #dfe4e8; scroll-margin-top: 72px; }
 .appGrid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: center; padding-block: 4rem; }
 .appGrid > div { max-width: 530px; }
 .checks { display: grid; gap: .9rem; list-style: none; padding: 0; margin-top: 1.7rem; }
@@ -108,17 +108,29 @@
 .loadPro > figure { margin: 0 2.2rem; }
 .loadPro > figure img { border: 1px solid #ffffff1c; border-radius: 7px; width: 100%; height: auto; }
 .loadPro figcaption { font-size: .67rem; color: #a4b2b1; padding: .8rem 0 1.2rem; }
-.course { background: #e9e6de; display: flex; flex-direction: column; }
+.course { background: #f3f5f7; display: flex; flex-direction: column; }
 .coursePhoto { min-height: 230px; flex: 1; position: relative; }
 .coursePhoto img { object-fit: cover; object-position: center 30%; }
 .course .eyebrow { font-size: .63rem; color: #5d655f; }
 .course .toolCopy > p:not(.eyebrow) { color: #58635e; }
 .founder { display: grid; grid-template-columns: 350px 1fr; gap: 5rem; align-items: center; padding-top: 1rem; }
-.founder > img { width: 100%; height: 420px; object-fit: cover; object-position: center 30%; border-radius: 6px; }
-.credentials { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; padding: 1rem 0; border-block: 1px solid #19302026; margin-top: 1.5rem; font-size: .8rem; }
+.founder > img { width: 100%; height: 560px; object-fit: cover; object-position: 45% center; border-radius: 6px; }
+.qualifications { margin-top: 1.5rem; padding-top: 1.4rem; border-top: 1px solid #19302026; }
+.qualifications h3, .journey h3 { font-size: .62rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #637267; }
+.qualifications > ul { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; margin-top: 1rem; }
+.qualifications li { display: flex; gap: .85rem; align-items: center; }
+.qualifications li > img { width: 46px; height: 46px; object-fit: contain; }
+.qualifications strong { display: block; font-size: 1.08rem; font-weight: 600; }
+.qualifications small { display: block; font-size: .72rem; color: #58685e; margin-top: .15rem; }
+.journey { margin-top: 1.5rem; padding-top: 1.4rem; border-top: 1px solid #19302026; }
+.journeyGroup { margin-top: .9rem; }
+.journeyGroup h4 { font-size: .72rem; color: #56645a; margin-bottom: .6rem; }
+.journeyGroup ul { display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; }
+.journeyGroup li { display: flex; gap: .6rem; align-items: center; font-size: .72rem; }
+.journeyGroup li > img { width: 32px; height: 32px; object-fit: contain; }
 .signature { font-size: 1.3rem; font-weight: 600; margin-top: 1.5rem; }
 .signature span { display: block; font-size: .76rem; color: #5b6860; font-weight: 400; margin-top: .3rem; }
-.reviews > section { background: #eeeee7; border-top: 1px solid #19302020; }
+.reviews > section { background: #f5f7f9; border-top: 1px solid #dfe4e8; }
 .reviews h2 { font-size: clamp(2.6rem, 4.1vw, 4rem); }
 .reviews article { box-shadow: none; border: none; border-radius: 0; background: transparent; border-top: 1px solid #1d392930; padding-inline: 0; }
 .reviews blockquote { font-weight: 400; font-size: 1.1rem; line-height: 1.6; }
@@ -190,7 +202,11 @@
   .coursePhoto { aspect-ratio: 16/10; min-height: 0; }
   .founder { grid-template-columns: 1fr; gap: 2rem; padding-top: 0; }
   .founder > img { height: 380px; }
-  .credentials { display: grid; gap: .8rem; }
+  .qualifications > ul { gap: 1.2rem; }
+  .qualifications li { gap: .6rem; }
+  .qualifications li > img { width: 38px; height: 38px; }
+  .qualifications small { font-size: .65rem; }
+  .journeyGroup ul { gap: .65rem 1.1rem; }
   .reviews > section { padding-block: 3rem; }
   .reviews article { margin-top: .6rem; padding-top: 1.25rem; }
   .final { display: block; padding: 3rem 1.25rem; }

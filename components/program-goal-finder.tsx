@@ -19,6 +19,7 @@ import { reviewGroups, type ReviewGroupKey } from "@/lib/reviews";
 type ProgramGoalFinderProps = {
   locale: "pt" | "en";
   tone?: "light" | "dark";
+  showClassicLink?: boolean;
 };
 
 type GoalId = "power" | "speed" | "offseason" | "inseason" | "return-to-play";
@@ -245,7 +246,8 @@ const copy = {
 
 export function ProgramGoalFinder({
   locale,
-  tone = "light"
+  tone = "light",
+  showClassicLink = true
 }: ProgramGoalFinderProps) {
   const availableGoals = goals[locale];
   const [selectedGoalId, setSelectedGoalId] = useState<GoalId>(
@@ -486,14 +488,16 @@ export function ProgramGoalFinder({
           {page.all}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </Link>
-        <Link
-          className={`focus-ring text-xs font-bold underline-offset-4 hover:underline ${
-            isDark ? "text-white/48" : "text-graphite/55"
-          }`}
-          href={page.alternateHref}
-        >
-          {page.alternate}
-        </Link>
+        {showClassicLink && (
+          <Link
+            className={`focus-ring text-xs font-bold underline-offset-4 hover:underline ${
+              isDark ? "text-white/48" : "text-graphite/55"
+            }`}
+            href={page.alternateHref}
+          >
+            {page.alternate}
+          </Link>
+        )}
       </div>
     </div>
   );
