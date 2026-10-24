@@ -128,13 +128,14 @@ const copy = {
 } as const;
 
 const coachingJourney = [
-  { name: "Lindsey Wilson", image: assets.logoLindseyWilson },
-  { name: "FC Málaga City", image: assets.logoMalagaCity },
-  { name: "CD Almuñécar City", image: assets.logoAlmunecar }
+  // Compensate for transparent padding so the visible crests share a 32px height.
+  { name: "Lindsey Wilson", image: assets.logoLindseyWilson, logoScale: 1.41 },
+  { name: "FC Málaga City", image: assets.logoMalagaCity, logoScale: 2.22 },
+  { name: "CD Almuñécar City", image: assets.logoAlmunecar, logoScale: 1.32 }
 ];
 const playingJourney = [
-  { name: "Vasalunds IF", image: assets.logoVasalundsTransparent },
-  { name: "Desportivo Brasil", image: assets.logoDesportivoBrasil }
+  { name: "Vasalunds IF", image: assets.logoVasalundsTransparent, logoScale: 1 },
+  { name: "Desportivo Brasil", image: assets.logoDesportivoBrasil, logoScale: 1 }
 ];
 
 export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
@@ -201,7 +202,7 @@ export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
           </div>
           <div className={styles.journey}>
             <h3>{page.careerTitle}</h3>
-            {[{ label: page.coachingRole, items: coachingJourney }, { label: page.playingRole, items: playingJourney }].map(group => <div className={styles.journeyGroup} key={group.label}><h4>{group.label}</h4><ul>{group.items.map(item => <li key={item.name}><Image src={item.image} alt="" width={36} height={36} /><span>{item.name}</span></li>)}</ul></div>)}
+            {[{ label: page.coachingRole, items: coachingJourney }, { label: page.playingRole, items: playingJourney }].map(group => <div className={styles.journeyGroup} key={group.label}><h4>{group.label}</h4><ul>{group.items.map(item => <li key={item.name}><span className={styles.journeyLogo}><Image src={item.image} alt="" width={96} height={96} style={{ transform: `scale(${item.logoScale})` }} /></span><span>{item.name}</span></li>)}</ul></div>)}
           </div>
           <p className={styles.signature}>Lukaz de Paula<span>RumoAoPro</span></p>
         </div>

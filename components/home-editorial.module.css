@@ -127,7 +127,8 @@
 .journeyGroup h4 { font-size: .72rem; color: #56645a; margin-bottom: .6rem; }
 .journeyGroup ul { display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; }
 .journeyGroup li { display: flex; gap: .6rem; align-items: center; font-size: .72rem; }
-.journeyGroup li > img { width: 32px; height: 32px; object-fit: contain; }
+.journeyLogo { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; overflow: hidden; }
+.journeyLogo > img { flex-shrink: 0; width: 32px; height: 32px; object-fit: contain; }
 .signature { font-size: 1.3rem; font-weight: 600; margin-top: 1.5rem; }
 .signature span { display: block; font-size: .76rem; color: #5b6860; font-weight: 400; margin-top: .3rem; }
 .reviews > section { background: #f5f7f9; border-top: 1px solid #dfe4e8; }
