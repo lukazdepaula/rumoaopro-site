@@ -105,7 +105,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       outcome:
         "Mantenha força, potência e exposição à velocidade com uma dose pensada para não competir com treinos e partidas.",
       detail:
-        "28 semanas · programa em inglês · RaptorPro · acesso vitalício",
+        "28 semanas · português e inglês · RaptorPro · acesso vitalício",
       reviewGroup: "inSeason",
       icon: ShieldCheck
     },
@@ -191,7 +191,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       outcome:
         "Maintain strength, power and speed exposure with a dose designed around team training and matches.",
       detail:
-        "28 weeks · English · RaptorPro · lifetime access",
+        "28 weeks · Portuguese and English · RaptorPro · lifetime access",
       reviewGroup: "inSeason",
       icon: ShieldCheck
     },
