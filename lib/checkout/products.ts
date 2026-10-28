@@ -213,8 +213,7 @@ export const checkoutProducts: CheckoutProduct[] = [
     cover_image: "/assets/programs/power-pro/power-pro-cover-v2.png",
     delivery_type: "member_area",
     file_id: null,
-    checkout_country_lock: "BR",
-    checkout_payment_methods: ["mercado_pago", "pix"],
+    // Use the standard market routing: Mercado Pago/Pix in BR, Stripe abroad.
     discounts_enabled: false,
     created_at: now,
     updated_at: now

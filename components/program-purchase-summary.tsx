@@ -2,6 +2,7 @@ import { CreditCard, QrCode, Zap } from "lucide-react";
 
 type ProgramPurchaseSummaryProps = {
   locale: "pt" | "en";
+  compact?: boolean;
 };
 
 const copy = {
@@ -46,12 +47,15 @@ const copy = {
 } as const;
 
 export function ProgramPurchaseSummary({
-  locale
+  locale,
+  compact = false
 }: ProgramPurchaseSummaryProps) {
   const content = copy[locale];
 
   return (
-    <div className="mt-4 max-w-2xl border-y border-white/15 py-3 sm:mt-6 sm:py-4">
+    <div className={compact
+      ? "mt-4 max-w-2xl border-y border-white/15 py-3"
+      : "mt-4 max-w-2xl border-y border-white/15 py-3 sm:mt-6 sm:py-4"}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p className="font-display text-3xl uppercase text-white sm:text-4xl">
           {content.primaryPrice}
@@ -67,13 +71,17 @@ export function ProgramPurchaseSummary({
         </p>
       </div>
 
-      <div className="mt-3 grid gap-1 sm:mt-4 sm:grid-cols-3 sm:gap-2">
+      <div className={compact
+        ? "mt-2 flex flex-wrap gap-x-4 gap-y-1"
+        : "mt-3 grid gap-1 sm:mt-4 sm:grid-cols-3 sm:gap-2"}>
         {content.paymentItems.map((item) => {
           const Icon = item.icon;
 
           return (
             <div
-              className="flex min-h-8 items-center gap-2 text-xs font-semibold leading-5 text-white/72 last:pr-14 sm:min-h-10 sm:last:pr-0"
+              className={compact
+                ? "flex min-h-6 items-center gap-2 text-xs font-semibold leading-5 text-white/80"
+                : "flex min-h-8 items-center gap-2 text-xs font-semibold leading-5 text-white/72 last:pr-14 sm:min-h-10 sm:last:pr-0"}
               key={item.text}
             >
               <Icon

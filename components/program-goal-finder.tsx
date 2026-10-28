@@ -19,6 +19,7 @@ import { reviewGroups, type ReviewGroupKey } from "@/lib/reviews";
 type ProgramGoalFinderProps = {
   locale: "pt" | "en";
   tone?: "light" | "dark";
+  showClassicLink?: boolean;
 };
 
 type GoalId = "power" | "speed" | "offseason" | "inseason" | "return-to-play";
@@ -104,7 +105,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       outcome:
         "Mantenha força, potência e exposição à velocidade com uma dose pensada para não competir com treinos e partidas.",
       detail:
-        "28 semanas · programa em inglês · RaptorPro · acesso vitalício",
+        "28 semanas · português e inglês · RaptorPro · acesso vitalício",
       reviewGroup: "inSeason",
       icon: ShieldCheck
     },
@@ -190,7 +191,7 @@ const goals: Record<"pt" | "en", GoalDefinition[]> = {
       outcome:
         "Maintain strength, power and speed exposure with a dose designed around team training and matches.",
       detail:
-        "28 weeks · English · RaptorPro · lifetime access",
+        "28 weeks · Portuguese and English · RaptorPro · lifetime access",
       reviewGroup: "inSeason",
       icon: ShieldCheck
     },
@@ -245,7 +246,8 @@ const copy = {
 
 export function ProgramGoalFinder({
   locale,
-  tone = "light"
+  tone = "light",
+  showClassicLink = true
 }: ProgramGoalFinderProps) {
   const availableGoals = goals[locale];
   const [selectedGoalId, setSelectedGoalId] = useState<GoalId>(
@@ -486,14 +488,16 @@ export function ProgramGoalFinder({
           {page.all}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </Link>
-        <Link
-          className={`focus-ring text-xs font-bold underline-offset-4 hover:underline ${
-            isDark ? "text-white/48" : "text-graphite/55"
-          }`}
-          href={page.alternateHref}
-        >
-          {page.alternate}
-        </Link>
+        {showClassicLink && (
+          <Link
+            className={`focus-ring text-xs font-bold underline-offset-4 hover:underline ${
+              isDark ? "text-white/48" : "text-graphite/55"
+            }`}
+            href={page.alternateHref}
+          >
+            {page.alternate}
+          </Link>
+        )}
       </div>
     </div>
   );
