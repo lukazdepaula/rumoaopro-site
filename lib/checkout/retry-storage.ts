@@ -9,7 +9,7 @@ type Claim = { state: 'claimed' | 'busy' | 'completed'; token?: string };
 export type RetryEmail = { encrypted_payload: string | null; first_attempt_at: string | null; sent_at: string | null };
 
 async function operation<T>(op: string, key: string, token?: string, payload?: string, legacyEventId?: string): Promise<T> {
-  if (key.length > 256 || !/^(stripe-event|raptor-order|raptor-welcome):[a-zA-Z0-9_-]+$/.test(key)) throw Error('Invalid retry key');
+  if (key.length > 256 || !/^(?:(?:stripe-event|raptor-order|raptor-welcome):[a-zA-Z0-9_-]+|mercado-event:[a-zA-Z0-9_:-]+)$/.test(key)) throw Error('Invalid retry key');
   const db = checkoutRetryLocalDatabase();
   if (!db) return checkoutRetryRpc<T>({ p_operation: op, p_key: key, p_token: token || null,
     p_payload: payload || null, p_legacy_event_id: legacyEventId || null });
@@ -19,8 +19,10 @@ async function operation<T>(op: string, key: string, token?: string, payload?: s
     let result: unknown;
     if (op === 'claim') {
       const row = db.prepare('SELECT * FROM checkout_retry_work WHERE work_key=?').get(key);
-      const legacy = !row && legacyEventId && db.prepare("SELECT id FROM webhook_events WHERE provider='stripe' AND event_id=?").get(legacyEventId);
-      if (legacy && key !== `stripe-event:${legacyEventId}`) throw Error('Invalid legacy key');
+      const provider = key.startsWith('mercado-event:') ? 'mercado_pago' : 'stripe';
+      const prefix = provider === 'stripe' ? 'stripe-event' : 'mercado-event';
+      const legacy = !row && legacyEventId && db.prepare('SELECT id FROM webhook_events WHERE provider=? AND event_id=?').get(provider,legacyEventId);
+      if (legacy && key !== `${prefix}:${legacyEventId}`) throw Error('Invalid legacy key');
       if (legacy) db.prepare("INSERT INTO checkout_retry_work(work_key,state) VALUES(?,'completed')").run(key);
       if (legacy || row?.state === 'completed') result = { state: 'completed' };
       else if (row?.state === 'processing' && String(row.lease_until) > now) result = { state: 'busy' };
@@ -30,6 +32,9 @@ async function operation<T>(op: string, key: string, token?: string, payload?: s
           .run(key, token, new Date(Date.now() + 300_000).toISOString());
         result = { state: 'claimed', token };
       }
+    } else if (op === 'assert') {
+      const row = db.prepare("SELECT token,lease_until FROM checkout_retry_work WHERE work_key=? AND state='processing'").get(key);
+      result = { updated: Boolean(row && row.token === token && String(row.lease_until) > now) };
     } else if (op === 'complete' || op === 'release') {
       const update = db.prepare(`UPDATE checkout_retry_work SET state=?,token=NULL,lease_until=NULL
         WHERE work_key=? AND state='processing' AND token=? AND lease_until>?`)
@@ -53,6 +58,10 @@ export async function claimRetryWork(key: string, legacyEventId?: string) {
 }
 export async function finishRetryWork(key: string, token: string, success: boolean) {
   const result = await operation<{ updated: boolean }>(success ? 'complete' : 'release',key,token);
+  if (!result.updated) throw Error('Retry processing ownership expired');
+}
+export async function assertRetryWork(key: string, token: string) {
+  const result = await operation<{ updated: boolean }>('assert',key,token);
   if (!result.updated) throw Error('Retry processing ownership expired');
 }
 export const readRetryEmail = (key: string) => operation<RetryEmail | null>('get_email',key);

@@ -276,6 +276,10 @@ práticas Stripe orientou assinatura, separação de ambiente e processamento no
 
 ### Recuo e limitações
 
+**Atualização de 28/10:** para o candidato que contém as correções de reembolso,
+seguir `docs/security-completion-2026-10-28.md`. A orientação histórica abaixo de
+desligar a flag não é uma reversão segura após ativar o novo registro de revogações.
+
 Se for necessário recuar após uma ativação futura, desligar o flag e publicar a
 configuração anterior autorizada. Não apagar tabelas, marcadores ou pedidos: podem
 ser necessários para conciliação. Eventos recebidos durante a janela podem exigir

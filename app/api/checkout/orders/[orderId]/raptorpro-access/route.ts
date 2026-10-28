@@ -58,12 +58,12 @@ export async function POST(request: Request, { params }: RouteProps) {
     });
     return response;
   } catch (error) {
-    console.error("[checkout.raptorpro-access]", error);
+    console.error("[checkout.raptorpro-access] secure access unavailable");
     await appendOrderLog(
       orderId,
       "raptorpro.access.direct_error",
       "Não foi possível abrir o acesso direto pela confirmação da compra.",
-      { error: error instanceof Error ? error.message : String(error) }
+      { error: 'Secure access generation failed' }
     ).catch(() => undefined);
     fallbackUrl.searchParams.set("access_error", "generation_failed");
     return NextResponse.redirect(fallbackUrl, 303);

@@ -439,7 +439,7 @@ export async function sendLoadProPaymentFailedEmail(input: {
   });
 }
 
-export async function sendRaptorProProgramAccessEmail(input: {
+type RaptorProgramEmail = {
   orderId: string;
   to: string;
   name: string;
@@ -448,7 +448,25 @@ export async function sendRaptorProProgramAccessEmail(input: {
   programName: string;
   locale: "pt" | "en";
   retrySafe?: boolean;
-}) {
+};
+
+export async function sendRaptorProProgramAccessEmail(input: RaptorProgramEmail): Promise<boolean> {
+  if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    const guard = await import('./order-guard');
+    return guard.withRaptorOrderGuard(input.orderId, async current => {
+      await guard.assertRaptorOrderPaid(current.id);
+      if (input.to.trim().toLowerCase() !== current.customer_email.trim().toLowerCase()) {
+        throw Error('Delivery recipient does not match the paid order');
+      }
+      const sent = await sendRaptorProProgramAccessEmailInternal({ ...input, retrySafe: true });
+      await guard.assertRaptorOrderPaid(current.id);
+      return sent;
+    });
+  }
+  return sendRaptorProProgramAccessEmailInternal(input);
+}
+
+async function sendRaptorProProgramAccessEmailInternal(input: RaptorProgramEmail) {
   const preview = isPreviewEnvironment();
   const actionUrl = escapeHtml(input.actionUrl);
   const programName = escapeHtml(input.programName);

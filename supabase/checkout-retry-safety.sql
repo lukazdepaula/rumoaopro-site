@@ -26,7 +26,7 @@ declare
   w public.checkout_retry_work;
   e public.checkout_retry_email;
 begin
-  if p_key is null or length(p_key) > 256 or p_key !~ '^(stripe-event|raptor-order|raptor-welcome):[a-zA-Z0-9_-]+$' then
+  if p_key is null or length(p_key) > 256 or p_key !~ '^((stripe-event|raptor-order|raptor-welcome):[a-zA-Z0-9_-]+|mercado-event:[a-zA-Z0-9_:-]+)$' then
     raise exception 'Invalid retry key';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(p_key, 0));
@@ -35,8 +35,8 @@ begin
     select * into w from public.checkout_retry_work where work_key = p_key;
     -- Legacy rows have unknown fulfillment state. Never automatically replay old purchases.
     if not found and p_legacy_event_id is not null then
-      if p_key <> 'stripe-event:' || p_legacy_event_id then raise exception 'Invalid legacy key'; end if;
-      if exists (select 1 from public.webhook_events where provider='stripe' and event_id=p_legacy_event_id) then
+      if p_key <> (case when p_key like 'mercado-event:%' then 'mercado-event:' else 'stripe-event:' end) || p_legacy_event_id then raise exception 'Invalid legacy key'; end if;
+      if exists (select 1 from public.webhook_events where provider=case when p_key like 'mercado-event:%' then 'mercado_pago' else 'stripe' end and event_id=p_legacy_event_id) then
         insert into public.checkout_retry_work(work_key,state) values(p_key,'completed');
         return jsonb_build_object('state','completed');
       end if;
@@ -50,6 +50,11 @@ begin
     on conflict(work_key) do update set state='processing',token=excluded.token,
       lease_until=excluded.lease_until,attempts=public.checkout_retry_work.attempts+1;
     return jsonb_build_object('state','claimed','token',p_token);
+  elsif p_operation = 'assert' then
+    return jsonb_build_object('updated', exists (
+      select 1 from public.checkout_retry_work where work_key=p_key and state='processing'
+        and token=p_token and lease_until > clock_timestamp()
+    ));
   elsif p_operation in ('complete','release') then
     update public.checkout_retry_work set state=case when p_operation='complete' then 'completed' else 'failed' end,
       token=null,lease_until=null where work_key=p_key and state='processing'

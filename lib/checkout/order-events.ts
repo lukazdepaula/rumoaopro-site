@@ -133,6 +133,7 @@ async function syncRaptorProSafely(
     return;
   }
   try {
+    let preserveOrderId: string | undefined;
     if (status === "revoked") {
       // An abandoned checkout never owned the customer's lifetime program access.
       if (!order.paid_at && order.metadata.raptorpro_access_status !== "granted") {
@@ -142,7 +143,7 @@ async function syncRaptorProSafely(
           "Tentativa sem pagamento/liberação anterior: acesso ao programa preservado.",
           { reason: "order_never_granted", programId: program.programId }
         );
-        return;
+        if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED !== 'true') return;
       }
 
       const paidOrder = await findOtherPaidOrderForProducts(
@@ -157,11 +158,13 @@ async function syncRaptorProSafely(
           "Acesso ao programa preservado: existe outra compra paga para este cliente.",
           { reason: "another_paid_order", paidOrderId: paidOrder.id, programId: program.programId }
         );
-        return;
+        if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED !== 'true') return;
+        preserveOrderId = paidOrder.id;
       }
     }
     const savedEmail = retrySafe ? await (await import('./retry-email')).existingRaptorWelcome(order.id) : null;
-    if (retrySafe && !savedEmail?.sent_at && order.metadata.raptorpro_welcome_email_sent !== true) {
+    if (retrySafe && status === 'granted') await (await import('./retry-email')).assertSavedRaptorWelcomeRetryable(order.id);
+    if (retrySafe && status === 'granted' && !savedEmail?.sent_at && order.metadata.raptorpro_welcome_email_sent !== true) {
       (await import('./retry-email')).assertRetryEmailConfigured();
       if (!isEmailDeliveryConfigured({ raptorPreviewTo: order.customer_email, orderId: order.id })) {
         throw Error('Retry-safe email channel is not configured');
@@ -169,8 +172,11 @@ async function syncRaptorProSafely(
     }
     // Do not generate another magic link while a durable email contains the original.
     const result = await syncRaptorProProgramAccess(savedEmail
-      ? { ...order, metadata: { ...order.metadata, raptorpro_welcome_email_sent: true } } : order, status);
+      ? { ...order, metadata: { ...order.metadata, raptorpro_welcome_email_sent: true } } : order, status, { preserveOrderId });
     if (!result.handled) return;
+    if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true' && status === 'granted') {
+      await (await import('./order-guard')).assertRaptorOrderPaid(order.id);
+    }
     let welcomeEmailSent = order.metadata.raptorpro_welcome_email_sent === true || Boolean(savedEmail?.sent_at);
     let welcomeEmailStatus =
       welcomeEmailSent ? "sent" : typeof order.metadata.raptorpro_welcome_email_status === "string"
@@ -214,20 +220,24 @@ async function syncRaptorProSafely(
         raptorpro_program_id: result.configured !== false ? result.programId || program.programId : program.programId
       }
     });
-    if (retrySafe && (result.configured === false || !welcomeEmailSent)) {
+    if (retrySafe && (result.configured === false || (status === 'granted' && !welcomeEmailSent))) {
       throw Error('Raptor fulfillment incomplete; retry required');
     }
   } catch (error) {
     await updateOrderGatewayIds(order.id, {
-      metadata: { raptorpro_provisioning_status: "error" }
+      metadata: { raptorpro_provisioning_status: "error",
+        ...(error instanceof Error && error.name === 'DeliveryReviewRequiredError' ? { raptorpro_welcome_email_status: 'manual_review' } : {}) }
     });
     await appendOrderLog(
       order.id,
       "raptorpro.provisioning.error",
       "O pagamento foi preservado, mas o acesso automático ao RaptorPro precisa ser reprocessado.",
-      { error: error instanceof Error ? error.message : String(error), status }
+      { error: 'Raptor fulfillment requires review or retry', status }
     );
-    if (retrySafe) throw Error('Raptor fulfillment incomplete; retry required');
+    if (retrySafe) {
+      if (error instanceof Error && error.name === 'DeliveryReviewRequiredError') throw error;
+      throw Error('Raptor fulfillment incomplete; retry required');
+    }
   }
 }
 
@@ -276,21 +286,16 @@ export async function markOrderAsPaid(
   gatewayData: Record<string, unknown> = {},
   options: { retrySafe?: boolean } = {}
 ) {
-  if (!options.retrySafe) return markOrderAsPaidInternal(orderId,gatewayData);
   const order = await assertOrder(orderId);
   if (!isRaptorProProgramOrder(order)) return markOrderAsPaidInternal(orderId,gatewayData);
-  const { claimRetryWork, finishRetryWork } = await import('./retry-storage');
-  const key = `raptor-order:${orderId}`;
-  const claim = await claimRetryWork(key);
-  if (claim.state !== 'claimed') throw Error('Raptor order is already processing');
-  try {
-    const current = await assertOrder(orderId);
+  const apply = async (current: Order) => {
     if (['refunded','cancelled'].includes(current.status)) throw Error('Closed order requires manual review');
-    return await markOrderAsPaidInternal(orderId,gatewayData,true);
-  } finally {
-    // Order lock is reusable; only the event and email have durable completed states.
-    await finishRetryWork(key,claim.token!,false);
+    return markOrderAsPaidInternal(orderId,gatewayData,options.retrySafe === true || process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true');
+  };
+  if (options.retrySafe || process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    return (await import('./order-guard')).withRaptorOrderGuard(orderId, apply);
   }
+  return apply(order);
 }
 
 async function markOrderAsPaidInternal(
@@ -318,6 +323,7 @@ async function markOrderAsPaidInternal(
     await syncLoadProSafely(paidOrder, "active", gatewayData, firstConfirmation);
     try { await syncRaptorProSafely(paidOrder, "granted", retrySafe); }
     catch (error) { if (!retrySafe) throw error; raptorFailure = error; }
+    if (retrySafe) await (await import('./order-guard')).assertRaptorOrderPaid(orderId);
     if (
       !isLoadProOrder(paidOrder) &&
       paidOrder.product_id !== "online_coaching_monthly"
@@ -385,7 +391,9 @@ export async function markOrderAsFailed(
   orderId: string,
   gatewayData: Record<string, unknown> = {}
 ) {
-  await assertOrder(orderId);
+  const current = await assertOrder(orderId);
+  // A late failure is not evidence that a settled or closed purchase is unpaid.
+  if (['paid', 'refunded', 'cancelled'].includes(current.status)) return current;
   await updateOrderStatus(orderId, "failed", {
     gateway_data: gatewayData
   });
@@ -396,6 +404,10 @@ export async function markOrderAsRefunded(
   orderId: string,
   gatewayData: Record<string, unknown> = {}
 ) {
+  const current = await assertOrder(orderId);
+  if (isRaptorProProgramOrder(current) && process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    return (await import('./order-guard')).withRaptorOrderGuard(orderId, () => closeRaptorOrder(orderId, 'refunded', gatewayData));
+  }
   await assertOrder(orderId);
   await updateOrderStatus(orderId, "refunded", {
     gateway_data: gatewayData
@@ -413,6 +425,10 @@ export async function markOrderAsCancelled(
   orderId: string,
   gatewayData: Record<string, unknown> = {}
 ) {
+  const current = await assertOrder(orderId);
+  if (isRaptorProProgramOrder(current) && process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    return (await import('./order-guard')).withRaptorOrderGuard(orderId, () => closeRaptorOrder(orderId, 'cancelled', gatewayData));
+  }
   await assertOrder(orderId);
   await updateOrderStatus(orderId, "cancelled", {
     gateway_data: gatewayData
@@ -422,5 +438,13 @@ export async function markOrderAsCancelled(
     await syncLoadProSafely(order, "canceled", gatewayData);
     await syncRaptorProSafely(order, "revoked");
   }
+  return getOrderById(orderId);
+}
+
+async function closeRaptorOrder(orderId: string, status: 'refunded' | 'cancelled', gatewayData: Record<string, unknown>) {
+  const order = await assertOrder(orderId);
+  await updateOrderStatus(orderId, order.status === 'refunded' ? 'refunded' : status, { gateway_data: gatewayData });
+  await revokeProductAccessByOrder(orderId);
+  await syncRaptorProSafely(await assertOrder(orderId), 'revoked', true);
   return getOrderById(orderId);
 }

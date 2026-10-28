@@ -14,6 +14,22 @@ function encryptionKey() {
 export function assertRetryEmailConfigured() { encryptionKey(); }
 export const existingRaptorWelcome = (orderId: string) => readRetryEmail(mailKey(orderId));
 
+export class DeliveryReviewRequiredError extends Error {
+  constructor() { super('Delivery requires manual review; no email resent'); this.name = 'DeliveryReviewRequiredError'; }
+}
+
+export async function assertSavedRaptorWelcomeRetryable(orderId: string) {
+  const row = await existingRaptorWelcome(orderId);
+  if (!row || row.sent_at) return;
+  if (!row.encrypted_payload) throw new DeliveryReviewRequiredError();
+  const saved = open(row.encrypted_payload, mailKey(orderId));
+  const first = row.first_attempt_at ? Date.parse(row.first_attempt_at) : saved.createdAt;
+  if (!Number.isFinite(saved.createdAt) || saved.createdAt > Date.now() || Date.now() - saved.createdAt >= windowMs
+    || !Number.isFinite(first) || first > Date.now() || Date.now() - first >= windowMs) {
+    throw new DeliveryReviewRequiredError();
+  }
+}
+
 function seal(value: SavedMail, key: string) {
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm',encryptionKey(),iv);
@@ -40,6 +56,7 @@ export async function sendRetrySafeRaptorEmail(orderId: string, current: SavedMa
   const key = mailKey(orderId);
   let row = await readRetryEmail(key);
   if (row?.sent_at) return true;
+  await assertSavedRaptorWelcomeRetryable(orderId);
   if (!row) {
     if (!validate(current)) throw Error('Unapproved delivery payload');
     row = await prepareRetryEmail(key,seal(current,key));
@@ -49,11 +66,11 @@ export async function sendRetrySafeRaptorEmail(orderId: string, current: SavedMa
   const saved = open(row.encrypted_payload,key);
   if (!saved.body || saved.body.to !== current.body.to || !validate(saved)
     || !Number.isFinite(saved.createdAt) || saved.createdAt > Date.now()
-    || Date.now() - saved.createdAt >= windowMs) throw Error('Delivery requires manual review; no email resent');
+    || Date.now() - saved.createdAt >= windowMs) throw new DeliveryReviewRequiredError();
   const attempt = await startRetryEmail(key);
   if (attempt.sent_at) return true;
   const firstAttempt = Date.parse(attempt.first_attempt_at || '');
-  if (!Number.isFinite(firstAttempt) || Date.now() - firstAttempt >= windowMs) throw Error('Delivery retry window closed');
+  if (!Number.isFinite(firstAttempt) || Date.now() - firstAttempt >= windowMs) throw new DeliveryReviewRequiredError();
   if (!await send(saved.body,`raptor-welcome-v1/${orderId}`)) return false;
   // Persist before optional audit logging; a storage failure is retryable with the same payload.
   await markRetryEmailSent(key);

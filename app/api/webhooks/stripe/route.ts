@@ -12,6 +12,7 @@ import {
 import {
   markOrderAsFailed,
   markOrderAsPaid,
+  markOrderAsRefunded,
   syncOrderSubscription
 } from "@/lib/checkout/order-events";
 import {
@@ -256,6 +257,9 @@ export async function POST(request: Request) {
     if (!order && sessionId) {
       order = await getOrderByGatewayCheckoutId("stripe", sessionId);
     }
+    if (!order && paymentIntent) {
+      order = await getOrderByGatewayPaymentId("stripe", paymentIntent);
+    }
     if (!order) {
       return await respond({ received: true, order: "not_found" }, retrySafe && orderId ? 503 : 200);
     }
@@ -276,6 +280,15 @@ export async function POST(request: Request) {
     }
     if (!firstDelivery) return await respond({received:true,duplicate:true,reconciled:true});
     const environmentData = { provider_livemode: event.livemode };
+
+    // Partial refunds retain access. Full refunds share the same order guard as
+    // delivery, and are acknowledged only after revocation has completed.
+    if (event.type === 'charge.refunded' && object.refunded === true
+      && typeof object.amount === 'number' && object.amount > 0
+      && object.amount_refunded === object.amount) {
+      await markOrderAsRefunded(order.id, { ...environmentData, stripe_event_id: eventId });
+      return await respond({ received: true });
+    }
 
     if (
       event.type === "checkout.session.completed" ||

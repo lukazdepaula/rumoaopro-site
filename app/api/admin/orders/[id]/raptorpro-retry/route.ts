@@ -134,6 +134,6 @@ export async function POST(
       "Não foi possível reprocessar o acesso ao RaptorPro.",
       { error: isPreviewEnvironment() ? "Isolated preview retry failed." : error instanceof Error ? error.message : String(error) }
     );
-    return redirect("error");
+    return redirect(error instanceof Error && error.name === 'DeliveryReviewRequiredError' ? 'email_review_required' : 'error');
   }
 }

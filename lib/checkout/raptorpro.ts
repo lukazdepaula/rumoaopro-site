@@ -162,16 +162,23 @@ async function requestRaptorPro(path: string, init: RequestInit = {}) {
   });
 }
 
-async function setPaidAccess(order: Order, status: PaidAccessStatus) {
+async function setPaidAccess(order: Order, status: PaidAccessStatus, preserveOrderId?: string) {
   const program = provisioningProgram(order);
   if (!program) throw new Error("Order is not a RaptorPro program purchase.");
-  return requestRaptorPro("/rest/v1/rpc/set_commercial_program_paid_access", {
+  const safe = process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true';
+  if (safe) {
+    const guard = await import('./order-guard');
+    if (status === 'granted') await guard.assertRaptorOrderPaid(order.id);
+    else await guard.assertRaptorOrderOwner(order.id);
+  }
+  return requestRaptorPro(`/rest/v1/rpc/${safe ? 'set_commercial_program_paid_access_safe' : 'set_commercial_program_paid_access'}`, {
     method: "POST",
     body: JSON.stringify({
       p_program_id: program.programId,
       p_email: order.customer_email.trim().toLowerCase(),
       p_status: status,
-      p_order_id: order.id
+      p_order_id: order.id,
+      ...(safe ? { p_preserve_order_id: preserveOrderId || null } : {})
     })
   });
 }
@@ -181,6 +188,9 @@ function isMissingAuthUser(message: string) {
 }
 
 async function generateActionLink(order: Order, type: "invite" | "magiclink") {
+  if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    await (await import('./order-guard')).assertRaptorOrderPaid(order.id);
+  }
   const environment = config();
   if (!environment) throw new Error("RaptorPro provisioning environment is not configured.");
   const program = provisioningProgram(order);
@@ -205,7 +215,7 @@ async function generateActionLink(order: Order, type: "invite" | "magiclink") {
   });
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(`RaptorPro ${type} link failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
+    throw new Error(`RaptorPro ${type} link failed: ${response.status}`);
   }
   const result = (await response.json()) as GeneratedLink;
   if (!result.action_link) throw new Error(`RaptorPro ${type} link was not generated.`);
@@ -224,7 +234,21 @@ export function getRaptorProProgramUrl(orderOrProductId: Pick<Order, "product_id
   return `${appUrl}/programs/${slug}/access`;
 }
 
-export async function syncRaptorProProgramAccess(order: Order, status: PaidAccessStatus) {
+export async function syncRaptorProProgramAccess(order: Order, status: PaidAccessStatus, options: { preserveOrderId?: string } = {}) {
+  if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    const guard = await import('./order-guard');
+    return guard.withRaptorOrderGuard(order.id, async current => {
+      if (status === 'granted') await guard.assertRaptorOrderPaid(current.id);
+      const result = await syncRaptorProProgramAccessInternal({ ...current, metadata: { ...current.metadata,
+        ...(order.metadata.raptorpro_welcome_email_sent === true ? { raptorpro_welcome_email_sent: true } : {}) } }, status, options);
+      if (status === 'granted') await guard.assertRaptorOrderPaid(current.id);
+      return result;
+    });
+  }
+  return syncRaptorProProgramAccessInternal(order, status, options);
+}
+
+async function syncRaptorProProgramAccessInternal(order: Order, status: PaidAccessStatus, options: { preserveOrderId?: string }) {
   const program = provisioningProgram(order);
   if (!program) return { handled: false as const };
   // Enforce this at the provider boundary, not only in webhook orchestration:
@@ -245,24 +269,24 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
     return { handled: true as const, configured: false as const };
   }
 
-  let response = await setPaidAccess(order, status);
+  let response = await setPaidAccess(order, status, options.preserveOrderId);
   let actionUrl: string | null = null;
   let accountCreated = false;
 
   if (!response.ok && status === "granted") {
     const message = await response.text().catch(() => "");
     if (!isMissingAuthUser(message)) {
-      throw new Error(`RaptorPro access sync failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
+      throw new Error(`RaptorPro access sync failed: ${response.status}`);
     }
     const invite = await generateActionLink(order, "invite");
     actionUrl = invite.actionUrl;
     accountCreated = true;
-    response = await setPaidAccess(order, status);
+    response = await setPaidAccess(order, status, options.preserveOrderId);
   }
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(`RaptorPro access sync failed: ${response.status}${isPreviewEnvironment() ? "" : ` ${message}`}`);
+    throw new Error(`RaptorPro access sync failed: ${response.status}`);
   }
 
   if (status === "granted" && !actionUrl && order.metadata.raptorpro_welcome_email_sent !== true) {
@@ -292,6 +316,19 @@ export async function syncRaptorProProgramAccess(order: Order, status: PaidAcces
 
 /** Generate a fresh one-time link so paid buyers are not blocked by email delivery. */
 export async function createRaptorProCheckoutAccessLink(order: Order) {
+  if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED === 'true') {
+    const guard = await import('./order-guard');
+    return guard.withRaptorOrderGuard(order.id, async current => {
+      await guard.assertRaptorOrderPaid(current.id);
+      const link = await createRaptorProCheckoutAccessLinkInternal(current);
+      await guard.assertRaptorOrderPaid(current.id);
+      return link;
+    });
+  }
+  return createRaptorProCheckoutAccessLinkInternal(order);
+}
+
+async function createRaptorProCheckoutAccessLinkInternal(order: Order) {
   if (!isRaptorProProgramOrder(order)) {
     throw new Error("Order is not a RaptorPro program purchase.");
   }

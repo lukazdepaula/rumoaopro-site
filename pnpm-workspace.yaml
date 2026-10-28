@@ -12,3 +12,5 @@ overrides:
   sharp: 0.35.5
   source-map-js: 1.2.2
   postcss-selector-parser: 7.1.6
+  browserslist: 4.28.7
+  baseline-browser-mapping: 2.11.0

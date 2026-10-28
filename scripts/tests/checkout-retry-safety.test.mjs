@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as crypto from 'node:crypto';
+import * as asyncHooks from 'node:async_hooks';
 import { DatabaseSync } from 'node:sqlite';
 import vm from 'node:vm';
 import test from 'node:test';
@@ -17,9 +18,9 @@ function load(file, mocks = {}, env = environment, extras = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
   }).outputText;
   vm.runInNewContext(code, { module, exports: module.exports, Request, Response, Headers, URL,
-    Buffer, AbortSignal, Date, process: { env }, console: { info() {}, error() {} },
+    Buffer, AbortSignal, Date, Error, process: { env }, console: { info() {}, error() {} },
     fetch() { throw Error('Real network is forbidden'); },
-    require(id) { if (id === 'node:crypto') return crypto; if (id in mocks) return mocks[id]; throw Error('Unmocked '+id); },
+    require(id) { if (id === 'node:crypto') return crypto; if (id === 'node:async_hooks') return asyncHooks; if (id in mocks) return mocks[id]; throw Error('Unmocked '+id); },
     ...extras });
   return module.exports;
 }
@@ -127,7 +128,7 @@ test('email ambiguity outside the retry window and a changed encryption key stop
     const badKey=load('lib/checkout/retry-email.ts',{'./retry-storage':f.storage},{...environment,CHECKOUT_DELIVERY_ENCRYPTION_KEY:'another-synthetic-key-with-more-than-32-chars'});
     await assert.rejects(badKey.sendRetrySafeRaptorEmail('fixture',input,()=>true,async()=>{sends++;return true;}),/decrypted/);
     f.db.prepare('UPDATE checkout_retry_email SET first_attempt_at=?').run('2000-01-01T00:00:00.000Z');
-    await assert.rejects(mail.sendRetrySafeRaptorEmail('fixture',input,()=>true,async()=>{sends++;return true;}),/window closed/);
+    await assert.rejects(mail.sendRetrySafeRaptorEmail('fixture',input,()=>true,async()=>{sends++;return true;}),/manual review/);
     assert.equal(sends,0);
   } finally {f.close();}
 });
@@ -143,7 +144,8 @@ function integration(options={}) {
     getOrderByGatewayCheckoutId:async()=>order,getOrderByGatewayPaymentId:async()=>order,
     recordWebhookEvent:async(p,id)=>{const row=f.db.prepare('SELECT id FROM webhook_events WHERE event_id=?').get(id);
       if(row)return false;f.db.prepare('INSERT INTO webhook_events VALUES(?,?,?)').run(id,p,id);return true;},
-    updateOrderStatus:async(id,status)=>{order.status=status;},
+    updateOrderStatus:async(id,status)=>{order.status=status;if(status==='paid')order.paid_at=new Date().toISOString();},
+    revokeProductAccessByOrder:async()=>{state.grants=0;},
     updateOrderGatewayIds:async(id,data)=>{
       if(options.metadataFailure&&data.metadata.raptorpro_welcome_email_sent===true&&!state.metadataFailed){state.metadataFailed=true;throw Error('Synthetic persistence interruption');}
       Object.assign(order.metadata,data.metadata);
@@ -152,7 +154,8 @@ function integration(options={}) {
   };
   const safety={isPreviewEnvironment:()=>false,canProvisionRaptorProSandbox:()=>true,canProvisionLoadProSandbox:()=>false};
   const retryMail=load('lib/checkout/retry-email.ts',{'./retry-storage':f.storage});
-  const email=load('lib/checkout/email.ts',{'@/lib/checkout/db':db,'@/lib/preview-safety':safety,'./retry-email':retryMail},environment,{
+  const guard=load('lib/checkout/order-guard.ts',{'./db':db,'./retry-storage':f.storage});
+  const email=load('lib/checkout/email.ts',{'@/lib/checkout/db':db,'@/lib/preview-safety':safety,'./retry-email':retryMail,'./order-guard':guard},environment,{
     fetch:async(url,init)=>{
       assert.equal(url,'https://api.resend.com/emails');
       const key=init.headers['Idempotency-Key'];assert.ok(key);state.mailRequests.push({key,body:init.body});
@@ -164,16 +167,19 @@ function integration(options={}) {
     }
   });
   const events=load('lib/checkout/order-events.ts',{
+    './order-guard':guard,
     '@/lib/checkout/db':db,'./retry-storage':f.storage,'./retry-email':retryMail,
     '@/lib/preview-safety':safety,'@/lib/checkout/access':{grantProductAccess:async()=>state.grants++},
     '@/lib/checkout/delivery':{deliverOrder:async()=>{}},'@/lib/checkout/admin-push':{},
     '@/lib/checkout/email':{...email,...(options.mailDisabled?{isEmailDeliveryConfigured:()=>false}:{})},'@/lib/checkout/loadpro':{isLoadProOrder:()=>false},
     '@/lib/checkout/raptorpro':{
       isRaptorProProgramOrder:()=>true,getRaptorProProgramConfig:()=>({programId:'synthetic-program',programTitle:'Test'}),
-      syncRaptorProProgramAccess:async value=>{
+      syncRaptorProProgramAccess:async (value,status)=>{
         state.providers++;
         if(options.provisionFailure&&state.providers===1)throw Error('Synthetic temporary provider failure');
-        if(options.blockProvider)await options.blockProvider();
+        if(options.blockProvider && status==='granted')await options.blockProvider();
+        state.remoteAccess=status;
+        if(status==='revoked')return {handled:true,configured:true,accountCreated:false,actionUrl:null};
         const link=value.metadata.raptorpro_welcome_email_sent===true?null:`https://auth.example.invalid/link-${++state.links}`;
         return {handled:true,configured:true,programId:'synthetic-program',actionUrl:link,accountCreated:false};
       }
@@ -195,8 +201,140 @@ function integration(options={}) {
     method:'POST',headers:{'stripe-signature':'synthetic'},body:JSON.stringify({id,type:'checkout.session.completed',livemode:false,
       data:{object:{id:'cs_test_fixture',payment_status:'paid',metadata:{order_id:order.id},status:'complete',amount_total:4990,currency:'usd'}},...patch})
   }));
-  return {...f,order,state,send};
+  return {...f,order,state,send,events,dbmock:db,guard,email};
 }
+
+for (const method of ['markOrderAsRefunded','markOrderAsCancelled']) {
+  test(`${method} conflicts with an in-flight grant, then wins without a later re-grant`,async()=>{
+    let release,entered;
+    const gate=new Promise(resolve=>{release=resolve;});
+    const started=new Promise(resolve=>{entered=resolve;});
+    const f=integration({blockProvider:async()=>{entered();await gate;}});
+    try {
+      const first=f.send();await started;
+      await assert.rejects(f.events[method](f.order.id),/already processing/);
+      release();assert.equal((await first).status,200);
+      await f.events[method](f.order.id);
+      assert.equal(f.order.status,method==='markOrderAsRefunded'?'refunded':'cancelled');
+      assert.equal(f.state.remoteAccess,'revoked');assert.equal(f.state.grants,0);
+      assert.equal((await f.send('evt_late_paid')).status,500);
+      assert.equal(f.state.remoteAccess,'revoked');assert.equal(f.state.sends,1);
+    } finally {release();f.close();}
+  });
+}
+
+test('Stripe full refund resolves the payment intent, retries contention and does not duplicate delivery',async()=>{
+  let release,entered;const gate=new Promise(resolve=>{release=resolve;});
+  const started=new Promise(resolve=>{entered=resolve;});
+  const f=integration({blockProvider:async()=>{entered();await gate;}});
+  const event={type:'charge.refunded',data:{object:{id:'ch_fixture',payment_intent:'pi_fixture',refunded:true,amount:4990,amount_refunded:4990}}};
+  try {
+    const first=f.send();await started;
+    assert.equal((await f.send('evt_refund',event)).status,500);
+    release();assert.equal((await first).status,200);
+    assert.equal((await f.send('evt_refund',event)).status,200);
+    assert.equal(f.order.status,'refunded');assert.equal(f.state.remoteAccess,'revoked');assert.equal(f.state.grants,0);
+    assert.equal((await f.send('evt_refund',event)).body.duplicate,true);
+  } finally {release();f.close();}
+});
+
+test('Stripe partial refund preserves a paid purchase',async()=>{
+  const f=integration();
+  try {
+    assert.equal((await f.send()).status,200);
+    assert.equal((await f.send('evt_partial',{type:'charge.refunded',data:{object:{payment_intent:'pi_fixture',refunded:false,amount:4990,amount_refunded:1000}}})).status,200);
+    assert.equal(f.order.status,'paid');assert.equal(f.state.remoteAccess,'granted');
+  } finally {f.close();}
+});
+
+test('expired welcome delivery becomes an explicit manual review without a fresh link or email',async()=>{
+  const f=integration({mailFailure:true});
+  try {
+    assert.equal((await f.send()).status,500);
+    const providers=f.state.providers;
+    f.db.prepare('UPDATE checkout_retry_email SET first_attempt_at=?').run('2000-01-01T00:00:00.000Z');
+    await assert.rejects(f.events.markOrderAsPaid(f.order.id,{}, {retrySafe:true}),/manual review/);
+    assert.equal(f.order.status,'paid');
+    assert.equal(f.order.metadata.raptorpro_welcome_email_status,'manual_review');
+    assert.equal(f.state.providers,providers);assert.equal(f.state.links,1);assert.equal(f.state.sends,0);
+    assert.ok((await f.storage.readRetryEmail(`raptor-welcome:${f.order.id}`)).encrypted_payload);
+  } finally {f.close();}
+});
+
+test('expired ownership fences a suspended grant before local access or email',async()=>{
+  let release,entered;const gate=new Promise(resolve=>{release=resolve;});
+  const started=new Promise(resolve=>{entered=resolve;});
+  const f=integration({blockProvider:async()=>{entered();await gate;}});
+  try {
+    const pending=f.send();await started;
+    f.db.prepare("UPDATE checkout_retry_work SET lease_until=? WHERE work_key LIKE 'raptor-order:%'").run('2000-01-01T00:00:00.000Z');
+    release();assert.equal((await pending).status,500);
+    assert.equal(f.state.grants,0);assert.equal(f.state.sends,0);
+  } finally {release();f.close();}
+});
+
+test('Mercado Pago retries a refund after contention instead of treating the receipt as completion',async()=>{
+  const f=integration();
+  let calls=0;
+  const route=load('app/api/webhooks/mercado-pago/route.ts',{
+    'next/server':{NextResponse:{json:(body,init)=>Response.json(body,init)}},
+    '@/lib/checkout/retry-storage':f.storage,'@/lib/checkout/db':f.dbmock,
+    '@/lib/checkout/order-events':{...f.events,markOrderAsRefunded:async(...args)=>{
+      calls++;if(calls===1)throw Error('Synthetic contention');return f.events.markOrderAsRefunded(...args);
+    }},
+    '@/lib/checkout/payments':{verifyMercadoPagoWebhookSignature:()=>true,
+      fetchMercadoPagoPayment:async()=>({id:'mp_payment',status:'refunded',external_reference:f.order.id}),mapMercadoPagoStatus:s=>s},
+    '@/lib/marketing/order-events':{}
+  });
+  const request=()=>new Request('https://site.example.invalid/api/webhooks/mercado-pago',{method:'POST',body:JSON.stringify({id:'mp_event',type:'payment',data:{id:'mp_payment'}})});
+  try {
+    assert.equal((await f.send()).status,200);
+    assert.equal((await route.POST(request())).status,500);
+    assert.equal((await route.POST(request())).status,200);
+    assert.equal(f.order.status,'refunded');assert.equal(f.state.remoteAccess,'revoked');assert.equal(f.state.grants,0);
+    assert.equal((await (await route.POST(request())).json()).duplicate,true);assert.equal(calls,2);
+    f.db.prepare('INSERT INTO webhook_events VALUES(?,?,?)').run('old','mercado_pago','mp_old');
+    assert.equal((await f.storage.claimRetryWork('mercado-event:mp_old','mp_old')).state,'completed');
+  } finally {f.close();}
+});
+
+test('real Raptor adapter uses the terminal RPC and refuses stale direct-access requests',async()=>{
+  const f=integration();
+  const requests=[];
+  delete f.order.metadata.checkout_gateway_mode;
+  f.order.status='paid';
+  const raptor=load('lib/checkout/raptorpro.ts',{
+    '@/lib/preview-safety':{assertPreviewDatabase(){},isPreviewEnvironment:()=>false,canProvisionRaptorProSandbox:()=>false,publicRaptorProAppUrl:()=> 'https://app.example.invalid'},
+    '@/lib/checkout/db':f.dbmock,'./order-guard':f.guard
+  },{...environment,RAPTORPRO_SUPABASE_URL:'https://fixture.example.invalid',RAPTORPRO_SUPABASE_SERVICE_ROLE_KEY:'sb_secret_fixture',RAPTORPRO_APP_URL:'https://app.example.invalid'}, {
+    fetch:async(url,init)=>{
+      requests.push({url,body:JSON.parse(init.body)});
+      if(url.endsWith('/rpc/set_commercial_program_paid_access_safe')) return Response.json({status:'granted'});
+      if(url.endsWith('/auth/v1/admin/generate_link'))return Response.json({action_link:'https://auth.example.invalid/fixture'});
+      throw Error('Unexpected provider request');
+    }
+  });
+  try {
+    assert.equal(await raptor.createRaptorProCheckoutAccessLink({...f.order}), 'https://auth.example.invalid/fixture');
+    assert.match(requests[0].url,/paid_access_safe$/);assert.equal(requests.length,2);
+    const stale={...f.order};f.order.status='refunded';
+    await assert.rejects(raptor.createRaptorProCheckoutAccessLink(stale),/unpaid order/);
+    await assert.rejects(raptor.syncRaptorProProgramAccess(stale,'granted'),/unpaid order/);
+    assert.equal(requests.length,2);
+  } finally {f.close();}
+});
+
+test('manual Raptor mail paths cannot send for a closed order or a substituted recipient',async()=>{
+  const f=integration();
+  const input={orderId:f.order.id,to:f.order.customer_email,name:'QA',programName:'Test',locale:'pt',actionUrl:'https://auth.example.invalid/fixture',accountCreated:false};
+  try {
+    f.order.status='refunded';
+    await assert.rejects(f.email.sendRaptorProProgramAccessEmail(input),/unpaid order/);
+    f.order.status='paid';
+    await assert.rejects(f.email.sendRaptorProProgramAccessEmail({...input,to:'different@example.invalid'}),/recipient/);
+    assert.equal(f.state.mailRequests.length,0);
+  } finally {f.close();}
+});
 
 for(const fault of ['lookupFailure','provisionFailure','mailFailure','lostMailResponse','metadataFailure','finishFailure']) {
   test(`signed checkout recovers ${fault} without charging, losing the paid state or duplicating mail`,async()=>{
