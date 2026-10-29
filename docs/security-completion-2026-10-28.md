@@ -5,7 +5,7 @@ migrações, ativar flags, publicar ou enviar e-mails aos clientes a partir dest
 O pacote integra o candidato anterior com `origin/main` (`ee38929`), preservando a
 home, o catálogo, as páginas In-Season e o checkout internacional Power Pro.
 
-## Resultado local
+## Resultado local de 28/10
 
 - `pnpm check`: passou.
 - `pnpm build`: passou, Next 15.5.28, 40 páginas geradas.
@@ -20,6 +20,43 @@ home, o catálogo, as páginas In-Season e o checkout internacional Power Pro.
 - Sem publicação, migração remota, cobrança, e-mail real ou mudança de conta.
 
 Os resultados locais não substituem a homologação hospedada listada abaixo.
+
+## Homologação executada em 29/10
+
+- As três migrações foram aplicadas nos dois bancos isolados de QA. As funções
+  instaladas correspondem ao SQL revisado; RLS e permissões foram verificadas.
+  Testes transacionais hospedados passaram para revogação terminal, duas compras,
+  eventos repetidos, acesso sem pagamento, falha tardia e claims concorrentes.
+  Os registros desses testes transacionais foram revertidos.
+- Login do admin QA com MFA e manutenção da sessão após refresh passaram.
+- O pedido fictício `982b5665-e630-4654-8437-913cfbd8b9a7` foi pago no Stripe TEST
+  (USD 49,90), reembolsado parcialmente (USD 1) e depois integralmente (USD 48,90
+  restantes). Não houve movimentação de dinheiro real nem alteração da produção.
+- Os eventos originais do Stripe foram enviados por relay autenticado à prévia
+  protegida, usando a credencial Vercel existente com autorização específica.
+  As assinaturas foram calculadas em memória; nenhum segredo foi publicado.
+  Isso valida o processamento da aplicação, mas não a entrega direta Stripe →
+  URL protegida, que continua bloqueada pelo login Vercel.
+- Pagamento e reembolso retornaram HTTP 200. Repetição do pagamento retornou
+  `duplicate: true`; o reprocessamento pelo admin preservou o único registro de
+  envio. O payload criptografado foi descartado após aceitação do e-mail.
+  O destinatário foi exclusivamente o titular autorizado do teste; não foi
+  verificada a leitura da mensagem na caixa de entrada.
+- O reembolso parcial preservou o acesso. O total deixou o pedido `refunded`, o
+  entitlement `revoked` e o registro por pedido no Raptor `revoked`. Um replay
+  posterior do pagamento manteve esses estados e o mesmo `sent_at` do e-mail.
+  Outras compras pagas do mesmo cliente não foram reembolsadas nem reexecutadas.
+- O endpoint TEST permanece desativado, inscrito em `checkout.session.completed`
+  e `charge.refunded`. A janela de provisionamento/e-mail QA foi encerrada.
+- Duas mensagens encontradas no teste foram corrigidas: o admin não promete novo
+  convite quando um reprocessamento reutiliza o envio existente; a tela do cliente
+  identifica pedidos Raptor reembolsados/cancelados como encerrados.
+
+Falhas de provedor, expiração da janela de e-mail, cancelamento e concorrência
+continuam cobertos pela suíte local e/ou pelos testes transacionais descritos;
+não foram simulados como novos eventos reais de provedor neste pedido. A sessão
+dentro do aplicativo Raptor e a recuperação de senha não foram repetidas nesta
+rodada. A aprovação da publicação e a ativação na produção continuam pendentes.
 
 ## Correções preparadas
 
@@ -68,8 +105,9 @@ alterar datas para reabrir a janela e não marcar `sent_at` sem prova de aceita�
 
 ## Ordem da validação hospedada e publicação
 
-Ainda é necessária a homologação destas alterações novas em infraestrutura de QA.
-Os testes locais usam SQLite/PostgreSQL em memória e provedores simulados.
+O roteiro abaixo define a ordem de aplicação. A seção de 29/10 distingue as
+etapas executadas em QA dos cenários locais e dos controles de publicação ainda
+pendentes. Os testes locais usam SQLite/PostgreSQL em memória e provedores simulados.
 
 1. Validar os projetos/contas de QA e manter o preview protegido. Nenhuma chave de
    produção deve ser copiada para esta cópia de trabalho.

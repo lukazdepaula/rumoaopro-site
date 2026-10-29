@@ -94,9 +94,9 @@ export default async function OrderDetailPage({
           A migração para o RaptorPro não foi concluída ({query.raptorMigration}). Nenhuma nova cobrança foi criada.
         </p>
       ) : null}
-      {query.raptorRetry === "sent" ? (
+      {query.raptorRetry === "sent" && order.status === "paid" ? (
         <p className="mt-5 rounded-lg border border-turf/20 bg-turf/10 px-4 py-3 text-sm font-bold text-turf">
-          Acesso ao RaptorPro reprocessado e novo convite enviado ao cliente.
+          Reprocessamento do acesso ao RaptorPro concluído. Consulte os logs abaixo para conferir o envio do convite.
         </p>
       ) : null}
       {query.raptorRetry && query.raptorRetry !== "sent" ? (
