@@ -23,7 +23,7 @@ import { publicLoadProAppUrl } from "@/lib/preview-safety";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Pagamento em processamento",
+  title: "Status do pedido",
   description:
     "Recebemos o retorno do checkout. A entrega acontece somente após confirmação do webhook."
 };
@@ -70,6 +70,11 @@ export default async function CheckoutSuccessPage({
   const isLoadPro = isLoadProProductId(order?.product_id);
   const isLoadProTrial = isLoadPro && trialDays > 0;
   const isRaptorProProgram = order ? isRaptorProProgramOrder(order) : false;
+  const isClosedRaptorOrder = isRaptorProProgram &&
+    (order?.status === "refunded" || order?.status === "cancelled");
+  const closedRaptorLabel = order?.status === "refunded"
+    ? isEnglish ? "Refunded" : "Reembolsado"
+    : isEnglish ? "Cancelled" : "Cancelado";
   const raptorProgram = order ? getRaptorProProgramConfig(order) : null;
   const raptorProgramName = raptorProgram?.programTitle || order?.product_name || "programa";
   const raptorProvisioningStatus =
@@ -96,7 +101,7 @@ export default async function CheckoutSuccessPage({
   const trialIsReady =
     isLoadProTrial &&
     (subscriptionStatus === "trialing" || order?.status === "paid");
-  const statusLabel = isLoadProTrial
+  const statusLabel = isClosedRaptorOrder ? closedRaptorLabel : isLoadProTrial
     ? trialIsReady
       ? isEnglish ? "Trial active" : "Teste ativo"
       : isEnglish ? "Activating trial" : "Ativando teste"
@@ -114,7 +119,9 @@ export default async function CheckoutSuccessPage({
     : order?.status === "paid" && product
       ? `/my-programs/${product.slug}`
       : "/my-programs";
-  const title = isCoachingSubscription && order?.status === "paid"
+  const title = isClosedRaptorOrder
+    ? isEnglish ? `Order ${closedRaptorLabel.toLowerCase()}` : `Pedido ${closedRaptorLabel.toLowerCase()}`
+    : isCoachingSubscription && order?.status === "paid"
     ? isEnglish ? "Coaching subscription confirmed" : "Assinatura da assessoria confirmada"
     : isLoadProTrial
     ? trialIsReady
@@ -131,7 +138,11 @@ export default async function CheckoutSuccessPage({
     : order?.status === "paid"
     ? isEnglish ? "Payment confirmed" : "Pagamento confirmado"
     : isEnglish ? "Payment processing" : "Pagamento em confirmação";
-  const description = isCoachingSubscription && order?.status === "paid"
+  const description = isClosedRaptorOrder
+    ? isEnglish
+      ? "This order is closed and cannot grant new access. Access from other valid purchases is preserved."
+      : "Este pedido foi encerrado e não libera novos acessos. O acesso de outras compras válidas é preservado."
+    : isCoachingSubscription && order?.status === "paid"
     ? isEnglish
       ? "Payment approved. Your subscription is active and our team will contact you using the details provided to begin onboarding."
       : "Pagamento aprovado. Sua assinatura está ativa e nossa equipe entrará em contato pelo WhatsApp informado para iniciar o atendimento."

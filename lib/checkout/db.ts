@@ -286,6 +286,40 @@ function migrate(db: SqliteDatabase) {
       metadata TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL
     );
+
+    CREATE TRIGGER IF NOT EXISTS checkout_closed_program_order
+    BEFORE UPDATE OF status ON orders
+    WHEN OLD.product_id IN ('offseason_30_days','project_36','projeto_36_2022_pt','elanga_in_season','de_volta_aos_gramados_pt','power_pro')
+      AND ((OLD.status IN ('refunded','cancelled') AND NEW.status NOT IN ('refunded','cancelled'))
+        OR (OLD.status='paid' AND NEW.status IN ('pending','failed')))
+    BEGIN
+      SELECT RAISE(ABORT, 'Settled program order cannot be reopened or downgraded');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS checkout_paid_entitlement_insert
+    BEFORE INSERT ON entitlements
+    WHEN NEW.access_status='active' AND NEW.order_id IS NOT NULL
+      AND NOT EXISTS(SELECT 1 FROM orders WHERE id=NEW.order_id AND status='paid' AND product_id=NEW.product_id)
+    BEGIN
+      SELECT RAISE(ABORT, 'Active entitlement requires a matching paid order');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS checkout_paid_entitlement_update
+    BEFORE UPDATE ON entitlements
+    WHEN NEW.access_status='active' AND NEW.order_id IS NOT NULL
+      AND NOT EXISTS(SELECT 1 FROM orders WHERE id=NEW.order_id AND status='paid' AND product_id=NEW.product_id)
+    BEGIN
+      SELECT RAISE(ABORT, 'Active entitlement requires a matching paid order');
+    END;
+
+    CREATE TABLE IF NOT EXISTS checkout_retry_work (
+      work_key TEXT PRIMARY KEY, state TEXT NOT NULL, token TEXT,
+      lease_until TEXT, attempts INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS checkout_retry_email (
+      email_key TEXT PRIMARY KEY, encrypted_payload TEXT,
+      first_attempt_at TEXT, sent_at TEXT
+    );
   `);
 
   ensureColumn(db, "products", "language", "language TEXT NOT NULL DEFAULT 'English'");
@@ -720,6 +754,15 @@ async function supabaseRequest<T>(
 
 function eq(column: string, value: string) {
   return `${column}=eq.${encodeURIComponent(value)}`;
+}
+
+// Narrow internal bridge for retry state. No production schema changes at runtime.
+export function checkoutRetryLocalDatabase() {
+  return useSupabaseDriver() ? null : getDatabase();
+}
+
+export async function checkoutRetryRpc<T>(body: Record<string, unknown>) {
+  return supabaseRequest<T>("rpc/checkout_retry_operation", { method: "POST", body });
 }
 
 function selectQuery(parts: string[] = []) {
@@ -1216,6 +1259,11 @@ export async function updateOrderStatus(
 ) {
   const order = await getOrderById(orderId);
   const paidAt = status === "paid" && !order?.paid_at ? nowIso() : order?.paid_at;
+  if (order && ['offseason_30_days','project_36','projeto_36_2022_pt','elanga_in_season','de_volta_aos_gramados_pt','power_pro'].includes(order.product_id)
+    && ((['refunded','cancelled'].includes(order.status) && !['refunded','cancelled'].includes(status))
+      || (order.status === 'paid' && ['pending','failed'].includes(status)))) {
+    throw Error('Settled program order cannot be reopened or downgraded');
+  }
   const shouldRedeemDiscount =
     status === "paid" &&
     order?.status !== "paid" &&
@@ -2479,6 +2527,14 @@ export async function grantProductAccess(input: {
     return getActiveEntitlement(input.user_id, input.product_id);
   }
 
+  // No await between the SQLite authority check and the synchronous grant.
+  // PostgreSQL enforces the same invariant transactionally with its trigger.
+  if (input.order_id) {
+    const purchase = getDatabase().prepare('SELECT status,product_id FROM orders WHERE id=?').get(input.order_id);
+    if (!purchase || purchase.status !== 'paid' || purchase.product_id !== input.product_id) {
+      throw Error('Active entitlement requires a matching paid order');
+    }
+  }
   getDatabase()
     .prepare(
       `INSERT INTO entitlements (

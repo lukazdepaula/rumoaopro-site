@@ -104,6 +104,9 @@ expect(
   firstLogin.headers.get("location")?.endsWith("/admin/mfa/setup"),
   "Login inicial não abriu a configuração de MFA."
 );
+expect(!cookies.has("rap_admin_session"), "Senha sozinha criou uma sessão completa.");
+const pendingAccess = await request("/api/admin/live");
+expect(pendingAccess.status === 401, "Sessão pendente liberou a API antes do MFA.");
 
 const secret = pendingSetupSecret();
 const setupPage = await request("/admin/mfa/setup");
@@ -127,6 +130,16 @@ const acknowledge = await postForm("/api/admin/mfa/recovery/acknowledge", {});
 expect(acknowledge.status === 303, "Confirmação dos códigos falhou.");
 const adminPage = await request("/admin");
 expect(adminPage.status === 200, "Sessão completa de admin não foi criada.");
+expect(
+  adminPage.headers.get("cache-control")?.includes("no-store"),
+  "Painel autenticado permitiu cache."
+);
+for (let refresh = 0; refresh < 2; refresh += 1) {
+  const refreshedPage = await request("/admin");
+  expect(refreshedPage.status === 200, "Atualizar o painel perdeu a sessão autenticada.");
+}
+const authenticatedApi = await request("/api/admin/live");
+expect(authenticatedApi.status === 200, "API rejeitou a sessão completa após atualizar.");
 
 const secondLogin = await login();
 expect(
@@ -186,12 +199,14 @@ expect(crossSite.status === 403, "Proteção contra origem maliciosa falhou.");
 console.log(
   JSON.stringify({
     passwordStage: "ok",
+    pendingSessionBlocked: "ok",
     totpEnrollment: "ok",
     totpReplayBlocked: "ok",
     recoveryCodes: 10,
     recoveryReplayBlocked: "ok",
     mfaRateLimit: "ok",
     fullAdminSession: "ok",
+    sessionSurvivesRefresh: "ok",
     crossSiteBlocked: "ok"
   })
 );

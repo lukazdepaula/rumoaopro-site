@@ -67,7 +67,7 @@ function eventsFixture(input, otherPaid = null, lookupError = null) {
         return { handled: true, configured: true, accountCreated: false, actionUrl: null };
       }
     },
-    '@/lib/preview-safety': { canProvisionLoadProSandbox: () => false }
+    '@/lib/preview-safety': { canProvisionLoadProSandbox: () => false, canProvisionRaptorProSandbox: () => false }
   });
   return { events, state, current };
 }

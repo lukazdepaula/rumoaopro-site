@@ -27,6 +27,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type MercadoPagoNotification = {
   id?: string | number;
@@ -52,6 +53,27 @@ function subscriptionPlanTopic(value: string) {
 }
 
 export async function POST(request: Request) {
+  if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED !== 'true') return processNotification(request);
+  const storage = await import('@/lib/checkout/retry-storage');
+  let claim: { key: string; token: string } | undefined;
+  try {
+    const response = await processNotification(request, async eventId => {
+      const key = `mercado-event:${eventId}`;
+      const result = await storage.claimRetryWork(key, eventId);
+      if (result.state === 'busy') throw Error('Event processing in progress');
+      if (result.state === 'completed') return false;
+      claim = { key, token: result.token! };
+      return true;
+    });
+    if (claim) await storage.finishRetryWork(claim.key, claim.token, response.status >= 200 && response.status < 300);
+    return response;
+  } catch {
+    if (claim) await storage.finishRetryWork(claim.key, claim.token, false).catch(() => undefined);
+    return NextResponse.json({ error: 'Webhook error' }, { status: 500 });
+  }
+}
+
+async function processNotification(request: Request, claimReceipt?: (eventId: string) => Promise<boolean>) {
   try {
     const url = new URL(request.url);
     const body = (await request.json().catch(() => ({}))) as MercadoPagoNotification;
@@ -74,13 +96,14 @@ export async function POST(request: Request) {
 
     const topic = String(body.type || url.searchParams.get("topic") || body.action || "payment");
     const eventId = String(body.id || `${topic}:${body.action || "updated"}:${dataId}`);
-    const firstDelivery = await recordWebhookEvent("mercado_pago", eventId, {
+    const firstDelivery = claimReceipt ? await claimReceipt(eventId) : await recordWebhookEvent("mercado_pago", eventId, {
       body,
       query: Object.fromEntries(url.searchParams)
     });
     if (!firstDelivery) {
       return NextResponse.json({ received: true, duplicate: true });
     }
+    if (claimReceipt) await recordWebhookEvent('mercado_pago', eventId, { body, query: Object.fromEntries(url.searchParams) });
 
     if (subscriptionAuthorizedPaymentTopic(topic)) {
       const invoice = await fetchMercadoPagoAuthorizedPayment(dataId);
@@ -319,7 +342,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("[webhook.mercado_pago]", error);
+    console.error("[webhook.mercado_pago] processing failed; retry required");
     return NextResponse.json({ error: "Webhook error" }, { status: 500 });
   }
 }
