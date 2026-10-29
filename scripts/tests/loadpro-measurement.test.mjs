@@ -62,7 +62,7 @@ test('consented campaign and handoff survive normalization; sensitive URL parame
   assert.equal(attribution.marketingLandingUrl('https://user:password@example.invalid/'), undefined);
 });
 
-function browserFixture({ consent = 'granted', blockedStorage = false } = {}) {
+function browserFixture({ consent = 'granted', blockedStorage = false, pathname = '/checkout/loadpro-founders' } = {}) {
   const saved = new Map();
   const storage = {
     getItem(key) { if (blockedStorage) throw Error('Storage blocked'); return saved.get(key) || null; },
@@ -70,19 +70,58 @@ function browserFixture({ consent = 'granted', blockedStorage = false } = {}) {
     removeItem(key) { if (blockedStorage) throw Error('Storage blocked'); saved.delete(key); }
   };
   const calls = [];
+  const effects = [];
+  const requests = [];
   const window = { localStorage: storage, sessionStorage: storage, location: {
-    href: 'https://rumoaopro.com/checkout/loadpro-founders?utm_source=meta&utm_campaign=fixture&lp_attribution_id=landing-123',
+    href: `https://rumoaopro.com${pathname}?utm_source=meta&utm_campaign=fixture&lp_attribution_id=landing-123`,
     search: '?utm_source=meta&utm_campaign=fixture&lp_attribution_id=landing-123',
-    pathname: '/checkout/loadpro-founders', protocol: 'https:'
-  }, fbq: (...args) => calls.push(args) };
-  const document = { cookie: '', documentElement: { dataset: {} } };
+    pathname, protocol: 'https:'
+  }, fbq: (...args) => calls.push(args),
+    setInterval() { return 1; }, clearInterval() {}, addEventListener() {}, removeEventListener() {}
+  };
+  const document = { cookie: '', documentElement: { dataset: {} }, visibilityState: 'hidden',
+    getElementById() { return null; }, addEventListener() {}, removeEventListener() {}
+  };
   const api = load('components/conversion-tracker.tsx', {
-    react: { useEffect() {} }, 'next/navigation': { usePathname() {} },
+    react: { useEffect(effect) { effects.push(effect); } }, 'next/navigation': { usePathname: () => pathname },
     '@/components/privacy-consent': { readMarketingConsent: () => consent, MARKETING_CONSENT_EVENT: 'consent' },
     '@/lib/marketing/attribution': attribution
-  }, { window, document, process: { env: { NEXT_PUBLIC_LOADPRO_META_PIXEL_ID: 'fixture-loadpro', NEXT_PUBLIC_RUMOAOPRO_META_PIXEL_ID: 'fixture-site' } } });
-  return { api, window, saved, calls };
+  }, { window, document,
+    async fetch(url, options) {
+      requests.push({ url, body: JSON.parse(options.body) });
+      return Response.json({ recorded: true });
+    },
+    process: { env: { NEXT_PUBLIC_LOADPRO_META_PIXEL_ID: 'fixture-loadpro', NEXT_PUBLIC_RUMOAOPRO_META_PIXEL_ID: 'fixture-site' } }
+  });
+  async function mount() {
+    effects.length = 0;
+    api.ConversionTracker();
+    const cleanups = effects.map(effect => effect());
+    await new Promise(setImmediate);
+    return () => cleanups.forEach(cleanup => cleanup?.());
+  }
+  return { api, window, saved, calls, requests, mount };
 }
+
+test('Power Pro landing records its product view once and gates Meta on consent', async () => {
+  for (const consent of ['denied', 'granted']) {
+    const browser = browserFixture({ consent, pathname: '/programas/power-pro' });
+    const unmount = await browser.mount();
+    unmount();
+    const unmountAgain = await browser.mount();
+    unmountAgain();
+    const views = browser.requests.filter(request => request.url === '/api/analytics/event' && request.body.type === 'product_view');
+    assert.equal(views.length, 1, `one Power Pro view with ${consent} consent`);
+    assert.equal(views[0].body.productSlug, 'power-pro');
+    assert.equal(views[0].body.path, '/programas/power-pro');
+    assert.equal(views[0].body.locale, 'pt');
+    assert.equal(views[0].body.marketing.consent, consent);
+    const metaViews = browser.calls.filter(call => call[0] === 'trackSingle' && call[2] === 'ViewContent');
+    assert.equal(metaViews.length, consent === 'granted' ? 1 : 0);
+    if (consent === 'denied') assert.equal(browser.calls.length, 0);
+    else assert.deepEqual(plain(metaViews[0][3].content_ids), ['power-pro']);
+  }
+});
 
 test('browser preserves the consented landing ID and its own checkout session', () => {
   const { api, window } = browserFixture();

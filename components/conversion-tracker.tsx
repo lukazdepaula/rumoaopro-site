@@ -62,6 +62,7 @@ const productPaths: Record<string, string> = {
   "/en/programs/adama-strength-power": "adama-offseason-strength-and-power",
   "/programas/projeto-36kmh": "project-36",
   "/en/programs/project-36kmh": "project-36",
+  "/programas/power-pro": "power-pro",
   "/programas/elanga-in-season": "elanga-in-season",
   "/en/programs/elanga-in-season": "elanga-in-season",
   "/programas/projeto-pre-temporada": "projeto-pre-temporada",
