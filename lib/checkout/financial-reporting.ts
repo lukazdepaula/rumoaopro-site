@@ -25,6 +25,22 @@ export type FinancialPeriod = {
 
 export type FinancialSourceState = "ready" | "fallback" | "missing" | "error";
 
+export type ExternalReceiptTotals = {
+  grossRevenueBrl: number;
+  netRevenueBrl: number;
+  refundsBrl: number;
+  feesBrl: number;
+  paymentCount: number;
+  transactionCount: number;
+};
+
+export type ExternalReceipts = {
+  coaching: ExternalReceiptTotals;
+  internal_transfer: ExternalReceiptTotals;
+  unclassified: ExternalReceiptTotals;
+  hasUnconvertedCurrencies: boolean;
+};
+
 export type FinancialSource = {
   id: "stripe" | "mercado_pago" | "kiwify" | "shopify_legacy";
   name: string;
@@ -38,6 +54,7 @@ export type FinancialSource = {
   detail: string;
   updatedAt: string;
   hasUnconvertedCurrencies: boolean;
+  externalReceipts?: ExternalReceipts;
 };
 
 export type FinancialDailyPoint = {
@@ -71,6 +88,54 @@ type SourceDailyValue = {
 };
 
 type SourceResult = FinancialSource & { daily: Map<string, SourceDailyValue> };
+
+function emptyExternalReceipts(): ExternalReceipts {
+  const empty = () => ({ grossRevenueBrl: 0, netRevenueBrl: 0, refundsBrl: 0,
+    feesBrl: 0, paymentCount: 0, transactionCount: 0 });
+  return { coaching: empty(), internal_transfer: empty(), unclassified: empty(),
+    hasUnconvertedCurrencies: false };
+}
+
+function externalClassifications() {
+  const stripeProducts = new Set((process.env.ADMIN_FINANCE_STRIPE_COACHING_PRODUCT_IDS || "")
+    .split(",").map(id => id.trim()).filter(Boolean));
+  if ([...stripeProducts].some(id => !/^prod_[A-Za-z0-9]+$/.test(id))) {
+    throw new Error("Invalid financial product classification");
+  }
+  const mp: unknown = JSON.parse(process.env.ADMIN_FINANCE_MP_CLASSIFICATIONS || "{}");
+  if (!mp || typeof mp !== "object" || Array.isArray(mp) ||
+    Object.entries(mp).some(([id, category]) => !/^\d+$/.test(id) ||
+      (category !== "coaching" && category !== "internal_transfer"))) {
+    throw new Error("Invalid financial payment classification");
+  }
+  return { stripeProducts, mercadoPago: mp as Record<string, "coaching" | "internal_transfer"> };
+}
+
+function addExternalReceipt(target: ExternalReceiptTotals, gross: number, net: number,
+  refund: number, fee: number, count: number) {
+  target.grossRevenueBrl += gross;
+  target.netRevenueBrl += net;
+  target.refundsBrl += refund;
+  target.feesBrl += fee;
+  target.paymentCount += count;
+  target.transactionCount += 1;
+}
+
+function collectStripeProducts(value: unknown, products = new Set<string>(), depth = 0): Set<string> {
+  if (depth > 10 || !value || typeof value !== "object") return products;
+  if (Array.isArray(value)) {
+    for (const item of value) collectStripeProducts(item, products, depth + 1);
+    return products;
+  }
+  const resource = value as Record<string, unknown>;
+  const product = resource.product;
+  if (typeof product === "string") products.add(product);
+  if (product && typeof product === "object") products.add(String((product as Record<string, unknown>).id));
+  for (const key of ["lines", "data", "items", "price", "plan", "pricing", "price_details"]) {
+    collectStripeProducts(resource[key], products, depth + 1);
+  }
+  return products;
+}
 
 type StripeBalanceTransaction = {
   id: string;
@@ -126,6 +191,8 @@ type KiwifyProduct = {
 };
 
 type KiwifyPayment = {
+  product_base_price?: number | null;
+  product_base_currency?: string | null;
   charge_amount?: number | null;
   charge_currency?: string | null;
   net_amount?: number | null;
@@ -144,6 +211,7 @@ type KiwifySale = {
   net_amount?: number | null;
   product?: { id?: string; name?: string } | null;
   payment?: KiwifyPayment | null;
+  revenue_partners?: Array<{ account_id?: string; net_amount_split?: number | null }>;
 };
 
 type KiwifyListResponse<T> = {
@@ -490,6 +558,7 @@ function addDaily(
 }
 
 function convertToBrl(amount: number, currency: string) {
+  if (!Number.isFinite(amount)) return null;
   const normalized = currency.toUpperCase();
   if (normalized === "BRL") return amount;
   if (normalized === "USD") return amount * usdBrlRate();
@@ -753,7 +822,10 @@ async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> 
           Authorization: `Bearer ${token}`,
           "x-kiwify-account-id": credentials.accountId
         });
-        const pageData = Array.isArray(payload.data) ? payload.data : [];
+        if (!Array.isArray(payload.data) || payload.data.some(sale => !sale.id)) {
+          throw new Error("Kiwify returned an invalid sales list");
+        }
+        const pageData = payload.data;
         sales.push(...pageData);
         if (pageData.length < 100) break;
         if (page === 50) {
@@ -800,19 +872,22 @@ async function loadKiwifySource(period: FinancialPeriod): Promise<SourceResult> 
     }
 
     const payment = sale.payment || {};
-    const grossCurrency = (payment.charge_currency || sale.currency || "BRL").toUpperCase();
-    const netCurrency = (
-      payment.settlement_currency || sale.currency || grossCurrency
-    ).toUpperCase();
+    // Buyer installment interest is not producer revenue. Settlement amount
+    // can include that interest and must never stand in for producer net.
+    const grossCurrency = (payment.product_base_currency || "").toUpperCase();
+    const netCurrency = (sale.currency || payment.settlement_currency || "").toUpperCase();
     const feeCurrency = (payment.fee_currency || netCurrency).toUpperCase();
-    const grossMinor = Number(payment.charge_amount ?? sale.net_amount ?? 0);
-    const netMinor = Number(
-      payment.settlement_amount ?? payment.net_amount ?? sale.net_amount ?? 0
-    );
-    const feeMinor = Number(payment.fee ?? 0);
-    const gross = convertToBrl(stripeMajorAmount(grossMinor, grossCurrency), grossCurrency);
-    const settledNet = convertToBrl(stripeMajorAmount(netMinor, netCurrency), netCurrency);
-    const providerFee = convertToBrl(stripeMajorAmount(feeMinor, feeCurrency), feeCurrency);
+    const ownShares = (sale.revenue_partners || []).filter(partner => partner.account_id === credentials.accountId);
+    if (ownShares.length > 1) throw new Error("Kiwify returned ambiguous producer shares");
+    const grossMinor = payment.product_base_price;
+    const netMinor = ownShares.length === 1 ? ownShares[0].net_amount_split : sale.net_amount ?? payment.net_amount;
+    const feeMinor = payment.fee;
+    if (![grossMinor, netMinor, feeMinor].every(value => typeof value === "number" && Number.isFinite(value) && value >= 0)) {
+      throw new Error("Kiwify producer amounts are incomplete");
+    }
+    const gross = convertToBrl(stripeMajorAmount(grossMinor!, grossCurrency), grossCurrency);
+    const settledNet = convertToBrl(stripeMajorAmount(netMinor!, netCurrency), netCurrency);
+    const providerFee = convertToBrl(stripeMajorAmount(feeMinor!, feeCurrency), feeCurrency);
     if (gross === null || settledNet === null || providerFee === null) {
       hasUnconvertedCurrencies = true;
       continue;
@@ -864,13 +939,15 @@ async function safeKiwifySource(period: FinancialPeriod) {
   }
 }
 
-async function stripeTransactionMatchesSite(
+async function stripeTransactionScope(
   transaction: StripeBalanceTransaction,
   secretKey: string,
   index: SiteSalesIndex,
-  resourceRequests: Map<string, Promise<StripeResource | null>>
+  resourceRequests: Map<string, Promise<StripeResource | null>>,
+  coachingProducts: Set<string>
 ) {
-  if (resourceMatchesSite(transaction.source, index.stripeIdentifiers, index)) return true;
+  if (resourceMatchesSite(transaction.source, index.stripeIdentifiers, index)) return "site";
+  const productIds = collectStripeProducts(transaction.source);
 
   const pending = Array.from(collectStripeReferences(transaction.source));
   const checked = new Set<string>();
@@ -890,16 +967,46 @@ async function stripeTransactionMatchesSite(
     }
     const resource = await request;
     if (!resource || resource.id !== id) throw new Error("Stripe returned an invalid resource");
-    if (resourceMatchesSite(resource, index.stripeIdentifiers, index)) return true;
+    if (resourceMatchesSite(resource, index.stripeIdentifiers, index)) return "site";
+    if (recordValue(resource.lines)?.has_more === true) {
+      throw new Error("Stripe invoice lines are incomplete");
+    }
+    collectStripeProducts(resource, productIds);
     for (const reference of collectStripeReferences(resource)) {
       if (!checked.has(reference)) pending.push(reference);
+    }
+    // Newer Stripe versions link invoices through Invoice Payments instead of
+    // charge.invoice. Resolve this bridge only for still-unclassified payments.
+    if (id.startsWith("pi_") && coachingProducts.size > 0 && productIds.size === 0) {
+      const cacheKey = `invoice-payments:${id}`;
+      let linksRequest = resourceRequests.get(cacheKey);
+      if (!linksRequest) {
+        const url = new URL("https://api.stripe.com/v1/invoice_payments");
+        url.searchParams.set("payment[type]", "payment_intent");
+        url.searchParams.set("payment[payment_intent]", id);
+        url.searchParams.set("status", "paid");
+        url.searchParams.set("limit", "100");
+        linksRequest = requestJson<StripeResource>(url, { Authorization: `Bearer ${secretKey}` });
+        resourceRequests.set(cacheKey, linksRequest);
+      }
+      const links = await linksRequest;
+      if (!Array.isArray(links?.data) || links.has_more) throw new Error("Stripe invoice payment links are incomplete");
+      for (const link of links.data) {
+        const invoice = recordValue(link)?.invoice;
+        const invoiceId = typeof invoice === "string" ? invoice : recordValue(invoice)?.id;
+        if (typeof invoiceId !== "string" || !/^in_[a-zA-Z0-9]+$/.test(invoiceId)) {
+          throw new Error("Stripe returned an invalid invoice payment link");
+        }
+        if (!checked.has(invoiceId)) pending.push(invoiceId);
+      }
     }
   }
 
   if (pending.some((id) => !checked.has(id))) {
     throw new Error("Stripe resource classification exceeded the safety limit");
   }
-  return false;
+  return productIds.size > 0 && [...productIds].every(id => coachingProducts.has(id))
+    ? "coaching" : "unclassified";
 }
 
 async function loadStripeSource(
@@ -911,6 +1018,8 @@ async function loadStripeSource(
   const index = siteSalesIndex(orders);
 
   const transactions: StripeBalanceTransaction[] = [];
+  const classifications = externalClassifications();
+  const externalReceipts = emptyExternalReceipts();
   let startingAfter: string | null = null;
   for (let page = 0; page < 50; page += 1) {
     const url = new URL("https://api.stripe.com/v1/balance_transactions");
@@ -925,7 +1034,8 @@ async function loadStripeSource(
     if (!Array.isArray(payload.data)) throw new Error("Stripe returned an invalid transaction list");
     const pageData = payload.data;
     transactions.push(...pageData);
-    if (!payload.has_more || pageData.length === 0) break;
+    if (!payload.has_more) break;
+    if (pageData.length === 0) throw new Error("Stripe returned an incomplete transaction list");
     startingAfter = pageData.at(-1)?.id || null;
     if (page === 49) throw new Error("Stripe report exceeded the pagination safety limit");
   }
@@ -951,17 +1061,17 @@ async function loadStripeSource(
     ["charge", "payment", "refund", "payment_refund", "dispute", "payment_dispute", "dispute_reversal"]
       .includes(transaction.reporting_category || transaction.type || "")
   );
-  const siteMatches = new Map<string, boolean>();
+  const scopes = new Map<string, "site" | "coaching" | "unclassified">();
   // Limit provider lookups; an unavailable lookup must trigger the explicit
   // partial/local fallback, never silently classify a payment as external.
   for (let offset = 0; offset < reportableTransactions.length; offset += 4) {
     const matches = await Promise.all(
       reportableTransactions.slice(offset, offset + 4).map(async (transaction) => [
         transaction.id,
-        await stripeTransactionMatchesSite(transaction, secretKey, index, resourceRequests)
+        await stripeTransactionScope(transaction, secretKey, index, resourceRequests, classifications.stripeProducts)
       ] as const)
     );
-    for (const [id, matchesSite] of matches) siteMatches.set(id, matchesSite);
+    for (const [id, scope] of matches) scopes.set(id, scope);
   }
 
   for (const transaction of uniqueTransactions) {
@@ -971,17 +1081,16 @@ async function loadStripeSource(
     const isDispute = category === "dispute" || category === "payment_dispute";
     const isDisputeReversal = category === "dispute_reversal";
     if (!isPayment && !isRefund && !isDispute && !isDisputeReversal) continue;
-    if (!siteMatches.get(transaction.id)) {
-      excludedTransactionCount += 1;
-      continue;
-    }
+    const scope = scopes.get(transaction.id) || "unclassified";
+    if (scope !== "site") excludedTransactionCount += 1;
 
     const currency = (transaction.currency || "BRL").toUpperCase();
     const amount = convertToBrl(stripeMajorAmount(transaction.amount || 0, currency), currency);
     const fee = convertToBrl(stripeMajorAmount(transaction.fee || 0, currency), currency);
     const net = convertToBrl(stripeMajorAmount(transaction.net || 0, currency), currency);
     if (amount === null || fee === null || net === null) {
-      hasUnconvertedCurrencies = true;
+      if (scope === "site") hasUnconvertedCurrencies = true;
+      else externalReceipts.hasUnconvertedCurrencies = true;
       continue;
     }
 
@@ -990,6 +1099,10 @@ async function loadStripeSource(
     const gross = isPayment && amount > 0 ? amount : 0;
     const refund = isRefund || isDispute ? Math.abs(Math.min(0, amount)) : 0;
     const count = gross > 0 ? 1 : 0;
+    if (scope !== "site") {
+      addExternalReceipt(externalReceipts[scope], gross, net, refund, fee, count);
+      continue;
+    }
     grossRevenueBrl += gross;
     refundsBrl += refund;
     feesBrl += fee;
@@ -1010,10 +1123,11 @@ async function loadStripeSource(
     excludedTransactionCount,
     detail:
       excludedTransactionCount > 0
-        ? `Somente vendas vinculadas ao site; ${excludedTransactionCount} movimentação(ões) externa(s) ignorada(s)`
+        ? `Vendas vinculadas ao site; ${excludedTransactionCount} movimentação(ões) fora do checkout detalhada(s) separadamente`
         : "Somente vendas vinculadas ao site, incluindo renovações",
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
+    externalReceipts,
     daily
   };
 }
@@ -1045,9 +1159,11 @@ async function loadMercadoPagoSource(
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
   if (!accessToken) throw new Error("Mercado Pago token is not configured");
   const index = siteSalesIndex(orders);
+  const classifications = externalClassifications();
+  const externalReceipts = emptyExternalReceipts();
 
   const payments: MercadoPagoPayment[] = [];
-  for (let offset = 0; offset < 5000; offset += 100) {
+  for (let offset = 0; offset < 5000;) {
     const url = new URL("https://api.mercadopago.com/v1/payments/search");
     url.searchParams.set("sort", "date_approved");
     url.searchParams.set("criteria", "asc");
@@ -1059,11 +1175,19 @@ async function loadMercadoPagoSource(
     const payload = await requestJson<MercadoPagoSearchResponse>(url, {
       Authorization: `Bearer ${accessToken}`
     });
-    const pageData = Array.isArray(payload.results) ? payload.results : [];
+    if (!Array.isArray(payload.results) || !Number.isFinite(payload.paging?.total)) {
+      throw new Error("Mercado Pago returned an invalid payment list");
+    }
+    const pageData = payload.results;
+    if (pageData.some(payment => payment.id === undefined || payment.id === null)) {
+      throw new Error("Mercado Pago returned a payment without an ID");
+    }
     payments.push(...pageData);
-    const total = Number(payload.paging?.total || 0);
-    if (pageData.length < 100 || offset + pageData.length >= total) break;
-    if (offset === 4900) throw new Error("Mercado Pago report exceeded the pagination safety limit");
+    const total = Number(payload.paging?.total);
+    offset += pageData.length;
+    if (offset >= total) break;
+    if (pageData.length === 0) throw new Error("Mercado Pago returned an incomplete payment list");
+    if (offset >= 5000) throw new Error("Mercado Pago report exceeded the pagination safety limit");
   }
 
   const daily = new Map<string, SourceDailyValue>();
@@ -1090,10 +1214,12 @@ async function loadMercadoPagoSource(
     if (!payment.date_approved || !["approved", "refunded", "charged_back"].includes(payment.status || "")) {
       continue;
     }
-    if (!mercadoPagoPaymentMatchesSite(payment, index)) {
-      excludedTransactionCount += 1;
-      continue;
-    }
+    const approvedAt = new Date(payment.date_approved);
+    if (!Number.isFinite(approvedAt.getTime())) throw new Error("Invalid payment approval date");
+    if (approvedAt < period.start || approvedAt >= period.end) continue;
+    const scope = mercadoPagoPaymentMatchesSite(payment, index) ? "site"
+      : classifications.mercadoPago[String(payment.id)] || "unclassified";
+    if (scope !== "site") excludedTransactionCount += 1;
     const currency = (payment.currency_id || "BRL").toUpperCase();
     const gross = convertToBrl(Number(payment.transaction_amount || 0), currency);
     const refund = convertToBrl(Number(payment.transaction_amount_refunded || 0), currency);
@@ -1109,7 +1235,12 @@ async function loadMercadoPagoSource(
           : null
         : convertToBrl(Number(providerNet), currency);
     if (gross === null || refund === null || fee === null || net === null) {
-      hasUnconvertedCurrencies = true;
+      if (scope === "site") hasUnconvertedCurrencies = true;
+      else externalReceipts.hasUnconvertedCurrencies = true;
+      continue;
+    }
+    if (scope !== "site") {
+      addExternalReceipt(externalReceipts[scope], gross, net, refund, fee, 1);
       continue;
     }
     const key = dateKeyInReportingZone(new Date(payment.date_approved));
@@ -1133,10 +1264,11 @@ async function loadMercadoPagoSource(
     excludedTransactionCount,
     detail:
       excludedTransactionCount > 0
-        ? `Somente vendas vinculadas ao site; ${excludedTransactionCount} pagamento(s) externo(s) ignorado(s)`
+        ? `Vendas vinculadas ao site; ${excludedTransactionCount} entrada(s) fora do checkout detalhada(s) separadamente`
         : "Somente vendas vinculadas ao site, incluindo renovações",
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,
+    externalReceipts,
     daily
   };
 }
