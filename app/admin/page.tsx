@@ -2,10 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CircleDollarSign, CreditCard, ShieldCheck } from "lucide-react";
 import { AdminDateRangeFilter } from "@/components/admin-date-range-filter";
+import { AdminExternalReceipts } from "@/components/admin-external-receipts";
 import { AdminLiveVisitors } from "@/components/admin-live-visitors";
 import { AdminMonthlyExpenses } from "@/components/admin-monthly-expenses";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
+import { summarizeFunnel } from "@/lib/checkout/analytics-funnel";
 import { listActiveSitePresence, listAnalyticsEvents, listOrders } from "@/lib/checkout/db";
 import { getMonthlyExpenseMetrics } from "@/lib/checkout/expense-reporting";
 import {
@@ -102,8 +104,9 @@ export default async function AdminDashboardPage({
       ? financialPeriod.startKey.slice(0, 7)
       : currentMonthPeriod.startKey.slice(0, 7);
   const [ordersData, analyticsData, presenceData, recurringMetrics, expenseMetrics] = await Promise.all([
-    loadAdminData("orders", () => listOrders({}), [] as Order[]),
-    loadAdminData("analytics", () => listAnalyticsEvents(financialPeriod.start), []),
+    loadAdminData("orders", () => listOrders({}, { complete: true }), [] as Order[]),
+    loadAdminData("analytics", () => listAnalyticsEvents(financialPeriod.start,
+      new Date(Math.min(financialPeriod.end.getTime(), now.getTime()))), []),
     loadAdminData(
       "presence",
       () => listActiveSitePresence(new Date(Date.now() - 2 * 60 * 1000)),
@@ -145,26 +148,12 @@ export default async function AdminDashboardPage({
   const monthConvertedOrders = monthOrders.filter((order) => order.status === "paid");
   const monthConversion = monthOrders.length > 0
     ? (monthConvertedOrders.length / monthOrders.length) * 100
-    : 0;
-  const trackingStart = selectedAnalyticsEvents.length > 0
-    ? new Date(
-        Math.min(...selectedAnalyticsEvents.map((event) => new Date(event.created_at).getTime()))
-      )
     : null;
-  const trackedOrders = trackingStart
-    ? monthOrders.filter((order) => new Date(order.created_at) >= trackingStart)
-    : [];
-  const trackedPaidOrders = trackedOrders.filter((order) => order.status === "paid");
-  const eventCount = (type: "product_view" | "checkout_click" | "checkout_view" | "checkout_submit" | "checkout_error") =>
-    selectedAnalyticsEvents.filter((event) => event.type === type).length;
-  const productViews = eventCount("product_view");
-  const checkoutClicks = eventCount("checkout_click");
-  const checkoutViews = eventCount("checkout_view");
-  const checkoutSubmits = eventCount("checkout_submit");
-  const checkoutErrors = eventCount("checkout_error");
-  const viewToSaleConversion = productViews > 0
-    ? (trackedPaidOrders.length / productViews) * 100
-    : 0;
+  const funnel = summarizeFunnel(selectedAnalyticsEvents, monthOrders);
+  const funnelAvailable = ordersData.available && analyticsData.available;
+  const formatConversion = (value: number | null) =>
+    funnelAvailable && value !== null ? `${value.toFixed(1)}%` : "—";
+  const stageValue = (value: number) => analyticsData.available ? value : "—";
   const grossRevenueDelta = comparisonMetrics
     ? percentDelta(financialMetrics.grossRevenueBrl, comparisonMetrics.grossRevenueBrl)
     : null;
@@ -172,10 +161,9 @@ export default async function AdminDashboardPage({
   const localProgramSalesBrl = monthPaidOrders
     .filter((order) => productTypeById.get(order.product_id) === "training_program")
     .reduce((total, order) => total + orderValueBrl(order), 0);
-  const kiwifyProgramSalesBrl = kiwifySource?.state === "ready"
-    ? kiwifySource.grossRevenueBrl
-    : 0;
-  const programSalesBrl = localProgramSalesBrl + kiwifyProgramSalesBrl;
+  const courseSalesBrl = kiwifySource?.state === "ready" && !kiwifySource.hasUnconvertedCurrencies
+    ? kiwifySource.grossRevenueBrl : null;
+  const programSalesBrl = localProgramSalesBrl;
   const combinedMonthlyRevenueBrl =
     financialPeriod.isCurrentMonth && recurringMetrics.state === "ready" &&
     financialMetrics.state === "ready" && ordersData.available &&
@@ -229,22 +217,13 @@ export default async function AdminDashboardPage({
       const productEvents = selectedAnalyticsEvents.filter(
         (event) => event.product_id === product.id
       );
-      const productOrders = trackedOrders.filter(
+      const productOrders = monthOrders.filter(
         (order) => order.product_id === product.id
       );
-      const views = productEvents.filter((event) => event.type === "product_view").length;
-      const sales = productOrders.filter((order) => order.status === "paid").length;
       return {
         id: product.id,
         name: product.name,
-        views,
-        clicks: productEvents.filter((event) => event.type === "checkout_click").length,
-        checkouts: productEvents.filter((event) => event.type === "checkout_view").length,
-        submits: productEvents.filter((event) => event.type === "checkout_submit").length,
-        errors: productEvents.filter((event) => event.type === "checkout_error").length,
-        starts: productOrders.length,
-        sales,
-        conversion: views > 0 ? (sales / views) * 100 : 0
+        ...summarizeFunnel(productEvents, productOrders)
       };
     })
     .filter((row) => row.views > 0 || row.clicks > 0 || row.checkouts > 0 || row.starts > 0)
@@ -252,19 +231,19 @@ export default async function AdminDashboardPage({
 
   const localeRows = (["pt", "en"] as const).map((locale) => {
     const localeEvents = selectedAnalyticsEvents.filter((event) => event.locale === locale);
-    const localeOrders = trackedOrders.filter(
+    const localeOrders = monthOrders.filter(
       (order) => (order.metadata.checkout_locale === "en" ? "en" : "pt") === locale
     );
     return {
       locale,
-      views: localeEvents.filter((event) => event.type === "product_view").length,
+      views: summarizeFunnel(localeEvents, localeOrders).views,
       starts: localeOrders.length,
       sales: localeOrders.filter((order) => order.status === "paid").length
     };
   });
 
   const countryRows = Array.from(
-    trackedOrders.reduce((map, order) => {
+    monthOrders.reduce((map, order) => {
       const country = order.customer_country || "—";
       const current = map.get(country) || { country, starts: 0, sales: 0 };
       current.starts += 1;
@@ -458,8 +437,15 @@ export default async function AdminDashboardPage({
               </p>
             </div>
             <div className="rounded-md border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-bold uppercase text-white/45">Programas no mês</p>
-              <p className="mt-2 text-xl font-black">{formatBrl(programSalesBrl)}</p>
+              <p className="text-xs font-bold uppercase text-white/45">Programas no período</p>
+              <p className="mt-2 text-xl font-black">{ordersData.available ? formatBrl(programSalesBrl) : "—"}</p>
+              <p className="mt-1 text-xs text-white/55">Pedidos locais pagos · sem o curso</p>
+            </div>
+            <div className="rounded-md border border-white/10 bg-white/5 p-4 sm:col-span-2">
+              <p className="text-xs font-bold uppercase text-white/45">Curso · Preparador PRO</p>
+              <p className="mt-2 text-xl font-black">{courseSalesBrl === null ? "—" : formatBrl(courseSalesBrl)}</p>
+              <p className="mt-1 text-xs text-white/55">Bruto sem juros do comprador · líquido {courseSalesBrl === null ? "—" : formatBrl(kiwifySource!.netRevenueBrl)}</p>
+              <p className="mt-1 text-xs text-white/55">Kiwify no período · separado do indicador combinado</p>
             </div>
           </div>
         </div>
@@ -521,6 +507,8 @@ export default async function AdminDashboardPage({
       </div>
 
       <div className="mt-5">
+        <AdminExternalReceipts metrics={financialMetrics} ordersAvailable={ordersData.available} />
+        <p className="mt-4 text-xs text-graphite/55">O saldo abaixo usa apenas a receita líquida vinculada ao site e ao curso; a assessoria externa é apresentada separadamente acima.</p>
         <AdminMonthlyExpenses
           initialData={expenseMetrics}
           confirmedNetRevenueBrl={confirmedMonthNetRevenueBrl}
@@ -532,54 +520,54 @@ export default async function AdminDashboardPage({
           <div>
             <h2 className="text-lg font-bold text-ink">Funil comercial no período</h2>
             <p className="mt-1 text-sm text-graphite/60">
-              Fonte: pedidos criados e confirmações recebidas pelos webhooks.
+              Etapas por sessão e produto; pedidos locais criados no período e seu status atual.
             </p>
           </div>
           <p className="rounded-full bg-smoke px-3 py-1 text-xs font-bold text-graphite/70">
-            {monthConversion.toFixed(1)}% dos pedidos locais convertidos
+            {ordersData.available && monthConversion !== null ? `${monthConversion.toFixed(1)}%` : "—"} dos pedidos locais pagos
           </p>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <div className="rounded-md bg-ink p-4 text-white">
             <p className="text-xs font-bold uppercase text-white/55">Visita no produto</p>
-            <p className="mt-2 text-3xl font-black">{productViews}</p>
+            <p className="mt-2 text-3xl font-black">{stageValue(funnel.views)}</p>
             <p className="mt-2 text-xs text-white/60">Sessões únicas por produto</p>
           </div>
           <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
             <p className="text-xs font-bold uppercase text-graphite/55">Clique em comprar</p>
-            <p className="mt-2 text-3xl font-black">{checkoutClicks}</p>
-            <p className="mt-2 text-xs text-graphite/60">{productViews > 0 ? ((checkoutClicks / productViews) * 100).toFixed(1) : "0.0"}% das visitas</p>
+            <p className="mt-2 text-3xl font-black">{stageValue(funnel.clicks)}</p>
+            <p className="mt-2 text-xs text-graphite/60">Sessões com clique</p>
           </div>
           <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
             <p className="text-xs font-bold uppercase text-graphite/55">Abriu checkout</p>
-            <p className="mt-2 text-3xl font-black">{checkoutViews}</p>
+            <p className="mt-2 text-3xl font-black">{stageValue(funnel.checkouts)}</p>
             <p className="mt-2 text-xs text-graphite/60">Página carregada</p>
           </div>
           <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
             <p className="text-xs font-bold uppercase text-graphite/55">Tentou pagar</p>
-            <p className="mt-2 text-3xl font-black">{checkoutSubmits}</p>
+            <p className="mt-2 text-3xl font-black">{stageValue(funnel.submits)}</p>
             <p className="mt-2 text-xs text-graphite/60">Formulário enviado</p>
           </div>
           <div className="rounded-md border border-red-200 bg-red-50 p-4 text-ink">
             <p className="text-xs font-bold uppercase text-red-700">Erro no checkout</p>
-            <p className="mt-2 text-3xl font-black">{checkoutErrors}</p>
+            <p className="mt-2 text-3xl font-black">{stageValue(funnel.errors)}</p>
             <p className="mt-2 text-xs text-red-700/70">Falha antes do gateway</p>
           </div>
           <div className="rounded-md border border-ink/10 bg-smoke p-4 text-ink">
             <p className="text-xs font-bold uppercase text-graphite/55">Iniciou pagamento</p>
-            <p className="mt-2 text-3xl font-black">{trackedOrders.length}</p>
+            <p className="mt-2 text-3xl font-black">{ordersData.available ? monthOrders.length : "—"}</p>
             <p className="mt-2 text-xs text-graphite/60">Pedido criado no gateway</p>
           </div>
           <div className="rounded-md bg-turf p-4 text-white">
             <p className="text-xs font-bold uppercase text-white/70">Venda confirmada</p>
-            <p className="mt-2 text-3xl font-black">{trackedPaidOrders.length}</p>
-            <p className="mt-2 text-xs text-white/75">{viewToSaleConversion.toFixed(1)}% das visitas rastreadas</p>
+            <p className="mt-2 text-3xl font-black">{ordersData.available ? monthConvertedOrders.length : "—"}</p>
+            <p className="mt-2 text-xs text-white/75">{formatConversion(funnel.conversion)} de conversão mensurável</p>
           </div>
         </div>
         <p className="mt-4 text-xs text-graphite/55">
-          {trackingStart
-            ? `Janela rastreada desde ${trackingStart.toLocaleString("pt-BR")}.`
-            : "A coleta começa após a publicação desta versão; ainda não há visitas rastreadas."}
+          {funnelAvailable
+            ? `Conversão: ${funnel.convertedSessions} sessões com venda entre ${funnel.measurableViews} visitas com consentimento. ${funnel.unlinkedSales} venda(s) sem visita vinculada ficam fora da taxa. Etapas podem incluir acessos diretos; não representam uma sequência obrigatória. Eventos antigos não coletados não são reconstruídos.`
+            : "Conversão indisponível: é necessário carregar os pedidos e o histórico completo de eventos."}
         </p>
       </section>
 
@@ -595,7 +583,7 @@ export default async function AdminDashboardPage({
             <tbody>
               {productFunnelRows.map((row) => (
                 <tr className="border-t border-ink/10" key={row.id}>
-                  <td className="px-4 py-3 font-bold text-ink">{row.name}</td><td className="px-4 py-3">{row.views}</td><td className="px-4 py-3">{row.clicks}</td><td className="px-4 py-3">{row.checkouts}</td><td className="px-4 py-3">{row.submits}</td><td className="px-4 py-3">{row.errors}</td><td className="px-4 py-3">{row.starts}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3 font-bold">{row.conversion.toFixed(1)}%</td>
+                  <td className="px-4 py-3 font-bold text-ink">{row.name}</td><td className="px-4 py-3">{stageValue(row.views)}</td><td className="px-4 py-3">{stageValue(row.clicks)}</td><td className="px-4 py-3">{stageValue(row.checkouts)}</td><td className="px-4 py-3">{stageValue(row.submits)}</td><td className="px-4 py-3">{stageValue(row.errors)}</td><td className="px-4 py-3">{ordersData.available ? row.starts : "—"}</td><td className="px-4 py-3">{ordersData.available ? row.sales : "—"}</td><td className="px-4 py-3 font-bold" title={`${row.convertedSessions} de ${row.measurableViews} sessões com consentimento`}>{formatConversion(row.conversion)}</td>
                 </tr>
               ))}
               {productFunnelRows.length === 0 ? <tr><td className="px-4 py-8 text-center text-graphite/60" colSpan={9}>Aguardando as primeiras visitas rastreadas.</td></tr> : null}

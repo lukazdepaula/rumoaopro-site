@@ -38,6 +38,32 @@ const linked = id => ({ id, metadata: { product_id: product.id } });
 const finance = fetch => load('lib/checkout/financial-reporting.ts', fetch, { STRIPE_SECRET_KEY: 'fixture' });
 const stripeSource = async api => (await api.getFinancialPeriodMetrics(period, [])).sources.find(s => s.id === 'stripe');
 
+test('Kiwify uses base price and producer net, excluding buyer interest and refunded sales', async () => {
+  const sale={id:'sale_paid',status:'paid',product:{id:'course_fixture'},approved_date:'2026-09-20T12:00:00Z',
+    currency:'BRL',net_amount:18000,payment:{product_base_price:20000,product_base_currency:'BRL',
+      charge_amount:24000,charge_currency:'BRL',settlement_amount:24000,settlement_currency:'BRL',
+      net_amount:18000,fee:2000,fee_currency:'BRL'}};
+  const env={KIWIFY_CLIENT_ID:'fixture',KIWIFY_CLIENT_SECRET:'fixture',KIWIFY_ACCOUNT_ID:'own_fixture',
+    KIWIFY_PREPARADOR_PRO_PRODUCT_ID:'course_fixture'};
+  let mode='paid';
+  const api=load('lib/checkout/financial-reporting.ts',async url=>{
+    if(String(url).endsWith('/oauth/token'))return json({access_token:'fixture_token'});
+    assert.equal(url.searchParams.get('view_full_sale_details'),'true');
+    if(mode==='malformed')return json({});
+    if(mode==='missing')return json({data:[{...sale,net_amount:null,payment:{...sale.payment,net_amount:null}}]});
+    if(mode==='split')return json({data:[{...sale,revenue_partners:[{account_id:'own_fixture',net_amount_split:9000}]}]});
+    return json({data:[sale,sale,{...sale,id:'sale_refunded',status:'refunded'}]});
+  },env);
+  const source=async()=> (await api.getFinancialPeriodMetrics(period,[],{bypassCache:true})).sources.find(s=>s.id==='kiwify');
+  const paid=await source();
+  assert.equal(paid.state,'ready');assert.equal(paid.paymentCount,1);
+  assert.equal(paid.grossRevenueBrl,200);assert.equal(paid.netRevenueBrl,180);
+  assert.equal(paid.feesBrl,20);assert.equal(paid.refundsBrl,200);
+  mode='split';assert.equal((await source()).netRevenueBrl,90);
+  mode='missing';assert.equal((await source()).state,'error');
+  mode='malformed';assert.equal((await source()).state,'error');
+});
+
 test('Stripe reconciles linked payments, refunds and genuine external transactions without duplicates', async () => {
   const paid = transaction('txn_paid', linked('ch_paid'));
   const api = finance(async url => {
@@ -58,6 +84,78 @@ test('Stripe reconciles linked payments, refunds and genuine external transactio
   assert.equal(result.feesBrl, 2);
   assert.equal(result.refundsBrl, 10);
   assert.equal(result.excludedTransactionCount, 1);
+  assert.equal(result.externalReceipts.unclassified.grossRevenueBrl,49.9);
+});
+
+test('confirmed external coaching is separate from site sales and unidentified payments', async () => {
+  const coaching={id:'in_external',lines:{data:[{pricing:{price_details:{product:'prod_coaching'}}}]}};
+  const api=load('lib/checkout/financial-reporting.ts',async url=>{
+    if(url.pathname.endsWith('/balance_transactions'))return json({data:[
+      transaction('txn_site',{...coaching,id:'in_site',metadata:{product_id:product.id}}),
+      transaction('txn_external',coaching),
+      transaction('txn_refund',coaching,{reporting_category:'refund',amount:-1000,fee:0,net:-1000}),
+      transaction('txn_unknown',{id:'ch_unknown',metadata:{}})
+    ],has_more:false});
+    if(url.pathname==='/v1/charges/ch_unknown')return json({id:'ch_unknown'});
+    throw Error('Unexpected lookup '+url.pathname);
+  },{STRIPE_SECRET_KEY:'fixture',ADMIN_FINANCE_STRIPE_COACHING_PRODUCT_IDS:'prod_coaching'});
+  const result=await stripeSource(api);
+  assert.equal(result.state,'ready');
+  assert.equal(result.paymentCount,1);
+  assert.equal(result.externalReceipts.coaching.paymentCount,1);
+  assert.equal(result.externalReceipts.coaching.grossRevenueBrl,49.9);
+  assert.equal(result.externalReceipts.coaching.netRevenueBrl,37.9);
+  assert.equal(result.externalReceipts.coaching.refundsBrl,10);
+  assert.equal(result.externalReceipts.unclassified.paymentCount,1);
+});
+
+test('external coaching resolves the Invoice Payments bridge and never classifies a mixed invoice', async () => {
+  let mode='coaching';
+  const api=load('lib/checkout/financial-reporting.ts',async url=>{
+    if(url.pathname.endsWith('/balance_transactions'))return json({data:[transaction('txn_bridge',{id:'ch_bridge',payment_intent:'pi_bridge'})],has_more:false});
+    if(url.pathname==='/v1/payment_intents/pi_bridge')return json({id:'pi_bridge',latest_charge:'ch_bridge'});
+    if(url.pathname==='/v1/invoice_payments'){
+      assert.equal(url.searchParams.get('payment[payment_intent]'),'pi_bridge');
+      assert.equal(url.searchParams.get('payment[type]'),'payment_intent');
+      return json({data:[{invoice:'in_bridge'}],has_more:mode==='incomplete'});
+    }
+    if(url.pathname==='/v1/invoices/in_bridge')return json({id:'in_bridge',lines:{has_more:mode==='partial_lines',data:[
+      {pricing:{price_details:{product:'prod_coaching'}}},...(mode==='mixed'?[{price:{product:'prod_other'}}]:[])]}});
+    throw Error('Unexpected lookup '+url.pathname);
+  },{STRIPE_SECRET_KEY:'fixture',ADMIN_FINANCE_STRIPE_COACHING_PRODUCT_IDS:'prod_coaching'});
+  const source=async()=> (await api.getFinancialPeriodMetrics(period,[],{bypassCache:true})).sources.find(s=>s.id==='stripe');
+  assert.equal((await source()).externalReceipts.coaching.paymentCount,1);
+  mode='mixed';assert.equal((await source()).externalReceipts.unclassified.paymentCount,1);
+  mode='incomplete';assert.equal((await source()).state,'fallback');
+  mode='partial_lines';assert.equal((await source()).state,'fallback');
+});
+
+test('MP classifications never double count site receipts, own-account transfers or duplicate rows', async () => {
+  const payment=(id,extra={})=>({id,status:'approved',date_approved:'2026-09-28T12:00:00Z',currency_id:'BRL',
+    transaction_amount:300,transaction_amount_refunded:0,transaction_details:{net_received_amount:300},...extra});
+  const data=[payment(1,{metadata:{product_id:product.id}}),payment(2),payment(2),payment(3),payment(4),
+    payment(5,{date_approved:period.end.toISOString()})];
+  const api=load('lib/checkout/financial-reporting.ts',async url=>{
+    const offset=Number(url.searchParams.get('offset'));return json({results:data.slice(offset,offset+2),paging:{total:data.length}});
+  },{MERCADO_PAGO_ACCESS_TOKEN:'fixture',ADMIN_FINANCE_MP_CLASSIFICATIONS:JSON.stringify({'1':'coaching','2':'coaching','3':'internal_transfer'})});
+  const result=(await api.getFinancialPeriodMetrics(period,[])).sources.find(s=>s.id==='mercado_pago');
+  assert.equal(result.state,'ready');assert.equal(result.grossRevenueBrl,300);
+  assert.equal(result.externalReceipts.coaching.grossRevenueBrl,300);
+  assert.equal(result.externalReceipts.internal_transfer.netRevenueBrl,300);
+  assert.equal(result.externalReceipts.unclassified.paymentCount,1);
+  assert.equal(result.excludedTransactionCount,3);
+});
+
+test('invalid external classification or incomplete MP responses produce explicit fallback', async () => {
+  for(const [env,body] of [
+    [{ADMIN_FINANCE_MP_CLASSIFICATIONS:'{"2":"guess"}'},{results:[],paging:{total:0}}],
+    [{},{results:[],paging:{total:10}}],
+    [{},{}]
+  ]){
+    const api=load('lib/checkout/financial-reporting.ts',async()=>json(body),{MERCADO_PAGO_ACCESS_TOKEN:'fixture',...env});
+    const source=(await api.getFinancialPeriodMetrics(period,[])).sources.find(s=>s.id==='mercado_pago');
+    assert.equal(source.state,'fallback');assert.equal(source.externalReceipts,undefined);
+  }
 });
 
 test('Stripe resource errors produce explicit fallback, not false external exclusions', async () => {

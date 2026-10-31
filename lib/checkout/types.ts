@@ -52,6 +52,7 @@ export type AnalyticsEvent = {
   country: string | null;
   payment_method: CheckoutPaymentMethod | null;
   error_code: string | null;
+  marketing_consent: "granted" | "denied" | null;
   created_at: string;
 };
 

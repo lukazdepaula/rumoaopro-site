@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { checkoutProducts } from "@/lib/checkout/products";
+import { readReportingPages } from "@/lib/checkout/reporting-pagination";
 import type {
   AccessStatus,
   AnalyticsEvent,
@@ -1495,6 +1496,7 @@ export async function recordWebhookEvent(
 
 function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent | null {
   const payload = parseMetadata(row.payload);
+  const attribution = parseMetadata(payload.attribution);
   const type = payload.type;
 
   if (
@@ -1530,18 +1532,22 @@ function normalizeAnalyticsEvent(row: Record<string, unknown>): AnalyticsEvent |
         ? payload.payment_method
         : null,
     error_code: typeof payload.error_code === "string" ? payload.error_code : null,
+    marketing_consent: attribution.consent === "granted" || attribution.consent === "denied"
+      ? attribution.consent : null,
     created_at: String(row.created_at)
   };
 }
 
-export async function listAnalyticsEvents(since?: Date) {
+export async function listAnalyticsEvents(since?: Date, until = new Date()) {
   if (useSupabaseDriver()) {
-    const parts = [eq("provider", "analytics"), "order=created_at.desc", "limit=10000"];
+    const parts = [eq("provider", "analytics"), "order=created_at.asc,id.asc", "limit=1000",
+      `created_at=lt.${encodeURIComponent(until.toISOString())}`];
     if (since) parts.push(`created_at=gte.${encodeURIComponent(since.toISOString())}`);
 
-    const rows = await supabaseRequest<Record<string, unknown>[]>("webhook_events", {
-      query: selectQuery(parts)
-    });
+    const rows = await readReportingPages(offset =>
+      supabaseRequest<Record<string, unknown>[]>("webhook_events", {
+        query: selectQuery([...parts, `offset=${offset}`])
+      }));
 
     return rows
       .map(normalizeAnalyticsEvent)
@@ -1551,14 +1557,14 @@ export async function listAnalyticsEvents(since?: Date) {
   const rows = since
     ? getDatabase()
         .prepare(
-          "SELECT * FROM webhook_events WHERE provider = 'analytics' AND created_at >= ? ORDER BY created_at DESC LIMIT 10000"
+          "SELECT * FROM webhook_events WHERE provider = 'analytics' AND created_at >= ? AND created_at < ? ORDER BY created_at ASC, id ASC"
         )
-        .all(since.toISOString())
+        .all(since.toISOString(), until.toISOString())
     : getDatabase()
         .prepare(
-          "SELECT * FROM webhook_events WHERE provider = 'analytics' ORDER BY created_at DESC LIMIT 10000"
+          "SELECT * FROM webhook_events WHERE provider = 'analytics' AND created_at < ? ORDER BY created_at ASC, id ASC"
         )
-        .all();
+        .all(until.toISOString());
 
   return rows
     .map(normalizeAnalyticsEvent)
@@ -2901,23 +2907,24 @@ export type OrderFilters = {
   customer?: string;
 };
 
-export async function listOrders(filters: OrderFilters = {}) {
+export async function listOrders(filters: OrderFilters = {}, options: { complete?: boolean } = {}) {
   if (useSupabaseDriver()) {
     await ensureSupabaseSeeded();
-    const parts = ["order=created_at.desc", "limit=500"];
+    const parts = [options.complete ? "order=created_at.asc,id.asc" : "order=created_at.desc,id.desc", "limit=500"];
+    if (options.complete) parts.push(`created_at=lt.${encodeURIComponent(nowIso())}`);
 
     if (filters.status) parts.push(eq("status", filters.status));
     if (filters.gateway) parts.push(eq("gateway", filters.gateway));
     if (filters.country) parts.push(eq("customer_country", filters.country));
     if (filters.product) parts.push(eq("product_id", filters.product));
 
-    const orders = (
-      await supabaseRequest<Record<string, unknown>[]>("orders", {
-        query: selectQuery(parts)
-      })
-    )
+    const readPage = (offset: number) => supabaseRequest<Record<string, unknown>[]>("orders", {
+      query: selectQuery([...parts, `offset=${offset}`])
+    });
+    const orders = (options.complete ? await readReportingPages(readPage) : await readPage(0))
       .map(normalizeOrder)
-      .filter((order) => !isAdminDeletedOrder(order));
+      .filter((order) => !isAdminDeletedOrder(order))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
     const customer = filters.customer?.trim().toLowerCase();
     return customer
       ? orders.filter(
@@ -2959,7 +2966,7 @@ export async function listOrders(filters: OrderFilters = {}) {
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const rows = getDatabase()
-    .prepare(`SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT 500`)
+    .prepare(`SELECT * FROM orders ${where} ORDER BY created_at DESC, id DESC${options.complete ? "" : " LIMIT 500"}`)
     .all(...values);
 
   return rows.map(normalizeOrder).filter((order) => !isAdminDeletedOrder(order));
