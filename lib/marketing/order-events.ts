@@ -100,6 +100,7 @@ export async function trackMetaStartTrial(
     dataset: "loadpro",
     eventName: "StartTrial",
     eventId,
+    eventTime: options.occurredAt ?? Math.floor(Date.parse(order.created_at) / 1000),
     eventSourceUrl: eventSourceUrl(),
     userData: userData(order),
     customData: {
@@ -140,6 +141,7 @@ export async function trackMetaPurchase(
     dataset: datasetForOrder(order),
     eventName: "Purchase",
     eventId,
+    eventTime: options.occurredAt ?? (order.paid_at ? Math.floor(Date.parse(order.paid_at) / 1000) : undefined),
     eventSourceUrl: eventSourceUrl(),
     userData: userData(order),
     customData: {

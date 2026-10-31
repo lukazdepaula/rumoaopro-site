@@ -38,6 +38,7 @@ export const maxDuration = 60;
 type StripeEvent = {
   id?: string;
   type?: string;
+  created?: number;
   livemode?: boolean;
   data?: { object?: Record<string, unknown> };
 };
@@ -347,6 +348,7 @@ export async function POST(request: Request) {
         if (!isLoadProOrder(order)) {
           await trackMetaPurchase(order, {
             eventId: `purchase:${order.id}`,
+            occurredAt: event.created,
             amount:
               typeof object.amount_total === "number"
                 ? object.amount_total / 100
@@ -371,7 +373,7 @@ export async function POST(request: Request) {
           reference: paymentEventId,
           amount: amountPaid / 100,
           currency: textValue(object.currency)?.toUpperCase() || order.currency,
-          occurredAt: typeof paidAt === "number" ? paidAt : undefined
+          occurredAt: typeof paidAt === "number" ? paidAt : event.created
         });
       }
       // Invoice metadata may describe the original plan and may arrive late.
@@ -439,7 +441,7 @@ export async function POST(request: Request) {
           eventId: paymentEventId,
           amount: amountPaid / 100,
           currency: textValue(object.currency)?.toUpperCase() || order.currency,
-          occurredAt: typeof paidAt === "number" ? paidAt : undefined
+          occurredAt: typeof paidAt === "number" ? paidAt : event.created
         });
       }
     }

@@ -26,6 +26,7 @@ function load(file, mocks = {}, extras = {}) {
 }
 const plain = value => JSON.parse(JSON.stringify(value));
 const attribution = load('lib/marketing/attribution.ts');
+const eventPath = load('lib/marketing/event-path.ts');
 const product = { id: 'loadpro_founders', slug: 'loadpro-founders', name: 'LoadPro', price_brl: 49.9, price_usd: 9.9 };
 const products = {
   isLoadProProductId: id => ['loadpro_founders', 'loadpro_founders_50'].includes(id),
@@ -62,7 +63,7 @@ test('consented campaign and handoff survive normalization; sensitive URL parame
   assert.equal(attribution.marketingLandingUrl('https://user:password@example.invalid/'), undefined);
 });
 
-function browserFixture({ consent = 'granted', blockedStorage = false, pathname = '/checkout/loadpro-founders' } = {}) {
+function browserFixture({ consent = 'granted', blockedStorage = false, pathname = '/checkout/loadpro-founders', replies, revokeAfterFirst = false } = {}) {
   const saved = new Map();
   const storage = {
     getItem(key) { if (blockedStorage) throw Error('Storage blocked'); return saved.get(key) || null; },
@@ -77,7 +78,7 @@ function browserFixture({ consent = 'granted', blockedStorage = false, pathname 
     search: '?utm_source=meta&utm_campaign=fixture&lp_attribution_id=landing-123',
     pathname, protocol: 'https:'
   }, fbq: (...args) => calls.push(args),
-    setInterval() { return 1; }, clearInterval() {}, addEventListener() {}, removeEventListener() {}
+    setTimeout(fn) { fn(); }, setInterval() { return 1; }, clearInterval() {}, addEventListener() {}, removeEventListener() {}
   };
   const document = { cookie: '', documentElement: { dataset: {} }, visibilityState: 'hidden',
     getElementById() { return null; }, addEventListener() {}, removeEventListener() {}
@@ -85,11 +86,13 @@ function browserFixture({ consent = 'granted', blockedStorage = false, pathname 
   const api = load('components/conversion-tracker.tsx', {
     react: { useEffect(effect) { effects.push(effect); } }, 'next/navigation': { usePathname: () => pathname },
     '@/components/privacy-consent': { readMarketingConsent: () => consent, MARKETING_CONSENT_EVENT: 'consent' },
-    '@/lib/marketing/attribution': attribution
+    '@/lib/marketing/attribution': attribution,
+    '@/lib/marketing/event-path': eventPath
   }, { window, document,
     async fetch(url, options) {
       requests.push({ url, body: JSON.parse(options.body) });
-      return Response.json({ recorded: true });
+      if (revokeAfterFirst) consent = 'denied';
+      return Response.json(replies?.[Math.min(requests.length - 1, replies.length - 1)] || { recorded: true });
     },
     process: { env: { NEXT_PUBLIC_LOADPRO_META_PIXEL_ID: 'fixture-loadpro', NEXT_PUBLIC_RUMOAOPRO_META_PIXEL_ID: 'fixture-site' } }
   });
@@ -121,6 +124,40 @@ test('Power Pro landing records its product view once and gates Meta on consent'
     if (consent === 'denied') assert.equal(browser.calls.length, 0);
     else assert.deepEqual(plain(metaViews[0][3].content_ids), ['power-pro']);
   }
+});
+
+test('private routes do not initialize the pixel or submit advertising events', async () => {
+  for (const pathname of ['/admin', '/admin/orders/123', '/login', '/my-programs/power-pro', '/checkout/success', '/en/login']) {
+    const browser = browserFixture({ pathname });
+    const unmount = await browser.mount(); unmount();
+    assert.equal(browser.requests.length, 0, pathname);
+    assert.equal(browser.calls.length, 0, pathname);
+  }
+});
+
+test('pixel disables inferred events and navigation tracking before initialization', async () => {
+  const browser = browserFixture({ pathname: '/programas/power-pro' });
+  const unmount = await browser.mount(); unmount();
+  assert.equal(browser.window.fbq.disablePushState, true);
+  assert.deepEqual(plain(browser.calls.slice(0, 2)), [
+    ['set', 'autoConfig', false, 'fixture-site'], ['init', 'fixture-site']
+  ]);
+});
+
+test('a browser retry preserves the event and does not resend the pixel event', async () => {
+  const browser = browserFixture({ replies: [{ recorded: true, retryable: true }, { recorded: false, accepted: true }] });
+  await browser.api.trackCheckoutEvent('checkout_submit', 'loadpro-founders', {});
+  assert.equal(browser.requests.length, 2);
+  assert.deepEqual(browser.requests[0].body, browser.requests[1].body);
+  assert.equal(browser.calls.filter(call => call[0] === 'trackSingle').length, 1);
+  await browser.api.trackCheckoutEvent('checkout_submit', 'loadpro-founders', {});
+  assert.equal(browser.requests.length, 2, 'accepted duplicate is saved in session storage');
+});
+
+test('consent withdrawal stops a pending advertising retry', async () => {
+  const browser = browserFixture({ replies: [{ recorded: true, retryable: true }], revokeAfterFirst: true });
+  await browser.api.trackCheckoutEvent('checkout_submit', 'loadpro-founders', {});
+  assert.equal(browser.requests.length, 1);
 });
 
 test('browser preserves the consented landing ID and its own checkout session', () => {
@@ -226,13 +263,19 @@ test('consented outcomes carry the original campaign and checkout session; trial
   const { api, records, sent } = outcomeFixture();
   const order = fixtureOrder();
   Object.assign(order.metadata, { marketing_consent: 'granted', marketing_utm_source: 'meta', marketing_utm_campaign: 'fixture', marketing_session_id: 'session-123', marketing_landing_attribution_id: 'landing-123' });
-  await api.trackMetaStartTrial(order, { subscriptionId: 'sub_fixture' });
+  await api.trackMetaStartTrial(order, { subscriptionId: 'sub_fixture', occurredAt: 1790035200 });
   const event = [...records.values()][0];
   assert.equal(event.session_id, 'session-123');
   assert.equal(event.attribution.landing_attribution_id, 'landing-123');
   assert.equal(event.attribution.status, 'campaign_identified');
   assert.equal(sent[0].customData.value, 0);
   assert.equal(sent[0].eventId, 'start_trial:fixture-order');
+  assert.equal(sent[0].eventTime, 1790035200);
+  await api.trackMetaPurchase(order, { occurredAt: 1790040000 });
+  assert.equal(sent[1].eventTime, 1790040000);
+  order.paid_at = '2026-10-31T08:00:00Z';
+  await api.trackMetaPurchase(order);
+  assert.equal(sent[2].eventTime, Date.parse(order.paid_at) / 1000);
 });
 
 test('sandbox, mock, preview and unverified trial do not create production outcomes', async () => {
@@ -261,6 +304,7 @@ test('public analytics endpoint rejects financial outcomes and strips denied att
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status || 200 }) } },
     '@/lib/checkout/db': { recordWebhookEvent: async (...args) => { records.push(args); return true; } },
     '@/lib/checkout/products': products, '@/lib/marketing/attribution': attribution,
+    '@/lib/marketing/event-path': eventPath,
     '@/lib/marketing/meta': { marketingConsentGranted: value => value === 'granted', sendMetaEvent: async value => sent.push(value) }
   });
   const request = type => new Request('https://example.invalid/api/analytics/event', { method: 'POST', headers: { 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ type, sessionId: 'fixture-session', productSlug: product.slug, path: '/checkout/loadpro-founders', marketing: { consent: 'denied', utmCampaign: 'must-not-store', fbp: 'must-not-store' } }) });

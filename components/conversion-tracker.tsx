@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { attributionId, marketingLandingUrl } from "@/lib/marketing/attribution";
+import { publicEventPath } from "@/lib/marketing/event-path";
 import {
   MARKETING_CONSENT_EVENT,
   readMarketingConsent
@@ -48,7 +49,7 @@ type MetaEventName =
   | "Contact";
 
 type MetaWindow = Window & {
-  fbq?: ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue?: unknown[]; loaded?: boolean; version?: string };
+  fbq?: ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue?: unknown[]; loaded?: boolean; version?: string; disablePushState?: boolean };
   _fbq?: unknown;
 };
 
@@ -269,6 +270,10 @@ function initMetaPixel(productSlug: string) {
       .filter(Boolean)
   );
   if (!initializedPixels.has(pixelId)) {
+    // Only our consented, explicit events may collect activity; do not infer
+    // events from form fields, page metadata or private client-side navigation.
+    if (metaWindow.fbq) metaWindow.fbq.disablePushState = true;
+    metaWindow.fbq?.("set", "autoConfig", false, pixelId);
     metaWindow.fbq?.("init", pixelId);
     initializedPixels.add(pixelId);
     document.documentElement.dataset.rapMetaPixels = [...initializedPixels].join(",");
@@ -322,21 +327,10 @@ async function sendEvent(
   sourcePath?: string,
   details: CheckoutEventDetails = {}
 ) {
+  if (!publicEventPath(path) || !publicEventPath(window.location.pathname)) return;
   const locale = localeForPath(path);
   const attribution = captureAttribution();
   const eventId = `${getSessionId()}:${type}:${productSlug}:${locale}:${path}:${attribution.consent}`.slice(0, 240);
-  const payload = JSON.stringify({
-    type,
-    eventId,
-    productSlug,
-    sessionId: getSessionId(),
-    locale,
-    path,
-    sourcePath: sourcePath || null,
-    referrerHost: referrerHost(),
-    marketing: attribution,
-    ...details
-  });
   const storageKey = `rap_event:${type}:${productSlug}:${locale}:${path}:${attribution.consent}`;
 
   try { if (window.sessionStorage.getItem(storageKey)) return; } catch { /* Server event IDs still deduplicate. */ }
@@ -345,22 +339,34 @@ async function sendEvent(
   if (metaEvent && attribution.consent === "granted") {
     trackMetaBrowser(metaEvent, eventId, productSlug);
   }
+  const payload = JSON.stringify({
+    type, eventId, productSlug, sessionId: getSessionId(), locale, path,
+    sourcePath: sourcePath || null, referrerHost: referrerHost(),
+    // Initialization may have just created _fbp. Read it before the CAPI send.
+    marketing: captureAttribution(), ...details
+  });
 
-  try {
-    const response = await fetch("/api/analytics/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-      keepalive: true
-    });
-    const result = (await response.json().catch(() => null)) as
-      | { recorded?: boolean }
-      | null;
-    if (response.ok && result?.recorded !== false) {
-      window.sessionStorage.setItem(storageKey, "1");
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attribution.consent === "granted" && readMarketingConsent() !== "granted") return;
+    try {
+      const response = await fetch("/api/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true
+      });
+      const result = (await response.json().catch(() => null)) as
+        | { recorded?: boolean; accepted?: boolean; retryable?: boolean }
+        | null;
+      if (response.ok && (result?.recorded || result?.accepted) && !result?.retryable) {
+        try { window.sessionStorage.setItem(storageKey, "1"); } catch { /* Server deduplicates. */ }
+        return;
+      }
+      if (!result?.retryable && response.status < 500 && response.status !== 202) return;
+    } catch {
+      // A transient outage can retry the identical event without blocking checkout.
     }
-  } catch {
-    // A later navigation can retry the event when the network is available.
+    if (attempt === 0) await new Promise(resolve => window.setTimeout(resolve, 1500));
   }
 }
 
@@ -400,6 +406,7 @@ export function ConversionTracker() {
   }, [pathname]);
 
   useEffect(() => {
+    if (!publicEventPath(pathname)) return;
     void sendEvent("page_view", "site", pathname);
     const salesProduct = productPaths[pathname];
     const checkoutProduct = checkoutSlug(pathname);
@@ -424,6 +431,7 @@ export function ConversionTracker() {
 
   useEffect(() => {
     const consentChanged = () => {
+      if (!publicEventPath(window.location.pathname)) return;
       captureAttribution();
       if (readMarketingConsent() !== "granted") return;
       void sendEvent("page_view", "site", window.location.pathname);

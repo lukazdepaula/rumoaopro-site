@@ -52,6 +52,10 @@ function subscriptionPlanTopic(value: string) {
   return value.includes("subscription_preapproval_plan");
 }
 
+function approvedPaymentTime(payment: Record<string, unknown>) {
+  return typeof payment.date_approved === "string" ? Math.floor(Date.parse(payment.date_approved) / 1000) : NaN;
+}
+
 export async function POST(request: Request) {
   if (process.env.STRIPE_RETRY_SAFE_FULFILLMENT_ENABLED !== 'true') return processNotification(request);
   const storage = await import('@/lib/checkout/retry-storage');
@@ -152,8 +156,14 @@ async function processNotification(request: Request, claimReceipt?: (eventId: st
           mercado_pago_authorized_payment_id: dataId,
           mercado_pago_payment_id: paymentId
         });
+        let occurredAt = approvedPaymentTime(invoicePayment);
+        if (!Number.isFinite(occurredAt) && paymentId) {
+          try { occurredAt = approvedPaymentTime(await fetchMercadoPagoPayment(paymentId)); }
+          catch { /* Missing advertising time must never prevent fulfillment. */ }
+        }
         await trackMetaPurchase(order, {
           eventId: `purchase:mercado_pago:${paymentId || dataId}`,
+          occurredAt,
           amount:
             typeof invoicePayment.transaction_amount === "number"
               ? invoicePayment.transaction_amount
@@ -299,6 +309,7 @@ async function processNotification(request: Request, claimReceipt?: (eventId: st
       if (firstOneTimePayment) {
         await trackMetaPurchase(order, {
           eventId: `purchase:${order.id}`,
+          occurredAt: approvedPaymentTime(payment),
           amount:
             typeof payment.transaction_amount === "number"
               ? payment.transaction_amount
