@@ -5,16 +5,16 @@ export function AdminExternalReceipts({ metrics, ordersAvailable }: { metrics: F
   const sources = metrics.sources.filter(source => source.id === "stripe" || source.id === "mercado_pago");
   const ready = ordersAvailable && sources.length === 2 && sources.every(source => source.state === "ready" &&
     source.externalReceipts && !source.externalReceipts.hasUnconvertedCurrencies);
-  const sum = (category: "coaching" | "internal_transfer" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl" | "transactionCount") =>
+  const sum = (category: "coaching" | "internal_transfer" | "outgoing_payment" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl" | "transactionCount") =>
     sources.reduce((total, source) => total + (source.externalReceipts?.[category][field] || 0), 0);
   const money = (value: number) => formatMoney(value, "BRL");
-  const amount = (category: "coaching" | "internal_transfer" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl") =>
+  const amount = (category: "coaching" | "internal_transfer" | "outgoing_payment" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl") =>
     ready ? money(sum(category, field)) : "—";
   return (
     <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
-      <h2 className="text-lg font-bold text-ink">Recebimentos fora do checkout</h2>
-      <p className="mt-1 text-sm text-graphite/60">Classificação por produto ou transação conferida. Cada entrada pertence a um único grupo.</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <h2 className="text-lg font-bold text-ink">Movimentações fora do checkout</h2>
+      <p className="mt-1 text-sm text-graphite/60">Classificação por produto ou transação conferida. Cada movimentação pertence a um único grupo.</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-md bg-smoke p-4">
           <p className="text-xs font-bold uppercase text-graphite/60">Assessoria identificada</p>
           <p className="mt-2 text-2xl font-black text-ink">{amount("coaching", "grossRevenueBrl")}</p>
@@ -29,6 +29,11 @@ export function AdminExternalReceipts({ metrics, ordersAvailable }: { metrics: F
           <p className="text-xs font-bold uppercase text-graphite/60">Classificação pendente</p>
           <p className="mt-2 text-2xl font-black text-ink">{ready ? sum("unclassified", "transactionCount") : "—"}</p>
           <p className="mt-2 text-xs text-graphite/60">Movimentações · líquido {amount("unclassified", "netRevenueBrl")} · fora da receita até conferência</p>
+        </div>
+        <div className="rounded-md bg-smoke p-4">
+          <p className="text-xs font-bold uppercase text-graphite/60">Saídas conferidas</p>
+          <p className="mt-2 text-2xl font-black text-ink">{amount("outgoing_payment", "netRevenueBrl")}</p>
+          <p className="mt-2 text-xs text-graphite/60">Pagamentos de contas e compras · fora da receita. A conciliação de custos é separada.</p>
         </div>
       </div>
       <div className="mt-3 space-y-1 text-xs text-graphite/60">

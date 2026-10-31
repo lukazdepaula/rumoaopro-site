@@ -37,6 +37,7 @@ export type ExternalReceiptTotals = {
 export type ExternalReceipts = {
   coaching: ExternalReceiptTotals;
   internal_transfer: ExternalReceiptTotals;
+  outgoing_payment: ExternalReceiptTotals;
   unclassified: ExternalReceiptTotals;
   hasUnconvertedCurrencies: boolean;
 };
@@ -92,7 +93,7 @@ type SourceResult = FinancialSource & { daily: Map<string, SourceDailyValue> };
 function emptyExternalReceipts(): ExternalReceipts {
   const empty = () => ({ grossRevenueBrl: 0, netRevenueBrl: 0, refundsBrl: 0,
     feesBrl: 0, paymentCount: 0, transactionCount: 0 });
-  return { coaching: empty(), internal_transfer: empty(), unclassified: empty(),
+  return { coaching: empty(), internal_transfer: empty(), outgoing_payment: empty(), unclassified: empty(),
     hasUnconvertedCurrencies: false };
 }
 
@@ -105,10 +106,10 @@ function externalClassifications() {
   const mp: unknown = JSON.parse(process.env.ADMIN_FINANCE_MP_CLASSIFICATIONS || "{}");
   if (!mp || typeof mp !== "object" || Array.isArray(mp) ||
     Object.entries(mp).some(([id, category]) => !/^\d+$/.test(id) ||
-      (category !== "coaching" && category !== "internal_transfer"))) {
+      (category !== "coaching" && category !== "internal_transfer" && category !== "outgoing_payment"))) {
     throw new Error("Invalid financial payment classification");
   }
-  return { stripeProducts, mercadoPago: mp as Record<string, "coaching" | "internal_transfer"> };
+  return { stripeProducts, mercadoPago: mp as Record<string, "coaching" | "internal_transfer" | "outgoing_payment"> };
 }
 
 function addExternalReceipt(target: ExternalReceiptTotals, gross: number, net: number,
@@ -1264,7 +1265,7 @@ async function loadMercadoPagoSource(
     excludedTransactionCount,
     detail:
       excludedTransactionCount > 0
-        ? `Vendas vinculadas ao site; ${excludedTransactionCount} entrada(s) fora do checkout detalhada(s) separadamente`
+        ? `Vendas vinculadas ao site; ${excludedTransactionCount} movimentação(ões) fora do checkout detalhada(s) separadamente`
         : "Somente vendas vinculadas ao site, incluindo renovações",
     updatedAt: new Date().toISOString(),
     hasUnconvertedCurrencies,

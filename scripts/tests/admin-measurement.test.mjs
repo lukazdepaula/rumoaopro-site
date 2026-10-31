@@ -114,8 +114,11 @@ test('dashboard keeps course out of programs and the MRR-plus-programs indicator
   assert.doesNotMatch(combined,/1\.600,00/);
   assert.match(combined.split('Programas no período')[1].split('Curso ·')[0],/200,00/);
   assert.match(combined.split('Curso · Preparador PRO')[1],/400,00/);
-  assert.match(html,/Recebimentos fora do checkout/);
-  assert.match(html,/900,00/); // 600 linked + 300 external; 285 transfer excluded.
+  assert.match(html,/Movimentações fora do checkout/);
+  assert.match(html,/Saídas conferidas/);
+  assert.match(html.split('Saídas conferidas')[1].split('</section>')[0],/120,00/);
+  assert.match(html,/900,00/); // 600 linked + 300 external; transfers and outgoing payments excluded.
+  assert.doesNotMatch(html,/1\.020,00/);
 });
 
 test('missing orders or analytics suppresses conversion and operation totals', async () => {

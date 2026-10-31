@@ -8,7 +8,7 @@ O painel financeiro separa três métricas que respondem a perguntas diferentes:
 
 ## Fontes
 
-O Stripe é lido por `balance_transactions`, o que permite reconciliar valor bruto, taxas, reembolsos e líquido. Cada movimentação precisa estar ligada a um pedido, assinatura ou produto conhecido do site. O Mercado Pago é lido pela pesquisa de pagamentos e identifica vendas do site pelo `external_reference`, metadado ou ID do gateway. Recebimentos sem esse vínculo aparecem em uma seção separada: assessoria identificada, transferências entre contas ou classificação pendente. O vínculo ao site tem prioridade, impedindo dupla contagem.
+O Stripe é lido por `balance_transactions`, o que permite reconciliar valor bruto, taxas, reembolsos e líquido. Cada movimentação precisa estar ligada a um pedido, assinatura ou produto conhecido do site. O Mercado Pago é lido pela pesquisa de pagamentos e identifica vendas do site pelo `external_reference`, metadado ou ID do gateway. Movimentações sem esse vínculo aparecem em uma seção separada: assessoria identificada, transferências entre contas, saídas conferidas ou classificação pendente. O vínculo ao site tem prioridade, impedindo dupla contagem.
 
 A Kiwify é consultada exclusivamente para o produto **Preparador PRO**. O painel usa o ID configurado ou descobre todos os cadastros cujos nomes contêm “Preparador PRO” ou “Preparo Pro” e combina as vendas sem duplicá-las. Somente registros com status `paid` entram no faturamento bruto, líquido e na contagem; vendas reembolsadas ou contestadas ficam fora desses totais e aparecem no campo de reembolsos. Períodos maiores são divididos em janelas de até 90 dias, respeitando o limite da API. A fonte não possui fallback local: se a consulta falhar, o valor somado é zero e o painel marca a Kiwify como indisponível para impedir uma estimativa silenciosa.
 
@@ -57,12 +57,14 @@ Configurações somente no servidor, sem IDs reais no repositório:
 
 ```env
 ADMIN_FINANCE_STRIPE_COACHING_PRODUCT_IDS=prod_example
-ADMIN_FINANCE_MP_CLASSIFICATIONS={"123456":"coaching","654321":"internal_transfer"}
+ADMIN_FINANCE_MP_CLASSIFICATIONS={"123456":"coaching","654321":"internal_transfer","789012":"outgoing_payment"}
 ```
 
 A classificação Stripe exige que todos os produtos identificados pertençam à lista confirmada. A ligação também passa por `invoice_payments` nas versões que não expõem `charge.invoice`. Faturas mistas ficam pendentes e respostas incompletas disparam fallback. No Mercado Pago, somente IDs individualmente conferidos são classificados; Pix ou `bank_transfer` não indicam por si só uma venda ou transferência própria. A lista precisa ser atualizada após novas conferências.
 
-O total da operação soma site, curso e assessoria externa identificada. Transferências próprias e movimentos pendentes ficam fora. Configuração inválida, falha de consulta ou moeda sem conversão impede um total consolidado. Nunca classificar pelo nome do pagador ou por semelhança de valores.
+O total da operação soma site, curso e assessoria externa identificada. Transferências próprias, saídas conferidas e movimentos pendentes ficam fora. Configuração inválida, falha de consulta ou moeda sem conversão impede um total consolidado. Nunca classificar pelo nome do pagador ou por semelhança de valores.
+
+A pesquisa de pagamentos do Mercado Pago também pode retornar pagamentos feitos pela própria conta, com valores positivos. A categoria `outgoing_payment` é reservada a IDs conferidos no extrato com débito e no detalhe da transação. O cartão mostra o valor informado pelo pagamento como saída conferida, separado das vendas e das pendências. Isso não equivale ao total de despesas da conta e não alimenta automaticamente os custos: pagamento de fatura não comprova a natureza das compras e poderia duplicar despesas já registradas.
 
 ## Funil e cobertura
 

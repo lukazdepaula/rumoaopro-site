@@ -158,6 +158,28 @@ test('invalid external classification or incomplete MP responses produce explici
   }
 });
 
+test('verified outgoing MP payments stay outside revenue and pending entries, with site links taking priority', async () => {
+  const payment=(id,amount,extra={})=>({id,status:'approved',date_approved:'2026-09-28T12:00:00Z',currency_id:'BRL',
+    transaction_amount:amount,transaction_details:{net_received_amount:amount},...extra});
+  const bill=payment(21,210), purchase=payment(22,70);
+  const api=load('lib/checkout/financial-reporting.ts',async()=>json({results:[
+    bill,bill,purchase,payment(23,40),payment(24,300,{metadata:{product_id:product.id}})
+  ],paging:{total:5}}),{MERCADO_PAGO_ACCESS_TOKEN:'fixture',ADMIN_FINANCE_MP_CLASSIFICATIONS:JSON.stringify({
+    '21':'outgoing_payment','22':'outgoing_payment','24':'outgoing_payment'
+  })});
+  const result=await api.getFinancialPeriodMetrics(period,[]);
+  const mp=result.sources.find(s=>s.id==='mercado_pago');
+  assert.equal(mp.state,'ready');
+  assert.equal(mp.grossRevenueBrl,300);assert.equal(mp.netRevenueBrl,300);assert.equal(mp.paymentCount,1);
+  assert.equal(mp.externalReceipts.outgoing_payment.transactionCount,2);
+  assert.equal(mp.externalReceipts.outgoing_payment.netRevenueBrl,280);
+  assert.equal(mp.externalReceipts.unclassified.transactionCount,1);
+  assert.equal(mp.externalReceipts.unclassified.netRevenueBrl,40);
+  assert.equal(mp.externalReceipts.coaching.netRevenueBrl,0);
+  assert.equal(mp.externalReceipts.internal_transfer.netRevenueBrl,0);
+  assert.equal(result.grossRevenueBrl,300);
+});
+
 test('Stripe resource errors produce explicit fallback, not false external exclusions', async () => {
   for (const mode of ['429', 'timeout', 'malformed', 'invalid-list', 'invalid-resource']) {
     const api = finance(async url => {
