@@ -1,5 +1,6 @@
 import { isPreviewEnvironment } from "@/lib/preview-safety";
 import { createHash } from "node:crypto";
+import { readMeasurementEvent, recordWebhookEvent } from "@/lib/checkout/db";
 
 export type MetaEventName =
   | "PageView"
@@ -94,12 +95,26 @@ export async function sendMetaEvent(input: MetaEventInput) {
   const config = configuredMeta(input.dataset);
   if (!config) return { sent: false, reason: "not_configured" as const };
 
+  const receiptId = hash(`${input.dataset}:${input.eventName}:${input.eventId}`);
+  try {
+    if (await readMeasurementEvent("meta", receiptId)) return { sent: true as const, duplicate: true };
+  } catch {
+    return { sent: false, reason: "storage_error" as const, retryable: true };
+  }
+  const eventTime = input.eventTime ?? Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
+  // Conservative replay policy: stop after one day rather than risk a late
+  // duplicate. Never turn an old payment into today's sale.
+  if (!Number.isInteger(eventTime) || eventTime > now + 60 || eventTime < now - 86400) {
+    return { sent: false, reason: "invalid_event_time" as const, retryable: false };
+  }
+
   const userData = input.userData || {};
   const payload: Record<string, unknown> = {
     data: [
       {
         event_name: input.eventName,
-        event_time: input.eventTime || Math.floor(Date.now() / 1000),
+        event_time: eventTime,
         event_id: input.eventId,
         event_source_url: input.eventSourceUrl,
         action_source: "website",
@@ -124,25 +139,42 @@ export async function sendMetaEvent(input: MetaEventInput) {
 
   if (config.testEventCode) payload.test_event_code = config.testEventCode;
 
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/${config.graphVersion}/${encodeURIComponent(config.pixelId)}/events`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        cache: "no-store"
+  const body = JSON.stringify(payload);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let failure: "provider_error" | "network_error" | "invalid_response" = "network_error";
+    let retryable = true;
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/${config.graphVersion}/${encodeURIComponent(config.pixelId)}/events`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000)
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json().catch(() => null) as { events_received?: number } | null;
+        if (result?.events_received === 1) {
+          try {
+            await recordWebhookEvent("meta", receiptId, {
+              dataset: input.dataset, event_name: input.eventName, event_time: eventTime
+            });
+          } catch { console.error("[meta.capi.receipt]", "storage_error"); }
+          return { sent: true as const };
+        }
+        failure = "invalid_response";
+      } else {
+        failure = "provider_error";
+        retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+        // Never log response bodies: they can contain identifiers or credentials.
+        console.error("[meta.capi]", response.status);
       }
-    );
-
-    if (!response.ok) {
-      console.error("[meta.capi]", response.status, await response.text());
-      return { sent: false, reason: "provider_error" as const };
-    }
-
-    return { sent: true as const };
-  } catch (error) {
-    console.error("[meta.capi]", error);
-    return { sent: false, reason: "network_error" as const };
+    } catch { failure = "network_error"; }
+    if (!retryable || attempt === 2) return { sent: false, reason: failure, retryable };
+    await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
   }
+  return { sent: false, reason: "network_error" as const, retryable: true };
 }

@@ -1435,8 +1435,19 @@ export async function updateFiscalStatus(orderId: string, fiscalStatus: FiscalSt
   });
 }
 
+// Only these two providers are exposed to the advertising delivery code.
+export async function readMeasurementEvent(provider: "analytics" | "meta", eventId: string) {
+  const row = useSupabaseDriver()
+    ? (await supabaseRequest<Record<string, unknown>[]>("webhook_events", {
+        query: selectQuery([eq("provider", provider), eq("event_id", eventId), "limit=1"])
+      }))[0]
+    : getDatabase().prepare("SELECT payload,created_at FROM webhook_events WHERE provider=? AND event_id=?")
+      .get(provider, eventId);
+  return row ? { payload: parseMetadata(row.payload), createdAt: String(row.created_at) } : null;
+}
+
 export async function recordWebhookEvent(
-  provider: Gateway | "analytics" | "presence",
+  provider: Gateway | "analytics" | "presence" | "meta",
   eventId: string,
   payload: Record<string, unknown>
 ) {

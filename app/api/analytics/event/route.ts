@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { recordWebhookEvent } from "@/lib/checkout/db";
+import { recordWebhookEvent, readMeasurementEvent } from "@/lib/checkout/db";
+import { publicEventPath } from "@/lib/marketing/event-path";
 import { getProductBySlug, isLoadProProductId } from "@/lib/checkout/products";
 import type { AnalyticsEventType } from "@/lib/checkout/types";
 import { marketingConsentGranted, sendMetaEvent, type MetaEventName } from "@/lib/marketing/meta";
@@ -25,15 +26,13 @@ const cleanText = (value: unknown, maxLength: number) =>
 
 function sameSiteRequest(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
-  if (fetchSite) return fetchSite === "same-origin" || fetchSite === "same-site";
+  if (fetchSite && fetchSite !== "same-origin") return false;
 
   const origin = request.headers.get("origin");
-  if (!origin) return process.env.NODE_ENV !== "production";
+  if (!origin) return fetchSite === "same-origin" || process.env.NODE_ENV !== "production";
 
   try {
-    const originHost = new URL(origin).hostname.replace(/^www\./, "");
-    const requestHost = new URL(request.url).hostname.replace(/^www\./, "");
-    return originHost === requestHost;
+    return new URL(origin).origin === new URL(request.url).origin;
   } catch {
     return false;
   }
@@ -64,8 +63,8 @@ export async function POST(request: Request) {
     const sessionId = cleanText(body.sessionId, 80);
     const productSlug = cleanText(body.productSlug, 100);
     const locale = body.locale === "en" ? "en" : "pt";
-    const path = cleanText(body.path, 240);
-    const sourcePath = cleanText(body.sourcePath, 240);
+    const path = publicEventPath(body.path);
+    const sourcePath = publicEventPath(body.sourcePath);
     const referrerHost = cleanText(body.referrerHost, 160);
     const country = cleanText(body.country, 2).toUpperCase();
     const paymentMethod = cleanText(body.paymentMethod, 32);
@@ -76,7 +75,7 @@ export async function POST(request: Request) {
       !allowedTypes.has(type) ||
       !sessionId ||
       (!product && productSlug !== "site") ||
-      !path.startsWith("/")
+      !path
     ) {
       return NextResponse.json({ error: "Invalid event" }, { status: 400 });
     }
@@ -128,12 +127,24 @@ export async function POST(request: Request) {
     }
 
     const metaEvent = metaEventFor(type);
-    if (recorded && metaEvent && attribution.consent === "granted") {
+    let retryable = false;
+    if (metaEvent && attribution.consent === "granted") {
+      // A previous internal insert is not proof of CAPI delivery. Keep the
+      // original timestamp on replay and reject reused IDs with other data.
+      const previous = await readMeasurementEvent("analytics", eventId);
+      if (!previous) throw new Error("Recorded analytics event unavailable");
+      if (!recorded && (previous.payload.path !== path ||
+        previous.payload.type !== type || previous.payload.session_id !== sessionId ||
+        previous.payload.product_slug !== (product?.slug || "site") ||
+        (previous.payload.attribution as Record<string, unknown> | undefined)?.consent !== "granted")) {
+        return NextResponse.json({ error: "Event ID conflict" }, { status: 409 });
+      }
       const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-      await sendMetaEvent({
+      const result = await sendMetaEvent({
         dataset: isLoadProProductId(product?.id) ? "loadpro" : "rumoaopro",
         eventName: metaEvent,
         eventId,
+        eventTime: Math.floor(Date.parse(previous.createdAt) / 1000),
         eventSourceUrl: new URL(path, request.url).toString(),
         userData: {
           clientIpAddress: forwardedFor || request.headers.get("x-real-ip"),
@@ -151,9 +162,12 @@ export async function POST(request: Request) {
             }
           : undefined
       });
+      retryable = !result.sent && "retryable" in result && result.retryable === true;
     }
 
-    return NextResponse.json({ recorded });
+    return NextResponse.json({ recorded, accepted: true, retryable }, {
+      headers: { "Cache-Control": "no-store" }
+    });
   } catch (error) {
     console.error("[analytics.event]", error);
     return NextResponse.json({ error: "Analytics event error" }, { status: 500 });
