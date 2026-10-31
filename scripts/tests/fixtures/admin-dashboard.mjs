@@ -13,9 +13,9 @@ const totals=(gross=0,net=gross,count=0)=>({grossRevenueBrl:gross,netRevenueBrl:
   refundsBrl:0,paymentCount:count,transactionCount:count});
 export const sources=[
   {id:'stripe',name:'Stripe',state:'ready',...totals(200,190,1),excludedTransactionCount:1,updatedAt:now,
-    externalReceipts:{coaching:totals(300,285,1),internal_transfer:totals(),unclassified:totals(),hasUnconvertedCurrencies:false}},
+    externalReceipts:{coaching:totals(300,285,1),internal_transfer:totals(),outgoing_payment:totals(),unclassified:totals(),hasUnconvertedCurrencies:false}},
   {id:'mercado_pago',name:'Mercado Pago',state:'ready',...totals(),excludedTransactionCount:1,updatedAt:now,
-    externalReceipts:{coaching:totals(),internal_transfer:totals(285,285,1),unclassified:totals(),hasUnconvertedCurrencies:false}},
+    externalReceipts:{coaching:totals(),internal_transfer:totals(285,285,1),outgoing_payment:totals(120,120,2),unclassified:totals(),hasUnconvertedCurrencies:false}},
   {id:'kiwify',name:'Kiwify · Preparador PRO',state:'ready',...totals(400,350,1),updatedAt:now}
 ];
 export async function renderDashboard({unavailable=false}={}) {
