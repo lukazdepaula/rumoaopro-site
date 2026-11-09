@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminMotion } from "@/components/admin-motion";
 import {
   BadgePercent,
   BellRing,
@@ -11,6 +12,7 @@ import {
   KeyRound,
   Link2,
   LogOut,
+  MoreHorizontal,
   Package,
   ReceiptText,
   RefreshCcw,
@@ -22,6 +24,7 @@ import {
 type AdminShellProps = {
   title: string;
   eyebrow?: string;
+  glass?: boolean;
   children: React.ReactNode;
 };
 
@@ -82,9 +85,14 @@ function NavLink({
   );
 }
 
-export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellProps) {
+export function AdminShell({ title, eyebrow = "Admin", glass = false, children }: AdminShellProps) {
+  const pathname = usePathname();
+  const mobilePrimary = navigation.filter(item => ["/admin", "/admin/orders", "/admin/entitlements", "/admin/products"].includes(item.href));
+  const mobileOther = [...navigation.filter(item => !mobilePrimary.includes(item)), ...accountNavigation];
+  const moreActive = mobileOther.some(item => isActivePath(pathname, item.href));
   return (
-    <div className="min-h-screen bg-[#f6f6f7] text-ink">
+    <div className={`${glass ? "admin-glass" : ""} admin-shell min-h-screen bg-[#f6f6f7] text-ink`}>
+      {glass ? <><div className="admin-photo-backdrop" aria-hidden="true" /><AdminMotion /></> : null}
       <header className="sticky top-0 z-40 border-b border-ink/10 bg-[#1a1a1a] text-white lg:hidden">
         <div className="flex min-h-14 items-center justify-between gap-3 px-4">
           <Link className="flex items-center gap-2 font-display text-base uppercase" href="/admin">
@@ -100,21 +108,10 @@ export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellPro
             <ExternalLink className="h-4 w-4" />
           </Link>
         </div>
-        <nav className="flex max-w-full gap-1 overflow-x-auto px-3 pb-3">
-          {[...navigation, ...accountNavigation].map((item) => (
-            <NavLink compact key={item.href} {...item} />
-          ))}
-          <form action="/api/admin/logout" method="post">
-            <button className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white" type="submit">
-              <LogOut className="h-4 w-4" />
-              Sair
-            </button>
-          </form>
-        </nav>
       </header>
 
       <div className="mx-auto min-h-screen max-w-[1600px] lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="sticky top-0 hidden h-screen flex-col border-r border-ink/10 bg-[#ebebeb] p-3 lg:flex">
+        <aside className="admin-sidebar sticky top-0 hidden h-screen flex-col border-r border-ink/10 bg-[#ebebeb] p-3 lg:flex">
           <Link className="mb-5 flex h-11 items-center gap-3 px-2" href="/admin">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-signal font-display text-sm text-white shadow-sm">R</span>
             <span>
@@ -167,6 +164,20 @@ export function AdminShell({ title, eyebrow = "Admin", children }: AdminShellPro
           </section>
         </main>
       </div>
+      <nav className="admin-mobile-dock lg:hidden" aria-label="Navegação principal do admin">
+        {mobilePrimary.map(({ href, label, icon: Icon, exact }) => <Link
+          href={href} key={href} aria-current={isActivePath(pathname, href, exact) ? "page" : undefined}
+          className="admin-dock-item"
+        ><Icon className="h-5 w-5" /><span>{label === "Visão geral" ? "Início" : label}</span></Link>)}
+        <details className="admin-mobile-more">
+          <summary className={`admin-dock-item ${moreActive ? "admin-dock-more-active" : ""}`} aria-label="Mais opções do admin"><MoreHorizontal className="h-5 w-5" /><span>Mais</span></summary>
+          <div className="admin-mobile-menu">
+            <p className="mb-3 px-3 text-xs font-bold uppercase tracking-widest text-white/60">Outras áreas</p>
+            {mobileOther.map(item => <NavLink compact key={item.href} {...item} />)}
+            <form action="/api/admin/logout" method="post"><button type="submit" className="flex w-full items-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold text-white/80"><LogOut className="h-4 w-4" />Sair</button></form>
+          </div>
+        </details>
+      </nav>
     </div>
   );
 }

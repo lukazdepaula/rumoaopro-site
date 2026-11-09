@@ -5,6 +5,7 @@ import { AdminDateRangeFilter } from "@/components/admin-date-range-filter";
 import { AdminExternalReceipts } from "@/components/admin-external-receipts";
 import { AdminLiveVisitors } from "@/components/admin-live-visitors";
 import { AdminMonthlyExpenses } from "@/components/admin-monthly-expenses";
+import { AdminRevenueOverview } from "@/components/admin-revenue-overview";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/checkout/admin-auth";
 import { summarizeFunnel } from "@/lib/checkout/analytics-funnel";
@@ -34,13 +35,6 @@ const gatewayLabels: Record<Gateway, string> = {
   shopify_legacy: "Shopify legado"
 };
 
-const productTypeById = new Map(
-  checkoutProducts.flatMap((product) => [
-    [product.id, product.type] as const,
-    ...(product.aliases || []).map((alias) => [alias, product.type] as const)
-  ])
-);
-
 function paidDate(order: Order) {
   return financialOrderDate(order);
 }
@@ -51,10 +45,6 @@ function orderValueBrl(order: Order) {
 
 function formatBrl(value: number) {
   return formatMoney(value, "BRL");
-}
-
-function percentDelta(current: number, previous: number) {
-  return previous > 0 ? ((current - previous) / previous) * 100 : null;
 }
 
 async function loadAdminData<T>(
@@ -154,22 +144,7 @@ export default async function AdminDashboardPage({
   const formatConversion = (value: number | null) =>
     funnelAvailable && value !== null ? `${value.toFixed(1)}%` : "—";
   const stageValue = (value: number) => analyticsData.available ? value : "—";
-  const grossRevenueDelta = comparisonMetrics
-    ? percentDelta(financialMetrics.grossRevenueBrl, comparisonMetrics.grossRevenueBrl)
-    : null;
   const kiwifySource = financialMetrics.sources.find((source) => source.id === "kiwify");
-  const localProgramSalesBrl = monthPaidOrders
-    .filter((order) => productTypeById.get(order.product_id) === "training_program")
-    .reduce((total, order) => total + orderValueBrl(order), 0);
-  const courseSalesBrl = kiwifySource?.state === "ready" && !kiwifySource.hasUnconvertedCurrencies
-    ? kiwifySource.grossRevenueBrl : null;
-  const programSalesBrl = localProgramSalesBrl;
-  const combinedMonthlyRevenueBrl =
-    financialPeriod.isCurrentMonth && recurringMetrics.state === "ready" &&
-    financialMetrics.state === "ready" && ordersData.available &&
-    !financialMetrics.hasUnconvertedCurrencies && !recurringMetrics.hasUnconvertedCurrencies
-      ? recurringMetrics.mrrBrlEstimate + programSalesBrl
-      : null;
   const confirmedMonthNetRevenueBrl =
     financialPeriod.isCurrentMonth && financialMetrics.state === "ready" &&
     !financialMetrics.hasUnconvertedCurrencies && ordersData.available
@@ -266,7 +241,7 @@ export default async function AdminDashboardPage({
     .slice(0, 5);
 
   return (
-    <AdminShell title="Painel">
+    <AdminShell title="Visão geral" eyebrow="Seu negócio em números" glass>
       {unavailableData.length > 0 ? (
         <section className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950 shadow-sm">
           <p className="text-sm font-black">Parte dos dados está temporariamente indisponível</p>
@@ -275,7 +250,93 @@ export default async function AdminDashboardPage({
           </p>
         </section>
       ) : null}
-      <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(250px,0.72fr)_minmax(0,1.65fr)]">
+      <AdminDateRangeFilter
+        compare={comparisonEnabled}
+        maxDate={currentMonthPeriod.endKey}
+        period={financialPeriod}
+      />
+
+      <AdminRevenueOverview
+        metrics={financialMetrics}
+        ordersAvailable={ordersData.available}
+        comparisonMetrics={comparisonMetrics}
+        comparisonPeriod={comparisonPeriod}
+      />
+
+      <section className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
+        financialMetrics.state === "ready"
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-amber-200 bg-amber-50"
+      }`}>
+        <div>
+          <p className="text-xs font-black text-ink">
+            {financialMetrics.state === "ready"
+              ? "Vendas do site conciliadas com os gateways"
+              : "Faturamento parcial — falta conciliar uma fonte"}
+          </p>
+          <p className="mt-1 text-[11px] text-graphite/60">
+            {financialMetrics.officialSourceCount}/3 gateways conectados · cada fonte é limitada aos produtos desta operação
+          </p>
+        </div>
+        <p className="text-[11px] font-semibold text-graphite/55">
+          Atualizado às {new Date(financialMetrics.updatedAt).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo"
+          })}
+        </p>
+      </section>
+
+      <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-ink">Recebimentos por dia</h2>
+            <p className="mt-1 text-sm text-graphite/60">
+              Site e curso · assessoria externa aparece no total acima. Valores convertidos para reais.
+            </p>
+          </div>
+          <Link
+            className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink"
+            href="/admin/orders?status=paid"
+          >
+            Ver pedidos pagos
+          </Link>
+        </div>
+        <p className="mt-3 text-xs text-graphite/65">Altura das barras: faturamento bruto em R$ · maior dia {formatBrl(Math.max(...dailySeries.map(day => day.revenue), 0))}. Pagamentos abaixo de cada data.</p>
+        {financialMetrics.state !== "ready" || financialMetrics.hasUnconvertedCurrencies ? <p className="mt-2 text-xs font-semibold text-amber-800">Leitura parcial: o gráfico inclui apenas os valores disponíveis.</p> : null}
+        <div
+          className="mt-6 grid min-h-56 items-end gap-2 overflow-x-auto pt-8"
+          data-admin-reveal
+          style={{ gridTemplateColumns: `repeat(${dailySeries.length}, minmax(1.5rem, 1fr))` }}
+        >
+          {dailySeries.map((day, index) => {
+            const height = Math.max(0, Math.round((day.revenue / maxDailyRevenue) * 160));
+            return (
+              <div className="admin-chart-column grid min-w-6 gap-2" key={day.key} tabIndex={0} aria-label={`${day.label}: ${formatBrl(day.revenue)} em ${day.count} pagamento(s)`}>
+                <span className="admin-chart-tooltip" aria-hidden="true">{formatBrl(day.revenue)}</span>
+                <div className="flex h-40 items-end rounded-md bg-smoke px-1">
+                  <div
+                    className="admin-chart-bar w-full rounded-t-md bg-gradient-to-t from-signal to-[#fc6577]"
+                    style={{ height: `${height}px`, "--bar-index": Math.min(index, 20) } as React.CSSProperties}
+                    role="img"
+                    aria-label={`${day.label}: ${formatBrl(day.revenue)} em ${day.count} pagamento(s)`}
+                    title={`${day.label}: ${formatBrl(day.revenue)} em ${day.count} venda(s)`}
+                  />
+                </div>
+                <p className="text-center text-[11px] font-bold text-graphite/55">
+                  {day.label}
+                </p>
+                <p className="text-center text-[11px] font-semibold text-ink">
+                  {day.count}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        {dailySeries.length === 0 ? <p className="py-6 text-sm text-graphite/65">Sem dados diários disponíveis para este período.</p> : null}
+      </section>
+
+      <section className="my-5 grid gap-5 xl:grid-cols-[minmax(220px,0.6fr)_minmax(0,1.8fr)]">
         <AdminLiveVisitors
           initialData={{
             activeVisitors: activePresence.length,
@@ -289,9 +350,9 @@ export default async function AdminDashboardPage({
             <div>
               <div className="flex items-center gap-2">
                 <CircleDollarSign className="h-4 w-4 text-turf" />
-                <h2 className="text-sm font-bold text-ink">MRR atual</h2>
+                <h2 className="text-sm font-bold text-ink">Receita recorrente prevista</h2>
               </div>
-              <p className="mt-1 text-xs text-graphite/55">Assinaturas ativas; atrasos e testes separados</p>
+              <p className="mt-1 text-xs text-graphite/55">MRR · fotografia atual das assinaturas, separado do faturamento</p>
             </div>
             <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${
               recurringMetrics.state === "ready"
@@ -309,7 +370,7 @@ export default async function AdminDashboardPage({
           </div>
 
           <div className="grid md:grid-cols-3">
-            <div className="bg-[#1f1f1f] p-5 text-white md:min-h-36">
+            <div className="bg-[#713747] p-5 text-white md:min-h-36">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">MRR após descontos</p>
               <p className="mt-2 text-3xl font-black tracking-tight">
                 {recurringMetrics.state === "ready" ? formatBrl(recurringMetrics.mrrBrlEstimate) : "—"}
@@ -381,130 +442,6 @@ export default async function AdminDashboardPage({
           ) : null}
         </article>
       </section>
-
-      <AdminDateRangeFilter
-        compare={comparisonEnabled}
-        maxDate={currentMonthPeriod.endKey}
-        period={financialPeriod}
-      />
-
-      <section className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
-        financialMetrics.state === "ready"
-          ? "border-emerald-200 bg-emerald-50"
-          : "border-amber-200 bg-amber-50"
-      }`}>
-        <div>
-          <p className="text-xs font-black text-ink">
-            {financialMetrics.state === "ready"
-              ? "Vendas do site conciliadas com os gateways"
-              : "Faturamento parcial — falta conciliar uma fonte"}
-          </p>
-          <p className="mt-1 text-[11px] text-graphite/60">
-            {financialMetrics.officialSourceCount}/3 gateways conectados · cada fonte é limitada aos produtos desta operação
-          </p>
-        </div>
-        <p className="text-[11px] font-semibold text-graphite/55">
-          Atualizado às {new Date(financialMetrics.updatedAt).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "America/Sao_Paulo"
-          })}
-        </p>
-      </section>
-
-      <article className="mb-4 overflow-hidden rounded-lg bg-ink text-white shadow-sm">
-        <div className="grid gap-5 p-5 lg:grid-cols-[1.15fr_1fr] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-              Indicador mensal combinado
-            </p>
-            <p className="mt-2 text-3xl font-black sm:text-4xl">
-              {combinedMonthlyRevenueBrl === null
-                ? "—"
-                : formatBrl(combinedMonthlyRevenueBrl)}
-            </p>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-              MRR atual mais vendas avulsas de programas no mês. Indicador gerencial, não faturamento recebido nem lucro.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-md border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-bold uppercase text-white/45">MRR atual</p>
-              <p className="mt-2 text-xl font-black">
-                {recurringMetrics.state === "ready"
-                  ? formatBrl(recurringMetrics.mrrBrlEstimate)
-                  : "—"}
-              </p>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-bold uppercase text-white/45">Programas no período</p>
-              <p className="mt-2 text-xl font-black">{ordersData.available ? formatBrl(programSalesBrl) : "—"}</p>
-              <p className="mt-1 text-xs text-white/55">Pedidos locais pagos · sem o curso</p>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/5 p-4 sm:col-span-2">
-              <p className="text-xs font-bold uppercase text-white/45">Curso · Preparador PRO</p>
-              <p className="mt-2 text-xl font-black">{courseSalesBrl === null ? "—" : formatBrl(courseSalesBrl)}</p>
-              <p className="mt-1 text-xs text-white/55">Bruto sem juros do comprador · líquido {courseSalesBrl === null ? "—" : formatBrl(kiwifySource!.netRevenueBrl)}</p>
-              <p className="mt-1 text-xs text-white/55">Kiwify no período · separado do indicador combinado</p>
-            </div>
-          </div>
-        </div>
-        <p className="border-t border-white/10 px-5 py-3 text-[11px] leading-relaxed text-white/45">
-          {financialPeriod.isCurrentMonth
-            ? "Indicador gerencial: o MRR é uma fotografia atual e as vendas de programas são acumuladas até hoje."
-            : "Selecione Mês atual para calcular o total combinado sem misturar períodos diferentes."}
-        </p>
-      </article>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-lg border border-ink/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase text-graphite/55">
-            Faturamento recebido
-          </p>
-          <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(financialMetrics.grossRevenueBrl)}
-          </p>
-          <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Pagamentos efetivamente confirmados no período
-            {grossRevenueDelta === null
-              ? ""
-              : ` · ${grossRevenueDelta >= 0 ? "+" : ""}${grossRevenueDelta.toFixed(1)}% vs período anterior`}
-          </p>
-        </article>
-        <article className="rounded-lg border border-ink/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase text-graphite/55">
-            Faturamento líquido
-          </p>
-          <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(financialMetrics.netRevenueBrl)}
-          </p>
-          <p className="mt-2 text-xs font-semibold text-graphite/60">
-            {formatBrl(financialMetrics.feesBrl)} em taxas · {formatBrl(financialMetrics.refundsBrl)} reembolsado
-          </p>
-        </article>
-        <article className="rounded-lg border border-ink/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase text-graphite/55">
-            Vendas confirmadas
-          </p>
-          <p className="mt-2 text-2xl font-black text-ink">
-            {financialMetrics.paymentCount}
-          </p>
-          <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Stripe + Mercado Pago + Kiwify + Shopify conciliados
-          </p>
-        </article>
-        <article className="rounded-lg border border-ink/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase text-graphite/55">
-            Ticket médio
-          </p>
-          <p className="mt-2 text-2xl font-black text-ink">
-            {formatBrl(financialMetrics.averageTicketBrl)}
-          </p>
-          <p className="mt-2 text-xs font-semibold text-graphite/60">
-            Bruto dividido pelos pagamentos aprovados
-          </p>
-        </article>
-      </div>
 
       <div className="mt-5">
         <AdminExternalReceipts metrics={financialMetrics} ordersAvailable={ordersData.available} />
@@ -602,48 +539,6 @@ export default async function AdminDashboardPage({
           <div className="divide-y divide-ink/10">{countryRows.slice(0, 8).map((row) => <div className="grid grid-cols-3 gap-2 p-4 text-sm" key={row.country}><p className="font-bold text-ink">{row.country}</p><p>{row.starts} pedidos</p><p>{row.sales} vendas</p></div>)}{countryRows.length === 0 ? <p className="p-4 text-sm text-graphite/60">Aguardando novos pedidos rastreados.</p> : null}</div>
         </section>
       </div>
-
-      <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-ink">Vendas diárias</h2>
-            <p className="mt-1 text-sm text-graphite/60">
-              Somente vendas vinculadas ao site; valores em USD são convertidos para BRL.
-            </p>
-          </div>
-          <Link
-            className="rounded-md border border-ink/15 px-3 py-2 text-xs font-bold text-ink"
-            href="/admin/orders?status=paid"
-          >
-            Ver pedidos pagos
-          </Link>
-        </div>
-        <div
-          className="mt-6 grid min-h-56 items-end gap-2 overflow-x-auto"
-          style={{ gridTemplateColumns: `repeat(${dailySeries.length}, minmax(3.5rem, 1fr))` }}
-        >
-          {dailySeries.map((day) => {
-            const height = Math.max(8, Math.round((day.revenue / maxDailyRevenue) * 160));
-            return (
-              <div className="grid min-w-14 gap-2" key={day.key}>
-                <div className="flex h-40 items-end rounded-md bg-smoke px-1">
-                  <div
-                    className="w-full rounded-t-md bg-signal"
-                    style={{ height: `${height}px` }}
-                    title={`${day.label}: ${formatBrl(day.revenue)} em ${day.count} venda(s)`}
-                  />
-                </div>
-                <p className="text-center text-[11px] font-bold text-graphite/55">
-                  {day.label}
-                </p>
-                <p className="text-center text-[11px] font-semibold text-ink">
-                  {day.count}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <section className="rounded-lg border border-ink/10 bg-white">
