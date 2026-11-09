@@ -107,13 +107,16 @@ test('SQLite honors the exclusive end date and preserves more than the old 10000
   } finally {db.close();}
 });
 
-test('dashboard keeps course out of programs and the MRR-plus-programs indicator', async () => {
+test('dashboard leads with received operation revenue and separates course from site and forecasts', async () => {
   const html=await renderDashboard();
-  const combined=html.split('Indicador mensal combinado')[1].split('</article>')[0];
-  assert.match(combined,/1\.200,00/);
-  assert.doesNotMatch(combined,/1\.600,00/);
-  assert.match(combined.split('Programas no período')[1].split('Curso ·')[0],/200,00/);
-  assert.match(combined.split('Curso · Preparador PRO')[1],/400,00/);
+  const hero=html.split('Faturamento do mês até hoje')[1].split('</article>')[0];
+  assert.match(hero,/900,00/);
+  assert.doesNotMatch(hero,/1\.000,00|1\.200,00|1\.900,00/);
+  const parts=html.split('De onde veio a receita')[1].split('</article>')[0];
+  assert.match(parts.split('Site e aplicativos')[1].split('Curso ·')[0],/200,00/);
+  assert.match(parts.split('Curso · Preparador PRO')[1].split('Assessoria identificada')[0],/400,00/);
+  assert.ok(html.indexOf('Faturamento do mês até hoje') < html.indexOf('Receita recorrente prevista'));
+  assert.doesNotMatch(html,/Indicador mensal combinado/);
   assert.match(html,/Movimentações fora do checkout/);
   assert.match(html,/Saídas conferidas/);
   assert.match(html.split('Saídas conferidas')[1].split('</section>')[0],/120,00/);

@@ -1,4 +1,5 @@
 import type { FinancialPeriodMetrics } from "@/lib/checkout/financial-reporting";
+import { summarizeAdminRevenue } from "@/lib/checkout/admin-dashboard-summary";
 import { formatMoney } from "@/lib/checkout/products";
 
 export function AdminExternalReceipts({ metrics, ordersAvailable }: { metrics: FinancialPeriodMetrics; ordersAvailable: boolean }) {
@@ -8,10 +9,11 @@ export function AdminExternalReceipts({ metrics, ordersAvailable }: { metrics: F
   const sum = (category: "coaching" | "internal_transfer" | "outgoing_payment" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl" | "transactionCount") =>
     sources.reduce((total, source) => total + (source.externalReceipts?.[category][field] || 0), 0);
   const money = (value: number) => formatMoney(value, "BRL");
+  const summary = summarizeAdminRevenue(metrics, ordersAvailable);
   const amount = (category: "coaching" | "internal_transfer" | "outgoing_payment" | "unclassified", field: "grossRevenueBrl" | "netRevenueBrl") =>
     ready ? money(sum(category, field)) : "—";
   return (
-    <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5">
+    <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5" id="conciliacao">
       <h2 className="text-lg font-bold text-ink">Movimentações fora do checkout</h2>
       <p className="mt-1 text-sm text-graphite/60">Classificação por produto ou transação conferida. Cada movimentação pertence a um único grupo.</p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -42,8 +44,8 @@ export function AdminExternalReceipts({ metrics, ordersAvailable }: { metrics: F
           : "conferência indisponível"}</p>)}
       </div>
       <p className="mt-4 text-xs leading-relaxed text-graphite/60">
-        {ready && metrics.state === "ready" && !metrics.hasUnconvertedCurrencies
-          ? `Receita identificada do site, curso e assessoria externa: ${money(metrics.grossRevenueBrl + sum("coaching", "grossRevenueBrl"))}.`
+        {summary.grossRevenueBrl !== null
+          ? `Receita identificada do site, curso e assessoria externa: ${money(summary.grossRevenueBrl)}.`
           : "Total da operação indisponível até carregar as fontes oficiais."} Valores ainda sem classificação não entram nesse total. A conferência usa o período selecionado; não representa saldo bancário ou lucro.
       </p>
     </section>

@@ -18,7 +18,7 @@ export const sources=[
     externalReceipts:{coaching:totals(),internal_transfer:totals(285,285,1),outgoing_payment:totals(120,120,2),unclassified:totals(),hasUnconvertedCurrencies:false}},
   {id:'kiwify',name:'Kiwify · Preparador PRO',state:'ready',...totals(400,350,1),updatedAt:now}
 ];
-export async function renderDashboard({unavailable=false}={}) {
+export async function renderDashboard({unavailable=false, searchParams={}, financialOverrides={}, recurringOverrides={}}={}) {
   const cache=new Map();
   const date=new Date();const start=new Date(date.getFullYear(),date.getMonth(),1);
   const order={id:'fixture-order',product_id:'power_pro',product_name:'Power Pro',status:'paid',amount:200,currency:'BRL',
@@ -36,7 +36,7 @@ export async function renderDashboard({unavailable=false}={}) {
       listAnalyticsEvents:async()=>{if(unavailable)throw Error('Fixture unavailable');return events;},listActiveSitePresence:async()=>[]},
     '@/lib/checkout/stripe-reporting':{getStripeRecurringMetrics:async()=>({state:'ready',livemode:false,activeSubscribers:2,
       activeSubscriptions:2,trialingSubscriptions:0,pastDueSubscriptions:0,mrrBrlEstimate:1000,grossMrrBrlEstimate:1000,
-      discountBrlEstimate:0,usdBrlRate:5.5,updatedAt:now,products:[]})},
+      discountBrlEstimate:0,usdBrlRate:5.5,updatedAt:now,products:[],...recurringOverrides})},
     '@/lib/checkout/expense-reporting':{getMonthlyExpenseMetrics:async()=>({period:now.slice(0,7),isCurrentPeriod:true,
       elapsedDays:date.getDate(),daysInMonth:31,totalBrlEstimate:0,projectedBrlEstimate:0,budgetBrl:null,
       budgetUsedPercent:null,hasSpendData:false,hasUnconvertedCurrencies:false,updatedAt:now,
@@ -59,7 +59,7 @@ export async function renderDashboard({unavailable=false}={}) {
   const finance=load(path.resolve('lib/checkout/financial-reporting.ts'));
   mocks['@/lib/checkout/financial-reporting']={...finance,getFinancialPeriodMetrics:async period=>({
     ...totals(600,540,2),period,state:'ready',averageTicketBrl:300,officialSourceCount:3,sources,daily:[],updatedAt:now,
-    hasUnconvertedCurrencies:false})};
+    hasUnconvertedCurrencies:false,...financialOverrides})};
   const Page=load(path.resolve('app/admin/page.tsx')).default;
-  return renderToStaticMarkup(await Page({searchParams:Promise.resolve({compare:'0'})}));
+  return renderToStaticMarkup(await Page({searchParams:Promise.resolve({compare:'0',...searchParams})}));
 }

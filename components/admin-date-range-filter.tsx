@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import type { FinancialPeriod, FinancialRangePreset } from "@/lib/checkout/financial-reporting";
 
@@ -42,14 +42,17 @@ export function AdminDateRangeFilter({
   if (!compare) refreshParams.set("compare", "0");
 
   return (
-    <section className="mb-5 rounded-lg border border-ink/10 bg-white p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-graphite/55">
-            <CalendarDays className="h-4 w-4" />
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Período financeiro</p>
-          </div>
-          <p className="mt-1 text-lg font-black text-ink">{period.label}</p>
+    <section className="admin-period mb-5 rounded-lg border border-ink/10 bg-white p-4" aria-label="Selecionar período">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2" aria-label="Períodos rápidos">
+          {presets.map((preset) => {
+            const active = period.preset === preset.id;
+            return <Link
+              className={`rounded-full px-3 py-2 text-xs font-bold transition ${active ? "bg-signal text-white" : "bg-white/70 text-graphite/70 hover:text-ink"}`}
+              aria-current={active ? "date" : undefined}
+              href={hrefFor(preset.id, compare)} key={preset.id}
+            >{preset.label}</Link>;
+          })}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -72,24 +75,9 @@ export function AdminDateRangeFilter({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {presets.map((preset) => {
-          const active = period.preset === preset.id;
-          return (
-            <Link
-              className={`rounded-full px-3 py-2 text-xs font-bold transition ${
-                active ? "bg-ink text-white" : "bg-smoke text-graphite/70 hover:text-ink"
-              }`}
-              href={hrefFor(preset.id, compare)}
-              key={preset.id}
-            >
-              {preset.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <form className="mt-4 grid gap-3 border-t border-ink/10 pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end" method="get">
+      <details className="mt-3" open={period.preset === "custom"}>
+      <summary className="w-fit cursor-pointer rounded-md py-1 text-xs font-semibold text-graphite/70">Escolher outras datas</summary>
+      <form className="mt-3 grid gap-3 border-t border-ink/10 pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end" method="get">
         <input name="range" type="hidden" value="custom" />
         <input name="compare" type="hidden" value={compare ? "1" : "0"} />
         <label className="grid gap-1.5 text-xs font-bold text-graphite/65">
@@ -121,6 +109,7 @@ export function AdminDateRangeFilter({
       <p className="mt-3 text-[11px] leading-relaxed text-graphite/50">
         Intervalos personalizados aceitam até 366 dias. O Mercado Pago disponibiliza pesquisa financeira dos últimos 12 meses.
       </p>
+      </details>
     </section>
   );
 }

@@ -2,6 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dashboard theme, isolated from public pages and financial calculations. */
+.admin-glass { position: relative; isolation: isolate; background: #090a0d; }
+.admin-photo-backdrop { position: fixed; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }
+.admin-photo-backdrop::before {
+  content: ""; position: absolute; inset: -12px;
+  background: url('/assets/photos/lukaz-gym-instruction.jpg') right 35% / cover no-repeat;
+  filter: blur(7px) grayscale(.8); opacity: .45;
+}
+.admin-photo-backdrop::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 95% 15%, rgb(213 22 42 / 20%), transparent 52%),
+    linear-gradient(90deg, rgb(5 6 9 / 92%), rgb(5 6 9 / 40%) 60%, rgb(5 6 9 / 45%));
+}
+.admin-glass .admin-sidebar { background: rgb(12 13 17 / 55%); border-color: rgb(255 255 255 / 12%); backdrop-filter: blur(22px); }
+.admin-glass .admin-sidebar :is(a,button) { color: #bfc1c9; }
+.admin-glass .admin-sidebar .font-display { color: white; }
+.admin-glass .admin-sidebar [class*="text-graphite/"] { color: #a4a7b1; }
+.admin-glass .admin-sidebar a:hover, .admin-glass .admin-sidebar button:hover { background: rgb(255 255 255 / 10%); color: white; }
+.admin-glass .admin-sidebar a[aria-current="page"] { background: linear-gradient(110deg, #ba102b, #d5162a); color: white; box-shadow: 0 5px 24px rgb(213 22 42 / 25%); }
+.admin-glass .admin-sidebar a svg { transition: transform .2s ease; }
+.admin-glass .admin-sidebar a:hover svg { transform: translateY(-2px); }
+.admin-glass .admin-sidebar > div { border-color: rgb(255 255 255 / 12%); }
+.admin-glass main > header { background: rgb(12 13 17 / 35%); border-color: rgb(255 255 255 / 12%); backdrop-filter: blur(18px); }
+.admin-glass main > header > div { color: #b6b9c2; }
+.admin-glass main > section > :is(p,h1) { color: white; }
+.admin-glass main > section > p { color: #c1c3cb; }
+.admin-glass main > section > div > p { color: #d0d2da; }
+.admin-glass :is(section,article).bg-white, .admin-glass .admin-glass-panel {
+  color: #14161b; border: 1px solid rgb(255 255 255 / 70%); border-radius: 24px;
+  background: rgb(255 255 255 / 83%); backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 12px 35px rgb(0 0 0 / 16%), inset 0 1px 0 rgb(255 255 255 / 80%);
+}
+.admin-glass .admin-glass-panel { transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+@media (hover: hover) {
+  .admin-glass .admin-glass-panel:hover { transform: translateY(-3px); background: rgb(255 255 255 / 90%); box-shadow: 0 18px 40px rgb(0 0 0 / 22%); }
+}
+.admin-glass .admin-period { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0; backdrop-filter: none !important; color: white; }
+.admin-glass .admin-period :is(a,summary) { color: #e4e5eb; border-color: rgb(255 255 255 / 25%); }
+.admin-glass .admin-period a { background: rgb(255 255 255 / 10%); backdrop-filter: blur(12px); transition: background .2s, transform .2s; }
+.admin-glass .admin-period a:hover { background: rgb(255 255 255 / 20%); transform: translateY(-2px); }
+.admin-glass .admin-period a[aria-current="date"] { background: #d5162a; color: white; box-shadow: 0 4px 20px rgb(213 22 42 / 22%); }
+.admin-glass .admin-period :is(label,p) { color: #c9cbd3; }
+.admin-revenue-hero {
+  background: radial-gradient(ellipse at 100% 0, rgb(213 22 42 / 34%), transparent 70%), rgb(15 16 20 / 60%);
+  backdrop-filter: blur(20px); border: 1px solid rgb(255 255 255 / 25%);
+  box-shadow: 0 15px 40px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 15%);
+}
+.admin-revenue-hero::after { content: ""; position: absolute; width: 350px; height: 350px; right: -180px; top: -160px; border: 1px solid rgb(255 255 255 / 9%); border-radius: 50%; box-shadow: 0 0 0 42px rgb(255 255 255 / 3%), 0 0 0 84px rgb(255 255 255 / 2%); pointer-events: none; }
+.admin-goal { background: rgb(17 18 23 / 55%); border: 1px solid rgb(255 255 255 / 24%); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%),0 15px 35px rgb(0 0 0 / 20%); }
+.admin-ring-progress { filter: drop-shadow(0 0 6px rgb(241 58 81 / 40%)); animation: admin-ring-fill 1.25s cubic-bezier(.2,.8,.2,1) both; }
+.admin-chart-bar { transform-origin: bottom; animation: admin-bar-rise .85s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--bar-index,0) * 35ms); }
+.admin-motion-pending .admin-chart-bar, .admin-motion-pending .admin-ring-progress { animation: none; }
+.admin-motion-pending .admin-chart-bar { transform: scaleY(0); }
+.admin-motion-pending .admin-ring-progress { stroke-dashoffset: 100; }
+.admin-chart-column { position: relative; }
+.admin-chart-column:focus-visible { outline: 2px solid #d5162a; outline-offset: 3px; border-radius: 8px; }
+.admin-chart-tooltip { position: absolute; z-index: 5; left: 50%; top: -30px; transform: translate(-50%,5px); opacity: 0; pointer-events: none; background: #14161b; color: white; padding: 5px 8px; border-radius: 7px; font-size: 11px; white-space: nowrap; transition: opacity .15s,transform .15s; }
+.admin-chart-column:is(:hover,:focus-visible) .admin-chart-tooltip { opacity: 1; transform: translate(-50%,0); }
+.admin-chart-column:is(:hover,:focus-visible) .admin-chart-bar { filter: brightness(1.15); }
+.admin-glass :is(a,button,summary,input):focus-visible { outline: 3px solid #ff7183; outline-offset: 3px; }
+.admin-glass [id] { scroll-margin-top: 5rem; }
+.admin-mobile-dock { position: fixed; z-index: 50; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 3px; padding: 8px 10px max(10px,env(safe-area-inset-bottom)); background: rgb(10 11 15 / 90%); backdrop-filter: blur(22px); border-top: 1px solid rgb(255 255 255 / 18%); box-shadow: 0 -8px 30px rgb(0 0 0 / 12%); color: white; }
+.admin-dock-item { display: flex; min-height: 50px; align-items: center; justify-content: center; flex-direction: column; gap: 5px; border-radius: 14px; color: #b9bdc8; font-size: 10px; font-weight: 600; cursor: pointer; transition: background .2s,color .2s,transform .2s; }
+.admin-dock-item svg { transition: transform .2s ease; }
+.admin-dock-item:is(:hover,:focus-visible) { background: rgb(255 255 255 / 10%); color: white; }
+.admin-dock-item:is(:hover,:focus-visible) svg { transform: translateY(-2px); }
+.admin-dock-item:active { transform: scale(.95); }
+.admin-dock-item[aria-current="page"], .admin-dock-more-active, .admin-mobile-more[open] > summary { color: #ff5c71; background: rgb(213 22 42 / 16%); }
+.admin-mobile-more summary { list-style: none; }
+.admin-mobile-more summary::-webkit-details-marker { display: none; }
+.admin-mobile-menu { position: absolute; bottom: calc(100% + 10px); left: 12px; right: 12px; max-height: min(65dvh,520px); overflow-y: auto; padding: 18px 12px; background: rgb(18 19 25 / 97%); border: 1px solid rgb(255 255 255 / 20%); backdrop-filter: blur(20px); border-radius: 22px; box-shadow: 0 15px 45px rgb(0 0 0 / 30%); animation: admin-menu-in .2s ease-out; }
+.admin-mobile-menu a { min-height: 44px; }
+@keyframes admin-ring-fill { from { stroke-dashoffset: 100; } }
+@keyframes admin-bar-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes admin-menu-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 1023px) { .admin-shell main { padding-bottom: calc(90px + env(safe-area-inset-bottom)); } .admin-glass > header { background: rgb(10 11 15 / 65%); backdrop-filter: blur(22px); border-color: rgb(255 255 255 / 15%); } }
+@media (min-width: 1024px) { .admin-mobile-dock { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .admin-glass *, .admin-mobile-dock * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .admin-glass .admin-motion-pending .admin-chart-bar { transform: none; }
+  .admin-glass .admin-glass-panel:hover { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) { .admin-glass :is(section,article).bg-white,.admin-glass .admin-glass-panel { background: #f4f4f6; backdrop-filter: none; } .admin-goal,.admin-revenue-hero,.admin-mobile-dock { background: #15161c; backdrop-filter: none; } }
+
 :root {
   color-scheme: light;
   --header-height: 72px;
