@@ -1,14 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Check, Smartphone } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Layers3 } from "lucide-react";
 import { HomeMotionHero } from "@/components/home-motion-hero";
 import { HomeLoadProDemo } from "@/components/home-loadpro-demo";
-import { ProgramGoalFinder } from "@/components/program-goal-finder";
+import { HomeCourseLaptop } from "@/components/home-course-laptop";
+import { HomeServicesEntry, HomeAthleteStory } from "@/components/home-services-entry";
+import { HomeScrollReveal } from "@/components/home-scroll-reveal";
 import { ReviewsSection } from "@/components/reviews";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { assets, nav } from "@/lib/content";
 import styles from "./home-editorial.module.css";
+import services from "./home-services.module.css";
 
 const copy = {
   pt: {
@@ -142,51 +145,29 @@ export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
   const page = copy[locale];
   return (
     <main className={styles.page}>
-      <SiteHeader navItems={nav[locale]} ctaHref="#programas" ctaLabel={page.finalCta} languageHref={page.language} showMobileCta />
-      <HomeMotionHero locale={locale} />
-      <nav aria-label={page.explore} className={styles.paths} id="entradas">
-        {page.paths.map(([label, title, href], index) => <Link className="focus-ring" href={href} key={title}>
-          <span className={styles.pathNumber}>0{index + 1}</span><span><small>{label}</small><strong>{title}</strong></span><ArrowUpRight aria-hidden="true" size={23} />
-        </Link>)}
-      </nav>
+      <SiteHeader navItems={nav[locale]} ctaHref="#solucoes" ctaLabel={locale==="pt"?"Explorar soluções":"Explore solutions"} languageHref={page.language} showMobileCta />
+      <HomeServicesEntry locale={locale}/>
+      <HomeScrollReveal><div id="por-dentro"><HomeMotionHero locale={locale} /></div></HomeScrollReveal>
 
-      <section className={`${styles.section} ${styles.programFinder}`} id="programas">
-        <ProgramGoalFinder locale={locale} showClassicLink={false} />
-      </section>
-
-      <section className={styles.appSection} id="por-dentro">
-        <div className={`${styles.section} ${styles.appGrid}`}>
-          <div>
-            <p className={styles.eyebrow}><Smartphone aria-hidden="true" size={16} />{page.appEyebrow}</p>
-            <h2>{page.appTitle}</h2><p className={styles.body}>{page.appBody}</p>
-            <ul className={styles.checks}>{page.appPoints.map(point => <li key={point}><Check aria-hidden="true" size={18} />{point}</li>)}</ul>
-            <Link className={`${styles.darkButton} focus-ring`} href={page.programs}>{page.appLink}<ArrowRight aria-hidden="true" size={18} /></Link>
-          </div>
-          <figure className={styles.appFigure}>
-            <div className={styles.phone}><Image src="/assets/programs/in-season/refresh-2026-10/raptor-calendar-pt.png" alt={page.appAlt} width={558} height={764} sizes="(min-width: 768px) 330px, 80vw" /></div>
-            <figcaption>{page.appCaption}</figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <section className={styles.coaching}>
+      <HomeScrollReveal><section className={styles.coaching} id="assessoria-home">
         <figure><Image src={assets.coachFieldDrillWide} alt={page.coachingAlt} fill sizes="(min-width: 768px) 55vw, 100vw" /></figure>
-        <div><p className={styles.eyebrow}>{page.coachingEyebrow}</p><h2>{page.coachingTitle}</h2><p className={styles.body}>{page.coachingBody}</p><Link href={page.coaching} className={`${styles.primary} focus-ring`}>{page.coachingCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
-      </section>
+        <div><p className={styles.eyebrow}>02 / {page.coachingEyebrow}</p><h2>{page.coachingTitle}</h2><p className={styles.body}>{page.coachingBody}</p><Link href={page.coaching} className={`${styles.primary} focus-ring`}>{page.coachingCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
+      </section></HomeScrollReveal>
 
-      <section className={`${styles.section} ${styles.tools}`} id="treinadores">
-        <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>{page.toolsEyebrow}</p><h2>{page.toolsTitle}</h2></div><p className={styles.body}>{page.toolsBody}</p></div>
-        <div className={styles.toolsGrid}>
-          <article className={styles.loadPro}>
-            <div className={styles.toolCopy}><p className={styles.eyebrow}>{page.loadLabel}</p><Image src="/assets/loadpro/loadpro-logo-white-red-transparent.png" alt="LoadPro" width={340} height={72} className={styles.loadLogo} /><h3>{page.loadTitle}</h3><p>{page.loadBody}</p><Link className={`${styles.textLink} focus-ring`} href={page.apps}>{page.loadCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
-            <HomeLoadProDemo locale={locale} />
-          </article>
-          <article className={styles.course} id={locale === "pt" ? "cursos" : "courses"}>
-            <div className={styles.coursePhoto}><Image src={assets.programsGymBriefing} alt={page.courseAlt} fill sizes="(min-width: 1024px) 35vw, 100vw" /></div>
-            <div className={styles.toolCopy}><p className={styles.eyebrow}>{page.courseLabel}</p><h3>{page.courseTitle}</h3><p>{page.courseBody}</p><Link className={`${styles.textLink} focus-ring`} href={page.courses}>{page.courseCta}<ArrowUpRight aria-hidden="true" size={18} /></Link></div>
-          </article>
-        </div>
-      </section>
+      <HomeScrollReveal><div className={services.courseWrap}><section className={services.serviceFeature} id={locale === "pt" ? "cursos" : "courses"}>
+        <div><p className={services.eyebrow}>03 / {page.courseLabel}</p><h2>Preparador Pro.<br/>{locale==="pt"?"Conhecimento em campo.":"Knowledge on the pitch."}</h2><p>{page.courseBody}</p><ul>{(locale==="pt"?["Preparação física no futebol","Avaliações e planejamento","Aulas para aplicar na sua rotina"]:["Football physical preparation","Assessments and planning","Lessons for your coaching practice"]).map(item=><li key={item}><Check size={15}/>{item}</li>)}</ul><Link href={page.courses} className={`${services.featureLink} focus-ring`}>{page.courseCta}<ArrowUpRight size={18}/></Link></div>
+        <div className={services.featureVisual}><HomeCourseLaptop locale={locale}/></div>
+      </section></div></HomeScrollReveal>
+
+      <HomeScrollReveal><div className={services.loadWrap}><section className={services.serviceFeature} id="treinadores">
+        <div><p className={services.eyebrow}>04 / {page.loadLabel}</p><Image src="/assets/loadpro/loadpro-logo-white-red-transparent.png" alt="LoadPro" width={240} height={51} className={styles.loadLogo}/><h2>{page.loadTitle}</h2><p>{page.loadBody}</p><Link href={page.apps} className={`${services.featureLink} focus-ring`}>{page.loadCta}<ArrowUpRight size={18}/></Link></div>
+        <div className={services.loadVisual}><HomeLoadProDemo locale={locale}/></div>
+      </section></div></HomeScrollReveal>
+
+      <HomeScrollReveal><section id="raptor" className={services.raptorSection}><div className={services.raptorInner}><div className={services.raptorIcon} aria-hidden="true"><Layers3 size={50}/></div><div><span className={services.launchLabel}>05 / {locale==="pt"?"PRÓXIMO LANÇAMENTO":"COMING NEXT"}</span><h2>Raptor Pro</h2><p>{locale==="pt"?"Planejamento, calendário e acompanhamento do atleta em um só lugar. Já é a plataforma dos nossos programas; o acesso para novos treinadores está em preparação para lançamento.":"Planning, calendars and athlete monitoring in one place. Already home to our training programs; access for new coaches is being prepared for launch."}</p></div></div></section></HomeScrollReveal>
+
+      <HomeScrollReveal><HomeAthleteStory locale={locale}/></HomeScrollReveal>
+      <div className={styles.reviews}><ReviewsSection groupKey="coaching" locale={locale} eyebrow={page.reviewsEyebrow} title={page.reviewsTitle} /></div>
 
       <section className={`${styles.section} ${styles.founder}`}>
         <Image src={assets.coachPortrait} alt={page.coachAlt} width={840} height={560} sizes="(min-width: 768px) 350px, 100vw" />
@@ -207,8 +188,7 @@ export function HomeEditorialPage({ locale }: { locale: "pt" | "en" }) {
           <p className={styles.signature}>Lukaz de Paula<span>RumoAoPro</span></p>
         </div>
       </section>
-      <div className={styles.reviews}><ReviewsSection groupKey="coaching" locale={locale} eyebrow={page.reviewsEyebrow} title={page.reviewsTitle} /></div>
-      <section className={styles.final}><h2>{page.finalTitle}</h2><div className={styles.actions}><Link href={page.programs} className={`${styles.primary} focus-ring`}>{page.finalCta}<ArrowRight aria-hidden="true" size={19} /></Link><Link href={page.coaching} className={`${styles.textLink} focus-ring`}>{page.finalSecondary}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></section>
+      <section className={styles.final}><h2>{locale==="pt"?"Seu momento.\nSeu próximo passo.":"Your moment.\nYour next step."}</h2><div className={styles.actions}><Link href="#solucoes" className={`${styles.primary} focus-ring`}>{locale==="pt"?"Encontrar minha solução":"Find my path"}<ArrowRight aria-hidden="true" size={19} /></Link><Link href={page.coaching} className={`${styles.textLink} focus-ring`}>{page.finalSecondary}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></section>
       <SiteFooter />
     </main>
   );
