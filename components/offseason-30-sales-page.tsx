@@ -216,7 +216,7 @@ const appScreens = {
 };
 
 const rumoAoProPowerVideo = {
-  thumbnail: "https://i.ytimg.com/vi/FwnxY1xvskY/hqdefault.jpg",
+  thumbnail: "/assets/home/program-scenes-2026-11/offseason-power-video-poster.jpg",
   url: "https://www.youtube.com/watch?v=FwnxY1xvskY"
 };
 

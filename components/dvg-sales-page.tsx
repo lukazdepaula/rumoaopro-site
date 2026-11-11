@@ -12,6 +12,7 @@ import {
   Target
 } from "lucide-react";
 import { ProgramPurchaseSummary } from "@/components/program-purchase-summary";
+import { YouTubeVideoPreview } from "@/components/youtube-video-preview";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
@@ -303,7 +304,7 @@ export function DvgSalesPage({ locale }: DvgSalesPageProps) {
             <h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-4xl">{page.videoTitle}</h2>
           </div>
           <div className="overflow-hidden rounded-2xl border border-white/12 bg-black shadow-2xl">
-            <iframe className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen src="https://www.youtube-nocookie.com/embed/ttzRYsoSIlo" title="De Volta aos Gramados" />
+            <YouTubeVideoPreview videoId="ttzRYsoSIlo" poster="/assets/programs/dvg/dvg-return-to-play-cover-v3.png" title="De Volta aos Gramados" locale={locale}/>
           </div>
         </div>
       </section>
