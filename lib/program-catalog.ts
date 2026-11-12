@@ -12,6 +12,8 @@ export type CatalogProgram = {
   equipment: string;
   image: string;
   imagePosition: string;
+  bookImage: string;
+  bookPosition: string;
   href: string;
   priceBrl: number;
   priceUsd: number;
@@ -42,11 +44,30 @@ export function getProgramCatalog(locale: "pt" | "en"): CatalogProgram[] {
       duration: copy.duration,
       language: copy.tag,
       equipment: definition.equipment[languageIndex],
-      image: definition.id === "return" ? "/assets/programs/dvg/dvg-return-to-play-cover-v3.png" : copy.image,
+      image: catalogCovers[definition.id],
       imagePosition: definition.position,
+      bookImage: catalogBookScenes[definition.id].image,
+      bookPosition: catalogBookScenes[definition.id].position,
       href: copy.href,
       priceBrl: product.price_brl,
       priceUsd: product.price_usd
     }];
   });
 }
+
+// Presentation only: the complete cover stays separate from checkout data.
+const catalogCovers: Record<CatalogGoal, string> = {
+  gym: "/assets/programs/catalog-2026-11/power-pro-v1.png",
+  speed: "/assets/programs/catalog-2026-11/speed-pro-v1.png",
+  offseason: "/assets/programs/catalog-2026-11/offseason-v1.png",
+  inseason: "/assets/programs/catalog-2026-11/inseason-v1.png",
+  return: "/assets/programs/dvg/dvg-return-to-play-cover-v3.png"
+};
+
+const catalogBookScenes: Record<CatalogGoal, { image: string; position: string }> = {
+  gym: { image: "/assets/programs/power-pro/power-pro-cover-v2.png", position: "50% 16%" },
+  speed: { image: "/assets/photos/programs/programs-project36-sprint.jpg", position: "58% 50%" },
+  offseason: { image: "/assets/photos/programs/programs-field-control.jpg", position: "42% 40%" },
+  inseason: { image: "/assets/programs/in-season/refresh-2026-10/match-sprint.jpg", position: "51% 45%" },
+  return: { image: "/assets/photos/lukaz-gym-instruction.jpg", position: "50% 25%" }
+};
