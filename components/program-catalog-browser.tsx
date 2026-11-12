@@ -45,9 +45,9 @@ export function ProgramCatalogBrowser({ locale, programs }: { locale: "pt" | "en
         <div className={styles.currency}><span>{pt ? "Exibir preços em" : "Show prices in"}</span>{(["BRL", "USD"] as const).map(value => <button className="focus-ring" key={value} type="button" aria-label={value === "BRL" ? (pt ? "Preços em reais" : "Prices in Brazilian reais") : (pt ? "Preços em dólares" : "Prices in US dollars")} aria-pressed={value === currency} onClick={() => setCurrency(value)}>{value === "BRL" ? "R$" : "US$"}</button>)}</div>
       </div>
 
-      {view === "cards" ? <div className={styles.programGrid}>
+      {view === "cards" ? <div className={styles.programGrid} data-single={visible.length === 1}>
         {visible.map(program => <article className={styles.card} data-goal={program.id} key={program.id}>
-          <Link href={program.href} className={`${styles.cardImage} focus-ring`} tabIndex={-1} aria-hidden="true"><Image src={program.image} alt="" fill sizes="(min-width: 1050px) 33vw, (min-width: 680px) 50vw, 100vw" style={{ objectPosition: program.imagePosition }} /><span>RAPTORPRO <ArrowUpRight size={16} /></span></Link>
+          <Link href={program.href} className={`${styles.cardImage} focus-ring`} tabIndex={-1} aria-hidden="true"><Image src={program.image} alt="" fill sizes="(min-width: 1280px) 600px, (min-width: 800px) 45vw, 90vw" quality={90} /></Link>
           <div className={styles.cardBody}>
             <p className={styles.cardFocus}>{program.focus}</p><h3><Link href={program.href} className="focus-ring">{program.name}</Link></h3><p className={styles.cardDescription}>{program.body}</p>
             <dl className={styles.facts}><div><dt>{pt ? "Duração" : "Duration"}</dt><dd>{program.duration}</dd></div><div><dt>{pt ? "Estrutura" : "Training setting"}</dt><dd>{program.equipment}</dd></div><div><dt>{pt ? "Idioma" : "Language"}</dt><dd>{program.language}</dd></div></dl>
@@ -58,7 +58,7 @@ export function ProgramCatalogBrowser({ locale, programs }: { locale: "pt" | "en
       </div> : <>
         <p className={styles.compareHint}>{pt ? "No celular, deslize a tabela para ver todos os programas." : "On mobile, swipe across the table to see every program."}</p>
         <div className={`${styles.tableScroll} focus-ring`} role="region" aria-label={pt ? "Comparação dos programas, com rolagem horizontal" : "Program comparison with horizontal scrolling"} tabIndex={0}>
-          <table className={styles.table}><caption className="sr-only">{pt ? "Objetivo, duração, estrutura, idioma e preço dos programas" : "Program goals, duration, training setting, language and prices"}</caption><thead><tr><th scope="col">{pt ? "Seu próximo treino" : "Your next session"}</th>{programs.map(program => <th scope="col" key={program.id}><span>{program.name}</span></th>)}</tr></thead><tbody>
+          <table className={styles.table}><caption className="sr-only">{pt ? "Objetivo, duração, estrutura, idioma e preço dos programas" : "Program goals, duration, training setting, language and prices"}</caption><thead><tr><th scope="col">{pt ? "Seu próximo treino" : "Your next session"}</th>{programs.map(program => <th scope="col" key={program.id} data-goal={program.id}><span>{program.name}</span></th>)}</tr></thead><tbody>
             {comparisonRows.map(row => <tr key={row.key}><th scope="row">{row.label}</th>{programs.map(program => <td key={program.id}>{program[row.key]}</td>)}</tr>)}
             <tr><th scope="row">{pt ? "Compra única" : "One-time purchase"}</th>{programs.map(program => <td key={program.id}><strong>{price(program)}</strong></td>)}</tr>
             <tr><th scope="row">{pt ? "Veja os detalhes" : "See the details"}</th>{programs.map(program => <td key={program.id}><Link className="focus-ring" href={program.href} aria-label={`${pt ? "Conhecer" : "Explore"} ${program.name}`}>{pt ? "Ver programa" : "View program"}<ArrowUpRight size={15} aria-hidden="true" /></Link></td>)}</tr>
