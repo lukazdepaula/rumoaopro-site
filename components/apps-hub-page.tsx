@@ -1,252 +1,72 @@
-import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  CalendarRange,
-  Clock3,
-  ShieldCheck,
-  Smartphone
-} from "lucide-react";
-import { LoadProPromo } from "@/components/loadpro-promo";
-import {
-  RaptorPhoneMockup,
-  raptorAppScreens
-} from "@/components/raptor-program-experience";
+import { ArrowDown, ArrowUpRight, BarChart3, CalendarDays, Check, MessageCircle, Smartphone } from "lucide-react";
+import { AppsHeroDevices } from "@/components/apps-hero-devices";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { assets, nav } from "@/lib/content";
+import { contact, nav } from "@/lib/content";
+import editorial from "./home-editorial.module.css";
+import styles from "./apps-hub-page.module.css";
 
-type AppsHubPageProps = {
-  locale: "pt" | "en";
-};
+export function AppsHubPage({ locale }: { locale: "pt" | "en" }) {
+  const pt = locale === "pt";
+  const prefix = pt ? "/apps" : "/en/apps";
+  const supportHref = `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(pt
+    ? "Olá! Gostaria de ajuda para escolher entre LoadPro e Raptor Pro."
+    : "Hi! I'd like help choosing between LoadPro and Raptor Pro.")}`;
+  const apps = [
+    {
+      id: "loadpro", name: "LoadPro", Icon: BarChart3, href: `${prefix}/loadpro`,
+      category: pt ? "EQUIPE & CONTROLE DE CARGA" : "TEAM & TRAINING LOAD",
+      title: pt ? "Veja como a equipe responde." : "See how your team responds.",
+      body: pt ? "Para o treinador que precisa organizar o microciclo, acompanhar as coletas e monitorar a carga da equipe."
+        : "For coaches who need to organize the microcycle, review daily forms and monitor team training load.",
+      features: pt ? ["Planejamento semanal", "Coletas pré e pós-treino", "Painéis e relatórios de carga"]
+        : ["Weekly planning", "Pre and post-training forms", "Training-load dashboards and reports"],
+      status: pt ? "Planos com teste de 7 dias" : "Plans with a 7-day trial"
+    },
+    {
+      id: "raptorpro", name: "Raptor Pro", Icon: Smartphone, href: `${prefix}/raptor-pro`,
+      category: pt ? "TREINO & ACOMPANHAMENTO" : "TRAINING & COACHING",
+      title: pt ? "Conecte o plano ao atleta." : "Connect the plan to the player.",
+      body: pt ? "Para prescrever sessões, acompanhar a execução e consultar os registros e a evolução de cada atleta."
+        : "Build sessions, follow their execution and review each player's training logs and progress.",
+      features: pt ? ["Calendário de treinos", "Registro de exercícios e evolução", "Atletas individuais e equipes"]
+        : ["Training calendar", "Exercise logs and progression", "Individual athletes and teams"],
+      status: pt ? "Assessoria, programas e piloto por convite" : "Coaching, programs and an invitation-only pilot"
+    }
+  ];
 
-const copy = {
-  pt: {
-    languageHref: "/en/apps",
-    languageLabel: "🇧🇷 PT → EN",
-    eyebrow: "RumoAoPro Apps",
-    title: "Tecnologia para organizar o futebol dentro e fora do campo.",
-    lead:
-      "Comece agora com o LoadPro. O RaptorPro está sendo preparado para reunir acompanhamento e programas em uma experiência própria para atletas e treinadores.",
-    primaryCta: "Conhecer o LoadPro",
-    loadProStatus: "Disponível agora",
-    loadProBody:
-      "Planejamento de microciclo, prontidão, dor, PSE, carga e relatórios para treinadores e comissões.",
-    loadProCta: "Testar grátis por 7 dias",
-    raptorStatus: "Em breve",
-    raptorTitle: "RaptorPro",
-    raptorBody:
-      "A plataforma de coaching e execução dos programas RumoAoPro está evoluindo para uma experiência completa de treino no celular.",
-    raptorPoints: [
-      "Calendário individual de treinos",
-      "Vídeos, cargas, comentários e RPE",
-      "Comunicação entre atleta e treinador"
-    ],
-    raptorNote:
-      "Os compradores dos programas compatíveis já recebem acesso ao ambiente atual do RaptorPro. O lançamento público do app será anunciado depois."
-  },
-  en: {
-    languageHref: "/apps",
-    languageLabel: "🇺🇸 EN → PT",
-    eyebrow: "RumoAoPro Apps",
-    title: "Technology to organize football on and off the pitch.",
-    lead:
-      "Start now with LoadPro. RaptorPro is being prepared to bring coaching and programs together in a dedicated experience for players and coaches.",
-    primaryCta: "Explore LoadPro",
-    loadProStatus: "Available now",
-    loadProBody:
-      "Microcycle planning, readiness, pain, RPE, training load and reports for coaches and performance staff.",
-    loadProCta: "Start your 7-day free trial",
-    raptorStatus: "Coming soon",
-    raptorTitle: "RaptorPro",
-    raptorBody:
-      "The coaching and program-delivery platform is evolving into a complete mobile training experience.",
-    raptorPoints: [
-      "Individual training calendar",
-      "Videos, loads, comments and RPE",
-      "Player-to-coach communication"
-    ],
-    raptorNote:
-      "Buyers of compatible programs already receive access to the current RaptorPro environment. The public app launch will be announced later."
-  }
-} as const;
-
-export function AppsHubPage({ locale }: AppsHubPageProps) {
-  const page = copy[locale];
-  const coachingHref = locale === "pt" ? "/assessoria#aplicacao" : "/en/coaching#application";
-
-  return (
-    <main className="min-h-screen bg-[#07080c]">
-      <SiteHeader
-        ctaHref="#loadpro"
-        ctaLabel={page.primaryCta}
-        languageHref={page.languageHref}
-        navItems={nav[locale]}
-      />
-
-      <section className="relative isolate overflow-hidden bg-[#07080c] text-white">
-        <Image
-          alt="Lukaz de Paula trabalhando como treinador"
-          className="absolute inset-0 -z-30 h-full w-full object-cover object-[50%_36%] opacity-25"
-          fill
-          priority
-          sizes="100vw"
-          src={assets.coachCollage}
-        />
-        <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,#07080c_0%,rgba(7,8,12,0.96)_48%,rgba(7,8,12,0.74)_100%)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_82%_26%,rgba(239,35,60,0.24),transparent_34%)]" />
-
-        <div className="mx-auto grid min-h-[calc(82svh-var(--header-height))] max-w-7xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
-          <div>
-            <div className="flex flex-wrap gap-3">
-              <p className="rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-red-200">
-                {page.eyebrow}
-              </p>
-              <Link
-                className="rounded-md border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase text-white/72 transition hover:bg-white hover:text-ink"
-                href={page.languageHref}
-              >
-                {page.languageLabel}
-              </Link>
-            </div>
-            <h1 className="mt-6 max-w-3xl font-display text-4xl uppercase leading-[0.98] sm:text-5xl lg:text-6xl">
-              {page.title}
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/68 sm:text-lg">
-              {page.lead}
-            </p>
-            <Link
-              className="focus-ring mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-signal px-6 text-sm font-black uppercase text-white transition hover:bg-[#b90f20]"
-              href="#loadpro"
-            >
-              {page.primaryCta}
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Link
-              className="group relative min-h-[370px] overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl"
-              href="#loadpro"
-            >
-              <Image
-                alt="LoadPro"
-                className="object-cover object-center opacity-60 transition duration-500 group-hover:scale-105"
-                fill
-                sizes="(min-width: 1024px) 330px, 50vw"
-                src="/assets/loadpro/product-dashboard-monitoring-v2.png"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
-              <div className="relative flex min-h-[370px] flex-col justify-between p-5">
-                <span className="self-start rounded-full bg-emerald-400 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-950">
-                  {page.loadProStatus}
-                </span>
-                <div>
-                  <BarChart3 aria-hidden="true" className="h-7 w-7 text-red-300" />
-                  <h2 className="mt-4 font-display text-4xl uppercase text-white">LoadPro</h2>
-                  <p className="mt-3 text-sm leading-6 text-white/72">{page.loadProBody}</p>
-                  <p className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase text-white">
-                    {page.loadProCta}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                  </p>
-                </div>
-              </div>
-            </Link>
-
-            <article className="relative min-h-[370px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.055] p-5">
-              <div className="absolute -bottom-24 -right-12 w-[70%] rotate-6 opacity-30">
-                <RaptorPhoneMockup
-                  alt="RaptorPro"
-                  className="w-full"
-                  src={raptorAppScreens.calendar}
-                />
-              </div>
-              <div className="relative flex min-h-[330px] flex-col justify-between">
-                <span className="self-start rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/72">
-                  {page.raptorStatus}
-                </span>
-                <div className="max-w-[58%] sm:max-w-[62%]">
-                  <Clock3 aria-hidden="true" className="h-7 w-7 text-red-300" />
-                  <h2 className="mt-4 font-display text-3xl uppercase text-white">RaptorPro</h2>
-                  <p className="mt-3 text-sm leading-6 text-white/62">{page.raptorBody}</p>
-                </div>
-              </div>
-            </article>
-          </div>
+  return <main className={`${editorial.page} ${styles.page}`}>
+    <SiteHeader navItems={nav[locale]} ctaHref="#aplicativos" ctaLabel={pt ? "Escolher aplicativo" : "Choose your app"} languageHref={pt ? "/en/apps" : "/apps"} />
+    <section className={styles.hero} aria-labelledby="apps-hero-title">
+      <div className={styles.heroInner}>
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}><span />RUMOAOPRO / {pt ? "APLICATIVOS PARA O FUTEBOL" : "APPS FOR FOOTBALL"}</p>
+          <h1 id="apps-hero-title">{pt ? "Dois apps." : "Two apps."}<span>{pt ? "Seu futebol." : "Your game."}</span></h1>
+          <p className={styles.heroLead}>{pt ? "Ferramentas para momentos diferentes da sua rotina. Conheça cada aplicativo e escolha por onde começar."
+            : "Tools for different parts of your workflow. Explore each app and choose where to start."}</p>
+          <div className={styles.actions}><a className={`${styles.primary} focus-ring`} href="#aplicativos">{pt ? "Encontrar meu aplicativo" : "Find my app"}<ArrowDown size={18} aria-hidden="true" /></a></div>
+          <p className={styles.deviceNote}><CalendarDays size={15} aria-hidden="true" />{pt ? "Da rotina da comissão ao treino de cada atleta." : "From the staff workflow to each player's training."}</p>
         </div>
-      </section>
-
-      <LoadProPromo locale={locale} />
-
-      <section className="bg-white py-16" id="raptorpro">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-signal">
-              {page.raptorStatus}
-            </p>
-            <h2 className="mt-3 font-display text-4xl uppercase leading-[0.98] text-ink sm:text-5xl">
-              {page.raptorTitle}
-            </h2>
-            <p className="mt-5 max-w-xl text-base leading-8 text-graphite/72">
-              {page.raptorBody}
-            </p>
-            <div className="mt-7 grid gap-3">
-              {page.raptorPoints.map((point, index) => {
-                const Icon = index === 0 ? CalendarRange : index === 1 ? Smartphone : ShieldCheck;
-                return (
-                  <div className="flex items-center gap-3 rounded-lg bg-smoke p-4 text-sm font-bold text-ink" key={point}>
-                    <Icon aria-hidden="true" className="h-5 w-5 text-signal" />
-                    {point}
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-6 rounded-lg border border-ink/10 bg-smoke p-4 text-sm leading-6 text-graphite/68">
-              {page.raptorNote}
-            </p>
-          </div>
-
-          <div className="relative mx-auto min-h-[500px] w-full max-w-[620px] sm:min-h-[620px]">
-            <div className="absolute left-[3%] top-[16%] w-[42%] -rotate-6 opacity-70">
-              <RaptorPhoneMockup
-                alt="RaptorPro readiness"
-                className="w-full"
-                src={raptorAppScreens.readiness}
-              />
-            </div>
-            <div className="absolute right-[5%] top-0 w-[48%] rotate-3">
-              <RaptorPhoneMockup
-                alt="RaptorPro workout"
-                className="w-full"
-                src={raptorAppScreens.workout}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-ink py-12 text-white">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">RumoAoPro</p>
-            <p className="mt-2 max-w-2xl text-base text-white/65">
-              {locale === "pt"
-                ? "Precisa de um plano individual enquanto o RaptorPro evolui? A assessoria continua disponível."
-                : "Need an individual plan while RaptorPro evolves? Online coaching remains available."}
-            </p>
-          </div>
-          <Link
-            className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/15 px-5 text-sm font-bold uppercase text-white transition hover:bg-white hover:text-ink"
-            href={coachingHref}
-          >
-            {locale === "pt" ? "Conhecer assessoria" : "Explore coaching"}
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
-  );
+        <AppsHeroDevices locale={locale} />
+      </div>
+    </section>
+    <section className={styles.section} id="aplicativos" aria-labelledby="choose-app-title">
+      <div className={styles.sectionHeading}>
+        <div><p className={styles.eyebrow}>{pt ? "ESCOLHA SEU PRÓXIMO PASSO" : "CHOOSE YOUR NEXT STEP"}</p><h2 id="choose-app-title">{pt ? "Qual é a sua\nprioridade hoje?" : "What is your\npriority today?"}</h2></div>
+        <p>{pt ? "Cada aplicativo tem sua própria página, com recursos, demonstração e orientações para começar."
+          : "Each app has its own page with features, a demonstration and guidance to get started."}</p>
+      </div>
+      <div className={styles.gatewayCards}>{apps.map(({ id, name, Icon, href, category, title, body, features, status }, index) =>
+        <article key={id} id={id} className={styles.gatewayCard}>
+          <div className={styles.gatewayBrand}><Icon size={25} strokeWidth={1.5} aria-hidden="true" /><span>0{index + 1} / {category}</span></div>
+          <p className={styles.gatewayApp}>{name}</p><h3>{title}</h3><p className={styles.gatewayBody}>{body}</p>
+          <ul>{features.map(feature => <li key={feature}><Check size={15} aria-hidden="true" />{feature}</li>)}</ul>
+          <small>{status}</small><Link className={`${styles.primary} focus-ring`} href={href}>{pt ? `Conhecer o ${name}` : `Explore ${name}`}<ArrowUpRight size={18} aria-hidden="true" /></Link>
+        </article>)}
+      </div>
+      <div className={styles.gatewayHelp}><p>{pt ? "Quer ajuda para escolher? Conte como você trabalha hoje." : "Need help choosing? Tell us about your current workflow."}</p><a className={`${styles.textLink} focus-ring`} href={supportHref} target="_blank" rel="noreferrer">{pt ? "Falar com a RumoAoPro" : "Talk to RumoAoPro"}<MessageCircle size={17} aria-hidden="true" /></a></div>
+    </section>
+    <SiteFooter locale={locale} />
+  </main>;
 }

@@ -37,6 +37,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8
     },
     {
+      url: `${baseUrl}/apps/loadpro`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.85
+    },
+    {
+      url: `${baseUrl}/apps/raptor-pro`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.85
+    },
+    {
       url: `${baseUrl}/cursos`,
       lastModified,
       changeFrequency: "monthly",
@@ -89,6 +101,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.76
+    },
+    {
+      url: `${baseUrl}/en/apps/loadpro`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8
+    },
+    {
+      url: `${baseUrl}/en/apps/raptor-pro`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8
     },
     {
       url: `${baseUrl}/en/programs/offseason-30-days`,
