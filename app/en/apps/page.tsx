@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { AppsHubPage } from "@/components/apps-hub-page";
 
 export const metadata: Metadata = {
-  title: "Football apps | LoadPro and RaptorPro",
+  title: "RumoAoPro apps | Explore LoadPro and Raptor Pro",
   description:
-    "Explore RumoAoPro apps: LoadPro for coaches and the upcoming RaptorPro experience for player coaching and programs."
+    "Find the app for your workflow: LoadPro for team planning and training-load monitoring, or Raptor Pro for training plans and athlete coaching.",
+  alternates: { canonical: "/en/apps", languages: { "pt-BR": "/apps", en: "/en/apps" } }
 };
 
 export default function EnglishAppsPage() {
