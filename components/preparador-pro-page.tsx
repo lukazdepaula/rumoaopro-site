@@ -2,29 +2,31 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
-  ArrowRight,
+  ArrowDown,
   ArrowUpRight,
   BadgeCheck,
   BarChart3,
   BookOpen,
   CalendarRange,
   Check,
-  CheckCircle2,
-  ChevronDown,
-  CircleHelp,
   GraduationCap,
   HeartPulse,
-  PlayCircle,
+  Infinity,
+  MessageCircle,
+  Plus,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   Target,
   Zap
 } from "lucide-react";
 import { ReviewBadge, ReviewsSection } from "@/components/reviews";
+import { HomeCourseLaptop } from "@/components/home-course-laptop";
+import { PreparadorPlatformPreview } from "@/components/preparador-platform-preview";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { assets, nav } from "@/lib/content";
+import editorial from "./home-editorial.module.css";
+import styles from "./preparador-pro-page.module.css";
 
 type PreparadorProPageProps = {
   locale: "pt" | "en";
@@ -34,13 +36,6 @@ const checkoutBaseUrl = "https://pay.kiwify.com.br/ANEoMiE";
 
 const checkoutUrl = (placement: string) =>
   `${checkoutBaseUrl}?utm_source=rumoaopro&utm_medium=site&utm_campaign=preparador_pro&utm_content=${placement}`;
-
-const screenAssets = {
-  platform: "/assets/courses/preparador-pro/screens/platform-home.webp",
-  lessons: "/assets/courses/preparador-pro/screens/featured-lessons.webp",
-  player: "/assets/courses/preparador-pro/screens/lesson-player.webp",
-  modules: "/assets/courses/preparador-pro/screens/modules-list.webp"
-};
 
 const copy = {
   pt: {
@@ -242,150 +237,61 @@ const partnerLogos = [
 ];
 
 function CheckoutLink({ children, className, placement }: { children: ReactNode; className: string; placement: string }) {
-  return (
-    <a className={className} data-checkout-product="preparador-pro" href={checkoutUrl(placement)} rel="noreferrer" target="_blank">
-      {children}
-    </a>
-  );
+  return <a className={`${className} focus-ring`} data-checkout-product="preparador-pro" href={checkoutUrl(placement)} rel="noreferrer" target="_blank">{children}</a>;
 }
 
 export function PreparadorProPage({ locale }: PreparadorProPageProps) {
   const page = copy[locale];
-  const isEnglish = locale === "en";
+  const pt = locale === "pt";
 
-  return (
-    <main className="min-h-screen overflow-hidden bg-[#f4f4f1] pb-20 lg:pb-0">
-      <SiteHeader ctaHref="#oferta" ctaLabel={page.cta} languageHref={isEnglish ? "/cursos" : "/en/courses"} navItems={nav[locale]} />
+  return <main className={`${editorial.page} ${styles.page}`}>
+    <SiteHeader ctaHref="#oferta" ctaLabel={pt ? "Conhecer o curso" : "Explore the course"} languageHref={pt ? "/en/courses" : "/cursos"} navItems={nav[locale]} />
 
-      <section className="relative isolate overflow-hidden bg-[#070809] text-white">
-        <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_82%_18%,rgba(218,17,38,.3),transparent_33%),linear-gradient(135deg,#070809_0%,#111318_58%,#21080d_100%)]" />
-        <div className="absolute inset-0 -z-20 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:54px_54px]" />
-        <div className="mx-auto grid min-h-[min(820px,calc(100vh-var(--header-height)))] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20">
-          <div className="relative z-10">
-            <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#ffcf57] sm:text-sm"><Sparkles aria-hidden="true" className="h-4 w-4" />{page.eyebrow}</p>
-            <h1 className="mt-5 max-w-3xl font-display text-4xl uppercase leading-[0.95] sm:text-6xl lg:text-7xl">{page.heroTitle}</h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">{page.heroBody}</p>
-            <div className="mt-7 flex flex-wrap gap-2">
-              {page.heroTags.map((tag) => <span className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-2 text-xs font-bold text-white/80" key={tag}><Check aria-hidden="true" className="mr-1.5 inline h-3.5 w-3.5 text-[#ff344b]" />{tag}</span>)}
-            </div>
-            <div className="mt-7"><ReviewBadge groupKey="preparadorPro" locale={locale} tone="dark" /></div>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <CheckoutLink className="focus-ring inline-flex min-h-[52px] items-center justify-center gap-2 rounded-md bg-signal px-6 py-3.5 text-sm font-black uppercase text-white shadow-[0_18px_45px_rgba(218,17,38,.28)] transition hover:-translate-y-0.5 hover:bg-[#b90f20]" placement="hero">{page.cta}<ArrowUpRight aria-hidden="true" className="h-4 w-4" /></CheckoutLink>
-              <a className="focus-ring inline-flex min-h-[52px] items-center justify-center gap-2 rounded-md border border-white/20 bg-white/[0.06] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-ink" href="#conteudo">{page.explore}<ArrowRight aria-hidden="true" className="h-4 w-4" /></a>
-            </div>
-          </div>
-
-          <div className="relative mx-auto min-h-[430px] w-full max-w-[780px] sm:min-h-[560px] lg:mx-0 lg:min-h-[620px]">
-            <div className="absolute inset-x-[6%] top-[4%] h-[64%] rounded-full bg-signal/25 blur-[95px]" />
-            <div className="absolute -inset-x-[7%] -top-[2%] z-10 aspect-[1.5] overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_68%,transparent_100%)] sm:-inset-x-[4%] lg:-inset-x-[8%]">
-              <Image alt={`${page.screenLabels[0]} no notebook`} className="object-contain" fill priority sizes="(max-width: 1024px) 105vw, 59vw" src="/assets/courses/preparador-pro/preparador-pro-laptop-v3.png" />
-            </div>
-
-            <div className="absolute inset-x-0 bottom-2 z-20 h-[42%] sm:bottom-2 sm:h-[39%]">
-              {page.heroLessons.map(([eyebrow, title], index) => {
-                const cardPosition = [
-                  "left-0 top-4 w-[47%] -rotate-[4deg] sm:left-[2%] sm:top-7 sm:w-[31%]",
-                  "right-0 top-8 w-[47%] rotate-[4deg] sm:right-[2%] sm:top-7 sm:w-[31%]",
-                  "left-1/2 top-[30%] hidden w-[29%] -translate-x-1/2 rotate-[1deg] sm:block"
-                ][index];
-                const imagePosition = ["0% center", "33.333% center", "66.666% center"][index];
-
-                return (
-                  <div className={`absolute ${cardPosition}`} key={title}>
-                    <article className="group relative rounded-xl border border-white/25 bg-gradient-to-b from-[#24262b] to-[#101114] p-1.5 shadow-[0_26px_65px_rgba(0,0,0,.7)] transition duration-300 hover:-translate-y-1 sm:rounded-2xl sm:p-2">
-                      <div className="absolute -bottom-2.5 left-2 right-[-3px] top-3 -z-10 rounded-xl border border-white/10 bg-gradient-to-br from-[#6f101f] via-[#2a0a10] to-[#08090b] sm:rounded-2xl" />
-                      <div className="relative aspect-[1.38] overflow-hidden rounded-lg bg-[#0a0b0d] sm:rounded-xl">
-                        <div className="absolute inset-0 bg-no-repeat" style={{ backgroundImage: `url(${screenAssets.lessons})`, backgroundPosition: imagePosition, backgroundSize: "400% auto" }} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/15" />
-                        <span className="absolute left-2 top-2 rounded-full border border-white/15 bg-black/65 px-2 py-1 text-[7px] font-black uppercase tracking-[0.13em] text-[#ffcf57] backdrop-blur sm:left-3 sm:top-3 sm:text-[8px]">{eyebrow}</span>
-                      </div>
-                      <div className="flex items-end justify-between gap-2 px-2 pb-2 pt-2.5 sm:px-3 sm:pb-3 sm:pt-3"><p className="text-[11px] font-black uppercase leading-tight text-white sm:text-sm">{title}</p><span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-signal text-white shadow-[0_6px_18px_rgba(218,17,38,.35)] sm:h-7 sm:w-7"><PlayCircle aria-hidden="true" className="h-3.5 w-3.5" /></span></div>
-                    </article>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+    <section className={styles.hero} aria-labelledby="preparador-hero-title">
+      <div className={styles.heroInner}>
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}><span />PREPARADOR PRO / {pt ? "FORMAÇÃO PARA TREINADORES" : "EDUCATION FOR COACHES"}</p>
+          <h1 id="preparador-hero-title">{pt ? "Conhecimento" : "Knowledge"}<span>{pt ? "em campo." : "on the pitch."}</span></h1>
+          <p className={styles.heroLead}>{page.heroBody}</p>
+          <div className={styles.heroActions}><CheckoutLink className={styles.primary} placement="hero">{page.cta}<ArrowUpRight size={18} aria-hidden="true" /></CheckoutLink><a className={`${styles.textLink} focus-ring`} href="#conteudo">{page.explore}<ArrowDown size={17} aria-hidden="true" /></a></div>
+          <p className={styles.languageNote}><BookOpen size={14} aria-hidden="true" />{pt ? "Curso em português · Estude no seu ritmo" : "Course taught in Portuguese · Study at your own pace"}</p>
         </div>
-      </section>
-
-      <section className="border-b border-ink/10 bg-white py-14">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-end lg:px-8">
-          <div><p className="text-sm font-black uppercase tracking-[0.18em] text-signal">{page.problemEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-[1.02] text-ink sm:text-5xl">{page.problemTitle}</h2></div>
-          <p className="max-w-2xl text-base leading-8 text-graphite/72 lg:justify-self-end">{page.problemBody}</p>
-        </div>
-      </section>
-
-      <section className="bg-[#f4f4f1] py-16" id="conteudo">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl"><p className="text-sm font-black uppercase tracking-[0.18em] text-signal">{page.outcomesEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">{page.outcomesTitle}</h2></div>
-          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {page.outcomes.map(([title, body], index) => {
-              const Icon = outcomeIcons[index];
-              return <article className="group rounded-xl border border-ink/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-card" key={title}><div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-signal/10 text-signal transition group-hover:bg-signal group-hover:text-white"><Icon aria-hidden="true" className="h-5 w-5" /></div><h3 className="mt-5 text-xl font-black text-ink">{title}</h3><p className="mt-3 text-sm leading-6 text-graphite/68">{body}</p></article>;
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-[#090a0c] py-16 text-white">
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_10%,#e0112b,transparent_26%),radial-gradient(circle_at_90%_85%,#7d0716,transparent_28%)]" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-end"><div><p className="text-sm font-black uppercase tracking-[0.18em] text-[#ffcf57]">{page.insideEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-5xl">{page.insideTitle}</h2></div><p className="max-w-2xl text-base leading-8 text-white/68 lg:justify-self-end">{page.insideBody}</p></div>
-          <div className="mt-10 grid gap-5 lg:grid-cols-[1.45fr_0.55fr]">
-            <article className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-2 shadow-2xl sm:p-3"><div className="relative aspect-[1.91] overflow-hidden rounded-xl bg-black"><Image alt={page.screenLabels[1]} className="object-cover object-top" fill sizes="(max-width: 1024px) 100vw, 72vw" src={screenAssets.player} /></div><p className="px-3 pb-2 pt-4 text-sm font-black uppercase tracking-[0.16em] text-white/70"><PlayCircle aria-hidden="true" className="mr-2 inline h-4 w-4 text-signal" />{page.screenLabels[1]}</p></article>
-            <article className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-2 shadow-2xl sm:p-3"><div className="relative min-h-[440px] overflow-hidden rounded-xl bg-black lg:h-full"><Image alt={page.screenLabels[2]} className="object-cover object-top" fill sizes="(max-width: 1024px) 100vw, 28vw" src={screenAssets.modules} /></div><p className="px-3 pb-2 pt-4 text-sm font-black uppercase tracking-[0.16em] text-white/70"><BookOpen aria-hidden="true" className="mr-2 inline h-4 w-4 text-signal" />{page.screenLabels[2]}</p></article>
-          </div>
-          <div className="mt-5 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-2 sm:p-3"><div className="relative aspect-[2.54] min-h-[260px] overflow-hidden rounded-xl bg-black sm:min-h-0"><Image alt={page.screenLabels[0]} className="object-cover object-center" fill sizes="100vw" src={screenAssets.lessons} /></div></div>
-        </div>
-      </section>
-
-      <section className="bg-signal py-12 text-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><div className="max-w-3xl"><p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">{page.lessonsEyebrow}</p><h2 className="mt-2 font-display text-3xl uppercase leading-tight sm:text-4xl">{page.lessonsTitle}</h2><p className="mt-3 text-sm leading-7 text-white/78">{page.lessonsBody}</p></div><div className="shrink-0 rounded-full border border-white/20 bg-black/15 px-5 py-3 text-sm font-black"><RefreshCw aria-hidden="true" className="mr-2 inline h-4 w-4" />{page.lessonPill}</div></div>
-      </section>
-
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-end"><div><p className="text-sm font-black uppercase tracking-[0.18em] text-signal">{page.curriculumEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">{page.curriculumTitle}</h2></div><p className="max-w-2xl text-base leading-8 text-graphite/70 lg:justify-self-end">{page.curriculumBody}</p></div>
-          <div className="mt-10 grid gap-4 lg:grid-cols-2">
-            {page.curriculum.map((module, index) => <details className={`group rounded-xl border border-ink/10 bg-[#f7f7f5] p-5 open:bg-white open:shadow-card ${index === page.curriculum.length - 1 ? "lg:col-span-2" : ""}`} key={module.title}><summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 rounded-md [&::-webkit-details-marker]:hidden"><span className="flex min-w-0 items-center gap-4"><span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink text-sm font-black text-white">{String(index + 1).padStart(2, "0")}</span><span><span className="block text-lg font-black text-ink">{module.title}</span><span className="mt-1 block text-xs font-bold uppercase tracking-[0.14em] text-signal">{module.count}</span></span></span><ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-graphite/50 transition group-open:rotate-180" /></summary><div className="mt-5 grid gap-2 border-t border-ink/10 pt-5 sm:grid-cols-2">{module.lessons.map((lesson) => <p className="flex items-start gap-2 text-sm leading-6 text-graphite/72" key={lesson}><CheckCircle2 aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-signal" />{lesson}</p>)}</div></details>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#0b0c0e] py-16 text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-8">
-          <div className="relative min-h-[500px] overflow-hidden rounded-2xl border border-white/12 bg-[#15171b] shadow-2xl"><Image alt="Lukaz de Paula treinando jogadores de futebol" className="object-cover object-[50%_35%]" fill sizes="(max-width: 1024px) 100vw, 44vw" src={assets.coachGymInstruction} /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" /><div className="absolute inset-x-0 bottom-0 p-6 sm:p-8"><p className="font-display text-3xl uppercase">Lukaz de Paula</p><p className="mt-1 text-sm font-bold uppercase tracking-[0.15em] text-[#ffcf57]">Coach · Preparador físico · Ex-atleta</p></div></div>
-          <div><p className="text-sm font-black uppercase tracking-[0.18em] text-[#ffcf57]">{page.authorityEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-5xl">{page.authorityTitle}</h2><p className="mt-5 text-base leading-8 text-white/68">{page.authorityBody}</p><div className="mt-7 grid gap-3">{page.authorityPoints.map((item) => <p className="flex items-start gap-3 text-sm font-bold leading-6 text-white/78" key={item}><BadgeCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-signal" />{item}</p>)}</div><div className="mt-9 grid grid-cols-4 gap-3">{partnerLogos.map((logo) => <div className="flex aspect-square items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] p-3" key={logo.alt}><Image alt={logo.alt} className="h-full w-full object-contain" height={90} src={logo.src} width={90} /></div>)}</div></div>
-        </div>
-      </section>
-
-      <section className="bg-[#f4f4f1] py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:px-8"><div><p className="text-sm font-black uppercase tracking-[0.18em] text-signal">{page.audienceEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">{page.audienceTitle}</h2></div><div className="grid gap-3 sm:grid-cols-2">{page.audience.map((item) => <p className="flex min-h-24 items-start gap-3 rounded-xl border border-ink/10 bg-white p-5 text-sm font-bold leading-6 text-graphite/75 shadow-sm" key={item}><CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-signal" />{item}</p>)}</div></div>
-      </section>
-
-      <section className="bg-white px-4 py-16 sm:px-6" id="oferta">
-        <div className="mx-auto grid max-w-6xl overflow-hidden rounded-3xl border border-ink/10 bg-ink text-white shadow-[0_35px_100px_rgba(8,9,11,.2)] lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="relative min-h-[420px] overflow-hidden border-b border-white/10 p-8 lg:border-b-0 lg:border-r"><Image alt="Preparador PRO" className="object-cover opacity-45" fill sizes="(max-width: 1024px) 100vw, 42vw" src={assets.preparadorProCover} /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20" /><div className="relative z-10 flex h-full flex-col justify-end"><ShieldCheck aria-hidden="true" className="h-10 w-10 text-[#ffcf57]" /><p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#ffcf57]">{page.guaranteeTitle}</p><p className="mt-3 max-w-md text-base leading-7 text-white/72">{page.guaranteeBody}</p></div></div>
-          <div className="p-7 sm:p-10"><p className="text-sm font-black uppercase tracking-[0.18em] text-[#ffcf57]">{page.offerEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-5xl">{page.offerTitle}</h2><div className="mt-7 border-y border-white/12 py-6"><p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">{page.priceLabel}</p><p className="mt-2 font-display text-5xl uppercase text-white">{page.price}</p><p className="mt-1 text-sm font-semibold text-white/55">{page.installments}</p></div><div className="mt-7 grid gap-3 sm:grid-cols-2">{page.included.map((item) => <p className="flex items-start gap-2 text-sm font-bold leading-6 text-white/75" key={item}><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#ff344b]" />{item}</p>)}</div><CheckoutLink className="focus-ring mt-8 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-signal px-6 py-3.5 text-sm font-black uppercase text-white transition hover:bg-[#b90f20]" placement="offer">{page.cta}<ArrowUpRight aria-hidden="true" className="h-4 w-4" /></CheckoutLink><p className="mt-4 text-center text-xs leading-5 text-white/45">{page.externalNote}</p></div>
-        </div>
-      </section>
-
-      <ReviewsSection eyebrow={page.reviewsEyebrow} groupKey="preparadorPro" locale={locale} title={page.reviewsTitle} />
-
-      <section className="bg-[#f4f4f1] py-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8"><div className="text-center"><p className="text-sm font-black uppercase tracking-[0.18em] text-signal">{page.faqEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight text-ink sm:text-5xl">{page.faqTitle}</h2></div><div className="mt-9 grid gap-3">{page.faq.map(([question, answer]) => <details className="group rounded-xl border border-ink/10 bg-white p-5 shadow-sm" key={question}><summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-base font-black text-ink [&::-webkit-details-marker]:hidden"><span className="flex items-center gap-3"><CircleHelp aria-hidden="true" className="h-5 w-5 shrink-0 text-signal" />{question}</span><ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-graphite/45 transition group-open:rotate-180" /></summary><p className="mt-4 border-t border-ink/10 pt-4 text-sm leading-7 text-graphite/68">{answer}</p></details>)}</div></div>
-      </section>
-
-      <section className="bg-signal py-16 text-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-7 px-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><div className="max-w-3xl"><p className="text-sm font-black uppercase tracking-[0.18em] text-white/65">{page.finalEyebrow}</p><h2 className="mt-3 font-display text-3xl uppercase leading-tight sm:text-5xl">{page.finalTitle}</h2><p className="mt-4 text-base leading-7 text-white/78">{page.finalBody}</p></div><div className="flex shrink-0 flex-col gap-3"><CheckoutLink className="focus-ring inline-flex min-h-[52px] items-center justify-center gap-2 rounded-md bg-white px-6 py-3.5 text-sm font-black uppercase text-ink transition hover:bg-steel" placement="final">{page.cta}<ArrowUpRight aria-hidden="true" className="h-4 w-4" /></CheckoutLink><Link className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20" href={isEnglish ? "/en" : "/"}>{page.back}</Link></div></div>
-      </section>
-
-      <SiteFooter locale={locale} />
-
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#090a0c]/95 p-3 text-white shadow-[0_-12px_40px_rgba(0,0,0,.28)] backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-lg items-center gap-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-black uppercase tracking-[0.12em] text-white/55">Preparador PRO</p><p className="truncate text-sm font-black">{page.mobilePrice}</p></div><CheckoutLink className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-md bg-signal px-4 text-xs font-black uppercase text-white" placement="sticky_mobile">{page.cta}<ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" /></CheckoutLink></div>
+        <div className={styles.heroVisual}><span className={styles.visualLabel}>01 / {pt ? "SUA PRÓXIMA SALA DE AULA" : "YOUR NEXT CLASSROOM"}</span><HomeCourseLaptop locale={locale} /></div>
+        <div className={styles.heroProof}><ReviewBadge groupKey="preparadorPro" locale={locale} tone="dark" /><span>{pt ? "Avaliações de quem já estuda com a gente." : "Feedback from coaches already learning with us."}</span></div>
       </div>
-    </main>
-  );
+      <div className={styles.facts}>{page.heroTags.map((tag,index) => {const Icon = [Infinity, RefreshCw, MessageCircle, ShieldCheck][index];return <div key={tag}><Icon size={19} strokeWidth={1.5} aria-hidden="true" /><span>{tag}</span></div>;})}</div>
+    </section>
+
+    <section className={styles.section} aria-labelledby="preparador-method-title">
+      <div className={styles.methodIntro}><div><p className={styles.eyebrow}>01 / {page.problemEyebrow}</p><h2 id="preparador-method-title">{pt ? "Entender o atleta.\nDar sentido ao treino." : "Understand the player.\nGive training a purpose."}</h2></div><p>{page.problemBody}</p></div>
+      <div className={styles.outcomes}>{page.outcomes.map(([title,body],index)=>{const Icon=outcomeIcons[index];return <article key={title}><div><Icon size={23} strokeWidth={1.6} aria-hidden="true" /><span>0{index+1}</span></div><h3>{title}</h3><p>{body}</p></article>;})}</div>
+    </section>
+
+    <section className={styles.platform} id="plataforma" aria-labelledby="preparador-platform-title">
+      <div className={styles.platformInner}><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>02 / {page.insideEyebrow}</p><h2 id="preparador-platform-title">{pt ? "Abra a plataforma.\nConheça o conteúdo." : "Explore the platform.\nGet to know the content."}</h2></div><p>{pt ? "Telas reais do Preparador Pro, com aulas e exemplos para conectar estudo e prática. Explore a biblioteca, uma aula e a organização dos temas." : "Actual Preparador Pro screens, with lessons and examples connecting learning to coaching practice. Explore the library, a lesson and the topic organization."}</p></div><PreparadorPlatformPreview locale={locale} /></div>
+    </section>
+
+    <section className={`${styles.section} ${styles.curriculum}`} id="conteudo" aria-labelledby="preparador-curriculum-title">
+      <div className={styles.curriculumIntro}><p className={styles.eyebrow}>03 / {page.curriculumEyebrow}</p><h2 id="preparador-curriculum-title">{pt ? "Uma base sólida.\nVárias formas\nde aplicar." : "A strong foundation.\nMany ways\nto apply it."}</h2><p>{page.curriculumBody}</p><div className={styles.updateNote}><RefreshCw size={20} aria-hidden="true" /><span>{page.lessonPill}<small>{page.lessonsBody}</small></span></div><a href="#oferta" className={`${styles.textLink} focus-ring`}>{pt ? "Conhecer o investimento" : "See the investment"}<ArrowUpRight size={16} aria-hidden="true" /></a></div>
+      <div className={styles.moduleList}>{page.curriculum.map((module,index)=><details className={styles.module} key={module.title} open={index===0}><summary className="focus-ring"><span className={styles.moduleNumber}>0{index+1}</span><span><strong>{module.title}</strong><small>{module.count}</small></span><Plus size={19} strokeWidth={1.6} aria-hidden="true" /></summary><ul>{module.lessons.map(lesson=><li key={lesson}><Check size={15} aria-hidden="true" />{lesson}</li>)}</ul></details>)}</div>
+    </section>
+
+    <section className={styles.instructor} aria-labelledby="preparador-instructor-title"><div className={styles.instructorInner}>
+      <figure className={styles.coachPhoto}><Image alt={pt ? "Lukaz de Paula orientando um atleta na academia" : "Lukaz de Paula guiding an athlete in the gym"} src={assets.coachGymInstruction} fill sizes="(min-width:800px) 42vw, 100vw" /><figcaption>LUKAZ DE PAULA<small>{pt ? "PREPARADOR FÍSICO · TREINADOR · EX-ATLETA" : "PHYSICAL COACH · COACH · FORMER PLAYER"}</small></figcaption></figure>
+      <div className={styles.instructorCopy}><p className={styles.eyebrow}>04 / {page.authorityEyebrow}</p><h2 id="preparador-instructor-title">{pt ? "A experiência\nvira aula." : "Experience becomes\na lesson."}</h2><p>{page.authorityBody}</p><ul>{page.authorityPoints.map(point=><li key={point}><BadgeCheck size={18} aria-hidden="true" />{point}</li>)}</ul><div className={styles.credentials}>{partnerLogos.map(logo=><div key={logo.alt}><Image alt="" src={logo.src} width={40} height={40} className={logo.src===assets.logoMalagaCity ? styles.malagaLogo : undefined}/><span>{logo.alt}</span></div>)}</div><details className={styles.audience}><summary className="focus-ring">{page.audienceEyebrow}<Plus size={17} aria-hidden="true" /></summary><ul>{page.audience.map(item=><li key={item}><Check size={15} aria-hidden="true" />{item}</li>)}</ul></details></div>
+    </div></section>
+
+    <div className={styles.reviews}><ReviewsSection groupKey="preparadorPro" locale={locale} eyebrow={page.reviewsEyebrow} title={pt ? "Quem estuda.\nQuem aplica." : "Those who learn.\nThose who apply."} /></div>
+
+    <section className={styles.offerSection} id="oferta" aria-labelledby="preparador-offer-title"><div className={styles.offerInner}>
+      <div className={styles.offerCopy}><p className={styles.eyebrow}>05 / {page.offerEyebrow}</p><h2 id="preparador-offer-title">{pt ? "Um próximo passo.\nAcesso para sempre." : "Your next step.\nAccess for life."}</h2><p>{page.finalBody}</p><ul>{page.included.map(item=><li key={item}><Check size={17} aria-hidden="true" />{item}</li>)}</ul><div className={styles.guarantee}><ShieldCheck size={29} strokeWidth={1.5} aria-hidden="true" /><div><strong>{page.guaranteeTitle}</strong><p>{page.guaranteeBody}</p></div></div></div>
+      <div className={styles.priceCard}><div className={styles.priceBrand}>RUMO<span>AO</span>PRO <span>/</span> PREPARADOR PRO</div><p className={styles.priceLabel}>{page.priceLabel}</p><p className={styles.price}>{page.price}</p><p className={styles.installments}>{page.installments}</p><span className={styles.priceRule}/><p className={styles.priceDescription}>{pt ? "Sua formação para avaliar, planejar e treinar com mais intenção." : "Your education to assess, plan and train with greater intent."}</p><CheckoutLink className={styles.primary} placement="offer">{page.cta}<ArrowUpRight size={18} aria-hidden="true" /></CheckoutLink><p className={styles.checkoutNote}><ShieldCheck size={14} aria-hidden="true" />{page.externalNote}</p><div className={styles.priceFoot}><span><Infinity size={15} aria-hidden="true" />{pt ? "Uma única compra" : "One-time purchase"}</span><span>{pt ? "Sem mensalidade" : "No monthly fee"}</span></div></div>
+    </div></section>
+
+    <section className={`${styles.section} ${styles.faq}`} aria-labelledby="preparador-faq-title"><div><p className={styles.eyebrow}>{page.faqEyebrow}</p><h2 id="preparador-faq-title">{pt ? "Antes de\ncomeçar." : "Before\nyou start."}</h2><p>{pt ? "Acesso, suporte e os detalhes da sua formação." : "Access, support and the details of your education."}</p></div><div>{page.faq.map(([question,answer])=><details key={question}><summary className="focus-ring">{question}<Plus size={18} aria-hidden="true" /></summary><p>{answer}</p></details>)}</div></section>
+
+    <section className={styles.closing}><div><p className={styles.eyebrow}>PREPARADOR PRO</p><h2>{pt ? "Leve o conhecimento\npara o próximo treino." : "Bring your learning\nto the next session."}</h2><p>{page.finalBody}</p><div><CheckoutLink className={styles.primary} placement="final">{page.cta}<ArrowUpRight size={18} aria-hidden="true" /></CheckoutLink><Link className={`${styles.textLink} focus-ring`} href={pt ? "/" : "/en"}>{page.back}<ArrowUpRight size={16} aria-hidden="true" /></Link></div></div></section>
+    <SiteFooter locale={locale} />
+    <div className={styles.mobileOffer}><div><small>PREPARADOR PRO</small><strong>{page.mobilePrice}</strong></div><CheckoutLink className={styles.primary} placement="sticky_mobile">{pt ? "Entrar no curso" : "Join the course"}<ArrowUpRight size={16} aria-hidden="true" /></CheckoutLink></div>
+  </main>;
 }
