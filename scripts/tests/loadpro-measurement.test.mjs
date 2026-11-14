@@ -87,7 +87,8 @@ function browserFixture({ consent = 'granted', blockedStorage = false, pathname 
     react: { useEffect(effect) { effects.push(effect); } }, 'next/navigation': { usePathname: () => pathname },
     '@/components/privacy-consent': { readMarketingConsent: () => consent, MARKETING_CONSENT_EVENT: 'consent' },
     '@/lib/marketing/attribution': attribution,
-    '@/lib/marketing/event-path': eventPath
+    '@/lib/marketing/event-path': eventPath,
+    '@/lib/checkout/products': products
   }, { window, document,
     async fetch(url, options) {
       requests.push({ url, body: JSON.parse(options.body) });
@@ -205,6 +206,29 @@ test('LoadPro Purchase is server-only and StartTrial has zero value; programs st
   assert.equal(calls.at(-1)[3].value, 0);
   api.trackMetaOutcome('Purchase', 'program-payment', 'project-36', 'Program', 99, 'BRL');
   assert.equal(calls.at(-1)[3].value, 99);
+});
+
+test('all LoadPro plans use their own pixel and never create a browser Purchase', async () => {
+  for (const slug of ['loadpro-founders', 'loadpro-founders-50', 'loadpro-club-150']) {
+    const browser = browserFixture({ pathname: `/checkout/${slug}` });
+    await browser.api.trackCheckoutEvent('checkout_submit', slug, {});
+    const checkout = browser.calls.find(call => call[0] === 'trackSingle' && call[2] === 'InitiateCheckout');
+    assert.equal(checkout[1], 'fixture-loadpro');
+    const count = browser.calls.length;
+    browser.api.trackMetaOutcome('Purchase', 'invoice-fixture', slug, 'LoadPro', 49.9, 'BRL');
+    assert.equal(browser.calls.length, count);
+  }
+});
+
+test('new LoadPro product pages emit a consented product view in both languages, without claiming revenue', async () => {
+  for (const pathname of ['/apps/loadpro', '/en/apps/loadpro']) {
+    const browser = browserFixture({ pathname });
+    const unmount = await browser.mount(); unmount();
+    const views = browser.requests.filter(request => request.body.type === 'product_view');
+    assert.equal(views.length, 1); assert.equal(views[0].body.productSlug, 'loadpro-founders');
+    const meta = browser.calls.find(call => call[0] === 'trackSingle' && call[2] === 'ViewContent');
+    assert.equal(meta[1], 'fixture-loadpro'); assert.equal(meta[3].value, undefined);
+  }
 });
 
 function outcomeFixture({ preview = false, failStorage = false } = {}) {
