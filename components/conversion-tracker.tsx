@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { attributionId, marketingLandingUrl } from "@/lib/marketing/attribution";
 import { publicEventPath } from "@/lib/marketing/event-path";
+import { getProductBySlug } from "@/lib/checkout/products";
 import {
   MARKETING_CONSENT_EVENT,
   readMarketingConsent
@@ -57,6 +58,8 @@ const ATTRIBUTION_KEY = "rap_marketing_attribution_v1";
 let fallbackSessionId: string | undefined;
 
 const productPaths: Record<string, string> = {
+  "/apps/loadpro": "loadpro-founders",
+  "/en/apps/loadpro": "loadpro-founders",
   "/programas/offseason-30-days": "offseason-30-days",
   "/en/programs/offseason-30-days": "offseason-30-days",
   "/programas/adama-strength-power": "adama-offseason-strength-and-power",
@@ -226,7 +229,7 @@ function metaEventFor(type: EventType): MetaEventName | null {
 }
 
 function isLoadProSlug(productSlug: string) {
-  return productSlug === "loadpro-founders" || productSlug === "loadpro-founders-50";
+  return productSlug === "loadpro-founders" || productSlug === "loadpro-founders-50" || productSlug === "loadpro-club-150";
 }
 
 function pixelIdForProduct(productSlug: string) {
@@ -285,13 +288,17 @@ function initMetaPixel(productSlug: string) {
 function trackMetaBrowser(eventName: MetaEventName, eventId: string, productSlug: string) {
   const pixelId = initMetaPixel(productSlug);
   if (!pixelId) return;
+  const product = isLoadProSlug(productSlug) ? getProductBySlug(productSlug) : null;
+  const locale = localeForPath(window.location.pathname);
   const customData = isLoadProSlug(productSlug)
     ? {
-        content_name: productSlug === "loadpro-founders-50" ? "LoadPro App - Fundadores 50" : "LoadPro App - Fundadores 30",
+        content_name: productSlug === "loadpro-club-150" ? "LoadPro App - Clube 150" : productSlug === "loadpro-founders-50" ? "LoadPro App - Fundadores 50" : "LoadPro App - Fundadores 30",
         content_ids: [productSlug],
         content_type: "product",
-        currency: "BRL",
-        value: productSlug === "loadpro-founders-50" ? 69.9 : 49.9
+        ...(eventName === "InitiateCheckout" && product ? {
+          currency: locale === "pt" ? "BRL" : "USD",
+          value: locale === "pt" ? product.price_brl : product.price_usd
+        } : {})
       }
     : { content_ids: productSlug === "site" ? undefined : [productSlug], content_type: productSlug === "site" ? undefined : "product" };
   (window as MetaWindow).fbq?.("trackSingle", pixelId, eventName, customData, { eventID: eventId });
